@@ -11,15 +11,13 @@
 	<classpathentry combineaccessrules="false" kind="src" path="/tool-api"/>
 	<classpathentry combineaccessrules="false" kind="src" path="/authz-api"/>
 	<classpathentry combineaccessrules="false" kind="src" path="/event-api"/>
-	<classpathentry combineaccessrules="false" kind="src" path="/courier-api"/>
 	<classpathentry combineaccessrules="false" kind="src" path="/entity-api"/>
-	<classpathentry combineaccessrules="false" kind="src" path="/message-api"/>
 	<classpathentry combineaccessrules="false" kind="src" path="/site-api"/>
 	<classpathentry combineaccessrules="false" kind="src" path="/user-api"/>
 	<classpathentry combineaccessrules="false" kind="src" path="/content-api"/>
-	<classpathentry combineaccessrules="false" kind="src" path="/alias-api"/>
-	<classpathentry combineaccessrules="false" kind="src" path="/courier-util"/>
-	<classpathentry combineaccessrules="false" kind="src" path="/presence-api"/>
-	<classpathentry combineaccessrules="false" kind="src" path="/presence-util"/>
+	<classpathentry combineaccessrules="false" kind="src" path="/calendar-api"/>
+	<classpathentry combineaccessrules="false" kind="src" path="/gradebook"/>
+	<classpathentry combineaccessrules="false" kind="src" path="/announcement-api"/>
+	<classpathentry combineaccessrules="false" kind="src" path="/message-api"/>
 	<classpathentry kind="output" path="bin"/>
 </classpath>
