@@ -3819,6 +3819,8 @@ public abstract class BaseAssignmentService implements AssignmentService, Entity
 							ResourcePropertiesEdit p = nContent.getPropertiesEdit();
 							p.clear();
 							p.addAll(oContent.getProperties());
+							// update live properties
+							addLiveProperties(p);
 							// attachment
 							List oAttachments = oContent.getAttachments();
 							List nAttachments = m_entityManager.newReferenceList();
@@ -3920,6 +3922,8 @@ public abstract class BaseAssignmentService implements AssignmentService, Entity
 							ResourcePropertiesEdit p = nAssignment.getPropertiesEdit();
 							p.clear();
 							p.addAll(oAssignment.getProperties());
+							// update live properties
+							addLiveProperties(p);
 							// complete the edit
 							m_assignmentStorage.commit(nAssignment);
 							((BaseAssignmentEdit) nAssignment).closeEdit();
