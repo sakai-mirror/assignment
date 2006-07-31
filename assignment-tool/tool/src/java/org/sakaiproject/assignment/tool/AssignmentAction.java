@@ -46,9 +46,7 @@ import org.sakaiproject.assignment.api.AssignmentSubmission;
 import org.sakaiproject.assignment.api.AssignmentSubmissionEdit;
 import org.sakaiproject.assignment.cover.AssignmentService;
 import org.sakaiproject.authz.api.AuthzGroup;
-import org.sakaiproject.authz.api.Member;
 import org.sakaiproject.authz.api.PermissionsHelper;
-import org.sakaiproject.authz.api.Role;
 import org.sakaiproject.authz.cover.AuthzGroupService;
 import org.sakaiproject.calendar.api.Calendar;
 import org.sakaiproject.calendar.api.CalendarEvent;
@@ -498,9 +496,6 @@ public class AssignmentAction extends PagedResourceActionII
 	/** The alert flag when doing global navigation from improper mode */
 	private static final String ALERT_GLOBAL_NAVIGATION = "alert_global_navigation";
 
-	/** The maximum trial number to get an uniq assignment title in gradebook */
-	private static final int MAXIMUM_ATTEMPTS_FOR_UNIQUENESS = 100;
-	
 	/** The total list item before paging */
 	private static final String STATE_PAGEING_TOTAL_ITEMS = "state_paging_total_items";
 	
@@ -1450,9 +1445,7 @@ public class AssignmentAction extends PagedResourceActionII
 		String contextString = (String) state.getAttribute(STATE_CONTEXT_STRING);
 		context.put("accessPointUrl", (ServerConfigurationService.getAccessUrl()).concat(AssignmentService.submissionsZipReference(
 				contextString, (String) state.getAttribute(EXPORT_ASSIGNMENT_REF))));
-		// gradebook integration
-		context.put("withGradebook", Boolean.valueOf(isGradebookDefined()));
-
+		
 		String template = (String) getContext(data).get("template");
 		return template + TEMPLATE_INSTRUCTOR_GRADE_ASSIGNMENT;
 
@@ -1653,41 +1646,8 @@ public class AssignmentAction extends PagedResourceActionII
 					}
 					catch (ConflictingAssignmentNameException e)
 					{
-						// try to modify assignment title, make sure there is no such assignment in the gradebook, and insert again
-						boolean trying = true;
-						int attempts = 1;
-						String titleBase = newAssignment_title;
-						while (trying && attempts < MAXIMUM_ATTEMPTS_FOR_UNIQUENESS) // see end of loop for condition that enforces attempts <= limit)
-						{
-							String newTitle = titleBase + "-" + attempts;
-
-							if (!g.isAssignmentDefined(gradebookUid, newTitle) && !isExternalAssignmentDefined)
-							{
-								try
-								{
-									// add assignment to gradebook
-									g.addExternalAssessment(gradebookUid, assignmentRef, null, newTitle,
-											newAssignment_maxPoints / 10, new Date(newAssignment_dueTime.getTime()), "Assignment");
-									trying = false;
-								}
-								catch (ConflictingAssignmentNameException ee)
-								{
-									// still conflicting name, try again till the max meets
-									attempts++;
-									if (attempts >= MAXIMUM_ATTEMPTS_FOR_UNIQUENESS)
-									{
-										// add alert prompting for change assignment title
-										addAlert(state, rb.getString("addtogradebook.nonUniqueTitle"));
-									}
-								}
-								catch (Exception ee)
-								{
-									// other type of exception, terminate the loop
-									trying = false;
-									Log.warn("chef", this + ee.getMessage());
-								}
-							}
-						}
+						// add alert prompting for change assignment title
+						addAlert(state, rb.getString("addtogradebook.nonUniqueTitle"));
 					}
 					catch (ConflictingExternalIdException e)
 					{
@@ -5978,38 +5938,49 @@ public class AssignmentAction extends PagedResourceActionII
 					AssignmentSubmission s2 = AssignmentService.getSubmission((String) m_state.getAttribute(EXPORT_ASSIGNMENT_REF), (User) o2);
 	
 					//sort by submission grade
-					String grade1 = s1.getGrade();
-					String grade2 = s2.getGrade();
-					if (grade1 == null)
+					if (s1 == null)
 					{
-						grade1 = "";
+						result = -1;
 					}
-					if (grade2 == null)
+					else if (s2 == null)
 					{
-						grade2 = "";
-					}
-
-					// if scale is points
-					if ((((AssignmentSubmission) o1).getAssignment().getContent().getTypeOfGrade() == 3)
-							&& ((((AssignmentSubmission) o2).getAssignment().getContent().getTypeOfGrade() == 3)))
-					{
-						if (grade1.equals(""))
-						{
-							result = -1;
-						}
-						else if (grade2.equals(""))
-						{
-							result = 1;
-						}
-						else
-						{
-							result = (new Integer(grade1)).intValue() > (new Integer(grade2)).intValue() ? 1 : -1;
-
-						}
+						result = 1;
 					}
 					else
 					{
-						result = grade1.compareTo(grade2);
+						String grade1 = s1.getGrade();
+						String grade2 = s2.getGrade();
+						if (grade1 == null)
+						{
+							grade1 = "";
+						}
+						if (grade2 == null)
+						{
+							grade2 = "";
+						}
+	
+						// if scale is points
+						if ((((AssignmentSubmission) s1).getAssignment().getContent().getTypeOfGrade() == 3)
+								&& ((((AssignmentSubmission) s2).getAssignment().getContent().getTypeOfGrade() == 3)))
+						{
+							if (grade1.equals(""))
+							{
+								result = -1;
+							}
+							else if (grade2.equals(""))
+							{
+								result = 1;
+							}
+							else
+							{
+								result = (new Integer(grade1)).intValue() > (new Integer(grade2)).intValue() ? 1 : -1;
+	
+							}
+						}
+						else
+						{
+							result = grade1.compareTo(grade2);
+						}
 					}
 				}
 				catch (Exception e)
@@ -6025,11 +5996,22 @@ public class AssignmentAction extends PagedResourceActionII
 					AssignmentSubmission s1 = AssignmentService.getSubmission((String) m_state.getAttribute(EXPORT_ASSIGNMENT_REF), (User) o1);
 					AssignmentSubmission s2 = AssignmentService.getSubmission((String) m_state.getAttribute(EXPORT_ASSIGNMENT_REF), (User) o2);
 	
-					// sort by submission released
-					String released1 = (new Boolean(s1.getGradeReleased())).toString();
-					String released2 = (new Boolean(s2.getGradeReleased())).toString();
-
-					result = released1.compareTo(released2);
+					if (s1 == null)
+					{
+						result = -1;
+					}
+					else if (s2 == null)
+					{
+						result = 1;
+					}
+					else
+					{
+						// sort by submission released
+						String released1 = (new Boolean(s1.getGradeReleased())).toString();
+						String released2 = (new Boolean(s2.getGradeReleased())).toString();
+	
+						result = released1.compareTo(released2);
+					}
 				}
 				catch (Exception e)
 				{
