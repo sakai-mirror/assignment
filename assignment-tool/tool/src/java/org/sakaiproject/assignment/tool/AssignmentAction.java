@@ -1638,7 +1638,7 @@ public class AssignmentAction extends PagedResourceActionII
 					{
 						// add assignment to gradebook
 						g.addExternalAssessment(gradebookUid, assignmentRef, null, newAssignment_title,
-								newAssignment_maxPoints / 10, new Date(newAssignment_dueTime.getTime()), getToolTitle());
+								newAssignment_maxPoints/10.0, new Date(newAssignment_dueTime.getTime()), getToolTitle());
 					}
 					catch (AssignmentHasIllegalPointsException e)
 					{
@@ -1675,7 +1675,7 @@ public class AssignmentAction extends PagedResourceActionII
 						    Assignment a = AssignmentService.getAssignment(assignmentRef);
 						    	
 						    // update attributes for existing assignment
-					    		g.updateExternalAssessment(gradebookUid, assignmentRef, null, a.getTitle(), a.getContent().getMaxGradePoint()/10, new Date(a.getDueTime().getTime()));
+					    		g.updateExternalAssessment(gradebookUid, assignmentRef, null, a.getTitle(), a.getContent().getMaxGradePoint()/10.0, new Date(a.getDueTime().getTime()));
 						}
 					    catch(Exception e)
 				        {
@@ -3619,6 +3619,13 @@ public class AssignmentAction extends PagedResourceActionII
 					{
 						// commit assignment first
 						AssignmentService.commitEdit(a);
+						
+						if (state.getAttribute(STATE_MESSAGE) == null)
+						{
+							state.setAttribute(STATE_MODE, MODE_LIST_ASSIGNMENTS);
+							state.setAttribute(ATTACHMENTS, EntityManager.newReferenceList());
+							resetAssignment(state);
+						}
 
 						if (post)
 						{
@@ -3945,12 +3952,8 @@ public class AssignmentAction extends PagedResourceActionII
 								// remove assignment entry from Gradebook
 								integrateGradebook(state, aReference, "remove", null, null, -1, null, null, null);
 							}
-
-							state.setAttribute(STATE_MODE, MODE_LIST_ASSIGNMENTS);
-
-							state.setAttribute(ATTACHMENTS, EntityManager.newReferenceList());
-							resetAssignment(state);
-						}
+						}	// if post
+						
 					} // if
 				}
 				catch (IdUnusedException e)
