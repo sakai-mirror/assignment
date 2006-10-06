@@ -6358,13 +6358,16 @@ public class AssignmentAction extends PagedResourceActionII
 				// disable auto-updates while leaving the list view
 				justDelivered(state);
 			}
-			state.setAttribute(STATE_MODE, MODE_LIST_ASSIGNMENTS);
 
 			// reset the global navigaion alert flag
 			if (state.getAttribute(ALERT_GLOBAL_NAVIGATION) != null)
 			{
 				state.removeAttribute(ALERT_GLOBAL_NAVIGATION);
 			}
+			
+			// switching back to assignment list view
+			state.setAttribute(STATE_SELECTED_VIEW, MODE_LIST_ASSIGNMENTS);
+			doList_assignments(data);
 		}
 
 	} // doPermissions
