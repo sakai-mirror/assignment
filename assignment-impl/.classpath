@@ -22,7 +22,6 @@
 	<classpathentry combineaccessrules="false" kind="src" path="/util-api"/>
 	<classpathentry combineaccessrules="false" kind="src" path="/util-util"/>
 	<classpathentry combineaccessrules="false" kind="src" path="/authz-impl"/>
-	<classpathentry kind="lib" path="/Users/zqian/.maven/repository/junit/jars/junit-3.8.1.jar"/>
 	<classpathentry sourcepath="JRE_SRC" kind="var" path="JRE_LIB"/>
 	<classpathentry kind="output" path="bin"/>
 </classpath>
