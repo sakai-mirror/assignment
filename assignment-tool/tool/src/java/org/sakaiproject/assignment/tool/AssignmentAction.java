@@ -66,6 +66,7 @@ import org.sakaiproject.entity.api.ResourceProperties;
 import org.sakaiproject.entity.api.ResourcePropertiesEdit;
 import org.sakaiproject.entity.cover.EntityManager;
 import org.sakaiproject.event.api.SessionState;
+import org.sakaiproject.event.cover.EventTrackingService;
 import org.sakaiproject.event.cover.NotificationService;
 import org.sakaiproject.exception.IdInvalidException;
 import org.sakaiproject.exception.IdUnusedException;
@@ -189,19 +190,19 @@ public class AssignmentAction extends PagedResourceActionII
 	private static final String SORTED_GRADE_SUBMISSION_ASC = "Assignment.grade_submission_sorted_asc";
 
 	/** state sort submission by submitters last name * */
-	private static final String SORTED_GRADE_SUBMISSION_BY_LASTNAME = "grade_lastname";
+	private static final String SORTED_GRADE_SUBMISSION_BY_LASTNAME = "sorted_grade_submission_by_lastname";
 
 	/** state sort submission by submit time * */
-	private static final String SORTED_GRADE_SUBMISSION_BY_SUBMIT_TIME = "grade_submit_time";
+	private static final String SORTED_GRADE_SUBMISSION_BY_SUBMIT_TIME = "sorted_grade_submission_by_submit_time";
 
 	/** state sort submission by submission status * */
-	private static final String SORTED_GRADE_SUBMISSION_BY_STATUS = "grade_status";
+	private static final String SORTED_GRADE_SUBMISSION_BY_STATUS = "sorted_grade_submission_by_status";
 
 	/** state sort submission by submission grade * */
-	private static final String SORTED_GRADE_SUBMISSION_BY_GRADE = "grade_submission_grade";
+	private static final String SORTED_GRADE_SUBMISSION_BY_GRADE = "sorted_grade_submission_by_grade";
 
 	/** state sort submission by submission released * */
-	private static final String SORTED_GRADE_SUBMISSION_BY_RELEASED = "grade_released";
+	private static final String SORTED_GRADE_SUBMISSION_BY_RELEASED = "sorted_grade_submission_by_released";
 
 	/** *************************** sort submission *********************** */
 	/** state sort submission* */
@@ -211,25 +212,25 @@ public class AssignmentAction extends PagedResourceActionII
 	private static final String SORTED_SUBMISSION_ASC = "Assignment.submission_sorted_asc";
 
 	/** state sort submission by submitters last name * */
-	private static final String SORTED_SUBMISSION_BY_LASTNAME = "lastname";
+	private static final String SORTED_SUBMISSION_BY_LASTNAME = "sorted_submission_by_lastname";
 
 	/** state sort submission by submit time * */
-	private static final String SORTED_SUBMISSION_BY_SUBMIT_TIME = "submit_time";
+	private static final String SORTED_SUBMISSION_BY_SUBMIT_TIME = "sorted_submission_by_submit_time";
 
 	/** state sort submission by submission grade * */
-	private static final String SORTED_SUBMISSION_BY_GRADE = "submission_grade";
+	private static final String SORTED_SUBMISSION_BY_GRADE = "sorted_submission_by_grade";
 
 	/** state sort submission by submission status * */
-	private static final String SORTED_SUBMISSION_BY_STATUS = "status";
+	private static final String SORTED_SUBMISSION_BY_STATUS = "sorted_submission_by_status";
 
 	/** state sort submission by submission released * */
-	private static final String SORTED_SUBMISSION_BY_RELEASED = "released";
+	private static final String SORTED_SUBMISSION_BY_RELEASED = "sorted_submission_by_released";
 
 	/** state sort submission by assignment title */
-	private static final String SORTED_SUBMISSION_BY_ASSIGNMENT = "assignment";
+	private static final String SORTED_SUBMISSION_BY_ASSIGNMENT = "sorted_submission_by_assignment";
 
 	/** state sort submission by max grade */
-	private static final String SORTED_SUBMISSION_BY_MAX_GRADE = "submission_scale";
+	private static final String SORTED_SUBMISSION_BY_MAX_GRADE = "sorted_submission_by_max_grade";
 
 	/** ******************** student's view assignment submission ****************************** */
 	/** the assignment object been viewing * */
@@ -399,6 +400,9 @@ public class AssignmentAction extends PagedResourceActionII
 
 	/** **************************** student view grade submission id *********** */
 	private static final String VIEW_GRADE_SUBMISSION_ID = "view_grade_submission_id";
+	
+	// alert for grade exceeds max grade setting
+	private static final String GRADE_GREATER_THAN_MAX_ALERT = "grade_greater_than_max_alert";
 
 	/** **************************** modes *************************** */
 	/** The list view of assignments */
@@ -1601,6 +1605,13 @@ public class AssignmentAction extends PagedResourceActionII
 
 		context.put("sortedBy", (String) state.getAttribute(SORTED_SUBMISSION_BY));
 		context.put("sortedAsc", (String) state.getAttribute(SORTED_SUBMISSION_ASC));
+		context.put("sortedBy_lastName", SORTED_SUBMISSION_BY_LASTNAME);
+		context.put("sortedBy_submitTime", SORTED_SUBMISSION_BY_SUBMIT_TIME);
+		context.put("sortedBy_grade", SORTED_SUBMISSION_BY_GRADE);
+		context.put("sortedBy_status", SORTED_SUBMISSION_BY_STATUS);
+		context.put("sortedBy_released", SORTED_SUBMISSION_BY_RELEASED);
+		context.put("sortedBy_assignment", SORTED_SUBMISSION_BY_ASSIGNMENT);
+		context.put("sortedBy_maxGrade", SORTED_SUBMISSION_BY_MAX_GRADE);
 
 		add2ndToolbarFields(data, context);
 
@@ -2219,7 +2230,10 @@ public class AssignmentAction extends PagedResourceActionII
 	{
 		SessionState state = ((JetspeedRunData) data).getPortletSessionState(((JetspeedRunData) data).getJs_peid());
 		readGradeForm(data, state, "save");
-		grade_submission_option(data, "save");
+		if (state.getAttribute(STATE_MESSAGE) == null)
+		{
+			grade_submission_option(data, "save");
+		}
 
 	} // doSave_grade_submission
 
@@ -2230,7 +2244,10 @@ public class AssignmentAction extends PagedResourceActionII
 	{
 		SessionState state = ((JetspeedRunData) data).getPortletSessionState(((JetspeedRunData) data).getJs_peid());
 		readGradeForm(data, state, "release");
-		grade_submission_option(data, "release");
+		if (state.getAttribute(STATE_MESSAGE) == null)
+		{
+			grade_submission_option(data, "release");
+		}
 
 	} // doRelease_grade_submission
 
@@ -2241,7 +2258,10 @@ public class AssignmentAction extends PagedResourceActionII
 	{
 		SessionState state = ((JetspeedRunData) data).getPortletSessionState(((JetspeedRunData) data).getJs_peid());
 		readGradeForm(data, state, "return");
-		grade_submission_option(data, "return");
+		if (state.getAttribute(STATE_MESSAGE) == null)
+		{
+			grade_submission_option(data, "return");
+		}
 
 	} // doReturn_grade_submission
 
@@ -4055,7 +4075,8 @@ public class AssignmentAction extends PagedResourceActionII
 
 		try
 		{
-			AssignmentService.getAssignment(assignmentId);
+			Assignment a = AssignmentService.getAssignment(assignmentId);
+			EventTrackingService.post(EventTrackingService.newEvent(AssignmentService.SECURE_ACCESS_ASSIGNMENT, a.getReference(), false));
 		}
 		catch (IdUnusedException e)
 		{
@@ -4140,14 +4161,7 @@ public class AssignmentAction extends PagedResourceActionII
 			state.setAttribute(NEW_ASSIGNMENT_OPENDAY, new Integer(openTime.getDay()));
 			state.setAttribute(NEW_ASSIGNMENT_OPENYEAR, new Integer(openTime.getYear()));
 			int openHour = openTime.getHour();
-			if (openHour == 0)
-			{
-				// for midnight point, we mark it as 12AM
-				openHour = 12;
-			}
-			state.setAttribute(NEW_ASSIGNMENT_OPENHOUR, new Integer((openHour > 12) ? openHour - 12 : openHour));
-			state.setAttribute(NEW_ASSIGNMENT_OPENMIN, new Integer(openTime.getMin()));
-			if (((String) a.getOpenTime().toStringLocalFull()).indexOf("pm") != -1)
+			if (openHour >= 12)
 			{
 				state.setAttribute(NEW_ASSIGNMENT_OPENAMPM, "PM");
 			}
@@ -4155,20 +4169,20 @@ public class AssignmentAction extends PagedResourceActionII
 			{
 				state.setAttribute(NEW_ASSIGNMENT_OPENAMPM, "AM");
 			}
+			if (openHour == 0)
+			{
+				// for midnight point, we mark it as 12AM
+				openHour = 12;
+			}
+			state.setAttribute(NEW_ASSIGNMENT_OPENHOUR, new Integer((openHour > 12) ? openHour - 12 : openHour));
+			state.setAttribute(NEW_ASSIGNMENT_OPENMIN, new Integer(openTime.getMin()));
 
 			TimeBreakdown dueTime = a.getDueTime().breakdownLocal();
 			state.setAttribute(NEW_ASSIGNMENT_DUEMONTH, new Integer(dueTime.getMonth()));
 			state.setAttribute(NEW_ASSIGNMENT_DUEDAY, new Integer(dueTime.getDay()));
 			state.setAttribute(NEW_ASSIGNMENT_DUEYEAR, new Integer(dueTime.getYear()));
 			int dueHour = dueTime.getHour();
-			if (dueHour == 0)
-			{
-				// for midnight point, we mark it as 12AM
-				dueHour = 12;
-			}
-			state.setAttribute(NEW_ASSIGNMENT_DUEHOUR, new Integer((dueHour > 12) ? dueHour - 12 : dueHour));
-			state.setAttribute(NEW_ASSIGNMENT_DUEMIN, new Integer(dueTime.getMin()));
-			if (((String) a.getDueTime().toStringLocalFull()).indexOf("pm") != -1)
+			if (dueHour >= 12)
 			{
 				state.setAttribute(NEW_ASSIGNMENT_DUEAMPM, "PM");
 			}
@@ -4176,6 +4190,13 @@ public class AssignmentAction extends PagedResourceActionII
 			{
 				state.setAttribute(NEW_ASSIGNMENT_DUEAMPM, "AM");
 			}
+			if (dueHour == 0)
+			{
+				// for midnight point, we mark it as 12AM
+				dueHour = 12;
+			}
+			state.setAttribute(NEW_ASSIGNMENT_DUEHOUR, new Integer((dueHour > 12) ? dueHour - 12 : dueHour));
+			state.setAttribute(NEW_ASSIGNMENT_DUEMIN, new Integer(dueTime.getMin()));
 			// generate alert when editing an assignment past due date
 			if (a.getDueTime().before(TimeService.newTime()))
 			{
@@ -4190,14 +4211,7 @@ public class AssignmentAction extends PagedResourceActionII
 				state.setAttribute(NEW_ASSIGNMENT_CLOSEDAY, new Integer(closeTime.getDay()));
 				state.setAttribute(NEW_ASSIGNMENT_CLOSEYEAR, new Integer(closeTime.getYear()));
 				int closeHour = closeTime.getHour();
-				if (closeHour == 0)
-				{
-					// for the midnight point, we mark it as 12 AM
-					closeHour = 12;
-				}
-				state.setAttribute(NEW_ASSIGNMENT_CLOSEHOUR, new Integer((closeHour > 12) ? closeHour - 12 : closeHour));
-				state.setAttribute(NEW_ASSIGNMENT_CLOSEMIN, new Integer(closeTime.getMin()));
-				if (((String) a.getCloseTime().toStringLocalFull()).indexOf("pm") != -1)
+				if (closeHour >= 12)
 				{
 					state.setAttribute(NEW_ASSIGNMENT_CLOSEAMPM, "PM");
 				}
@@ -4205,6 +4219,13 @@ public class AssignmentAction extends PagedResourceActionII
 				{
 					state.setAttribute(NEW_ASSIGNMENT_CLOSEAMPM, "AM");
 				}
+				if (closeHour == 0)
+				{
+					// for the midnight point, we mark it as 12 AM
+					closeHour = 12;
+				}
+				state.setAttribute(NEW_ASSIGNMENT_CLOSEHOUR, new Integer((closeHour > 12) ? closeHour - 12 : closeHour));
+				state.setAttribute(NEW_ASSIGNMENT_CLOSEMIN, new Integer(closeTime.getMin()));
 			}
 			else
 			{
@@ -4537,6 +4558,9 @@ public class AssignmentAction extends PagedResourceActionII
 	{
 		SessionState state = ((JetspeedRunData) data).getPortletSessionState(((JetspeedRunData) data).getJs_peid());
 
+		// reset the submission context
+		resetViewSubmission(state);
+		
 		ParameterParser params = data.getParameters();
 
 		// reset the grade assignment id
@@ -5063,27 +5087,38 @@ public class AssignmentAction extends PagedResourceActionII
 						if (!((String) state.getAttribute(STATE_MODE)).equals(MODE_INSTRUCTOR_PREVIEW_GRADE_SUBMISSION))
 						{
 							validPointGrade(state, grade);
+							
+							if (state.getAttribute(STATE_MESSAGE) == null)
+							{
+								int maxGrade = a.getContent().getMaxGradePoint();
+								try
+								{
+									if (Integer.parseInt(scalePointGrade(state, grade)) > maxGrade)
+									{
+										if (state.getAttribute(GRADE_GREATER_THAN_MAX_ALERT) == null)
+										{
+											// alert user first when he enters grade bigger than max scale
+											addAlert(state, rb.getString("grad2"));
+											state.setAttribute(GRADE_GREATER_THAN_MAX_ALERT, Boolean.TRUE);
+										}
+										else
+										{
+											// remove the alert once user confirms he wants to give student higher grade
+											state.removeAttribute(GRADE_GREATER_THAN_MAX_ALERT);
+										}
+									}
+								}
+								catch (NumberFormatException e)
+								{
+									alertInvalidPoint(state, grade);
+								}
+							}
+							
 							if (state.getAttribute(STATE_MESSAGE) == null)
 							{
 								grade = scalePointGrade(state, grade);
 							}
 							state.setAttribute(GRADE_SUBMISSION_GRADE, grade);
-						}
-
-						if (state.getAttribute(STATE_MESSAGE) == null)
-						{
-							int maxGrade = a.getContent().getMaxGradePoint();
-							try
-							{
-								if (Integer.parseInt(grade) > maxGrade)
-								{
-									addAlert(state, rb.getString("grad2"));
-								}
-							}
-							catch (NumberFormatException e)
-							{
-								alertInvalidPoint(state, grade);
-							}
 						}
 					}
 				}
@@ -5218,11 +5253,6 @@ public class AssignmentAction extends PagedResourceActionII
 
 		} // if
 
-		if (state.getAttribute(VIEW_SUBMISSION_ASSIGNMENT_REFERENCE) == null)
-		{
-			// reset the view submission attributes
-			resetViewSubmission(state);
-		}
 		if (state.getAttribute(STATE_CONTEXT_STRING) == null)
 		{
 			state.setAttribute(STATE_CONTEXT_STRING, siteId);
@@ -5324,6 +5354,7 @@ public class AssignmentAction extends PagedResourceActionII
 		state.removeAttribute(VIEW_SUBMISSION_ASSIGNMENT_REFERENCE);
 		state.removeAttribute(VIEW_SUBMISSION_TEXT);
 		state.setAttribute(VIEW_SUBMISSION_HONOR_PLEDGE_YES, "false");
+		state.removeAttribute(GRADE_GREATER_THAN_MAX_ALERT);
 
 	} // resetViewSubmission
 
@@ -6033,31 +6064,44 @@ public class AssignmentAction extends PagedResourceActionII
 				UserSubmission u1 = (UserSubmission) o1;
 				UserSubmission u2 = (UserSubmission) o2;
 
-				if (u1 == null || u2 == null)
+				String status1 = "";
+				String status2 = "";
+				
+				if (u1 == null)
 				{
-					result = -1;
+					status1 = rb.getString("listsub.nosub");
 				}
 				else
 				{
 					AssignmentSubmission s1 = u1.getSubmission();
-					AssignmentSubmission s2 = u2.getSubmission();
-
 					if (s1 == null)
 					{
-						result = -1;
-					}
-					else if (s2 == null)
-					{
-						result = 1;
+						status1 = rb.getString("listsub.nosub");
 					}
 					else
 					{
-						String status1 = getSubmissionStatus((AssignmentSubmission) s1);
-						String status2 = getSubmissionStatus((AssignmentSubmission) s2);
-
-						result = status1.compareTo(status2);
+						status1 = getSubmissionStatus(m_state, (AssignmentSubmission) s1);
 					}
 				}
+				
+				if (u2 == null)
+				{
+					status2 = rb.getString("listsub.nosub");
+				}
+				else
+				{
+					AssignmentSubmission s2 = u2.getSubmission();
+					if (s2 == null)
+					{
+						status2 = rb.getString("listsub.nosub");
+					}
+					else
+					{
+						status2 = getSubmissionStatus(m_state, (AssignmentSubmission) s2);
+					}
+				}
+				
+				result = status1.toLowerCase().compareTo(status2.toLowerCase());
 			}
 			else if (m_criteria.equals(SORTED_GRADE_SUBMISSION_BY_GRADE))
 			{
@@ -6222,8 +6266,8 @@ public class AssignmentAction extends PagedResourceActionII
 			else if (m_criteria.equals(SORTED_SUBMISSION_BY_STATUS))
 			{
 				// sort by submission status
-				String status1 = getSubmissionStatus((AssignmentSubmission) o1);
-				String status2 = getSubmissionStatus((AssignmentSubmission) o2);
+				String status1 = getSubmissionStatus(m_state, (AssignmentSubmission) o1);
+				String status2 = getSubmissionStatus(m_state, (AssignmentSubmission) o2);
 
 				result = status1.compareTo(status2);
 			}
@@ -6335,7 +6379,7 @@ public class AssignmentAction extends PagedResourceActionII
 				String title1 = ((AssignmentSubmission) o1).getAssignment().getContent().getTitle();
 				String title2 = ((AssignmentSubmission) o2).getAssignment().getContent().getTitle();
 
-				result = title1.compareTo(title2);
+				result = title1.toLowerCase().compareTo(title2.toLowerCase());
 			}
 
 			// sort ascending or descending
@@ -6349,24 +6393,36 @@ public class AssignmentAction extends PagedResourceActionII
 		/**
 		 * get the submissin status
 		 */
-		private String getSubmissionStatus(AssignmentSubmission s)
+		private String getSubmissionStatus(SessionState state, AssignmentSubmission s)
 		{
 			String status = "";
-			if (s.getGraded())
+			if (s.getReturned())
 			{
-				if (s.getGradeReleased())
+				if (s.getTimeReturned() != null && s.getTimeSubmitted() != null && s.getTimeReturned().before(s.getTimeSubmitted()))
 				{
-					status = rb.getString("releas");
+					status = rb.getString("listsub.resubmi");
 				}
 				else
 				{
+					status = rb.getString("gen.returned");
+				}
+			}
+			else if (s.getGraded())
+			{
+				if (state.getAttribute(WITH_GRADES) != null && ((Boolean) state.getAttribute(WITH_GRADES)).booleanValue())
+				{
 					status = rb.getString("grad3");
+				}
+				else
+				{
+					status = rb.getString("gen.commented");
 				}
 			}
 			else
 			{
-				status = rb.getString("ungra");
+				status = rb.getString("gen.ung1");
 			}
+			
 			return status;
 
 		} // getSubmissionStatus
@@ -6728,12 +6784,14 @@ public class AssignmentAction extends PagedResourceActionII
 		// sort them all
 		String ascending = "true";
 		String sort = "";
-		if (mode.equalsIgnoreCase(MODE_INSTRUCTOR_GRADE_ASSIGNMENT))
+		ascending = (String) state.getAttribute(SORTED_ASC);
+		sort = (String) state.getAttribute(SORTED_BY);
+		if (mode.equalsIgnoreCase(MODE_INSTRUCTOR_GRADE_ASSIGNMENT) && !sort.startsWith("sorted_grade_submission_by"))
 		{
 			ascending = (String) state.getAttribute(SORTED_GRADE_SUBMISSION_ASC);
 			sort = (String) state.getAttribute(SORTED_GRADE_SUBMISSION_BY);
 		}
-		else if (mode.equalsIgnoreCase(MODE_INSTRUCTOR_REPORT_SUBMISSIONS))
+		else if (mode.equalsIgnoreCase(MODE_INSTRUCTOR_REPORT_SUBMISSIONS) && sort.startsWith("sorted_submission_by"))
 		{
 			ascending = (String) state.getAttribute(SORTED_SUBMISSION_ASC);
 			sort = (String) state.getAttribute(SORTED_SUBMISSION_BY);
@@ -6743,7 +6801,7 @@ public class AssignmentAction extends PagedResourceActionII
 			ascending = (String) state.getAttribute(SORTED_ASC);
 			sort = (String) state.getAttribute(SORTED_BY);
 		}
-
+		
 		if ((returnResources.size() > 1) && !mode.equalsIgnoreCase(MODE_INSTRUCTOR_VIEW_STUDENTS_ASSIGNMENT))
 		{
 			Collections.sort(returnResources, new AssignmentComparator(state, sort, ascending));
