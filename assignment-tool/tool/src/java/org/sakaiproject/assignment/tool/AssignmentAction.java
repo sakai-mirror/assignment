@@ -514,6 +514,9 @@ public class AssignmentAction extends PagedResourceActionII
 	/** is current user allowed to grade assignment? */
 	private static final String STATE_ALLOW_GRADE_SUBMISSION = "state_allow_grade_submission";
 
+	/** property for previous feedback attachments **/
+	private static final String PROP_SUBMISSION_PREVIOUS_FEEDBACK_ATTACHMENTS = "prop_submission_previous_feedback_attachments";
+	
 	/**
 	 * central place for dispatching the build routines based on the state name
 	 */
@@ -701,6 +704,11 @@ public class AssignmentAction extends PagedResourceActionII
 				if (p.getProperty(ResourceProperties.PROP_SUBMISSION_PREVIOUS_FEEDBACK_COMMENT) != null)
 				{
 					context.put("prevFeedbackComment", p.getProperty(ResourceProperties.PROP_SUBMISSION_PREVIOUS_FEEDBACK_COMMENT));
+				}
+				
+				if (p.getProperty(PROP_SUBMISSION_PREVIOUS_FEEDBACK_ATTACHMENTS) != null)
+				{
+					context.put("prevFeedbackAttachments", getPrevFeedbackAttachments(p));
 				}
 			}
 		}
@@ -1332,6 +1340,11 @@ public class AssignmentAction extends PagedResourceActionII
 				{
 					context.put("prevFeedbackComment", p.getProperty(ResourceProperties.PROP_SUBMISSION_PREVIOUS_FEEDBACK_COMMENT));
 				}
+				
+				if (p.getProperty(PROP_SUBMISSION_PREVIOUS_FEEDBACK_ATTACHMENTS) != null)
+				{
+					context.put("prevFeedbackAttachments", getPrevFeedbackAttachments(p));
+				}
 
 				if (p.getProperty(GRADE_SUBMISSION_ALLOW_RESUBMIT) != null)
 				{
@@ -1383,6 +1396,17 @@ public class AssignmentAction extends PagedResourceActionII
 		return template + TEMPLATE_INSTRUCTOR_GRADE_SUBMISSION;
 
 	} // build_instructor_grade_submission_context
+
+	private List getPrevFeedbackAttachments(ResourceProperties p) {
+		String attachmentsString = p.getProperty(PROP_SUBMISSION_PREVIOUS_FEEDBACK_ATTACHMENTS);
+		String[] attachmentsReferences = attachmentsString.split(",");
+		List prevFeedbackAttachments = EntityManager.newReferenceList();
+		for (int k =0; k < attachmentsReferences.length; k++)
+		{
+			prevFeedbackAttachments.add(EntityManager.newReference(attachmentsReferences[k]));
+		}
+		return prevFeedbackAttachments;
+	}
 
 	/**
 	 * build the instructor preview of grading submission
@@ -2739,6 +2763,20 @@ public class AssignmentAction extends PagedResourceActionII
 							feedbackCommentHistory = sEdit.getFeedbackComment() + "\n" + feedbackCommentHistory;
 							sPropertiesEdit.addProperty(ResourceProperties.PROP_SUBMISSION_PREVIOUS_FEEDBACK_COMMENT,
 									feedbackCommentHistory);
+							
+							// keep the history of assignment feed back comment
+							String feedbackAttachmentHistory = sPropertiesEdit
+									.getProperty(PROP_SUBMISSION_PREVIOUS_FEEDBACK_ATTACHMENTS) != null ? sPropertiesEdit
+									.getProperty(PROP_SUBMISSION_PREVIOUS_FEEDBACK_ATTACHMENTS)
+									: "";
+							List feedbackAttachments = sEdit.getFeedbackAttachments();
+							for (int k = 0; k<feedbackAttachments.size();k++)
+							{
+								feedbackAttachmentHistory = ((Reference) feedbackAttachments.get(k)).getReference() + "," + feedbackAttachmentHistory;
+							}
+							
+							sPropertiesEdit.addProperty(PROP_SUBMISSION_PREVIOUS_FEEDBACK_ATTACHMENTS,
+									feedbackAttachmentHistory);
 
 							// reset the previous grading context
 							sEdit.setFeedbackText("");
