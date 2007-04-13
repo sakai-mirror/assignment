@@ -453,6 +453,7 @@
 									#end
 								#else
 									#if ($!submission)
+										#set($grade=$submission.Grade)
 										#if ($submissionSubmitted && $submitTime)
 											#if ($submissionReturned)
 												#if ($!submitTime && $submission.TimeReturned.after($submitTime) || !$submitTime)
