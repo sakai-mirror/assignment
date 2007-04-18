@@ -4755,10 +4755,9 @@ public class AssignmentAction extends PagedResourceActionII
 			{
 				state.setAttribute(NEW_ASSIGNMENT_RANGE, "groups");
 			}
-
+				
+			state.setAttribute(AssignmentSubmission.ALLOW_RESUBMIT_NUMBER, properties.getProperty(AssignmentSubmission.ALLOW_RESUBMIT_NUMBER) != null?properties.getProperty(AssignmentSubmission.ALLOW_RESUBMIT_NUMBER):"0");
 			
-			
-
 			// set whether we use the review service or not
 			state.setAttribute(NEW_ASSIGNMENT_USE_REVIEW_SERVICE, new Boolean(a.getContent().getAllowReviewService()).toString());
 			
@@ -6009,6 +6008,9 @@ public class AssignmentAction extends PagedResourceActionII
 
 		// remove the edit assignment id if any
 		state.removeAttribute(EDIT_ASSIGNMENT_ID);
+		
+		// remove the resubmit number
+		state.removeAttribute(AssignmentSubmission.ALLOW_RESUBMIT_NUMBER);
 
 	} // resetNewAssignment
 
