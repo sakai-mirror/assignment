@@ -23,6 +23,7 @@ package org.sakaiproject.assignment.tool;
 
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
+import java.text.Collator;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
@@ -6333,6 +6334,8 @@ public class AssignmentAction extends PagedResourceActionII
 	 */
 	private class AssignmentComparator implements Comparator
 	{
+		Collator collator = Collator.getInstance();
+		
 		/**
 		 * the SessionState object
 		 */
@@ -6442,14 +6445,14 @@ public class AssignmentAction extends PagedResourceActionII
 				// sorted by the assignment title
 				String s1 = ((Assignment) o1).getTitle();
 				String s2 = ((Assignment) o2).getTitle();
-				result = s1.compareToIgnoreCase(s2);
+				result = compareString(s1, s2);
 			}
 			else if (m_criteria.equals(SORTED_BY_SECTION))
 			{
 				// sorted by the assignment section
 				String s1 = ((Assignment) o1).getSection();
 				String s2 = ((Assignment) o2).getSection();
-				result = s1.compareToIgnoreCase(s2);
+				result = compareString(s1, s2);
 			}
 			else if (m_criteria.equals(SORTED_BY_DUEDATE))
 			{
@@ -6501,7 +6504,7 @@ public class AssignmentAction extends PagedResourceActionII
 			{
 				String s1 = getAssignmentStatus((Assignment) o1);
 				String s2 = getAssignmentStatus((Assignment) o2);
-				result = s1.compareToIgnoreCase(s2);
+				result = compareString(s1, s2);
 			}
 			else if (m_criteria.equals(SORTED_BY_NUM_SUBMISSIONS))
 			{
@@ -6563,7 +6566,7 @@ public class AssignmentAction extends PagedResourceActionII
 					AssignmentSubmission submission2 = AssignmentService.getSubmission(((Assignment) o2).getId(), m_user);
 					String status2 = getSubmissionStatus(submission2, (Assignment) o2);
 
-					result = status1.compareTo(status2);
+					result = compareString(status1, status2);
 				}
 				catch (IdUnusedException e)
 				{
@@ -6592,7 +6595,7 @@ public class AssignmentAction extends PagedResourceActionII
 						grade2 = submission2.getGrade();
 					}
 
-					result = grade1.compareTo(grade2);
+					result = compareString(grade1, grade2);
 				}
 				catch (IdUnusedException e)
 				{
@@ -6618,7 +6621,7 @@ public class AssignmentAction extends PagedResourceActionII
 				catch (NumberFormatException e)
 				{
 					// otherwise do an alpha-compare
-					result = maxGrade1.compareTo(maxGrade2);
+					result = compareString(maxGrade1, maxGrade2);
 				}
 			}
 			// group related sorting
@@ -6627,14 +6630,14 @@ public class AssignmentAction extends PagedResourceActionII
 				// sorted by the public view attribute
 				String factor1 = getAssignmentRange((Assignment) o1);
 				String factor2 = getAssignmentRange((Assignment) o2);
-				result = factor1.compareToIgnoreCase(factor2);
+				result = compareString(factor1, factor2);
 			}
 			else if (m_criteria.equals(SORTED_BY_GROUP_TITLE))
 			{
 				// sorted by the group title
 				String factor1 = ((Group) o1).getTitle();
 				String factor2 = ((Group) o2).getTitle();
-				result = factor1.compareToIgnoreCase(factor2);
+				result = compareString(factor1, factor2);
 			}
 			else if (m_criteria.equals(SORTED_BY_GROUP_DESCRIPTION))
 			{
@@ -6649,7 +6652,7 @@ public class AssignmentAction extends PagedResourceActionII
 				{
 					factor2 = "";
 				}
-				result = factor1.compareToIgnoreCase(factor2);
+				result = compareString(factor1, factor2);
 			}
 			/** ***************** for sorting submissions in instructor grade assignment view ************* */
 			else if(m_criteria.equals(SORTED_GRADE_SUBMISSION_CONTENTREVIEW))
@@ -6697,7 +6700,7 @@ public class AssignmentAction extends PagedResourceActionII
 				{
 					String lName1 = u1.getUser().getSortName();
 					String lName2 = u2.getUser().getSortName();
-					result = lName1.toLowerCase().compareTo(lName2.toLowerCase());
+					result = compareString(lName1, lName2);
 				}
 			}
 			else if (m_criteria.equals(SORTED_GRADE_SUBMISSION_BY_SUBMIT_TIME))
@@ -6777,7 +6780,7 @@ public class AssignmentAction extends PagedResourceActionII
 					}
 				}
 				
-				result = status1.toLowerCase().compareTo(status2.toLowerCase());
+				result = compareString(status1, status2);
 			}
 			else if (m_criteria.equals(SORTED_GRADE_SUBMISSION_BY_GRADE))
 			{
@@ -6836,7 +6839,7 @@ public class AssignmentAction extends PagedResourceActionII
 						}
 						else
 						{
-							result = grade1.compareTo(grade2);
+							result = compareString(grade1, grade2);
 						}
 					}
 				}
@@ -6870,7 +6873,7 @@ public class AssignmentAction extends PagedResourceActionII
 						String released1 = (new Boolean(s1.getGradeReleased())).toString();
 						String released2 = (new Boolean(s2.getGradeReleased())).toString();
 
-						result = released1.compareTo(released2);
+						result = compareString(released1, released2);
 					}
 				}
 			}
@@ -6913,7 +6916,7 @@ public class AssignmentAction extends PagedResourceActionII
 							submitters2 = submitters2.concat(u2[j].getLastName());
 						}
 					}
-					result = submitters1.toLowerCase().compareTo(submitters2.toLowerCase());
+					result = compareString(submitters1, submitters2);
 				}
 			}
 			else if (m_criteria.equals(SORTED_SUBMISSION_BY_SUBMIT_TIME))
@@ -6945,7 +6948,7 @@ public class AssignmentAction extends PagedResourceActionII
 				String status1 = getSubmissionStatus(m_state, (AssignmentSubmission) o1);
 				String status2 = getSubmissionStatus(m_state, (AssignmentSubmission) o2);
 
-				result = status1.compareTo(status2);
+				result = compareString(status1, status2);
 			}
 			else if (m_criteria.equals(SORTED_SUBMISSION_BY_GRADE))
 			{
@@ -6975,13 +6978,13 @@ public class AssignmentAction extends PagedResourceActionII
 					}
 					else
 					{
-						result = (new Integer(grade1)).intValue() > (new Integer(grade2)).intValue() ? 1 : -1;
+						result = (new Double(grade1)).doubleValue() > (new Double(grade2)).doubleValue() ? 1 : -1;
 
 					}
 				}
 				else
 				{
-					result = grade1.compareTo(grade2);
+					result = compareString(grade1, grade2);
 				}
 			}
 			else if (m_criteria.equals(SORTED_SUBMISSION_BY_GRADE))
@@ -7012,13 +7015,13 @@ public class AssignmentAction extends PagedResourceActionII
 					}
 					else
 					{
-						result = (new Integer(grade1)).intValue() > (new Integer(grade2)).intValue() ? 1 : -1;
+						result = (new Double(grade1)).doubleValue() > (new Double(grade2)).doubleValue() ? 1 : -1;
 
 					}
 				}
 				else
 				{
-					result = grade1.compareTo(grade2);
+					result = compareString(grade1, grade2);
 				}
 			}
 			else if (m_criteria.equals(SORTED_SUBMISSION_BY_MAX_GRADE))
@@ -7047,7 +7050,7 @@ public class AssignmentAction extends PagedResourceActionII
 				String released1 = (new Boolean(((AssignmentSubmission) o1).getGradeReleased())).toString();
 				String released2 = (new Boolean(((AssignmentSubmission) o2).getGradeReleased())).toString();
 
-				result = released1.compareTo(released2);
+				result = compareString(released1, released2);
 			}
 			else if (m_criteria.equals(SORTED_SUBMISSION_BY_ASSIGNMENT))
 			{
@@ -7055,7 +7058,7 @@ public class AssignmentAction extends PagedResourceActionII
 				String title1 = ((AssignmentSubmission) o1).getAssignment().getContent().getTitle();
 				String title2 = ((AssignmentSubmission) o2).getAssignment().getContent().getTitle();
 
-				result = title1.toLowerCase().compareTo(title2.toLowerCase());
+				result = compareString(title1, title2);
 			}
 
 			// sort ascending or descending
@@ -7066,6 +7069,21 @@ public class AssignmentAction extends PagedResourceActionII
 			return result;
 		} // compare
 
+		private int compareString(String s1, String s2) 
+		{
+			int result;
+			if (s1 == null && s2 == null) {
+				result = 0;
+			} else if (s2 == null) {
+				result = 1;
+			} else if (s1 == null) {
+				result = -1;
+			} else {
+				result = collator.compare(s1.toLowerCase(), s2.toLowerCase());
+			}
+			return result;
+		}
+		
 		/**
 		 * get the submissin status
 		 */
