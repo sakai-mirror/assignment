@@ -209,6 +209,13 @@ public interface Assignment extends Entity, Comparable
 	 * @return The Assignment's title.
 	 */
 	public String getTitle();
+	
+	/**
+	 * Access the position order field for the assignment.
+	 * 
+	 * @return The Assignment's order.
+	 */
+	public int getPosition_order();
 
 	/**
 	 * Access the groups defined for this assignment.

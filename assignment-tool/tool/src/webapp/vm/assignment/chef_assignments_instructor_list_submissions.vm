@@ -34,6 +34,14 @@
 		#end
 		#if ($allowUpdateSite)
 			#if ($prevAction)
+			 |
+			#else
+				#set($prevAction=true)
+			#end
+			<a href="#toolLink("$action" "doReorder")" title="$tlang.getString('gen.reorder')">$tlang.getString('gen.reorder')</a>
+		#end
+		#if ($allowUpdateSite)
+			#if ($prevAction)
 			 | 
 			#else
 				#set($prevAction=true)
