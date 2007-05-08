@@ -627,7 +627,10 @@ public class AssignmentAction extends PagedResourceActionII
 		context.put("allowUpdateSite", Boolean
 						.valueOf(SiteService.allowUpdateSite((String) state.getAttribute(STATE_CONTEXT_STRING))));
 
-		
+		// allow all.groups?
+		boolean allowAllGroups = AssignmentService.allowAllGroups(contextString);
+		context.put("allowAllGroups", Boolean.valueOf(allowAllGroups));
+
 		//Is the review service allowed?
 		context.put("allowReviewService", allowReviewService);
 
@@ -3261,7 +3264,7 @@ public class AssignmentAction extends PagedResourceActionII
 
 		if (!alertGlobalNavigation(state, data))
 		{
-			if (AssignmentService.allowAddAssignment((String) state.getAttribute(STATE_CONTEXT_STRING)))
+			if (AssignmentService.allowAllGroups((String) state.getAttribute(STATE_CONTEXT_STRING)))
 			{
 				resetAssignment(state);
 				
@@ -3270,7 +3273,7 @@ public class AssignmentAction extends PagedResourceActionII
 			}
 			else
 			{
-				addAlert(state, rb.getString("youarenot2"));
+				addAlert(state, rb.getString("youarenot19"));
 				state.setAttribute(STATE_MODE, MODE_LIST_ASSIGNMENTS);
 			}
 		}
@@ -4039,15 +4042,27 @@ public class AssignmentAction extends PagedResourceActionII
 		
 		Iterator it = assignments.iterator();
 		
-		while (it.hasNext()) // reads and writes the paramter for default ordering
-		{
-			Assignment a = (Assignment) it.next();
-			String assignmentid = a.getId();
-			String assignmentposition = params.getString("position_" + assignmentid);
-			AssignmentEdit ae = getAssignmentEdit(state, assignmentid);
-			ae.setPosition_order(new Long(assignmentposition).intValue());
-			AssignmentService.commitEdit(ae);
-		}
+		// temporarily allow the user to read and write from assignments (asn.revise permission)
+        SecurityService.pushAdvisor(new SecurityAdvisor()
+            {
+                public SecurityAdvice isAllowed(String userId, String function, String reference)
+                {
+                    return SecurityAdvice.ALLOWED;
+                }
+            });
+        
+        while (it.hasNext()) // reads and writes the parameter for default ordering
+        {
+            Assignment a = (Assignment) it.next();
+            String assignmentid = a.getId();
+            String assignmentposition = params.getString("position_" + assignmentid);
+            AssignmentEdit ae = getAssignmentEdit(state, assignmentid);
+            ae.setPosition_order(new Long(assignmentposition).intValue());
+            AssignmentService.commitEdit(ae);
+        }
+        
+        // clear the permission
+        SecurityService.clearAdvisors();
 		
 		if (state.getAttribute(STATE_MESSAGE) == null)
 		{

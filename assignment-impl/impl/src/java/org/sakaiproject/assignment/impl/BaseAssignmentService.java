@@ -2746,6 +2746,25 @@ public abstract class BaseAssignmentService implements AssignmentService, Entity
 		// check security on the channel (throws if not permitted)
 		return unlockCheck(SECURE_ADD_ASSIGNMENT, resourceString);
 	}
+	
+	/**
+	 * @inheritDoc
+	 */
+	public boolean allowAllGroups(String context)
+	{
+		String resourceString = getAccessPoint(true) + Entity.SEPARATOR + "a" + Entity.SEPARATOR + context + Entity.SEPARATOR;
+
+		if (M_log.isDebugEnabled())
+		{
+			M_log.debug("Entering allow add Assignment with resource string : " + resourceString);
+		}
+
+		// checking all.groups
+		if (unlockCheck(SECURE_ALL_GROUPS, resourceString)) return true;
+
+		// if not
+		return false;
+	}
 
 	/**
 	 * @inheritDoc

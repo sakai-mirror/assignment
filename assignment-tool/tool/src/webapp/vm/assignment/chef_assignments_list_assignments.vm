@@ -42,7 +42,7 @@
 				$!tlang.getString("gen.stuvie")
 			#end
 		#end
-		#if ($allowUpdateSite)
+		#if ($allowAllGroups)
 			#if ($prevAction)
 			 |
 			#else
