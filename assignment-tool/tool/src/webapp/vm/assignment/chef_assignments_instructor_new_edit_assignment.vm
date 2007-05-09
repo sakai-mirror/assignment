@@ -55,7 +55,7 @@
 			#end
 			| <a href="#" title="$!tlang.getString('gen.stuvie')" onclick="javascript:document.newAssignmentForm.onsubmit();document.getElementById('option').value='view';document.getElementById('view').value='stuvie';document.newAssignmentForm.submit();return false;">$!tlang.getString("gen.stuvie")</a>
 		#end
-		#if ($allowAllGroups)
+		#if (($allowAllGroups) && ($assignmentscheck))
 			| <a href="#toolLink("$action" "doReorder")" title="$tlang.getString('gen.reorder')">$tlang.getString('gen.reorder')</a>
 		#end
 		#if ($allowUpdateSite)

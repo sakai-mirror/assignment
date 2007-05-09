@@ -631,6 +631,11 @@ public class AssignmentAction extends PagedResourceActionII
 		boolean allowAllGroups = AssignmentService.allowAllGroups(contextString);
 		context.put("allowAllGroups", Boolean.valueOf(allowAllGroups));
 
+		// this is a check for seeing if there are any assignments.  The check is used to see if we display a Reorder link in the vm files
+		Vector assignments = iterator_to_vector(AssignmentService.getAssignmentsForContext((String) state.getAttribute(STATE_CONTEXT_STRING)));
+		boolean assignmentscheck = (assignments.size() > 0) ? true : false;
+		context.put("assignmentscheck", Boolean.valueOf(assignmentscheck));
+		
 		//Is the review service allowed?
 		context.put("allowReviewService", allowReviewService);
 
