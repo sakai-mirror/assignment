@@ -101,12 +101,12 @@
 				</td>
 				<td headers="moveUp" class="moveUp">
 					<a#if($count <= 1) style="display:none;"#end href="#" onclick="moveRow(this,'up')" title="$tlang.getString("sort.moveup")">
-						<img src="#imageLink("sakai/arrowUp.gif")" alt="$tlang.getString("sort.moveup")" border="0">
+						<img src="#imageLink("silk/bullet_arrow_up.png")" alt="$tlang.getString("sort.moveup")" border="0">
 					</a>
 				</td>
 				<td headers="moveDown" class="moveDown">
 					<a#if($count >= $assignmentsize) style="display:none;"#end href="#" onclick="moveRow(this,'down')" title="$tlang.getString("sort.movedn")">
-						<img src="#imageLink("sakai/arrowDown.gif")" alt="$tlang.getString("sort.movedn")" border="0">
+						<img src="#imageLink("silk/bullet_arrow_down.png")" alt="$tlang.getString("sort.movedn")" border="0">
 					</a>
 				</td>
 				<td headers="title">
