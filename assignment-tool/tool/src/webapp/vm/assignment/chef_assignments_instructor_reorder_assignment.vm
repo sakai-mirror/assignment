@@ -1,8 +1,5 @@
 ##<!-- $Header: Exp $ -->
 ## Assignments - reorder view
-<script type="text/javascript" language="JavaScript">
-  focus_path = ["search"];
-</script>
 <div class="portletBody">
 	#if ($allowAddAssignment || ($withGrade && $!allowGradeSubmission))
 	## for user who cannot create assignment nor grade submission, no need to show "Assignment List" link at all since there is really no other toolbar choices
@@ -94,7 +91,8 @@
 			#set($count = 1)
 			#foreach($assignment in $assignments)
 			<tr class="sortable">
-				<td headers="expansion">
+			    ## The width attribute here fixes a minor bug of having extra space after the drop down.
+				<td headers="dropdown" width="1%">
 				  <select name="position_$validator.escapeUrl("$assignment.id")" onChange="moveRow(this,this.value);">
 					#foreach($i in [1..$assignmentsize])
 					<option value="$i"#if("$i" == "$count") selected="selected"#end>$i</option>
@@ -111,13 +109,13 @@
 						<img src="#imageLink("sakai/arrowDown.gif")" alt="$tlang.getString("sort.movedn")" border="0">
 					</a>
 				</td>
-				<td headers="title" style="text-indent: 1em;" class="specialLink">
+				<td headers="title">
 					$!assignment.getTitle()
 				</td>
-				<td headers="creator">
+				<td headers="opentime">
 					$!assignment.openTime.toStringLocalFull()
 				</td>
-				<td headers="modified">
+				<td headers="duetime">
 					$!assignment.dueTime.toStringLocalFull()
 				</td>
 			</tr>
