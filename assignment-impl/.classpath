@@ -12,7 +12,6 @@
 	<classpathentry combineaccessrules="false" kind="src" path="/event-api"/>
 	<classpathentry combineaccessrules="false" kind="src" path="/event-util"/>
 	<classpathentry combineaccessrules="false" kind="src" path="/component-api"/>
-	<classpathentry combineaccessrules="false" kind="src" path="/gradebook"/>
 	<classpathentry combineaccessrules="false" kind="src" path="/memory-api"/>
 	<classpathentry combineaccessrules="false" kind="src" path="/db-util"/>
 	<classpathentry combineaccessrules="false" kind="src" path="/user-api"/>
@@ -22,9 +21,8 @@
 	<classpathentry kind="var" path="MAVEN_REPO/poi/jars/poi-2.5.1.jar"/>
 	<classpathentry combineaccessrules="false" kind="src" path="/util-api"/>
 	<classpathentry combineaccessrules="false" kind="src" path="/util-util"/>
-	<classpathentry kind="var" path="JRE_LIB" sourcepath="JRE_SRC"/>
+	<classpathentry combineaccessrules="false" kind="src" path="/authz-impl"/>
+	<classpathentry sourcepath="JRE_SRC" kind="var" path="JRE_LIB"/>
 	<classpathentry kind="var" path="MAVEN_REPO/junit/jars/junit-3.8.1.jar"/>
-	<classpathentry combineaccessrules="false" kind="src" path="/email-api"/>
-	<classpathentry combineaccessrules="false" kind="src" path="/content-review-api"/>
 	<classpathentry kind="output" path="bin"/>
 </classpath>
