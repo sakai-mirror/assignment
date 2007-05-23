@@ -22,5 +22,6 @@
 	<classpathentry combineaccessrules="false" kind="src" path="/util-util"/>
 	<classpathentry combineaccessrules="false" kind="src" path="/archive-api"/>
 	<classpathentry combineaccessrules="false" kind="src" path="/import-api"/>
+	<classpathentry combineaccessrules="false" kind="src" path="/content-review-api"/>
 	<classpathentry kind="output" path="bin"/>
 </classpath>
