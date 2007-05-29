@@ -1652,7 +1652,7 @@ public class AssignmentAction extends PagedResourceActionII
 		Iterator assignments = AssignmentService.getAssignmentsForContext((String) state.getAttribute(STATE_CONTEXT_STRING));
 		
 		Vector assignmentsVector = new Vector();
-		while (assignments.hasNext())
+		while (assignments.hasNext()) // filters a clean assignment list
 		{
 			Assignment a = (Assignment) assignments.next();
 			String deleted = a.getProperties().getProperty(ResourceProperties.PROP_ASSIGNMENT_DELETED);
@@ -1660,8 +1660,20 @@ public class AssignmentAction extends PagedResourceActionII
 			{
 				assignmentsVector.add(a);
 			}
-		}
+		}	
 
+		// sort the assignments into the default order before adding to the final vector
+		String sort = (String) state.getAttribute(SORTED_BY);
+		String asc = (String) state.getAttribute(SORTED_ASC);	
+		Iterator assignmentsort = new SortedIterator(assignmentsVector.iterator(), new AssignmentComparator(state, sort, asc));
+		
+		Vector assignmentsVector2 = new Vector();
+		while (assignmentsort.hasNext()) // iterate back through the sorted vector
+		{
+			Assignment a = (Assignment) assignmentsort.next();
+			assignmentsVector2.add(a);
+		}
+		
 		List studentMembers = new Vector();
 		if (assignmentsVector.size() != 0)
 		{
@@ -1681,9 +1693,7 @@ public class AssignmentAction extends PagedResourceActionII
 		context.put("studentMembers", studentMembers);
 		context.put("assignmentService", AssignmentService.getInstance());
 		
-		String sort = (String) state.getAttribute(SORTED_BY);
-		String asc = (String) state.getAttribute(SORTED_ASC);
-		context.put("assignments", new SortedIterator(assignmentsVector.iterator(), new AssignmentComparator(state, sort, asc)));
+		context.put("assignments", assignmentsVector2);
 		if (state.getAttribute(STUDENT_LIST_SHOW_TABLE) != null)
 		{
 			context.put("studentListShowTable", (Hashtable) state.getAttribute(STUDENT_LIST_SHOW_TABLE));
