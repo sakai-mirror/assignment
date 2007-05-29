@@ -1650,6 +1650,7 @@ public class AssignmentAction extends PagedResourceActionII
 			SessionState state)
 	{
 		Iterator assignments = AssignmentService.getAssignmentsForContext((String) state.getAttribute(STATE_CONTEXT_STRING));
+		
 		Vector assignmentsVector = new Vector();
 		while (assignments.hasNext())
 		{
@@ -1679,7 +1680,10 @@ public class AssignmentAction extends PagedResourceActionII
 		}
 		context.put("studentMembers", studentMembers);
 		context.put("assignmentService", AssignmentService.getInstance());
-		context.put("assignments", assignmentsVector);
+		
+		String sort = (String) state.getAttribute(SORTED_BY);
+		String asc = (String) state.getAttribute(SORTED_ASC);
+		context.put("assignments", new SortedIterator(assignmentsVector.iterator(), new AssignmentComparator(state, sort, asc)));
 		if (state.getAttribute(STUDENT_LIST_SHOW_TABLE) != null)
 		{
 			context.put("studentListShowTable", (Hashtable) state.getAttribute(STUDENT_LIST_SHOW_TABLE));
