@@ -4,17 +4,17 @@
  ***********************************************************************************
  *
  * Copyright (c) 2003, 2004, 2005, 2006 The Sakai Foundation.
- * 
- * Licensed under the Educational Community License, Version 1.0 (the "License"); 
- * you may not use this file except in compliance with the License. 
+ *
+ * Licensed under the Educational Community License, Version 1.0 (the "License");
+ * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
- * 
+ *
  *      http://www.opensource.org/licenses/ecl1.php
- * 
- * Unless required by applicable law or agreed to in writing, software 
- * distributed under the License is distributed on an "AS IS" BASIS, 
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. 
- * See the License for the specific language governing permissions and 
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
  * limitations under the License.
  *
  **********************************************************************************/
@@ -25,6 +25,7 @@ import java.sql.Connection;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.List;
+import java.util.Map;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
@@ -32,6 +33,7 @@ import org.sakaiproject.assignment.api.Assignment;
 import org.sakaiproject.assignment.api.AssignmentContent;
 import org.sakaiproject.assignment.api.AssignmentContentEdit;
 import org.sakaiproject.assignment.api.AssignmentEdit;
+import org.sakaiproject.assignment.api.AssignmentServiceSql;
 import org.sakaiproject.assignment.api.AssignmentSubmission;
 import org.sakaiproject.assignment.api.AssignmentSubmissionEdit;
 import org.sakaiproject.db.api.SqlReader;
@@ -75,7 +77,7 @@ public class DbAssignmentService extends BaseAssignmentService
 
 	/**
 	 * Dependency: SqlService.
-	 * 
+	 *
 	 * @param service
 	 *        The SqlService.
 	 */
@@ -86,7 +88,7 @@ public class DbAssignmentService extends BaseAssignmentService
 
 	/**
 	 * Configuration: set the table name for assignments.
-	 * 
+	 *
 	 * @param path
 	 *        The table name for assignments.
 	 */
@@ -97,7 +99,7 @@ public class DbAssignmentService extends BaseAssignmentService
 
 	/**
 	 * Configuration: set the table name for contents.
-	 * 
+	 *
 	 * @param path
 	 *        The table name for contents.
 	 */
@@ -108,7 +110,7 @@ public class DbAssignmentService extends BaseAssignmentService
 
 	/**
 	 * Configuration: set the table name for submissions.
-	 * 
+	 *
 	 * @param path
 	 *        The table name for submissions.
 	 */
@@ -119,7 +121,7 @@ public class DbAssignmentService extends BaseAssignmentService
 
 	/**
 	 * Configuration: set the locks-in-db
-	 * 
+	 *
 	 * @param value
 	 *        The locks-in-db value.
 	 */
@@ -133,7 +135,7 @@ public class DbAssignmentService extends BaseAssignmentService
 
 	/**
 	 * Configuration: run the to-context conversion
-	 * 
+	 *
 	 * @param value
 	 *        The locks-in-db value.
 	 */
@@ -147,7 +149,7 @@ public class DbAssignmentService extends BaseAssignmentService
 
 	/**
 	 * Configuration: to run the ddl on init or not.
-	 * 
+	 *
 	 * @param value
 	 *        the auto ddl value.
 	 */
@@ -155,6 +157,24 @@ public class DbAssignmentService extends BaseAssignmentService
 	{
 		m_autoDdl = new Boolean(value).booleanValue();
 	}
+
+   protected Map<String, AssignmentServiceSql> databaseBeans;             // contains a map of the database dependent beans injected by spring
+   protected AssignmentServiceSql              assignmentServiceSql;      // contains database dependent code
+
+   public void setDatabaseBeans(Map databaseBeans) {
+     this.databaseBeans = databaseBeans;
+   }
+
+   public AssignmentServiceSql getAssignmentServiceSql() {
+      return assignmentServiceSql;
+   }
+
+   /**
+    * sets which bean containing database dependent code should be used depending on the database vendor.
+    */
+   public void setAssignmentServiceSql(String vendor) {
+      this.assignmentServiceSql = (databaseBeans.containsKey(vendor) ? databaseBeans.get(vendor) : databaseBeans.get("default"));
+   }
 
 	/**********************************************************************************************************************************************************************************************************************************************************
 	 * Init and Destroy
@@ -174,6 +194,7 @@ public class DbAssignmentService extends BaseAssignmentService
 			}
 
 			super.init();
+         setAssignmentServiceSql(m_sqlService.getVendor());
 
 			M_log.info("init: assignments table: " + m_assignmentsTableName + " contents table: " + m_contentsTableName
 					+ " submissions table: " + m_submissionsTableName + " locks-in-db" + m_locksInDb);
@@ -197,7 +218,7 @@ public class DbAssignmentService extends BaseAssignmentService
 
 	/**
 	 * Construct a Storage object for Assignments.
-	 * 
+	 *
 	 * @return The new storage object for Assignments.
 	 */
 	protected AssignmentStorage newAssignmentStorage()
@@ -208,7 +229,7 @@ public class DbAssignmentService extends BaseAssignmentService
 
 	/**
 	 * Construct a Storage object for AssignmentsContents.
-	 * 
+	 *
 	 * @return The new storage object for AssignmentContents.
 	 */
 	protected AssignmentContentStorage newContentStorage()
@@ -219,7 +240,7 @@ public class DbAssignmentService extends BaseAssignmentService
 
 	/**
 	 * Construct a Storage object for AssignmentSubmissions.
-	 * 
+	 *
 	 * @return The new storage object for AssignmentSubmissions.
 	 */
 	protected AssignmentSubmissionStorage newSubmissionStorage()
@@ -243,7 +264,7 @@ public class DbAssignmentService extends BaseAssignmentService
 	{
 		/**
 		 * Construct.
-		 * 
+		 *
 		 * @param assignment
 		 *        The StorageUser class to call back for creation of Resource and Edit objects.
 		 */
@@ -309,7 +330,7 @@ public class DbAssignmentService extends BaseAssignmentService
 	{
 		/**
 		 * Construct.
-		 * 
+		 *
 		 * @param content
 		 *        The StorageUser class to call back for creation of Resource and Edit objects.
 		 */
@@ -375,7 +396,7 @@ public class DbAssignmentService extends BaseAssignmentService
 	{
 		/**
 		 * Construct.
-		 * 
+		 *
 		 * @param submission
 		 *        The StorageUser class to call back for creation of Resource and Edit objects.
 		 */
@@ -446,7 +467,7 @@ public class DbAssignmentService extends BaseAssignmentService
 			connection.setAutoCommit(false);
 
 			// read all assignment records
-			String sql = "select XML from ASSIGNMENT_ASSIGNMENT where CONTEXT is null";
+         String sql = assignmentServiceSql.getListAssignmentsSql();
 			m_sqlService.dbRead(connection, sql, null, new SqlReader()
 			{
 				public Object readSqlResultRecord(ResultSet result)
@@ -472,7 +493,7 @@ public class DbAssignmentService extends BaseAssignmentService
 						String id = a.getId();
 
 						// update
-						String update = "update ASSIGNMENT_ASSIGNMENT set CONTEXT = ? where ASSIGNMENT_ID = ?";
+                  String update = assignmentServiceSql.getUpdateAssignmentSql();
 						Object fields[] = new Object[2];
 						fields[0] = context;
 						fields[1] = id;
@@ -490,7 +511,7 @@ public class DbAssignmentService extends BaseAssignmentService
 			});
 
 			// read all content records
-			sql = "select XML from ASSIGNMENT_CONTENT where CONTEXT is null";
+         sql = assignmentServiceSql.getListAssignmentContentsSql();
 			m_sqlService.dbRead(connection, sql, null, new SqlReader()
 			{
 				public Object readSqlResultRecord(ResultSet result)
@@ -516,7 +537,7 @@ public class DbAssignmentService extends BaseAssignmentService
 						String id = c.getId();
 
 						// update
-						String update = "update ASSIGNMENT_CONTENT set CONTEXT = ? where CONTENT_ID = ?";
+                  String update = assignmentServiceSql.getUpdateAssignmentContentSql();
 						Object fields[] = new Object[2];
 						fields[0] = context;
 						fields[1] = id;
@@ -534,7 +555,7 @@ public class DbAssignmentService extends BaseAssignmentService
 			});
 
 			// read all submission records
-			sql = "select XML from ASSIGNMENT_SUBMISSION where CONTEXT is null";
+         sql = assignmentServiceSql.getListAssignmentSubmissionsSql();
 			m_sqlService.dbRead(connection, sql, null, new SqlReader()
 			{
 				public Object readSqlResultRecord(ResultSet result)
@@ -560,7 +581,7 @@ public class DbAssignmentService extends BaseAssignmentService
 						String id = s.getId();
 
 						// update
-						String update = "update ASSIGNMENT_SUBMISSION set CONTEXT = ? where SUBMISSION_ID = ?";
+                  String update = assignmentServiceSql.getUpdateAssignmentSubmissionSql();
 						Object fields[] = new Object[2];
 						fields[0] = context;
 						fields[1] = id;
