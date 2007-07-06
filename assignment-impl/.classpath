@@ -25,5 +25,6 @@
 	<classpathentry kind="var" path="MAVEN_REPO/junit/jars/junit-3.8.1.jar"/>
 	<classpathentry combineaccessrules="false" kind="src" path="/email-api"/>
 	<classpathentry combineaccessrules="false" kind="src" path="/content-review-api"/>
+	<classpathentry combineaccessrules="false" kind="src" path="/taggable-api"/>
 	<classpathentry kind="output" path="bin"/>
 </classpath>

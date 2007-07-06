@@ -112,6 +112,12 @@
 
 		<dependency>
 			<groupId>sakaiproject</groupId>
+			<artifactId>sakai-taggable-api</artifactId>
+			<version>${sakai.version}</version>
+		</dependency>
+
+		<dependency>
+			<groupId>sakaiproject</groupId>
 			<artifactId>sakai-velocity-tool-api</artifactId>
 			<version>${sakai.version}</version>
 		</dependency>
