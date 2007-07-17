@@ -134,9 +134,6 @@
 			<groupId>sakaiproject</groupId>
 			<artifactId>sakai-contentreview-service-api</artifactId>
 			<version>${sakai.version}</version>
-			<properties>
-				<war.bundle>true</war.bundle>
-			</properties>
 		</dependency>
 
 		<dependency>
