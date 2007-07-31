@@ -862,7 +862,7 @@ public abstract class BaseAssignmentService implements AssignmentService, Entity
 		if (assignment == null) throw new IdUnusedException(assignmentReference);
 
 		// track event
-		// EventTrackingService.post(EventTrackingService.newEvent(EVENT_ACCESS_ASSIGNMENT, assignment.getReference(), false));
+		EventTrackingService.post(EventTrackingService.newEvent(EVENT_ACCESS_ASSIGNMENT, assignment.getReference(), false));
 
 		return assignment;
 
@@ -1922,6 +1922,11 @@ public abstract class BaseAssignmentService implements AssignmentService, Entity
 				// releasing a submitted assignment or releasing grade to an unsubmitted assignment
 				EventTrackingService.post(EventTrackingService.newEvent(EVENT_GRADE_ASSIGNMENT_SUBMISSION, submissionRef, true));
 			}
+			else if (submittedTime == null) /*grading non-submission*/
+			{
+				// releasing a submitted assignment or releasing grade to an unsubmitted assignment
+				EventTrackingService.post(EventTrackingService.newEvent(EVENT_GRADE_ASSIGNMENT_SUBMISSION, submissionRef, true));
+			}
 			else
 			{
 				// submitting a submission
@@ -1998,13 +2003,17 @@ public abstract class BaseAssignmentService implements AssignmentService, Entity
 		{
 			//send notification
 			User u = UserDirectoryService.getCurrentUser();
-			List receivers = new Vector();
-			receivers.add(u);
-			List headers = new Vector();
-			headers.add(rb.getString("noti.subject.label") + rb.getString("noti.subject.content"));
 			
-			String messageBody = getNotificationMessage(s);
-			EmailService.sendToUsers(receivers, headers, messageBody);
+			if (StringUtil.trimToNull(u.getEmail()) != null)
+			{
+				List receivers = new Vector();
+				receivers.add(u);
+				List headers = new Vector();
+				headers.add(rb.getString("noti.subject.label") + rb.getString("noti.subject.content"));
+				
+				String messageBody = getNotificationMessage(s);
+				EmailService.sendToUsers(receivers, headers, messageBody);
+			}
 		}
 	}
 
@@ -7510,6 +7519,9 @@ public abstract class BaseAssignmentService implements AssignmentService, Entity
 			{
 				retVal = m_assignmentStorage.get(m_assignment);
 			}
+			
+			// track event
+			EventTrackingService.post(EventTrackingService.newEvent(EVENT_ACCESS_ASSIGNMENT, retVal.getReference(), false));
 
 			return retVal;
 		}
@@ -7793,11 +7805,7 @@ public abstract class BaseAssignmentService implements AssignmentService, Entity
 							
 							if(submitTime != null)
 							{
-								if (getAssignment().getContent().getTypeOfSubmission() == Assignment.NON_ELECTRONIC_ASSIGNMENT_SUBMISSION)
-									//for non electronic submissions
-									retVal = rb.getString("nonelec");
-								else
-									retVal = rb.getString("gen.subm4") + " " + submitTime.toStringLocalFull();
+								retVal = rb.getString("gen.subm4") + " " + submitTime.toStringLocalFull();
 							}
 						}
 					}
