@@ -397,6 +397,8 @@ public class AssignmentAction extends PagedResourceActionII
 
 	private static final String NEW_ASSIGNMENT_DUEAMPM = "new_assignment_dueampm";
 
+	private static final String NEW_ASSIGNMENT_PAST_DUE_DATE = "new_assignment_past_due_date";
+	
 	// close date
 	private static final String NEW_ASSIGNMENT_ENABLECLOSEDATE = "new_assignment_enableclosedate";
 
@@ -453,7 +455,7 @@ public class AssignmentAction extends PagedResourceActionII
 	private static final String ALLOW_RESUBMIT_CLOSEHOUR = "allow_resubmit_closeHour";
 	private static final String ALLOW_RESUBMIT_CLOSEMIN = "allow_resubmit_closeMin";
 	private static final String ALLOW_RESUBMIT_CLOSEAMPM = "allow_resubmit_closeAMPM";
-
+	
 	private static final String ATTACHMENTS_MODIFIED = "attachments_modified";
 
 	/** **************************** instructor's view student submission ***************** */
@@ -3615,11 +3617,27 @@ public class AssignmentAction extends PagedResourceActionII
 			dueHour = 0;
 		}
 		Time dueTime = TimeService.newTimeLocal(dueYear, dueMonth, dueDay, dueHour, dueMin, 0, 0);
-		// validate date
-		if (dueTime.before(TimeService.newTime()))
+		
+		// show alert message when due date is in past. Remove it after user confirms the choice.
+		if (dueTime.before(TimeService.newTime()) && state.getAttribute(NEW_ASSIGNMENT_PAST_DUE_DATE) == null)
+		{
+			state.setAttribute(NEW_ASSIGNMENT_PAST_DUE_DATE, Boolean.TRUE);
+		}
+		else
+		{
+			// clean the attribute after user confirm
+			state.removeAttribute(NEW_ASSIGNMENT_PAST_DUE_DATE);
+		}
+		if (state.getAttribute(NEW_ASSIGNMENT_PAST_DUE_DATE) != null)
 		{
 			addAlert(state, rb.getString("assig4"));
 		}
+		
+		if (!dueTime.after(openTime))
+		{
+			addAlert(state, rb.getString("assig3"));
+		}
+		
 		if (!Validator.checkDate(dueDay, dueMonth, dueYear))
 		{
 			addAlert(state, rb.getString("date.invalid") + rb.getString("date.duedate") + ".");
