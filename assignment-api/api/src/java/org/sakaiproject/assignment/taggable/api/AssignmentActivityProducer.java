@@ -23,9 +23,9 @@ package org.sakaiproject.assignment.taggable.api;
 
 import org.sakaiproject.assignment.api.Assignment;
 import org.sakaiproject.assignment.api.AssignmentSubmission;
-import org.sakaiproject.taggable.api.TaggableActivity;
-import org.sakaiproject.taggable.api.TaggableActivityProducer;
-import org.sakaiproject.taggable.api.TaggableItem;
+import org.sakaiproject.taggable.deprecated.api.TaggableActivity;
+import org.sakaiproject.taggable.deprecated.api.TaggableActivityProducer;
+import org.sakaiproject.taggable.deprecated.api.TaggableItem;
 
 /**
  * A producer of assignments as taggable activities.

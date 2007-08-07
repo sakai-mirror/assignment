@@ -24,11 +24,11 @@ package org.sakaiproject.assignment.taggable.tool;
 import java.util.ArrayList;
 import java.util.List;
 
-import org.sakaiproject.taggable.api.Tag;
-import org.sakaiproject.taggable.api.TagColumn;
-import org.sakaiproject.taggable.api.TagList;
-import org.sakaiproject.taggable.api.TaggableActivity;
-import org.sakaiproject.taggable.api.TaggingProvider;
+import org.sakaiproject.taggable.deprecated.api.Tag;
+import org.sakaiproject.taggable.deprecated.api.TagColumn;
+import org.sakaiproject.taggable.deprecated.api.TaggableActivity;
+import org.sakaiproject.taggable.deprecated.api.TaggingProvider;
+import org.sakaiproject.taggable.deprecated.api.TagList;
 
 /**
  * Wrapper around {@link TaggingProvider} for displaying a pageable/sortable
