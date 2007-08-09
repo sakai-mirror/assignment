@@ -66,17 +66,13 @@
 				## exclude the link for non-electronic submission
 				<a href="$accessPointUrl" title="$!tlang.getString('downall')">$!tlang.getString('downall')</a> | 
 			#end
-			#if(!$!isGBEntryReleased)
-				##don't show the link when the related GB entry is set to release mode
-				#if ($withGrade)
-					<a href="#toolLinkParam("$action" "doRelease_grades" "assignmentId=$validator.escapeUrl($!assignment.Reference)")" title="$!tlang.getString('relgrad')">$!tlang.getString('relgrad')</a>
-				#else
-					<a href="#toolLinkParam("$action" "doRelease_grades" "assignmentId=$validator.escapeUrl($!assignment.Reference)")" title="$!tlang.getString('relcommented')">$!tlang.getString('relcommented')</a>
-				#end
-				| 
+			#if ($withGrade)
+				<a href="#toolLinkParam("$action" "doRelease_grades" "assignmentId=$validator.escapeUrl($!assignment.Reference)")" title="$!tlang.getString('relgrad')">$!tlang.getString('relgrad')</a>
+			#else
+				<a href="#toolLinkParam("$action" "doRelease_grades" "assignmentId=$validator.escapeUrl($!assignment.Reference)")" title="$!tlang.getString('relcommented')">$!tlang.getString('relcommented')</a>
 			#end
 			## upload all
-			<a href="#toolLinkParam("$action" "doPrep_upload_all" "assignmentId=$validator.escapeUrl($!assignment.Reference)")" title="$!tlang.getString('uploadall.title')">$!tlang.getString('uploadall.title')</a>
+			| <a href="#toolLinkParam("$action" "doPrep_upload_all" "assignmentId=$validator.escapeUrl($!assignment.Reference)")" title="$!tlang.getString('uploadall.title')">$!tlang.getString('uploadall.title')</a>
 			#if ($taggable)
 				#foreach ($provider in $providers)
 					#set ($helperInfo = false)
@@ -97,7 +93,7 @@
 					<label for="gradeList">$tlang.getString("non.submission.grade")</label>
 					##for non-point-based grading, choose the default grade from drop-down
 					#if ($!gradeType != 3)
-						<select id="defaultGrade_1" name="defaultGrade" size="1" onchange="blur();document.defaultGradeForm.submit();">
+						<select id="defaultGrade_1" name="defaultGrade" size="1" >
 							<option value="">$tlang.getString("non.submission.grade.select")</option>
 							#if ($!gradeType == 1)
 								<option value="ungraded" #if($!noSubmissionDefaultGrade && $!noSubmissionDefaultGrade.equals("ungraded"))selected="selected"#end>$tlang.getString("gen.nograd")</option>
@@ -115,7 +111,7 @@
 						</select>
 					#else
 						## instructor needs to type in default points in point-based-grading
-						<input type="text" id="defaultGrade_2" name="defaultGrade" value="$!noSubmissionDefaultGrade" size="5" onchange="blur();document.defaultGradeForm.submit();"/>
+						<input type="text" id="defaultGrade_2" name="defaultGrade" value="$!noSubmissionDefaultGrade" size="5" />
 					#end
 					<input type="button" accesskey="a" class="active"  name="apply" value="$tlang.getString('gen.applygrade')" onclick="blur();document.defaultGradeForm.submit();" title="$tlang.getString("gen.applygrade")" />
 				</form>
@@ -264,8 +260,6 @@
 				#foreach ($userSubmission in $userSubmissions)
 					#set($submission=false)
 					#set($submission = $userSubmission.Submission)
-					#set($gradeDisplay = false)
-					#set($gradeDisplay=$submission.getGradeDisplay())
 					#set($siteUser=false)
 					#set($siteUser = $userSubmission.User)
 					#set($submitTime=false)
@@ -330,25 +324,13 @@
 								#if ($returned)
 									#if ($!submitTime && $!returnedTime)
 										#if ($returnedTime.before($submitTime))
-											#if ($submission.getGraded() && $submission.TimeLastModified.after($submitTime))
-												## instructor has graded the resubmission
-												#if ($!withGrade)
-													$tlang.getString("grad3")
-												#else
-													$tlang.getString("gen.commented")
-												#end
-											#else
-												## the resubmission hasn't been graded yet
+											#if (!$submission.Graded)
 												$tlang.getString("listsub.resubmi")
-											#end
+											#else
+												$tlang.getString("grad3")
+											#end 
 										#else
 											$tlang.getString("gen.returned")
-										#end
-									#else
-										#if ($!withGrade)
-											$tlang.getString("grad3")
-										#else
-											$tlang.getString("gen.commented")
 										#end
 									#end
 								#elseif ($submission.getGraded())
@@ -363,7 +345,7 @@
 							</td>
 							#if ($withGrade)
 								<td headers="grade">
-									$!gradeDisplay
+									$submission.getGradeDisplay()
 								</td>
 							#end	
 							#if ($allowReviewService && $assignment.getContent().AllowReviewService)

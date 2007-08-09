@@ -158,9 +158,9 @@ public interface AssignmentEdit extends Assignment, Edit
 	 */
 	void setAccess(AssignmentAccess access);
 	
-	/**
+    /**
 	 * Set the position order field for the assignment.
-	 * 
+	 *
 	 * @param position_order -
 	 *        The Assignment's order.
 	 */

@@ -212,12 +212,13 @@ public interface Assignment extends Entity, Comparable
 	
 	/**
 	 * Access the position order field for the assignment.
-	 * 
-	 * @return The Assignment's order.
-	 */
-	public int getPosition_order();
+     *
+     * @return The Assignment's order.
+     */
+    public int getPosition_order();
 
 	/**
+	 * 
 	 * Access the groups defined for this assignment.
 	 * 
 	 * @return A Collection (String) of group refs (authorization group ids) defined for this message; empty if none are defined.

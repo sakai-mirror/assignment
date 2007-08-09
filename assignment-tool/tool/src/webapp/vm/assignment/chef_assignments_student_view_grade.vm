@@ -1,7 +1,6 @@
 ##<!-- $Header: /cvs/sakai2/legacy/tools/src/webapp/vm/assignment/chef_assignments_student_view_grade.vm,v 1.2 2005/05/19 19:39:49 gsilver.umich.edu Exp $ -->
 <div class="portletBody">
 	#set ($assignment = $submission.Assignment)
-	#set ($grade=$submission.Grade)
 	#if ($taggable)
 		#if (!$itemHelpers.isEmpty())
 			<div class="navIntraTool">
@@ -17,13 +16,9 @@
 			</div>
 		#end
 	#end
-	#set($submitTime=false)
-	#set($submitTime=$submission.getTimeSubmitted())
-	#set($returnTime=false)
-	#set($returnTime=$submission.getTimeReturned())
 	<h3>
 	$tlang.getString("stuviewgrad.viewass2")
-		#if ($submission.Returned && $!returnTime.after($!submitTime))
+		#if ($submission.Returned)
 			<span class="highlight"> - $tlang.getString("gen.returned")</span>
 		#else
 			<span class="highlight"> - $tlang.getString("gen.subm4")</span>
@@ -31,6 +26,10 @@
 		</h3>
 
 		#if ($alertMessage)<div class="alertMessage">$tlang.getString("gen.alert") $validator.escapeHtml($alertMessage)</div>#end
+		#set($submitTime=false)
+		#set($submitTime=$submission.getTimeSubmitted())
+		#set($returnTime=false)
+		#set($returnTime=$submission.getTimeReturned())
 			<table class="itemSummary" summary="$tlang.getString("stuviewgrad.thegradet")">
 				<tr>
 					<th>

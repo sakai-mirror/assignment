@@ -25,7 +25,7 @@
 			#if ($!allowAddAssignment)
 				<h3>$tlang.getString("viewexampleassign") </h3>
 			#else
-				<h3>
+			<h3>
 				#if(!$submitted)
 					## draft submission
 					$tlang.getString("viewassign")
@@ -35,7 +35,8 @@
 						 	- $tlang.getString("gen.inpro")
 						</span>
 					#end
-				#elseif ($!timeReturned && $!timeSubmitted && $!timeReturned.after($!timeSubmitted))
+				#end
+				#if ($!timeReturned && $!timeSubmitted && $!timeReturned.after($!timeSubmitted))
 				 $tlang.getString("assig1")
 					<span class="highlight">
 						 - $tlang.getString("resubmit")
@@ -322,7 +323,7 @@
 			#if (($submissionType==2) || ($submissionType==3)) 
 				#if ($submissionType==2)
 					<h4>
-						#if (!$!canSubmit)
+						#if (($submitted && !$returned) || ($returned && $!timeReturned && $!timeSubmitted && $!timeReturned.before($!timeSubmitted)) || ($!closeTime && $currentTime.after($closeTime)))
 							## for submitted not yet returned submission; or returned by resubmitted submission; or after close date
 							$tlang.getString("stuviewsubm.youatt")
 						#else
@@ -370,19 +371,41 @@
 							<input type="submit" name="eventSubmit_doAttachments" value="Attachment" accesskey="a" disabled="disabled" />
 						#else
 							##if the submission has not been submitted or has been returned and not yet resubmitted
-							<input
-								class="disableme" 
-								type="button" 
-								name="attach" 
-								id="attach"
-								#if ($size==0) 
-									value="$tlang.getString("gen.addatt")"
+							#if (!$submitted || ($submitted && !$timeSubmitted) || ($returned && $!timeSubmitted && $!timeReturned && $!timeReturned.after($!timeSubmitted)))
+								#if ($!closeTime)
+									## there is close date. Can only submit before the close date
+									#if ($currentTime.before($!closeTime))
+										<input
+											class="disableme" 
+											type="button" 
+											name="attach" 
+											id="attach"
+											#if ($size==0) 
+												value="$tlang.getString("gen.addatt")"
+											#else
+												value="$tlang.getString("gen.adddroatt2")"
+											#end
+											accesskey="a" #if(!$allowSubmit)disabled="disabled"#end
+											onclick="document.addSubmissionForm.onsubmit();document.addSubmissionForm.option.value='attach'; document.addSubmissionForm.submit(); return false;"
+										/>
+									#end
 								#else
-									value="$tlang.getString("gen.adddroatt2")"
+									## there is no close date. Still can submit after due date
+									<input
+										class="disableme" 
+										type="button" 
+										name="attach" 
+										id="attach"
+										#if ($size==0) 
+											value="$tlang.getString("gen.addatt")"
+										#else
+											value="$tlang.getString("gen.adddroatt2")"
+										#end
+										accesskey="a" #if(!$allowSubmit)disabled="disabled"#end
+										onclick="document.addSubmissionForm.onsubmit();document.addSubmissionForm.option.value='attach'; document.addSubmissionForm.submit(); return false;"
+									/>										
 								#end
-								accesskey="a" #if(!$canSubmit)disabled="disabled"#end
-								onclick="document.addSubmissionForm.onsubmit();document.addSubmissionForm.option.value='attach'; document.addSubmissionForm.submit(); return false;"
-							/>
+							#end
 						#end
 					</p>
 				#end
@@ -486,7 +509,7 @@
 						<label for="$name_submission_honor_pledge_yes">
 							$tlang.getString("gen.honple2")
 						</label>
-					#if (!$!canSubmit)
+						#if (!$!canSubmit)
 							## for submitted submission not yet returned; or returned but resubmitted submission; or after the close time
 							#if ($value_submission_honor_pledge_yes.equals("false"))
 								<input id="$name_submission_honor_pledge_yes" type="checkbox" name="$name_submission_honor_pledge_yes" value="true" disabled="disabled" />
@@ -527,7 +550,7 @@
 							onclick="document.addSubmissionForm.onsubmit();document.addSubmissionForm.option.value='cancel'; document.addSubmissionForm.submit(); return false;"
 						/>
 					#else
-					#if ($!canSubmit)
+					#if (!$submitted || ($submitted && !$timeSubmitted) || ($returned && $!timeSubmitted && $!timeReturned && $!timeReturned.after($!timeSubmitted)))
 							<input
 								type="button"
 								class="active"
