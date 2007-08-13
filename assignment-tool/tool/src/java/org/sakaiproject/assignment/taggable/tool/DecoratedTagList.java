@@ -24,40 +24,40 @@ package org.sakaiproject.assignment.taggable.tool;
 import java.util.ArrayList;
 import java.util.List;
 
-import org.sakaiproject.taggable.deprecated.api.Tag;
-import org.sakaiproject.taggable.deprecated.api.TagColumn;
-import org.sakaiproject.taggable.deprecated.api.TaggableActivity;
-import org.sakaiproject.taggable.deprecated.api.TaggingProvider;
-import org.sakaiproject.taggable.deprecated.api.TagList;
+import org.sakaiproject.taggable.api.Taggable;
+import org.sakaiproject.taggable.tool.api.TagColumn;
+import org.sakaiproject.taggable.tool.api.TagList;
+import org.sakaiproject.taggable.tool.api.TagRow;
+import org.sakaiproject.taggable.tool.api.TaggingTool;
 
 /**
- * Wrapper around {@link TaggingProvider} for displaying a pageable/sortable
- * list of tags for an activity or item. Since there may be multiple providers
- * each with a list of tags displayed on a single page, this class enables each
- * provider to maintain the page/sort state of its list separate from others.
+ * Wrapper around {@link TagList} for displaying a pageable/sortable list of
+ * tags for an activity or item. Since there may be multiple providers each with
+ * a list of tags displayed on a single page, this class enables each provider
+ * to maintain the page/sort state of its list separate from others.
  * 
  * @author The Sakai Foundation.
  */
-public class DecoratedTaggingProvider {
-	TaggingProvider provider;
+public class DecoratedTagList {
+	TaggingTool tool;
 
 	Sort sort;
 
 	Pager pager;
 
-	TaggableActivity lastActivity;
+	Taggable lastTaggable;
 
 	TagList tagList;
 
 	protected final static int[] PAGESIZES = { 5, 10, 20, 50, 100, 200 };
 
-	public DecoratedTaggingProvider(TaggingProvider provider) {
-		this.provider = provider;
+	public DecoratedTagList(TaggingTool tool) {
+		this.tool = tool;
 		sort = new Sort("", true);
 	}
 
-	public TaggingProvider getProvider() {
-		return provider;
+	public TaggingTool getTool() {
+		return tool;
 	}
 
 	public Sort getSort() {
@@ -68,26 +68,26 @@ public class DecoratedTaggingProvider {
 		return pager;
 	}
 
-	protected TagList getTagList(TaggableActivity activity) {
-		if (!activity.equals(lastActivity)) {
+	protected TagList getTagList(Taggable taggable) {
+		if (!taggable.equals(lastTaggable)) {
 			sort = new Sort("", true);
 			pager = null;
 			tagList = null;
-			lastActivity = activity;
+			lastTaggable = taggable;
 		}
 		if (tagList == null) {
-			tagList = provider.getTags(activity);
+			tagList = tool.getTagList(taggable);
 		}
 		return tagList;
 	}
 
-	public List<TagColumn> getColumns(TaggableActivity activity) {
-		return getTagList(activity).getColumns();
+	public List<TagColumn> getColumns(Taggable taggable) {
+		return getTagList(taggable).getColumns();
 	}
 
-	public List<Tag> getTags(TaggableActivity activity) {
-		TagList list = getTagList(activity);
-		List<Tag> tags = new ArrayList<Tag>();
+	public List<TagRow> getRows(Taggable taggable) {
+		TagList list = getTagList(taggable);
+		List<TagRow> tags = new ArrayList<TagRow>();
 		if (pager == null) {
 			pager = new Pager((list == null) ? 0 : list.size(), 0, 20);
 		}

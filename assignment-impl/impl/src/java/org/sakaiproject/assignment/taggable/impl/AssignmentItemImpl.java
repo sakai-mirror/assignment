@@ -24,11 +24,12 @@ package org.sakaiproject.assignment.taggable.impl;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.sakaiproject.assignment.api.AssignmentSubmission;
-import org.sakaiproject.taggable.deprecated.api.TaggableActivity;
-import org.sakaiproject.taggable.deprecated.api.TaggableItem;
+import org.sakaiproject.taggable.activity.api.TaggableActivity;
+import org.sakaiproject.taggable.activity.api.TaggableItem;
+import org.sakaiproject.taggable.api.TaggableProducer;
 import org.sakaiproject.user.api.User;
+import org.sakaiproject.user.api.UserDirectoryService;
 import org.sakaiproject.user.api.UserNotDefinedException;
-import org.sakaiproject.user.cover.UserDirectoryService;
 import org.sakaiproject.util.ResourceLoader;
 
 public class AssignmentItemImpl implements TaggableItem {
@@ -46,11 +47,14 @@ public class AssignmentItemImpl implements TaggableItem {
 
 	protected TaggableActivity activity;
 
+	protected UserDirectoryService userDirectoryService;
+
 	public AssignmentItemImpl(AssignmentSubmission submission, String userId,
-			TaggableActivity activity) {
+			TaggableActivity activity, UserDirectoryService userDirectoryService) {
 		this.submission = submission;
 		this.userId = userId;
 		this.activity = activity;
+		this.userDirectoryService = userDirectoryService;
 	}
 
 	public TaggableActivity getActivity() {
@@ -61,8 +65,20 @@ public class AssignmentItemImpl implements TaggableItem {
 		return submission.getSubmittedText();
 	}
 
+	public String getContext() {
+		return activity.getContext();
+	}
+
+	public String getDescription() {
+		return activity.getDescription();
+	}
+
 	public Object getObject() {
 		return submission;
+	}
+
+	public TaggableProducer getProducer() {
+		return activity.getProducer();
 	}
 
 	public String getReference() {
@@ -76,7 +92,7 @@ public class AssignmentItemImpl implements TaggableItem {
 	public String getTitle() {
 		StringBuffer sb = new StringBuffer();
 		try {
-			User user = UserDirectoryService.getUser(userId);
+			User user = userDirectoryService.getUser(userId);
 			sb.append(user.getFirstName());
 			sb.append(' ');
 			sb.append(user.getLastName());

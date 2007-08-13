@@ -21,22 +21,50 @@
 
 package org.sakaiproject.assignment.taggable.impl;
 
+import java.util.ArrayList;
+import java.util.Iterator;
+import java.util.List;
+
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
 import org.sakaiproject.assignment.api.Assignment;
-import org.sakaiproject.taggable.deprecated.api.TaggableActivity;
-import org.sakaiproject.taggable.deprecated.api.TaggableActivityProducer;
+import org.sakaiproject.assignment.api.AssignmentService;
+import org.sakaiproject.assignment.api.AssignmentSubmission;
+import org.sakaiproject.exception.IdUnusedException;
+import org.sakaiproject.exception.PermissionException;
+import org.sakaiproject.taggable.activity.api.TaggableActivity;
+import org.sakaiproject.taggable.activity.api.TaggableItem;
+import org.sakaiproject.taggable.api.TaggableProducer;
+import org.sakaiproject.taggable.api.TaggingProvider;
+import org.sakaiproject.user.api.UserDirectoryService;
+import org.sakaiproject.user.api.UserNotDefinedException;
 
 public class AssignmentActivityImpl implements TaggableActivity {
 
 	protected Assignment assignment;
 
-	protected TaggableActivityProducer producer;
+	protected TaggableProducer producer;
+
+	protected AssignmentService assignmentService;
+
+	protected UserDirectoryService userDirectoryService;
+
+	protected String currentUserId;
+
+	private static final Log logger = LogFactory
+			.getLog(AssignmentActivityImpl.class);
 
 	public AssignmentActivityImpl(Assignment assignment,
-			TaggableActivityProducer producer) {
+			TaggableProducer producer, AssignmentService assignmentService,
+			UserDirectoryService userDirectoryService) {
 		this.assignment = assignment;
 		this.producer = producer;
+		this.assignmentService = assignmentService;
+		this.userDirectoryService = userDirectoryService;
+		this.currentUserId = this.userDirectoryService.getCurrentUser().getId();
 	}
 
+	@Override
 	public boolean equals(Object object) {
 		if (object instanceof TaggableActivity) {
 			TaggableActivity activity = (TaggableActivity) object;
@@ -57,7 +85,7 @@ public class AssignmentActivityImpl implements TaggableActivity {
 		return assignment;
 	}
 
-	public TaggableActivityProducer getProducer() {
+	public TaggableProducer getProducer() {
 		return producer;
 	}
 
@@ -67,5 +95,70 @@ public class AssignmentActivityImpl implements TaggableActivity {
 
 	public String getTitle() {
 		return assignment.getTitle();
+	}
+
+	public boolean allowGetItems(TaggingProvider provider) {
+		/*
+		 * We aren't picky about the provider, so ignore that argument. Only
+		 * allow this if the user can grade submissions.
+		 */
+		return assignmentService.allowGradeSubmission(getReference());
+	}
+
+	public boolean allowGetItems(String userId, TaggingProvider provider) {
+		/*
+		 * We aren't picky about the provider, so ignore that argument. Only
+		 * allow this if the user can grade submissions, or if the identified
+		 * user is the current one.
+		 */
+		return (currentUserId.equals(userId) || assignmentService
+				.allowGradeSubmission(getReference()));
+	}
+
+	public List<TaggableItem> getItems(TaggingProvider provider)
+			throws PermissionException {
+		/*
+		 * We aren't picky about the provider, so ignore that argument.
+		 */
+		if (allowGetItems(provider)) {
+			List<TaggableItem> items = new ArrayList<TaggableItem>();
+			for (Iterator<AssignmentSubmission> i = assignmentService
+					.getSubmissions(assignment).iterator(); i.hasNext();) {
+				AssignmentSubmission submission = i.next();
+				for (Object submitterId : submission.getSubmitterIds()) {
+					items.add(new AssignmentItemImpl(submission,
+							(String) submitterId, this, userDirectoryService));
+				}
+			}
+			return items;
+		}
+		throw new PermissionException(currentUserId, this
+				+ ".allowGetItems(provider)", getReference());
+	}
+
+	public List<TaggableItem> getItems(String userId, TaggingProvider provider)
+			throws PermissionException {
+		/*
+		 * We aren't picky about the provider, so ignore that argument.
+		 */
+		if (allowGetItems(userId, provider)) {
+			List<TaggableItem> items = new ArrayList<TaggableItem>();
+			try {
+				AssignmentSubmission submission = assignmentService
+						.getSubmission(assignment.getReference(),
+								userDirectoryService.getUser(userId));
+				if (submission != null) {
+					TaggableItem item = new AssignmentItemImpl(submission,
+							userId, this, userDirectoryService);
+					items.add(item);
+				}
+			} catch (IdUnusedException iue) {
+				logger.error(iue.getMessage(), iue);
+			} catch (UserNotDefinedException unde) {
+				logger.error(unde.getMessage(), unde);
+			}
+		}
+		throw new PermissionException(currentUserId, this
+				+ ".allowGetItems(userId, provider)", getReference());
 	}
 }

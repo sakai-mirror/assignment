@@ -23,16 +23,16 @@ package org.sakaiproject.assignment.taggable.api;
 
 import org.sakaiproject.assignment.api.Assignment;
 import org.sakaiproject.assignment.api.AssignmentSubmission;
-import org.sakaiproject.taggable.deprecated.api.TaggableActivity;
-import org.sakaiproject.taggable.deprecated.api.TaggableActivityProducer;
-import org.sakaiproject.taggable.deprecated.api.TaggableItem;
+import org.sakaiproject.taggable.activity.api.TaggableActivity;
+import org.sakaiproject.taggable.activity.api.TaggableItem;
+import org.sakaiproject.taggable.api.TaggableProducer;
 
 /**
  * A producer of assignments as taggable activities.
  * 
  * @author The Sakai Foundation.
  */
-public interface AssignmentActivityProducer extends TaggableActivityProducer {
+public interface AssignmentActivityProducer extends TaggableProducer {
 
 	/**
 	 * The type name of this producer.

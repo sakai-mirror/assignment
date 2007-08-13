@@ -22,7 +22,6 @@
 package org.sakaiproject.assignment.taggable.impl;
 
 import java.util.ArrayList;
-import java.util.Iterator;
 import java.util.List;
 
 import org.apache.commons.logging.Log;
@@ -31,17 +30,17 @@ import org.sakaiproject.assignment.api.Assignment;
 import org.sakaiproject.assignment.api.AssignmentService;
 import org.sakaiproject.assignment.api.AssignmentSubmission;
 import org.sakaiproject.assignment.taggable.api.AssignmentActivityProducer;
-import org.sakaiproject.taggable.deprecated.api.TaggableActivity;
-import org.sakaiproject.taggable.deprecated.api.TaggableItem;
-import org.sakaiproject.taggable.deprecated.api.TaggingManager;
-import org.sakaiproject.taggable.deprecated.api.TaggingProvider;
+import org.sakaiproject.taggable.activity.api.TaggableActivity;
+import org.sakaiproject.taggable.activity.api.TaggableItem;
+import org.sakaiproject.taggable.api.Taggable;
+import org.sakaiproject.taggable.api.TaggingManager;
+import org.sakaiproject.taggable.api.TaggingProvider;
 import org.sakaiproject.authz.api.SecurityService;
 import org.sakaiproject.entity.api.EntityManager;
 import org.sakaiproject.exception.IdUnusedException;
 import org.sakaiproject.exception.PermissionException;
 import org.sakaiproject.site.api.SiteService;
 import org.sakaiproject.user.api.UserDirectoryService;
-import org.sakaiproject.user.api.UserNotDefinedException;
 import org.sakaiproject.util.ResourceLoader;
 
 public class AssignmentActivityProducerImpl implements
@@ -64,65 +63,89 @@ public class AssignmentActivityProducerImpl implements
 
 	protected UserDirectoryService userDirectoryService;
 
-	public boolean allowGetItems(TaggableActivity activity,
-			TaggingProvider provider) {
-		// We aren't picky about the provider, so ignore that argument.
-		// Only allow this if the user can grade submissions
-		return assignmentService.allowGradeSubmission(activity.getReference());
+	public boolean allowRemoveTags(Taggable taggable) {
+		boolean allowed = false;
+		if (taggable instanceof TaggableActivity) {
+			allowed = securityService.unlock(
+					AssignmentService.SECURE_REMOVE_ASSIGNMENT, taggable
+							.getReference());
+		} else if (taggable instanceof TaggableItem) {
+			allowed = securityService.unlock(
+					AssignmentService.SECURE_REMOVE_ASSIGNMENT_SUBMISSION,
+					parseSubmissionRef(taggable.getReference()));
+		}
+		return allowed;
 	}
 
-	public boolean allowRemoveTags(TaggableActivity activity) {
-		return securityService.unlock(
-				AssignmentService.SECURE_REMOVE_ASSIGNMENT, activity
-						.getReference());
-	}
-
-	public boolean allowRemoveTags(TaggableItem item) {
-		return securityService.unlock(
-				AssignmentService.SECURE_REMOVE_ASSIGNMENT_SUBMISSION,
-				parseSubmissionRef(item.getReference()));
-	}
-
-	public boolean allowTransferCopyTags(TaggableActivity activity) {
+	public boolean allowTransferCopyTags(Taggable taggable) {
 		return securityService.unlock(SiteService.SECURE_UPDATE_SITE,
-				siteService.siteReference(activity.getContext()));
+				siteService.siteReference(taggable.getContext()));
 	}
 
 	public boolean checkReference(String ref) {
 		return ref.startsWith(AssignmentService.REFERENCE_ROOT);
 	}
 
-	public List<TaggableActivity> getActivities(String context,
-			TaggingProvider provider) {
-		// We aren't picky about the provider, so ignore that argument.
-		List<TaggableActivity> activities = new ArrayList<TaggableActivity>();
-		List<Assignment> assignments = assignmentService
-				.getListAssignmentsForContext(context);
-		for (Assignment assignment : assignments) {
-			activities.add(getActivity(assignment));
-		}
-		return activities;
-	}
-
-	public TaggableActivity getActivity(Assignment assignment) {
-		return new AssignmentActivityImpl(assignment, this);
-	}
-
-	public TaggableActivity getActivity(String activityRef,
-			TaggingProvider provider) {
-		// We aren't picky about the provider, so ignore that argument.
-		TaggableActivity activity = null;
-		if (checkReference(activityRef)) {
+	public Taggable get(String ref, TaggingProvider provider) {
+		/*
+		 * We aren't picky about the provider, so ignore that argument.
+		 */
+		Taggable taggable = null;
+		if (checkReference(ref)) {
 			try {
-				activity = new AssignmentActivityImpl(assignmentService
-						.getAssignment(activityRef), this);
+				/*
+				 * Pass the reference through parseSubmissionRef(). This should
+				 * pull off the appended userId if it exists.
+				 */
+				String pureRef = parseSubmissionRef(ref);
+				String subType = entityManager.newReference(pureRef)
+						.getSubType();
+				/*
+				 * If the reference is for an assignment
+				 */
+				if (AssignmentService.REF_TYPE_ASSIGNMENT.equals(subType)) {
+					taggable = new AssignmentActivityImpl(assignmentService
+							.getAssignment(pureRef), this, assignmentService,
+							userDirectoryService);
+				}
+				/*
+				 * If the reference is for a submission
+				 */
+				else if (AssignmentService.REF_TYPE_SUBMISSION.equals(subType)) {
+					AssignmentSubmission submission = assignmentService
+							.getSubmission(pureRef);
+					taggable = new AssignmentItemImpl(submission,
+							parseAuthor(ref), new AssignmentActivityImpl(
+									submission.getAssignment(), this,
+									assignmentService, userDirectoryService),
+							userDirectoryService);
+				}
 			} catch (IdUnusedException iue) {
 				logger.error(iue.getMessage(), iue);
 			} catch (PermissionException pe) {
 				logger.error(pe.getMessage(), pe);
 			}
 		}
-		return activity;
+		return taggable;
+	}
+
+	public TaggableActivity getActivity(Assignment assignment) {
+		return new AssignmentActivityImpl(assignment, this, assignmentService,
+				userDirectoryService);
+	}
+
+	public List<Taggable> getAll(String context, TaggingProvider provider) {
+		/*
+		 * We aren't picky about the provider, so ignore that argument.
+		 */
+		List<Taggable> taggables = new ArrayList<Taggable>();
+		List<Assignment> assignments = assignmentService
+				.getListAssignmentsForContext(context);
+		for (Assignment assignment : assignments) {
+			taggables.add(new AssignmentActivityImpl(assignment, this,
+					assignmentService, userDirectoryService));
+		}
+		return taggables;
 	}
 
 	public String getContext(String ref) {
@@ -137,73 +160,9 @@ public class AssignmentActivityProducerImpl implements
 			String userId) {
 		return new AssignmentItemImpl(assignmentSubmission, userId,
 				new AssignmentActivityImpl(
-						assignmentSubmission.getAssignment(), this));
-	}
-
-	public TaggableItem getItem(String itemRef, TaggingProvider provider) {
-		// We aren't picky about the provider, so ignore that argument.
-		TaggableItem item = null;
-		if (checkReference(itemRef)) {
-			try {
-				AssignmentSubmission submission = assignmentService
-						.getSubmission(parseSubmissionRef(itemRef));
-				item = new AssignmentItemImpl(submission, parseAuthor(itemRef),
-						new AssignmentActivityImpl(submission.getAssignment(),
-								this));
-			} catch (IdUnusedException iue) {
-				logger.error(iue.getMessage(), iue);
-			} catch (PermissionException pe) {
-				logger.error(pe.getMessage(), pe);
-			}
-		}
-		return item;
-	}
-
-	public List<TaggableItem> getItems(TaggableActivity activity,
-			String userId, TaggingProvider provider) {
-		// We aren't picky about the provider, so ignore that argument.
-		List<TaggableItem> returned = new ArrayList<TaggableItem>();
-		try {
-			Assignment assignment = (Assignment) activity.getObject();
-			AssignmentSubmission submission = assignmentService.getSubmission(
-					assignment.getReference(), userDirectoryService
-							.getUser(userId));
-			if (submission != null) {
-				TaggableItem item = new AssignmentItemImpl(submission, userId,
-						activity);
-				returned.add(item);
-			}
-		} catch (IdUnusedException iue) {
-			logger.error(iue.getMessage(), iue);
-		} catch (PermissionException pe) {
-			logger.error(pe.getMessage(), pe);
-		} catch (UserNotDefinedException unde) {
-			logger.error(unde.getMessage(), unde);
-		}
-		return returned;
-	}
-
-	public List<TaggableItem> getItems(TaggableActivity activity,
-			TaggingProvider provider) {
-		// We aren't picky about the provider, so ignore that argument.
-		List<TaggableItem> items = new ArrayList<TaggableItem>();
-		Assignment assignment = (Assignment) activity.getObject();
-		/*
-		 * If you're not allowed to grade submissions, you shouldn't be able to
-		 * look at submission items. It seems that anybody is allowed to get any
-		 * submissions.
-		 */
-		if (assignmentService.allowGradeSubmission(assignment.getReference())) {
-			for (Iterator<AssignmentSubmission> i = assignmentService
-					.getSubmissions(assignment).iterator(); i.hasNext();) {
-				AssignmentSubmission submission = i.next();
-				for (Object submitterId : submission.getSubmitterIds()) {
-					items.add(new AssignmentItemImpl(submission,
-							(String) submitterId, activity));
-				}
-			}
-		}
-		return items;
+						assignmentSubmission.getAssignment(), this,
+						assignmentService, userDirectoryService),
+				userDirectoryService);
 	}
 
 	public String getName() {

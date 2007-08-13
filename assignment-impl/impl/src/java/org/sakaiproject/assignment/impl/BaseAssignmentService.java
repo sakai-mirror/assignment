@@ -62,8 +62,8 @@ import org.sakaiproject.assignment.api.AssignmentService;
 import org.sakaiproject.assignment.api.AssignmentSubmission;
 import org.sakaiproject.assignment.api.AssignmentSubmissionEdit;
 import org.sakaiproject.assignment.taggable.api.AssignmentActivityProducer;
-import org.sakaiproject.taggable.deprecated.api.TaggingManager;
-import org.sakaiproject.taggable.deprecated.api.TaggingProvider;
+import org.sakaiproject.taggable.api.TaggingManager;
+import org.sakaiproject.taggable.api.TaggingProvider;
 import org.sakaiproject.authz.api.AuthzGroup;
 import org.sakaiproject.authz.api.AuthzPermissionException;
 import org.sakaiproject.authz.api.GroupNotDefinedException;
@@ -4571,18 +4571,21 @@ public abstract class BaseAssignmentService implements AssignmentService, Entity
 							((BaseAssignmentEdit) nAssignment).closeEdit();
 							
 							try {
-								if (m_taggingManager.isTaggable()) {
+								if (m_taggingManager.isTaggable())
+								{
 									for (TaggingProvider provider : m_taggingManager
-											.getProviders()) {
-										provider
-												.transferCopyTags(
-														m_assignmentActivityProducer
-																.getActivity(oAssignment),
-														m_assignmentActivityProducer
-																.getActivity(nAssignment));
+											.getProviders())
+									{
+										provider.transferCopyTags(
+											m_assignmentActivityProducer
+												.get(oAssignment.getReference(), provider),
+											m_assignmentActivityProducer
+												.get(nAssignment.getReference(), provider));
 									}
 								}
-							} catch (PermissionException pe) {
+							}
+							catch (PermissionException pe)
+							{
 								M_log.error(pe.getMessage(), pe);
 							}
 						}
@@ -6994,7 +6997,7 @@ public abstract class BaseAssignmentService implements AssignmentService, Entity
 		
 		public String getReviewReport() {
 //			 Code to get updated report if default
-			if (m_submittedAttachments.isEmpty()) M_log.warn("No attachments submitted.");
+			if (m_submittedAttachments.isEmpty()) M_log.debug("No attachments submitted.");
 			else
 			{
 				try {
@@ -7766,7 +7769,7 @@ public abstract class BaseAssignmentService implements AssignmentService, Entity
 			Time returnTime = getTimeReturned();
 			Time lastModTime = getTimeLastModified();
 		
-			if (getSubmitted())
+			if (getSubmitted() || (!getSubmitted() && allowGrade))
 			{
 				if (submitTime != null)
 				{
