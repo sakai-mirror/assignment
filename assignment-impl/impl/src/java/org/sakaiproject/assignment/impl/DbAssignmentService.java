@@ -156,6 +156,18 @@ public class DbAssignmentService extends BaseAssignmentService
 		m_autoDdl = new Boolean(value).booleanValue();
 	}
 
+	/** Set if we are to run the from-old-schema conversion. */
+	protected boolean m_convertOldSchema = false;
+
+	/**
+	 * Configuration: run the from-old-schema conversion.
+	 * @param value The conversion desired value.
+	 */
+	public void setConvertOldSchema(String value)
+	{
+		m_convertOldSchema = new Boolean(value).booleanValue();
+	}
+	
 	/**********************************************************************************************************************************************************************************************************************************************************
 	 * Init and Destroy
 	 *********************************************************************************************************************************************************************************************************************************************************/
@@ -183,6 +195,13 @@ public class DbAssignmentService extends BaseAssignmentService
 			{
 				m_convertToContext = false;
 				convertToContext();
+			}
+			
+			// convert to new db tables
+			if (m_convertOldSchema)
+			{
+				m_convertOldSchema = false;
+				convertOldSchema();
 			}
 		}
 		catch (Throwable t)
@@ -588,5 +607,152 @@ public class DbAssignmentService extends BaseAssignmentService
 
 		// TODO:
 		M_log.info("convertToContext: done");
+	}
+	
+	/**
+	 * Create a new table record for all old table records found, and delete the old.
+	 */
+	protected void convertOldSchema()
+	{
+		M_log.info(this + ".convertOld");
+
+		try
+		{
+			// get a connection
+			final Connection connection = m_sqlService.borrowConnection();
+			boolean wasCommit = connection.getAutoCommit();
+			connection.setAutoCommit(false);
+
+			// read all submission we don't already have converted
+			String sql = "select SUBMISSION_ID, CONTEXT, XML from ASSIGNMENT_SUBMISSION where SUBMISSION_ID NOT IN (select SUBMISSION_ID from ASSIGNMENT_SUBMISSION_DETAIL)";
+			List submissions = m_sqlService.dbRead(sql, null,
+				new SqlReader()
+				{
+					public Object readSqlResultRecord(ResultSet result)
+					{
+						String submission_id = null;
+						String assignment_id = null;
+						try
+						{
+							// create the Resource from the db xml
+							submission_id = result.getString(1);
+							assignment_id = result.getString(2);
+							String xml = result.getString(3);
+							
+							// read the xml
+							Document doc =  Xml.readDocumentFromString(xml);
+
+							// verify the root element
+							Element root = doc.getDocumentElement();
+							if (!root.getTagName().equals("submission"))
+							{
+								M_log.warn(this + ".convertOldSchema: XML root element is not submission: " + root.getTagName());
+								return null;
+							}
+							BaseAssignmentSubmissionEdit edit = new BaseAssignmentSubmissionEdit(root);
+							return edit;
+						}
+						catch (Throwable e)
+						{
+							M_log.info(" ** exception converting : " + submission_id + " : ", e);
+							return null;
+						}
+					}
+				} );
+
+			M_log.info(this + ".convertOldSchema: read submission: " + submissions.size());
+
+			// write the submissions
+			Object[] fields22 = new Object[22];
+			Object[] fields2_1 = new Object[2];
+			Object[] fields2_2 = new Object[2];
+			String statement1 = "insert into ASSIGNMENT_SUBMISSION_DETAIL (SUBMISSION_ID, ASSIGNMENT_ID, SITE_ID, DATE_RETURNED, DATE_SUBMITTED, FEEDBACK_COMMENT, FEEDBACK_TEXT, " +
+					"SUBMITTED, GRADED, RETURNED, GRADE_RELEASED, HONOR_PLEDGE_FLAG, SCALED_GRADE, SUBMITTED_TEXT, SUBMITTER, CREATED_BY, MODIFIED_BY, DATE_CREATED, DATE_MODIFIED," +
+					"REVIEW_REPORT, REVIEW_SCORE, REVIEW_STATUS) values (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)";
+			String statement2 = "insert into ASSIGNMENT_SUBMITTED_ATTACHMENT (SUBMISSION_ID, ATTACHMENT_ID) values (?,?)";
+			String statement3 = "insert into ASSIGNMENT_FEEDBACK_ATTACHMENT (SUBMISSION_ID, ATTACHMENT_ID) values (?,?)";
+
+			int count = 0;
+			for (Iterator iSubmissions = submissions.iterator(); iSubmissions.hasNext();)
+			{
+				BaseAssignmentSubmissionEdit submission = (BaseAssignmentSubmissionEdit) iSubmissions.next();
+				ResourceProperties properties = submission.getProperties();
+				
+				// 1. write the main site record
+				fields22[0] = StringUtil.trimToZero(submission.m_id);
+				fields22[1] = StringUtil.trimToZero(submission.m_assignment);
+				fields22[2] = StringUtil.trimToZero(submission.m_context);
+				fields22[3] = submission.getTimeReturned();
+				fields22[4] = submission.getTimeSubmitted();
+				fields22[5] = StringUtil.trimToZero(submission.m_feedbackComment);
+				fields22[6] = StringUtil.trimToZero(submission.m_feedbackText);
+				fields22[7] = submission.getSubmitted() ? "1" : "0";
+				fields22[8] = submission.getGraded() ? "1" : "0";
+				fields22[9] = submission.getReturned() ? "1" : "0";
+				fields22[10] = submission.getGradeReleased() ? "1" : "0";
+				fields22[11] = submission.getHonorPledgeFlag() ? "1" : "0";
+				fields22[12] = submission.m_grade;
+				fields22[13] = StringUtil.trimToZero(submission.getSubmittedText());
+				List submitters = submission.m_submitters;
+				if ( submitters != null && submitters.size() > 0)
+				{
+					fields22[14] = StringUtil.trimToZero((String) submitters.get(0));
+				}
+				else
+				{
+					fields22[14]="";
+				}
+				fields22[15] = StringUtil.trimToZero(properties.getProperty(ResourceProperties.PROP_CREATOR));
+				fields22[16] = StringUtil.trimToZero(properties.getProperty(ResourceProperties.PROP_MODIFIED_BY));
+				fields22[17] = properties.getTimeProperty(ResourceProperties.PROP_CREATION_DATE);
+				fields22[18] = properties.getTimeProperty(ResourceProperties.PROP_MODIFIED_DATE);
+				fields22[19] = StringUtil.trimToZero(submission.getReviewReport());
+				fields22[20] = new Integer(submission.getReviewScore());
+				fields22[21] = StringUtil.trimToZero(submission.getReviewStatus());
+				m_sqlService.dbWrite(connection, statement1, fields22);
+
+				// 2.write the submitted attachments
+				List submittedAttachments = submission.getSubmittedAttachments();
+				if (submittedAttachments != null && submittedAttachments.size() > 0)
+				{
+					Iterator iSAttachments = submittedAttachments.iterator();
+					while (iSAttachments.hasNext())
+					{
+						fields2_1[0] = submission.getId();
+						fields2_1[1] = ((Reference) iSAttachments.next()).getId();
+						m_sqlService.dbWrite(connection, statement2, fields2_1);
+					}
+				}
+				
+				// 3.write the feedback attachments
+				List feedbackAttachments = submission.getFeedbackAttachments();
+				if (feedbackAttachments != null && feedbackAttachments.size() > 0)
+				{
+					Iterator iFAttachments = feedbackAttachments.iterator();
+					while (iFAttachments.hasNext())
+					{
+						fields2_2[0] = submission.getId();
+						fields2_2[1] = ((Reference) iFAttachments.next()).getId();
+						m_sqlService.dbWrite(connection, statement3, fields2_2);
+					}
+				}
+
+				count++;
+				if ((count % 1000) == 0) M_log.info(this + "convertOld: converted: " + count);
+			}
+
+			connection.commit();
+			
+			M_log.info(this + ".convertOldSchema: done submissions: " + count);
+
+			connection.setAutoCommit(wasCommit);
+			m_sqlService.returnConnection(connection);
+		}
+		catch (Throwable t)
+		{
+			M_log.warn(this + ".convertOldSchema: failed: " + t);		
+		}
+
+		M_log.info(this + ".convertOldSchema: done");
 	}
 }

@@ -19,7 +19,8 @@
  		<property name="submissionTableName"><value>ASSIGNMENT_SUBMISSION</value></property>
  		<property name="locksInDb"><value>false</value></property>
  		<property name="autoDdl"><value>${auto.ddl}</value></property>
- 		
+ 		<!--  When converting from Sakai 2.4.0 to Sakai 2.5.0, enable the below property -->
+ 		<property name="convertOldSchema"><value>true</value></property>
  		
  		
  		<!--<property name="contentReviewService"><ref bean="org.sakaiproject.contentreview.service.ContentReviewService"/></property>-->
