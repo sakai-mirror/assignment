@@ -24,21 +24,24 @@ package org.sakaiproject.assignment.taggable.tool;
 import java.util.ArrayList;
 import java.util.List;
 
+import org.sakaiproject.taggable.activity.api.TaggableActivity;
+import org.sakaiproject.taggable.activity.api.TaggableItem;
 import org.sakaiproject.taggable.api.Taggable;
 import org.sakaiproject.taggable.tool.api.TagColumn;
 import org.sakaiproject.taggable.tool.api.TagList;
 import org.sakaiproject.taggable.tool.api.TagRow;
+import org.sakaiproject.taggable.tool.api.TaggingHelperInfo;
 import org.sakaiproject.taggable.tool.api.TaggingTool;
 
 /**
- * Wrapper around {@link TagList} for displaying a pageable/sortable list of
+ * Wrapper around {@link TaggingTool} for displaying a pageable/sortable list of
  * tags for an activity or item. Since there may be multiple providers each with
  * a list of tags displayed on a single page, this class enables each provider
  * to maintain the page/sort state of its list separate from others.
  * 
  * @author The Sakai Foundation.
  */
-public class DecoratedTagList {
+public class DecoratedTaggingTool {
 	TaggingTool tool;
 
 	Sort sort;
@@ -51,7 +54,7 @@ public class DecoratedTagList {
 
 	protected final static int[] PAGESIZES = { 5, 10, 20, 50, 100, 200 };
 
-	public DecoratedTagList(TaggingTool tool) {
+	public DecoratedTaggingTool(TaggingTool tool) {
 		this.tool = tool;
 		sort = new Sort("", true);
 	}
@@ -97,6 +100,21 @@ public class DecoratedTagList {
 					.subList(pager.getFirstItem(), pager.getLastItemNumber());
 		}
 		return tags;
+	}
+
+	public TaggingHelperInfo getActivityHelperInfo(String activityRef) {
+		return tool.getHelperInfo(activityRef,
+				TaggingTool.TaggingAction.TAG_CURRENT);
+	}
+
+	public TaggingHelperInfo getItemHelperInfo(String itemRef) {
+		return tool.getHelperInfo(itemRef,
+				TaggingTool.TaggingAction.TAG_CURRENT);
+	}
+
+	public TaggingHelperInfo getItemsHelperInfo(String activityRef) {
+		return tool.getHelperInfo(activityRef,
+				TaggingTool.TaggingAction.TAG_ITEMS);
 	}
 
 	public class Sort {

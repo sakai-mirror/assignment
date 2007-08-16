@@ -7,10 +7,10 @@
 				#set ($first = true)
 				#foreach ($helperInfo in $itemHelpers)
 					#if (!$first)
-						| <a href="#toolLinkParam("$action" "doHelp_item" "itemRef=$validator.escapeUrl($item.reference)&providerId=$validator.escapeUrl($helperInfo.provider.id)")" title="$!helperInfo.description">$!helperInfo.name</a>
+						| <a href="#toolLinkParam("$action" "doHelp_item" "itemRef=$validator.escapeUrl($item.reference)&toolId=$validator.escapeUrl($helperInfo.tool.id)")" title="$!helperInfo.description">$!helperInfo.name</a>
 					#else
 						#set ($first = false)
-						<a href="#toolLinkParam("$action" "doHelp_item" "itemRef=$validator.escapeUrl($item.reference)&providerId=$validator.escapeUrl($helperInfo.provider.id)")" title="$!helperInfo.description">$!helperInfo.name</a>
+						<a href="#toolLinkParam("$action" "doHelp_item" "itemRef=$validator.escapeUrl($item.reference)&toolId=$validator.escapeUrl($helperInfo.tool.id)")" title="$!helperInfo.description">$!helperInfo.name</a>
 					#end
 				#end
 			</div>

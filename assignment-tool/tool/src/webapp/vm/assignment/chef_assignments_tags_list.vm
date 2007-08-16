@@ -16,21 +16,21 @@ function saveChanges(formName, textAreaId) {
 	<input type="hidden" name="toolId" value=""/>
 	<input type="hidden" name="criteria" value=""/>
 	<input type="hidden" name="savedText" value=""/>
-	#foreach ($list in $tagLists)
-		#set ($tool = $list.getTool())
+	#foreach ($dTaggingTool in $dTaggingTools)
+		#set ($tool = $dTaggingTool.getTool())
 		#if ($tool.allowViewTags($activity.getContext()))
 			<h4>$tool.getName() $tlang.getString("tag.tags")</h4>
-			#set ($rows = $list.getRows($activity))
+			#set ($rows = $dTaggingTool.getRows($activity))
 			#if (!$rows.isEmpty())
 				<div class="listNav">
-					#set ($pager = $list.getPager())
+					#set ($pager = $dTaggingTool.getPager())
 					<div  class="instruction">
 						$tlang.getString("gen.viewing") $pager.getFirstItemNumber() - $pager.getLastItemNumber() $tlang.getString("gen.of") $pager.getTotalItems() $tlang.getString("gen.items")
 					</div>
 					<div class="inlineForm">
 						#if ($pager.canFirst())
 							<input type="submit"
-							       onclick="saveChanges('form', '$name_submission_text'); form.sakai_action.value='doPage_tags'; form.providerId.value='$list.provider.id';"
+							       onclick="saveChanges('form', '$name_submission_text'); form.sakai_action.value='doPage_tags'; form.toolId.value='$dTaggingTool.tool.id';"
 							       name="page" value="|&lt;"
 							       title="$tlang.getString("gen.first")" />
 						#else
@@ -38,21 +38,21 @@ function saveChanges(formName, textAreaId) {
 						#end
 						#if ($pager.canPrevious())
 							<input type="submit"
-							       onclick="saveChanges('form', '$name_submission_text'); form.sakai_action.value='doPage_tags'; form.providerId.value='$list.provider.id';"
+							       onclick="saveChanges('form', '$name_submission_text'); form.sakai_action.value='doPage_tags'; form.toolId.value='$dTaggingTool.tool.id';"
 							       name="page" value="&lt;"
 							       title="$tlang.getString('gen.previous') $pagesize" />
 						#else
 							<input type="submit" value="&lt;" disabled="disabled" />
 						#end
 							<label for="pageSize" class="skip">$tlang.getString("newassig.selectmessage")</label>
-							<select name="pageSize" onchange="blur(); saveChanges('form', '$name_submission_text'); form.sakai_action.value='doPage_tags'; form.providerId.value='$list.provider.id'; form.submit();">
+							<select name="pageSize" onchange="blur(); saveChanges('form', '$name_submission_text'); form.sakai_action.value='doPage_tags'; form.toolId.value='$dTaggingTool.tool.id'; form.submit();">
 								#foreach ($i in $!pager.getPageSizes())
 									<option value="$i" #if($pager.getPageSize() == $i) selected="selected" #end>$tlang.getString("list.show") $i $tlang.getString("list.itemsper")</option>
 								#end
 							</select>
 						#if ($pager.canNext())
 							<input type="submit"
-	                               onclick="saveChanges('form', '$name_submission_text'); form.sakai_action.value='doPage_tags'; form.providerId.value='$list.provider.id';"
+	                               onclick="saveChanges('form', '$name_submission_text'); form.sakai_action.value='doPage_tags'; form.toolId.value='$dTaggingTool.tool.id';"
 	                               name="page"
 							       value="&gt;"
 							       title="$tlang.getString('gen.next') $pagesize" />
@@ -61,7 +61,7 @@ function saveChanges(formName, textAreaId) {
 						#end
 						#if ($pager.canLast())
 							<input type="submit"
-	                               onclick="saveChanges('form', '$name_submission_text'); form.sakai_action.value='doPage_tags'; form.providerId.value='$list.provider.id';"
+	                               onclick="saveChanges('form', '$name_submission_text'); form.sakai_action.value='doPage_tags'; form.toolId.value='$dTaggingTool.tool.id';"
 							       name="page"
 							       value="&gt;|"
 							       title="$tlang.getString('gen.last')" />
@@ -71,16 +71,16 @@ function saveChanges(formName, textAreaId) {
 					</div>
 				</div>
 				<table class="listHier lines nolines" border="0" cellspacing="0" summary="Table contains list of tags associated with current assignment.">
-					#set ($columns = $list.getColumns($activity))
+					#set ($columns = $dTaggingTool.getColumns($activity))
 					<tr>
 						#foreach ($column in $columns)
 							#if ($column.isSortable())
 								<th><a href="#"
-									   onclick="saveChanges('form', '$name_submission_text'); form.sakai_action.value='doSort_tags'; form.providerId.value='$list.provider.id'; form.criteria.value='$column.name'; form.submit(); return false;"
+									   onclick="saveChanges('form', '$name_submission_text'); form.sakai_action.value='doSort_tags'; form.toolId.value='$dTaggingTool.tool.id'; form.criteria.value='$column.name'; form.submit(); return false;"
 								   	   title="$!column.getDescription()">
 									$!column.getDisplayName()
-									#if ($list.getSort().getSort().equals($!column.getName()))
-										#if ($list.getSort().isAscending())
+									#if ($dTaggingTool.getSort().getSort().equals($!column.getName()))
+										#if ($dTaggingTool.getSort().isAscending())
 											<img id="sortascendinglastname" src = "#imageLink("sakai/sortascending.gif")" border="0" alt="$tlang.getString("gen.sorasc")" />
 										#else
 											<img id="sortdescendinglastname" src = "#imageLink("sakai/sortdescending.gif")" border="0" alt="$tlang.getString("gen.sordes")" />

@@ -59,9 +59,9 @@ import org.sakaiproject.assignment.api.AssignmentSubmission;
 import org.sakaiproject.assignment.api.AssignmentSubmissionEdit;
 import org.sakaiproject.assignment.cover.AssignmentService;
 import org.sakaiproject.assignment.taggable.api.AssignmentActivityProducer;
-import org.sakaiproject.assignment.taggable.tool.DecoratedTagList;
-import org.sakaiproject.assignment.taggable.tool.DecoratedTagList.Pager;
-import org.sakaiproject.assignment.taggable.tool.DecoratedTagList.Sort;
+import org.sakaiproject.assignment.taggable.tool.DecoratedTaggingTool;
+import org.sakaiproject.assignment.taggable.tool.DecoratedTaggingTool.Pager;
+import org.sakaiproject.assignment.taggable.tool.DecoratedTaggingTool.Sort;
 import org.sakaiproject.authz.api.SecurityAdvisor;
 import org.sakaiproject.authz.cover.SecurityService;
 import org.sakaiproject.authz.api.AuthzGroup;
@@ -608,8 +608,8 @@ public class AssignmentAction extends PagedResourceActionII
 	private static final String USER_SUBMISSIONS = "user_submissions";
 	
 	/** ************************* Taggable constants ************************** */
-	/** identifier of tagging provider that will provide the appropriate helper */
-	private static final String PROVIDER_ID = "providerId";
+	/** identifier of tagging tool that will provide the appropriate helper */
+	private static final String TAGGING_TOOL_ID = "toolId";
 
 	/** Reference to an activity */
 	private static final String ACTIVITY_REF = "activityRef";
@@ -617,8 +617,8 @@ public class AssignmentAction extends PagedResourceActionII
 	/** Reference to an item */
 	private static final String ITEM_REF = "itemRef";
 	
-	/** session attribute for list of decorated tag lists */
-	private static final String TAGLIST_LIST = "tagListList";
+	/** session attribute for list of decorated tagging tools */
+	private static final String DTAGGING_TOOLS = "dTaggingTools";
 	
 	// whether the choice of emails instructor submission notification is available in the installation
 	private static final String ASSIGNMENT_INSTRUCTOR_NOTIFICATIONS = "assignment.instructor.notifications";
@@ -884,7 +884,7 @@ public class AssignmentAction extends PagedResourceActionII
 		if (taggingManager != null && taggingManager.isTaggable()
 				&& assignment != null)
 		{
-			addTagLists(context, state);
+			addDecoratedTaggingTools(context, state, taggingManager);
 			addActivity(context, assignment);
 			context.put("taggable", Boolean.valueOf(true));
 		}
@@ -1004,7 +1004,7 @@ public class AssignmentAction extends PagedResourceActionII
 		if (taggingManager != null && taggingManager.isTaggable()
 				&& assignment != null)
 		{
-			addTagLists(context, state);
+			addDecoratedTaggingTools(context, state, taggingManager);
 			addActivity(context, assignment);
 			context.put("taggable", Boolean.valueOf(true));
 		}
@@ -1126,9 +1126,8 @@ public class AssignmentAction extends PagedResourceActionII
 				.get("org.sakaiproject.taggable.api.TaggingManager");
 		if (taggingManager != null && taggingManager.isTaggable())
 		{
-			context.put("producer", ComponentManager
-					.get("org.sakaiproject.assignment.taggable.api.AssignmentActivityProducer"));
-			context.put("providers", taggingManager.getProviders());
+			addDecoratedTaggingTools(context, state, taggingManager);
+			context.put("producer", ComponentManager.get("org.sakaiproject.assignment.taggable.api.AssignmentActivityProducer"));
 			context.put("taggable", Boolean.valueOf(true));
 		}
 		
@@ -1949,7 +1948,7 @@ public class AssignmentAction extends PagedResourceActionII
 		{
 			context.put("producer", ComponentManager
 					.get("org.sakaiproject.assignment.taggable.api.AssignmentActivityProducer"));
-			addTagLists(context, state);
+			addDecoratedTaggingTools(context, state, taggingManager);
 			addActivity(context, assignment);
 			context.put("taggable", Boolean.valueOf(true));
 		}
@@ -4048,7 +4047,7 @@ public class AssignmentAction extends PagedResourceActionII
 		TaggingManager taggingManager = (TaggingManager) ComponentManager
 				.get("org.sakaiproject.taggable.api.TaggingManager");
 		TaggingTool tool = (TaggingTool) taggingManager.findProviderById(params
-				.getString(PROVIDER_ID));
+				.getString(TAGGING_TOOL_ID));
 
 		String activityRef = params.getString(ACTIVITY_REF);
 
@@ -4079,7 +4078,7 @@ public class AssignmentAction extends PagedResourceActionII
 		TaggingManager taggingManager = (TaggingManager) ComponentManager
 				.get("org.sakaiproject.taggable.api.TaggingManager");
 		TaggingTool tool = (TaggingTool) taggingManager.findProviderById(params
-				.getString(PROVIDER_ID));
+				.getString(TAGGING_TOOL_ID));
 
 		String itemRef = params.getString(ITEM_REF);
 
@@ -4110,7 +4109,7 @@ public class AssignmentAction extends PagedResourceActionII
 		TaggingManager taggingManager = (TaggingManager) ComponentManager
 				.get("org.sakaiproject.taggable.api.TaggingManager");
 		TaggingTool tool = (TaggingTool) taggingManager.findProviderById(params
-				.getString(PROVIDER_ID));
+				.getString(TAGGING_TOOL_ID));
 
 		String activityRef = params.getString(ACTIVITY_REF);
 
@@ -6872,19 +6871,19 @@ public class AssignmentAction extends PagedResourceActionII
 		ParameterParser params = data.getParameters();
 
 		String criteria = params.getString("criteria");
-		String providerId = params.getString(PROVIDER_ID);
+		String toolId = params.getString(TAGGING_TOOL_ID);
 
 		String savedText = params.getString("savedText");
 		state.setAttribute(VIEW_SUBMISSION_TEXT, savedText);
 
 		String mode = (String) state.getAttribute(STATE_MODE);
 
-		List<DecoratedTagList> tagLists = (List) state.getAttribute(mode
-				+ TAGLIST_LIST);
+		List<DecoratedTaggingTool> dTaggingTools = (List) state.getAttribute(mode
+				+ DTAGGING_TOOLS);
 
-		for (DecoratedTagList tagList : tagLists) {
-			if (tagList.getTool().getId().equals(providerId)) {
-				Sort sort = tagList.getSort();
+		for (DecoratedTaggingTool dTaggingTool : dTaggingTools) {
+			if (dTaggingTool.getTool().getId().equals(toolId)) {
+				Sort sort = dTaggingTool.getSort();
 				if (sort.getSort().equals(criteria)) {
 					sort.setAscending(sort.isAscending() ? false : true);
 				} else {
@@ -6904,19 +6903,19 @@ public class AssignmentAction extends PagedResourceActionII
 
 		String page = params.getString("page");
 		String pageSize = params.getString("pageSize");
-		String providerId = params.getString(PROVIDER_ID);
+		String toolId = params.getString(TAGGING_TOOL_ID);
 
 		String savedText = params.getString("savedText");
 		state.setAttribute(VIEW_SUBMISSION_TEXT, savedText);
 
 		String mode = (String) state.getAttribute(STATE_MODE);
 
-		List<DecoratedTagList> tagLists = (List) state.getAttribute(mode
-				+ TAGLIST_LIST);
+		List<DecoratedTaggingTool> dTaggingTools = (List) state.getAttribute(mode
+				+ DTAGGING_TOOLS);
 
-		for (DecoratedTagList tagList : tagLists) {
-			if (tagList.getTool().getId().equals(providerId)) {
-				Pager pager = tagList.getPager();
+		for (DecoratedTaggingTool dTaggingTool : dTaggingTools) {
+			if (dTaggingTool.getTool().getId().equals(toolId)) {
+				Pager pager = dTaggingTool.getPager();
 				pager.setPageSize(Integer.valueOf(pageSize));
 				if (Pager.FIRST.equals(page)) {
 					pager.setFirstItem(0);
@@ -9422,31 +9421,31 @@ public class AssignmentAction extends PagedResourceActionII
 		}
 	}
 	
-	private List<DecoratedTagList> initDecoratedTagLists() {
-		TaggingManager taggingManager = (TaggingManager) ComponentManager
-				.get("org.sakaiproject.taggable.api.TaggingManager");
-		List<DecoratedTagList> tagLists = new ArrayList<DecoratedTagList>();
+	private List<DecoratedTaggingTool> initDecoratedTaggingTools(
+			TaggingManager taggingManager) {
+		List<DecoratedTaggingTool> dTaggingTools = new ArrayList<DecoratedTaggingTool>();
 		for (TaggingProvider provider : taggingManager.getProviders())
 		{
 			if (provider instanceof TaggingTool) {
-				tagLists.add(new DecoratedTagList((TaggingTool) provider));
+				dTaggingTools.add(new DecoratedTaggingTool((TaggingTool) provider));
 			}
 		}
-		return tagLists;
+		return dTaggingTools;
 	}
 	
-	private List<DecoratedTagList> addTagLists(Context context, SessionState state)
+	private List<DecoratedTaggingTool> addDecoratedTaggingTools(
+			Context context, SessionState state, TaggingManager taggingManager)
 	{
 		String mode = (String) state.getAttribute(STATE_MODE);
-		List<DecoratedTagList> tagLists = (List) state
-				.getAttribute(mode + TAGLIST_LIST);
-		if (tagLists == null)
+		List<DecoratedTaggingTool> dTaggingTools = (List) state
+				.getAttribute(mode + DTAGGING_TOOLS);
+		if (dTaggingTools == null)
 		{
-			tagLists = initDecoratedTagLists();
-			state.setAttribute(mode + TAGLIST_LIST, tagLists);
+			dTaggingTools = initDecoratedTaggingTools(taggingManager);
+			state.setAttribute(mode + DTAGGING_TOOLS, dTaggingTools);
 		}
-		context.put("tagLists", tagLists);
-		return tagLists;
+		context.put("dTaggingTools", dTaggingTools);
+		return dTaggingTools;
 	}
 	
 	private void addActivity(Context context, Assignment assignment)
