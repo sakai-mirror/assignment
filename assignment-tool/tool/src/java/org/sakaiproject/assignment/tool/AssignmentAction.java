@@ -73,7 +73,6 @@ import org.sakaiproject.authz.api.PermissionsHelper;
 import org.sakaiproject.authz.cover.AuthzGroupService;
 import org.sakaiproject.calendar.api.Calendar;
 import org.sakaiproject.calendar.api.CalendarEvent;
-import org.sakaiproject.calendar.api.CalendarEventEdit;
 import org.sakaiproject.calendar.api.CalendarService;
 import org.sakaiproject.cheftool.Context;
 import org.sakaiproject.cheftool.JetspeedRunData;
@@ -397,8 +396,6 @@ public class AssignmentAction extends PagedResourceActionII
 	private static final String NEW_ASSIGNMENT_DUEMIN = "new_assignment_duemin";
 
 	private static final String NEW_ASSIGNMENT_DUEAMPM = "new_assignment_dueampm";
-	
-	private static final String NEW_ASSIGNMENT_DUEDATE_CALENDAR_ASSIGNMENT_ID = "new_assignment_duedate_calendar_assignment_id";
 
 	private static final String NEW_ASSIGNMENT_PAST_DUE_DATE = "new_assignment_past_due_date";
 	
@@ -1154,7 +1151,7 @@ public class AssignmentAction extends PagedResourceActionII
 					// if there is any newly added user who doesn't have a submission object yet, add the submission
 					try
 					{
-						addSubmissionsForNonElectronicAssignment(state, allowAddSubmissionUsers, AssignmentService.getAssignment(a.getReference())); 
+						addSubmissionsForNonElectronicAssignment(state, submissions, allowAddSubmissionUsers, AssignmentService.getAssignment(a.getReference())); 
 					}
 					catch (Exception e)
 					{
@@ -4301,7 +4298,7 @@ public class AssignmentAction extends PagedResourceActionII
 	 */
 	private void setDefaultSort(SessionState state) {
 		state.setAttribute(SORTED_BY, SORTED_BY_DEFAULT);
-		state.setAttribute(SORTED_ASC, Boolean.FALSE.toString());
+		state.setAttribute(SORTED_ASC, Boolean.TRUE.toString());
 	}
 
 	/**
@@ -4309,8 +4306,22 @@ public class AssignmentAction extends PagedResourceActionII
 	 * @param state
 	 * @param a
 	 */
-	private void addSubmissionsForNonElectronicAssignment(SessionState state, List allowAddSubmissionUsers, Assignment a) 
+	private void addSubmissionsForNonElectronicAssignment(SessionState state, List submissions, List allowAddSubmissionUsers, Assignment a) 
 	{
+		// get the string for all submitters
+		HashSet<String> submitterIdSet = new HashSet<String>();
+		for (Iterator iSubmissions=submissions.iterator(); iSubmissions.hasNext();)
+		{
+			List submitterIds = ((AssignmentSubmission) iSubmissions.next()).getSubmitterIds();
+			if (submitterIds != null && submitterIds.size() > 0)
+			{
+				for (int i = 0; i < submitterIds.size(); i++)
+				{
+					submitterIdSet.add((String) submitterIds.get(i));
+				}
+			}
+		}
+		
 		String contextString = (String) state.getAttribute(STATE_CONTEXT_STRING);
 		String authzGroupId = SiteService.siteReference(contextString);
 		try
@@ -4320,14 +4331,14 @@ public class AssignmentAction extends PagedResourceActionII
 			for (Iterator iUserIds = grants.iterator(); iUserIds.hasNext();)
 			{
 				String userId = (String) iUserIds.next();
-				try
+				if (!submitterIdSet.contains(userId))
 				{
-					User u = UserDirectoryService.getUser(userId);
-					// only include those users that can submit to this assignment
-					if (u != null && allowAddSubmissionUsers.contains(u))
+					try
 					{
-						if (AssignmentService.getSubmission(a.getReference(), u) == null)
-						{
+						User u = UserDirectoryService.getUser(userId);
+						// only include those users that can submit to this assignment
+						if (u != null && allowAddSubmissionUsers.contains(u))
+						{System.out.println("here");
 							// construct fake submissions for grading purpose
 							AssignmentSubmissionEdit submission = AssignmentService.addSubmission(contextString, a.getId());
 							submission.removeSubmitter(UserDirectoryService.getCurrentUser());
@@ -4338,10 +4349,10 @@ public class AssignmentAction extends PagedResourceActionII
 							AssignmentService.commitEdit(submission);
 						}
 					}
-				}
-				catch (Exception e)
-				{
-					Log.warn("chef", this + e.toString() + " here userId = " + userId);
+					catch (Exception e)
+					{
+						Log.warn("chef", this + e.toString() + " here userId = " + userId);
+					}
 				}
 			}
 		}
@@ -4712,14 +4723,6 @@ public class AssignmentAction extends PagedResourceActionII
 							{
 								aEdit.getProperties().addProperty(ResourceProperties.PROP_ASSIGNMENT_DUEDATE_CALENDAR_EVENT_ID, e.getId());
 							}
-							
-							// edit the calendar ojbject and add an assignment id field
-							CalendarEventEdit edit = c.getEditEvent(e.getId(), org.sakaiproject.calendar.api.CalendarService.EVENT_ADD_CALENDAR);
-									
-							edit.setField(NEW_ASSIGNMENT_DUEDATE_CALENDAR_ASSIGNMENT_ID, a.getId());
-							
-							c.commitEvent(edit);
-							
 						}
 						catch (IdUnusedException ee)
 						{
