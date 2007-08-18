@@ -6945,7 +6945,12 @@ public abstract class BaseAssignmentService implements AssignmentService, Entity
 						{
 							String contentId = ((Reference) m_submittedAttachments.get(0)).getId();
 							String userId = (String)this.getSubmitterIds().get(0);
-							contentReviewService.queueContent(userId, null, getAssignment().getReference(), contentId);
+							try {
+								contentReviewService.queueContent(userId, null, getAssignment().getReference(), contentId);
+							}
+							catch (QueueException qe) {
+								M_log.warn("Unable to queue content with content review Service: " + qe.getMessage());
+							}
 						}
 					} catch (Exception e) {
 						e.printStackTrace();
@@ -8151,7 +8156,8 @@ public abstract class BaseAssignmentService implements AssignmentService, Entity
 			try {
 				Assignment ass = this.getAssignment();
 				contentReviewService.queueContent(null, null, ass.getReference(), attachment.getId());
-				
+			} catch (QueueException qe) {
+				M_log.warn("Unable to add content to Content Review queue: " + qe.getMessage());
 			} catch (Exception e) {
 				e.printStackTrace();
 			}
