@@ -2941,11 +2941,8 @@ public class AssignmentAction extends PagedResourceActionII
 			}
 			else if (gradeOption.equals("return"))
 			{
-				if (StringUtil.trimToNull(grade) != null)
-				{
-					sEdit.setGradeReleased(true);
-					sEdit.setGraded(true);
-				}
+				sEdit.setGradeReleased(true);
+				sEdit.setGraded(true);
 				sEdit.setReturned(true);
 				sEdit.setTimeReturned(TimeService.newTime());
 				sEdit.setHonorPledgeFlag(Boolean.FALSE.booleanValue());
@@ -4338,7 +4335,7 @@ public class AssignmentAction extends PagedResourceActionII
 						User u = UserDirectoryService.getUser(userId);
 						// only include those users that can submit to this assignment
 						if (u != null && allowAddSubmissionUsers.contains(u))
-						{System.out.println("here");
+						{
 							// construct fake submissions for grading purpose
 							AssignmentSubmissionEdit submission = AssignmentService.addSubmission(contextString, a.getId());
 							submission.removeSubmitter(UserDirectoryService.getCurrentUser());
@@ -6223,11 +6220,7 @@ public class AssignmentAction extends PagedResourceActionII
 				{
 					if ((grade.length() == 0))
 					{
-						if (gradeOption.equals("release") || gradeOption.equals("return"))
-						{
-							// in case of releasing grade, user must specify a grade
-							addAlert(state, rb.getString("plespethe2"));
-						}
+						state.setAttribute(GRADE_SUBMISSION_GRADE, grade);
 					}
 					else
 					{
