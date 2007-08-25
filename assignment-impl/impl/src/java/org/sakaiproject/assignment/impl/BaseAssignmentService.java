@@ -3491,15 +3491,14 @@ public abstract class BaseAssignmentService implements AssignmentService, Entity
 										if (typeOfSubmission != Assignment.ATTACHMENT_ONLY_ASSIGNMENT_SUBMISSION)
 										{
 											// create the text file only when a text submission is allowed
-											String entryName = submittersName + submittersString + "_submissionText.txt";
-											ZipEntry textEntry = new ZipEntry(entryName);
+											ZipEntry textEntry = new ZipEntry(submittersName + submittersString + "_submissionText.html");
 											out.putNextEntry(textEntry);
-											out.write(FormattedText.encodeUnicode(submittedText).getBytes());
+											out.write(submittedText.getBytes());
 											out.closeEntry();
 										}
 										
 										// the comments.txt file to show instructor's comments
-										ZipEntry textEntry = new ZipEntry(submittersName + "comments.txt");
+										ZipEntry textEntry = new ZipEntry(submittersName + "comments.html");
 										out.putNextEntry(textEntry);
 										out.write(FormattedText.encodeUnicode(s.getFeedbackComment()).getBytes());
 										out.closeEntry();
@@ -5174,6 +5173,25 @@ public abstract class BaseAssignmentService implements AssignmentService, Entity
 		}
 
 		/**
+		 * @inheritDoc
+		 */
+		public String getStatus()
+		{
+			Time currentTime = TimeService.newTime();
+			
+			if (this.getDraft())
+				return rb.getString("gen.dra1");
+			else if (this.getOpenTime().after(currentTime))
+				return rb.getString("gen.notope");
+			else if (this.getDueTime().after(currentTime))
+				return rb.getString("gen.open");
+			else if ((this.getCloseTime() != null) && (this.getCloseTime().before(currentTime)))
+				return rb.getString("gen.closed");
+			else
+				return rb.getString("gen.due1");
+		}
+
+		/**
 		 * Access the time that this object was created.
 		 * 
 		 * @return The Time object representing the time of creation.
@@ -5277,6 +5295,17 @@ public abstract class BaseAssignmentService implements AssignmentService, Entity
 			return m_openTime;
 		}
 
+	  /**
+		* @inheritDoc
+		*/
+		public String getOpenTimeString()
+		{
+			if ( m_openTime == null )
+				return "";
+			else
+				return m_openTime.toStringLocalFull();
+		}
+
 		/**
 		 * Access the time at which the assignment is due; may be null.
 		 * 
@@ -5285,6 +5314,17 @@ public abstract class BaseAssignmentService implements AssignmentService, Entity
 		public Time getDueTime()
 		{
 			return m_dueTime;
+		}
+
+	  /**
+		* @inheritDoc
+		*/
+		public String getDueTimeString()
+		{
+			if ( m_dueTime == null )
+				return "";
+			else
+				return m_dueTime.toStringLocalFull();
 		}
 
 		/**
@@ -5297,6 +5337,17 @@ public abstract class BaseAssignmentService implements AssignmentService, Entity
 			return m_dropDeadTime;
 		}
 
+	  /**
+		* @inheritDoc
+		*/
+		public String getDropDeadTimeString()
+		{
+			if ( m_dropDeadTime == null )
+				return "";
+			else
+				return m_dropDeadTime.toStringLocalFull();
+		}
+
 		/**
 		 * Access the close time after which this assignment can no longer be viewed, and after which submissions will not be accepted. May be null.
 		 * 
@@ -5304,7 +5355,22 @@ public abstract class BaseAssignmentService implements AssignmentService, Entity
 		 */
 		public Time getCloseTime()
 		{
+			if (m_closeTime == null)
+			{
+				m_closeTime = m_dueTime;
+			}
 			return m_closeTime;
+		}
+
+	  /**
+		* @inheritDoc
+		*/
+		public String getCloseTimeString()
+		{
+			if ( m_closeTime == null )
+				return "";
+			else
+				return m_closeTime.toStringLocalFull();
 		}
 
 		/**
@@ -6976,7 +7042,12 @@ public abstract class BaseAssignmentService implements AssignmentService, Entity
 						{
 							String contentId = ((Reference) m_submittedAttachments.get(0)).getId();
 							String userId = (String)this.getSubmitterIds().get(0);
-							contentReviewService.queueContent(userId, null, getAssignment().getReference(), contentId);
+							try {
+								contentReviewService.queueContent(userId, null, getAssignment().getReference(), contentId);
+							}
+							catch (QueueException qe) {
+								M_log.warn("Unable to queue content with content review Service: " + qe.getMessage());
+							}
 						}
 					} catch (Exception e) {
 						e.printStackTrace();
@@ -8286,7 +8357,8 @@ public abstract class BaseAssignmentService implements AssignmentService, Entity
 			try {
 				Assignment ass = this.getAssignment();
 				contentReviewService.queueContent(null, null, ass.getReference(), attachment.getId());
-				
+			} catch (QueueException qe) {
+				M_log.warn("Unable to add content to Content Review queue: " + qe.getMessage());
 			} catch (Exception e) {
 				e.printStackTrace();
 			}

@@ -611,11 +611,11 @@ public class AssignmentAction extends PagedResourceActionII
 	/** identifier of tagging tool that will provide the appropriate helper */
 	private static final String TAGGING_TOOL_ID = "toolId";
 
-	/** Reference to an activity */
-	private static final String ACTIVITY_REF = "activityRef";
+	/** identifier of helper that is being called */
+	private static final String TAGGING_HELPER_ID = "helperId";
 	
-	/** Reference to an item */
-	private static final String ITEM_REF = "itemRef";
+	/** Reference to a taggable object */
+	private static final String TAGGABLE_REF = "taggableRef";
 	
 	/** session attribute for list of decorated tagging tools */
 	private static final String DTAGGING_TOOLS = "dTaggingTools";
@@ -1088,27 +1088,23 @@ public class AssignmentAction extends PagedResourceActionII
 			AssignmentActivityProducer assignmentActivityProducer = (AssignmentActivityProducer) ComponentManager
 					.get("org.sakaiproject.assignment.taggable.api.AssignmentActivityProducer");
 			List<TaggingProvider> providers = taggingManager.getProviders();
-			List<TaggingHelperInfo> itemHelpers = new ArrayList<TaggingHelperInfo>();
+			List<TaggingHelperInfo> helpers = new ArrayList<TaggingHelperInfo>();
 			for (TaggingProvider provider : providers)
 			{
 				if (provider instanceof TaggingTool)
 				{
 					TaggingTool tool = (TaggingTool) provider;
-					TaggingHelperInfo helper = tool.getHelperInfo(
+					List<TaggingHelperInfo> helperInfo = tool.getHelperInfo(
 							assignmentActivityProducer.getItem(
 									submission,
 									UserDirectoryService.getCurrentUser()
-											.getId()).getReference(),
-							TaggingTool.TaggingAction.TAG_CURRENT);
-					if (helper != null)
-					{
-						itemHelpers.add(helper);
-					}
+											.getId()).getReference());
+					helpers.addAll(helperInfo);
 				}
 			}
 			addItem(context, submission, UserDirectoryService.getCurrentUser().getId());
 			addActivity(context, submission.getAssignment());
-			context.put("itemHelpers", itemHelpers);
+			context.put("helpers", helpers);
 			context.put("taggable", Boolean.valueOf(true));
 		}
 
@@ -1165,12 +1161,40 @@ public class AssignmentAction extends PagedResourceActionII
 			{
 				List allowAddSubmissionUsers = AssignmentService.allowAddSubmissionUsers(a.getReference());
 				List submissions = AssignmentService.getSubmissions(a);
-				if (submissions != null && allowAddSubmissionUsers != null && allowAddSubmissionUsers.size() != submissions.size())
+				
+				HashSet<String> submittersIdSet = getSubmittersIdSet(submissions);
+				HashSet<String> allowAddSubmissionUsersIdSet = getAllowAddSubmissionUsersIdSet(allowAddSubmissionUsers);
+				
+				if (!submittersIdSet.equals(allowAddSubmissionUsersIdSet))
 				{
-					// if there is any newly added user who doesn't have a submission object yet, add the submission
+					// get the difference between two sets
 					try
 					{
-						addSubmissionsForNonElectronicAssignment(state, submissions, allowAddSubmissionUsers, AssignmentService.getAssignment(a.getReference())); 
+						HashSet<String> addSubmissionUserIdSet = (HashSet<String>) allowAddSubmissionUsersIdSet.clone();
+						addSubmissionUserIdSet.removeAll(submittersIdSet);
+						HashSet<String> removeSubmissionUserIdSet = (HashSet<String>) submittersIdSet.clone();
+						removeSubmissionUserIdSet.removeAll(allowAddSubmissionUsersIdSet);
+						
+						// temporarily allow the user to read and write from assignments (asn.revise permission)
+				        SecurityService.pushAdvisor(new SecurityAdvisor()
+				            {
+				                public SecurityAdvice isAllowed(String userId, String function, String reference)
+				                {
+				                    return SecurityAdvice.ALLOWED;
+				                }
+				            });
+				        
+						try
+						{
+							addRemoveSubmissionsForNonElectronicAssignment(state, submissions, addSubmissionUserIdSet, removeSubmissionUserIdSet, a); 
+						}
+						catch (Exception ee)
+						{
+							Log.warn("chef", this + ee.getMessage());
+						}
+						
+						// clear temporary permissions
+						SecurityService.clearAdvisors();
 					}
 					catch (Exception e)
 					{
@@ -1253,6 +1277,30 @@ public class AssignmentAction extends PagedResourceActionII
 		return template + TEMPLATE_LIST_ASSIGNMENTS;
 
 	} // build_list_assignments_context
+	
+	private HashSet<String> getSubmittersIdSet(List submissions)
+	{
+		HashSet<String> rv = new HashSet<String>();
+		for (Iterator iSubmissions=submissions.iterator(); iSubmissions.hasNext();)
+		{
+			List submitterIds = ((AssignmentSubmission) iSubmissions.next()).getSubmitterIds();
+			if (submitterIds != null && submitterIds.size() > 0)
+			{
+				rv.add((String) submitterIds.get(0));
+			}
+		}
+		return rv;
+	}
+	
+	private HashSet<String> getAllowAddSubmissionUsersIdSet(List users)
+	{
+		HashSet<String> rv = new HashSet<String>();
+		for (Iterator iUsers=users.iterator(); iUsers.hasNext();)
+		{
+			rv.add(((User) iUsers.next()).getId());
+		}
+		return rv;
+	}
 
 	/**
 	 * build the instructor view of creating a new assignment or editing an existing one
@@ -2013,7 +2061,7 @@ public class AssignmentAction extends PagedResourceActionII
 				&& assignment != null)
 		{
 			List<TaggingProvider> providers = taggingManager.getProviders();
-			List<TaggingHelperInfo> activityHelpers = new ArrayList<TaggingHelperInfo>();
+			List<TaggingHelperInfo> helpers = new ArrayList<TaggingHelperInfo>();
 			AssignmentActivityProducer assignmentActivityProducer = (AssignmentActivityProducer) ComponentManager
 					.get("org.sakaiproject.assignment.taggable.api.AssignmentActivityProducer");
 			for (TaggingProvider provider : providers)
@@ -2021,18 +2069,14 @@ public class AssignmentAction extends PagedResourceActionII
 				if (provider instanceof TaggingTool)
 				{
 					TaggingTool tool = (TaggingTool) provider;
-					TaggingHelperInfo helper = tool.getHelperInfo(
+					List<TaggingHelperInfo> helperInfo = tool.getHelperInfo(
 							assignmentActivityProducer.getActivity(assignment)
-									.getReference(),
-							TaggingTool.TaggingAction.TAG_CURRENT);
-					if (helper != null)
-					{
-						activityHelpers.add(helper);
-					}
+									.getReference());
+					helpers.addAll(helperInfo);
 				}
 			}
 			addActivity(context, assignment);
-			context.put("activityHelpers", activityHelpers);
+			context.put("helpers", helpers);
 			context.put("taggable", Boolean.valueOf(true));
 		}
 
@@ -2132,7 +2176,7 @@ public class AssignmentAction extends PagedResourceActionII
 					
 					// sort the assignments into the default order before adding
 					Iterator assignmentSorter = AssignmentService.getAssignmentsForContext(contextString, userId);
-					Iterator assignmentSortFinal = new SortedIterator(assignmentSorter, new AssignmentComparator(state, "default", Boolean.TRUE.toString()));
+					Iterator assignmentSortFinal = new SortedIterator(assignmentSorter, new AssignmentComparator(state, SORTED_BY_DEFAULT, Boolean.TRUE.toString()));
 
 					showStudentAssignments.put(user, assignmentSortFinal);
 				}
@@ -4037,9 +4081,10 @@ public class AssignmentAction extends PagedResourceActionII
 	} // doPost_assignment
 
 	/**
-	 * Action is to tag items via an items tagging helper
+	 * Action is to tag an assignment or submission via a tagging helper
 	 */
-	public void doHelp_items(RunData data) {
+	public void doCall_helper(RunData data)
+	{
 		SessionState state = ((JetspeedRunData) data)
 				.getPortletSessionState(((JetspeedRunData) data).getJs_peid());
 		ParameterParser params = data.getParameters();
@@ -4049,83 +4094,30 @@ public class AssignmentAction extends PagedResourceActionII
 		TaggingTool tool = (TaggingTool) taggingManager.findProviderById(params
 				.getString(TAGGING_TOOL_ID));
 
-		String activityRef = params.getString(ACTIVITY_REF);
+		String taggableRef = params.getString(TAGGABLE_REF);
+		
+		String helperId = params.getString(TAGGING_HELPER_ID);
 
-		TaggingHelperInfo helperInfo = tool.getHelperInfo(activityRef,
-				TaggingTool.TaggingAction.TAG_ITEMS);
+		for (TaggingHelperInfo helperInfo : tool.getHelperInfo(taggableRef))
+		{
+			if (helperInfo.getHelperId().equals(helperId))
+			{
+				// get into helper mode with this helper tool
+				startHelper(data.getRequest(), helperId);
 
-		// get into helper mode with this helper tool
-		startHelper(data.getRequest(), helperInfo.getHelperId());
+				Map<String, ? extends Object> helperParms = helperInfo
+						.getParameterMap();
 
-		Map<String, ? extends Object> helperParms = helperInfo
-				.getParameterMap();
-
-		for (Iterator<String> keys = helperParms.keySet().iterator(); keys
-				.hasNext();) {
-			String key = keys.next();
-			state.setAttribute(key, helperParms.get(key));
+				for (Iterator<String> keys = helperParms.keySet().iterator(); keys
+						.hasNext();)
+				{
+					String key = keys.next();
+					state.setAttribute(key, helperParms.get(key));
+				}
+				return;
+			}
 		}
-	} // doHelp_items
-	
-	/**
-	 * Action is to tag an individual item via an item tagging helper
-	 */
-	public void doHelp_item(RunData data) {
-		SessionState state = ((JetspeedRunData) data)
-				.getPortletSessionState(((JetspeedRunData) data).getJs_peid());
-		ParameterParser params = data.getParameters();
-
-		TaggingManager taggingManager = (TaggingManager) ComponentManager
-				.get("org.sakaiproject.taggable.api.TaggingManager");
-		TaggingTool tool = (TaggingTool) taggingManager.findProviderById(params
-				.getString(TAGGING_TOOL_ID));
-
-		String itemRef = params.getString(ITEM_REF);
-
-		TaggingHelperInfo helperInfo = tool.getHelperInfo(itemRef,
-				TaggingTool.TaggingAction.TAG_CURRENT);
-
-		// get into helper mode with this helper tool
-		startHelper(data.getRequest(), helperInfo.getHelperId());
-
-		Map<String, ? extends Object> helperParms = helperInfo
-				.getParameterMap();
-
-		for (Iterator<String> keys = helperParms.keySet().iterator(); keys
-				.hasNext();) {
-			String key = keys.next();
-			state.setAttribute(key, helperParms.get(key));
-		}
-	} // doHelp_item
-	
-	/**
-	 * Action is to tag an activity via an activity tagging helper
-	 */
-	public void doHelp_activity(RunData data) {
-		SessionState state = ((JetspeedRunData) data)
-				.getPortletSessionState(((JetspeedRunData) data).getJs_peid());
-		ParameterParser params = data.getParameters();
-
-		TaggingManager taggingManager = (TaggingManager) ComponentManager
-				.get("org.sakaiproject.taggable.api.TaggingManager");
-		TaggingTool tool = (TaggingTool) taggingManager.findProviderById(params
-				.getString(TAGGING_TOOL_ID));
-
-		String activityRef = params.getString(ACTIVITY_REF);
-
-		TaggingHelperInfo helperInfo = tool.getHelperInfo(activityRef,
-				TaggingTool.TaggingAction.TAG_CURRENT);
-
-		// get into helper mode with this helper tool
-		startHelper(data.getRequest(), helperInfo.getHelperId());
-
-		Map<String, ? extends Object> helperParms = helperInfo
-				.getParameterMap();
-
-		for (String key : helperParms.keySet()) {
-			state.setAttribute(key, helperParms.get(key));
-		}
-	} // doHelp_activity
+	} // doCall_helper
 	
 	/**
 	 * post or save assignment
@@ -4315,7 +4307,7 @@ public class AssignmentAction extends PagedResourceActionII
 	 * @param state
 	 * @param a
 	 */
-	private void addSubmissionsForNonElectronicAssignment(SessionState state, List submissions, List allowAddSubmissionUsers, Assignment a) 
+	private void addRemoveSubmissionsForNonElectronicAssignment(SessionState state, List submissions, HashSet<String> addSubmissionForUsers, HashSet<String> removeSubmissionForUsers, Assignment a) 
 	{
 		// get the string for all submitters
 		HashSet<String> submitterIdSet = new HashSet<String>();
@@ -4331,44 +4323,61 @@ public class AssignmentAction extends PagedResourceActionII
 			}
 		}
 		
-		String contextString = (String) state.getAttribute(STATE_CONTEXT_STRING);
-		String authzGroupId = SiteService.siteReference(contextString);
-		try
+		// create submission object for those user who doesn't have one yet
+		for (Iterator iUserIds = addSubmissionForUsers.iterator(); iUserIds.hasNext();)
 		{
-			AuthzGroup group = AuthzGroupService.getAuthzGroup(authzGroupId);
-			Set grants = group.getUsers();
-			for (Iterator iUserIds = grants.iterator(); iUserIds.hasNext();)
+			String userId = (String) iUserIds.next();
+			try
 			{
-				String userId = (String) iUserIds.next();
-				if (!submitterIdSet.contains(userId))
+				User u = UserDirectoryService.getUser(userId);
+				// only include those users that can submit to this assignment
+				if (u != null)
 				{
-					try
-					{
-						User u = UserDirectoryService.getUser(userId);
-						// only include those users that can submit to this assignment
-						if (u != null && allowAddSubmissionUsers.contains(u))
-						{System.out.println("here");
-							// construct fake submissions for grading purpose
-							AssignmentSubmissionEdit submission = AssignmentService.addSubmission(contextString, a.getId());
-							submission.removeSubmitter(UserDirectoryService.getCurrentUser());
-							submission.addSubmitter(u);
-							submission.setTimeSubmitted(TimeService.newTime());
-							submission.setSubmitted(true);
-							submission.setAssignment(a);
-							AssignmentService.commitEdit(submission);
-						}
-					}
-					catch (Exception e)
-					{
-						Log.warn("chef", this + e.toString() + " here userId = " + userId);
-					}
+					// construct fake submissions for grading purpose
+					AssignmentSubmissionEdit submission = AssignmentService.addSubmission(a.getContext(), a.getId());
+					submission.removeSubmitter(UserDirectoryService.getCurrentUser());
+					submission.addSubmitter(u);
+					submission.setTimeSubmitted(TimeService.newTime());
+					submission.setSubmitted(true);
+					submission.setAssignment(a);
+					AssignmentService.commitEdit(submission);
+				}
+			}
+			catch (Exception e)
+			{
+				Log.warn("chef", this + e.toString() + "error adding submission for userId = " + userId);
+			}
+		}
+		
+		// remove submission object for those who no longer in the site
+		for (Iterator iUserIds = removeSubmissionForUsers.iterator(); iUserIds.hasNext();)
+		{
+			String userId = (String) iUserIds.next();
+			String submissionRef = null;
+			// TODO: we don't have an efficient way to retrieve specific user's submission now, so until then, we still need to iterate the whole submission list
+			for (Iterator iSubmissions=submissions.iterator(); iSubmissions.hasNext() && submissionRef != null;)
+			{
+				AssignmentSubmission submission = (AssignmentSubmission) iSubmissions.next();
+				List submitterIds = submission.getSubmitterIds();
+				if (submitterIds != null && submitterIds.size() > 0 && userId.equals((String) submitterIds.get(0)))
+				{
+					submissionRef = submission.getReference();
+				}
+			}
+			if (submissionRef != null)
+			{
+				try
+				{
+					AssignmentSubmissionEdit submissionEdit = AssignmentService.editSubmission(submissionRef);
+					AssignmentService.removeSubmission(submissionEdit);
+				}
+				catch (Exception e)
+				{
+					Log.warn("chef", this + e.toString() + " error remove submission for userId = " + userId);
 				}
 			}
 		}
-		catch (Exception e)
-		{
-			Log.warn("chef", this + e.getMessage() + " authGroupId=" + authzGroupId);
-		}
+		
 	}
 	
 	private void initIntegrateWithGradebook(SessionState state, String siteId, String aOldTitle, String oAssociateGradebookAssignment, AssignmentEdit a, String title, Time dueTime, int gradeType, String gradePoints, String addtoGradebook, String associateGradebookAssignment, String range) {
@@ -7082,6 +7091,11 @@ public class AssignmentAction extends PagedResourceActionII
 		public int compare(Object o1, Object o2)
 		{
 			int result = -1;
+			
+			if (m_criteria == null)
+			{
+				m_criteria = SORTED_BY_DEFAULT;
+			}
 
 			/** *********** for sorting assignments ****************** */
 			if (m_criteria.equals(SORTED_BY_DEFAULT))
@@ -8037,10 +8051,10 @@ public class AssignmentAction extends PagedResourceActionII
 								returnResources.add(a);
 							}
 						}
-						else if (deleted.equalsIgnoreCase(Boolean.TRUE.toString()) && AssignmentService.getSubmission(a.getReference(), (User) state
+						else if (deleted.equalsIgnoreCase(Boolean.TRUE.toString()) && (a.getContent().getTypeOfSubmission() != Assignment.NON_ELECTRONIC_ASSIGNMENT_SUBMISSION) && AssignmentService.getSubmission(a.getReference(), (User) state
 								.getAttribute(STATE_USER)) != null)
 						{
-							// and those deleted assignments but the user has made submissions to them
+							// and those deleted but not non-electronic assignments but the user has made submissions to them
 							returnResources.add(a);
 						}
 					}

@@ -324,17 +324,15 @@
 											#if ($!allowUpdateAssignment)#set($prevAction=true)<a href="#toolLinkParam("$action" "doEdit_assignment" "assignmentId=$validator.escapeUrl($assignmentReference)")">$!tlang.getString("revise")</a>#end
 											#if ($allowAddAssignment)#if($prevAction) | #else#set($prevAction=true)#end<a href="#toolLinkParam("$action" "doDuplicate_assignment" "assignmentId=$validator.escapeUrl($assignmentReference)")">$!tlang.getString("dupli")</a>#end
 											#if ($taggable)
+												#set ($activity = $producer.getActivity($assignment))
 												#foreach ($dTaggingTool in $dTaggingTools)
-													#set ($helperInfo = false)
-													#set ($activity = $producer.getActivity($assignment))
-													#set ($helperInfo = $dTaggingTool.getActivityHelperInfo($activity.reference))
-													#if ($helperInfo)
+													#foreach ($helperInfo in $dTaggingTool.getTool().getHelperInfo($activity.getReference()))
 														#if($prevAction)
 															| 
 														#else
 															#set($prevAction=true)
 														#end
-															<a href="#toolLinkParam("$action" "doHelp_activity" "activityRef=$validator.escapeUrl($activity.reference)&toolId=$validator.escapeUrl($dTaggingTool.tool.id)")" title="$!helperInfo.description">$!helperInfo.name</a>
+														<a href="#toolLinkParam("$action" "doCall_helper" "taggableRef=$validator.escapeUrl($activity.reference)&toolId=$validator.escapeUrl($helperInfo.tool.id)&helperId=$validator.escapeUrl($helperInfo.helperId)")" title="$!helperInfo.description">$!helperInfo.name</a>
 													#end
 												#end
 											#end
@@ -395,28 +393,24 @@
 													<div class="itemAction">
 														#set($prevAction=false)
 														#foreach ($dTaggingTool in $dTaggingTools)
-															#set ($activityHelperInfo = false)
 															#set ($activity = $producer.getActivity($assignment))
-															#set ($activityHelperInfo = $dTaggingTool.getActivityHelperInfo($activity.reference))
-															#if ($activityHelperInfo)
+															#foreach ($helperInfo in $dTaggingTool.getTool().getHelperInfo($activity.reference))
 																#if($prevAction)
 																	| 
 																#else
 																	#set($prevAction=true)
 																#end
-																<a href="#toolLinkParam("$action" "doHelp_activity" "activityRef=$validator.escapeUrl($activity.reference)&toolId=$validator.escapeUrl($dTaggingTool.tool.id)")" title="$!activityHelperInfo.description">$!activityHelperInfo.name</a>
+																<a href="#toolLinkParam("$action" "doCall_helper" "taggableRef=$validator.escapeUrl($activity.reference)&toolId=$validator.escapeUrl($dTaggingTool.tool.id)&helperId=$validator.escapeUrl($helperInfo.helperId)")" title="$!helperInfo.description">$!helperInfo.name</a>
 															#end
 															#if ($!submission)
-																#set ($itemHelperInfo = false)
 																#set ($item = $producer.getItem($submission, $user.getId()))
-																#set ($itemHelperInfo = $dTaggingTool.getItemHelperInfo($item.reference))
-																#if ($itemHelperInfo)
+																#foreach ($helperInfo in $dTaggingTool.getHelperInfo($item.reference))
 																	#if($prevAction)
 																		| 
 																	#else
 																		#set($prevAction=true)
 																	#end
-																	<a href="#toolLinkParam("$action" "doHelp_item" "itemRef=$validator.escapeUrl($item.reference)&toolId=$validator.escapeUrl($dTaggingTool.id)")" title="$!itemHelperInfo.description">$!itemHelperInfo.name</a>
+																	<a href="#toolLinkParam("$action" "doCall_helper" "taggableRef=$validator.escapeUrl($item.reference)&toolId=$validator.escapeUrl($dTaggingTool.id)&helperId=$validator.escapeUrl($helperInfo.helperId)")" title="$!helperInfo.description">$!helperInfo.name</a>
 																#end
 															#end
 														#end
@@ -461,19 +455,7 @@
 							#end
 							<td headers="status">
 								#if ($allowAddAssignment && $!view.equals('lisofass1'))
-									#if ($!assignment.Draft)
-										<span class="highlight">$tlang.getString("gen.dra1")</span>
-									#else
-										#if ($!assignment.getOpenTime().after($currentTime))
-											$tlang.getString("gen.notope")
-										#elseif ($!assignment.getDueTime().after($currentTime))
-											$tlang.getString("gen.open")
-										#elseif (($!assignment.getCloseTime())&&($assignment.getCloseTime().before($currentTime)))
-											$tlang.getString("gen.closed")
-										#else
-											$tlang.getString("gen.due1")
-										#end
-									#end
+								   $!assignment.getStatus()
 								#else
 									#if ($!submission)
 										$submission.getStatus()

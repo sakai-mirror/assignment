@@ -24,13 +24,10 @@ package org.sakaiproject.assignment.taggable.tool;
 import java.util.ArrayList;
 import java.util.List;
 
-import org.sakaiproject.taggable.activity.api.TaggableActivity;
-import org.sakaiproject.taggable.activity.api.TaggableItem;
 import org.sakaiproject.taggable.api.Taggable;
 import org.sakaiproject.taggable.tool.api.TagColumn;
 import org.sakaiproject.taggable.tool.api.TagList;
 import org.sakaiproject.taggable.tool.api.TagRow;
-import org.sakaiproject.taggable.tool.api.TaggingHelperInfo;
 import org.sakaiproject.taggable.tool.api.TaggingTool;
 
 /**
@@ -100,21 +97,6 @@ public class DecoratedTaggingTool {
 					.subList(pager.getFirstItem(), pager.getLastItemNumber());
 		}
 		return tags;
-	}
-
-	public TaggingHelperInfo getActivityHelperInfo(String activityRef) {
-		return tool.getHelperInfo(activityRef,
-				TaggingTool.TaggingAction.TAG_CURRENT);
-	}
-
-	public TaggingHelperInfo getItemHelperInfo(String itemRef) {
-		return tool.getHelperInfo(itemRef,
-				TaggingTool.TaggingAction.TAG_CURRENT);
-	}
-
-	public TaggingHelperInfo getItemsHelperInfo(String activityRef) {
-		return tool.getHelperInfo(activityRef,
-				TaggingTool.TaggingAction.TAG_ITEMS);
 	}
 
 	public class Sort {
