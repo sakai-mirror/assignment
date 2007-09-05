@@ -2981,18 +2981,7 @@ public class AssignmentAction extends PagedResourceActionII
 				}
 				else
 				{
-					if (!grade.equals(""))
-					{
-						if (typeOfGrade == 3)
-						{
-							sEdit.setGrade(grade);
-						}
-						else
-						{
-							sEdit.setGrade(grade);
-						}
-						sEdit.setGraded(true);
-					}
+					sEdit.setGrade(grade);
 				}
 			}
 
@@ -3006,11 +2995,8 @@ public class AssignmentAction extends PagedResourceActionII
 			}
 			else if (gradeOption.equals("return"))
 			{
-				if (StringUtil.trimToNull(grade) != null)
-				{
-					sEdit.setGradeReleased(true);
-					sEdit.setGraded(true);
-				}
+				sEdit.setGradeReleased(true);
+				sEdit.setGraded(true);
 				sEdit.setReturned(true);
 				sEdit.setTimeReturned(TimeService.newTime());
 				sEdit.setHonorPledgeFlag(Boolean.FALSE.booleanValue());
@@ -6332,11 +6318,7 @@ public class AssignmentAction extends PagedResourceActionII
 				{
 					if ((grade.length() == 0))
 					{
-						if (gradeOption.equals("release") || gradeOption.equals("return"))
-						{
-							// in case of releasing grade, user must specify a grade
-							addAlert(state, rb.getString("plespethe2"));
-						}
+						state.setAttribute(GRADE_SUBMISSION_GRADE, grade);
 					}
 					else
 					{
