@@ -5246,7 +5246,6 @@ public class AssignmentAction extends PagedResourceActionII
 		try
 		{
 			Assignment a = AssignmentService.getAssignment(assignmentId);
-			EventTrackingService.post(EventTrackingService.newEvent(AssignmentService.SECURE_ACCESS_ASSIGNMENT, a.getReference(), false));
 		}
 		catch (IdUnusedException e)
 		{
