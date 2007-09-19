@@ -862,7 +862,7 @@ public abstract class BaseAssignmentService implements AssignmentService, Entity
 		if (assignment == null) throw new IdUnusedException(assignmentReference);
 
 		// track event
-		EventTrackingService.post(EventTrackingService.newEvent(EVENT_ACCESS_ASSIGNMENT, assignment.getReference(), false));
+		// EventTrackingService.post(EventTrackingService.newEvent(EVENT_ACCESS_ASSIGNMENT, assignment.getReference(), false));
 
 		return assignment;
 
@@ -1964,10 +1964,7 @@ public abstract class BaseAssignmentService implements AssignmentService, Entity
 			// need to send notification email
 			String context = s.getContext();
 			
-			// compare the list of users with the receive.notifications and list of users who can actually grade this assignment
 			List receivers = allowReceiveSubmissionNotificationUsers(context);
-			List allowGradeAssignmentUsers = allowGradeAssignmentUsers(a.getReference());
-			receivers.retainAll(allowGradeAssignmentUsers);
 			
 			List headers = new Vector();
 			headers.add(rb.getString("noti.subject.label") + rb.getString("noti.subject.content"));
@@ -2532,6 +2529,38 @@ public abstract class BaseAssignmentService implements AssignmentService, Entity
 	}
 
 	/**
+	 * @inheritDoc
+	 */
+	public AssignmentSubmission getSubmission(List submissions, User person) 
+	{
+		AssignmentSubmission retVal = null;
+		
+		for (int z = 0; z < submissions.size(); z++)
+		{
+			AssignmentSubmission sub = (AssignmentSubmission) submissions.get(z);
+			if (sub != null)
+			{
+				List submitters = sub.getSubmitterIds();
+				for (int a = 0; a < submitters.size(); a++)
+				{
+					String aUserId = (String) submitters.get(a);
+					if (M_log.isDebugEnabled())
+						M_log.debug(this + "comparing aUser id : " + aUserId + " and chosen user id : "
+								+ person.getId());
+					if (aUserId.equals(person.getId()))
+					{
+						if (M_log.isDebugEnabled())
+							M_log.debug(this + " found a match : return value is " + sub.getId());
+						retVal = sub;
+					}
+				}
+			}
+		}
+
+		return retVal;
+	}
+	
+	/**
 	 * Get the submissions for an assignment.
 	 * 
 	 * @param assignment -
@@ -2988,16 +3017,19 @@ public abstract class BaseAssignmentService implements AssignmentService, Entity
 
 		return unlockCheck(SECURE_ADD_ASSIGNMENT_SUBMISSION, resourceString);
 	}
-	
+
 	/**
-	 * Get the list of Users who can do certain function for this assignment
-	 * @inheritDoc
+	 * Get the List of Users who can addSubmission() for this assignment.
+	 * 
+	 * @param assignmentReference -
+	 *        a reference to an assignment
+	 * @return the List (User) of users who can addSubmission() for this assignment.
 	 */
-	public List allowAssignmentFunctionUsers(String assignmentReference, String function)
+	public List allowAddSubmissionUsers(String assignmentReference)
 	{
 		List rv = new Vector();
 		
-		rv = SecurityService.unlockUsers(function, assignmentReference);
+		rv = SecurityService.unlockUsers(SECURE_ADD_ASSIGNMENT_SUBMISSION, assignmentReference);
 		
 		// get the list of users who have SECURE_ALL_GROUPS
 		List allGroupUsers = new Vector();
@@ -3017,65 +3049,8 @@ public abstract class BaseAssignmentService implements AssignmentService, Entity
 		rv.addAll(allGroupUsers);
 		
 		return rv;
-	}
-	
-	/**
-	 * Get the List of Users who can addSubmission() for this assignment.
-	 * 
-	 * @param assignmentReference -
-	 *        a reference to an assignment
-	 * @return the List (User) of users who can addSubmission() for this assignment.
-	 */
-	public List allowAddSubmissionUsers(String assignmentReference)
-	{
-		return allowAssignmentFunctionUsers(assignmentReference, SECURE_ADD_ASSIGNMENT_SUBMISSION);
 
 	} // allowAddSubmissionUsers
-	
-	/**
-	 * Get the List of Users who can grade submission for this assignment.
-	 * 
-	 * @param assignmentReference -
-	 *        a reference to an assignment
-	 * @return the List (User) of users who can grade submission for this assignment.
-	 */
-	public List allowGradeAssignmentUsers(String assignmentReference)
-	{
-		return allowAssignmentFunctionUsers(assignmentReference, SECURE_GRADE_ASSIGNMENT_SUBMISSION);
-
-	} // allowGradeAssignmentUsers
-	
-	/**
-	 * @inheritDoc
-	 * @param context
-	 * @return
-	 */
-	public List allowAddAnySubmissionUsers(String context)
-	{
-		List rv = new Vector();
-		
-		try
-		{
-			AuthzGroup group = AuthzGroupService.getAuthzGroup(SiteService.siteReference(context));
-			
-			// get the roles which are allowed for submission but not for all_site control
-			Set rolesAllowSubmission = group.getRolesIsAllowed(SECURE_ADD_ASSIGNMENT_SUBMISSION);
-			Set rolesAllowAllSite = group.getRolesIsAllowed(SECURE_ALL_GROUPS);
-			rolesAllowSubmission.removeAll(rolesAllowAllSite);
-			
-			for (Iterator iRoles = rolesAllowSubmission.iterator(); iRoles.hasNext(); )
-			{
-				rv.addAll(group.getUsersHasRole((String) iRoles.next()));
-			}
-		}
-		catch (Exception e)
-		{
-			M_log.warn(this + e.getMessage() + " context=" + context);
-		}
-		
-		return rv;
-		
-	}
 
 	/**
 	 * Get the List of Users who can add assignment
@@ -3520,6 +3495,7 @@ public abstract class BaseAssignmentService implements AssignmentService, Entity
 										{
 											// create the text file only when a text submission is allowed
 											ZipEntry textEntry = new ZipEntry(submittersName + submittersString + "_submissionText.html");
+											
 											out.putNextEntry(textEntry);
 											out.write(submittedText.getBytes());
 											out.closeEntry();
@@ -4362,8 +4338,14 @@ public abstract class BaseAssignmentService implements AssignmentService, Entity
 								String draftAttribute = el2clone.getAttribute("draft");
 								if (draftAttribute.equalsIgnoreCase("true") || draftAttribute.equalsIgnoreCase("false"))
 									el2clone.setAttribute("draft", draftAttribute);
-								else
-									el2clone.setAttribute("draft", "true");
+								else {
+									/*
+									 * IU Oncourse Overlay - default to draft = false 
+									 * if attribute missing in imported file
+									 */
+									// el2clone.setAttribute("draft", "true");
+									el2clone.setAttribute("draft", "false"); 
+								}
 							}
 							else
 							{
@@ -7022,7 +7004,7 @@ public abstract class BaseAssignmentService implements AssignmentService, Entity
 		
 		public String getReviewReport() {
 //			 Code to get updated report if default
-			if (m_submittedAttachments.isEmpty()) M_log.debug("No attachments submitted.");
+			if (m_submittedAttachments.isEmpty()) M_log.warn("No attachments submitted.");
 			else
 			{
 				try {
@@ -7547,9 +7529,6 @@ public abstract class BaseAssignmentService implements AssignmentService, Entity
 			{
 				retVal = m_assignmentStorage.get(m_assignment);
 			}
-			
-			// track event
-			EventTrackingService.post(EventTrackingService.newEvent(EVENT_ACCESS_ASSIGNMENT, retVal.getReference(), false));
 
 			return retVal;
 		}
