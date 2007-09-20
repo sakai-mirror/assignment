@@ -135,7 +135,8 @@ import org.sakaiproject.contentreview.service.ContentReviewService;
 public class AssignmentAction extends PagedResourceActionII
 {
 	private static ResourceLoader rb = new ResourceLoader("assignment");
-
+	
+	private static final String ASSIGNMENT_TOOL_ID = "sakai.assignment.grades";
 	
 	private static final Boolean allowReviewService = ServerConfigurationService.getBoolean("assignment.useContentReview", false);
 	
@@ -622,9 +623,11 @@ public class AssignmentAction extends PagedResourceActionII
 	private static final String ASSIGNMENT_INSTRUCTOR_NOTIFICATIONS_DEFAULT = "assignment.instructor.notifications.default";
 	
 	/****************************** Upload all screen ***************************/
-	private static final String UPLOAD_ALL_HAS_SUBMISSIONS = "upload_all_has_submissions";
+	private static final String UPLOAD_ALL_HAS_SUBMISSION_TEXT = "upload_all_has_submission_text";
+	private static final String UPLOAD_ALL_HAS_SUBMISSION_ATTACHMENT = "upload_all_has_submission_attachment";
 	private static final String UPLOAD_ALL_HAS_GRADEFILE = "upload_all_has_gradefile";
 	private static final String UPLOAD_ALL_HAS_COMMENTS= "upload_all_has_comments";
+	private static final String UPLOAD_ALL_HAS_FEEDBACK_ATTACHMENT = "upload_all_has_feedback_attachment";
 	private static final String UPLOAD_ALL_RELEASE_GRADES = "upload_all_release_grades";
 	
 	/**
@@ -2266,7 +2269,8 @@ public class AssignmentAction extends PagedResourceActionII
 	 */
 	protected String build_instructor_upload_all(VelocityPortlet portlet, Context context, RunData data, SessionState state)
 	{
-		context.put("hasSubmissions", state.getAttribute(UPLOAD_ALL_HAS_SUBMISSIONS));
+		context.put("hasSubmissionText", state.getAttribute(UPLOAD_ALL_HAS_SUBMISSION_TEXT));
+		context.put("hasSubmissionAttachment", state.getAttribute(UPLOAD_ALL_HAS_SUBMISSION_ATTACHMENT));
 		context.put("hasGradeFile", state.getAttribute(UPLOAD_ALL_HAS_GRADEFILE));
 		context.put("hasComments", state.getAttribute(UPLOAD_ALL_HAS_COMMENTS));
 		context.put("releaseGrades", state.getAttribute(UPLOAD_ALL_RELEASE_GRADES));
@@ -8452,7 +8456,32 @@ public class AssignmentAction extends PagedResourceActionII
 			addAlert(state, rb.getString("plesuse4") + maxInt + "." + maxDec + ".");
 		}
 	}
-
+	
+	/**
+	 * valid grade for point based type
+	 */
+	private void validLetterGrade(SessionState state, String grade)
+	{
+		String VALID_CHARS_FOR_LETTER_GRADE = " ABCDEFGHIJKLMNOPQRSTUVWXYZ+-";
+		boolean invalid = false;
+		if (grade != null)
+		{
+			grade = grade.toUpperCase();
+			for (int i = 0; i < grade.length() && !invalid; i++)
+			{
+				char c = grade.charAt(i);
+				if (VALID_CHARS_FOR_LETTER_GRADE.indexOf(c) == -1)
+				{
+					invalid = true;
+				}
+			}
+			if (invalid)
+			{
+				addAlert(state, rb.getString("plesuse0"));
+			}
+		}
+	}
+	
 	/**
 	 * display grade properly
 	 */
@@ -8966,55 +8995,62 @@ public class AssignmentAction extends PagedResourceActionII
 		}
 	}
 	
-	/**
-	 * returns concatenation of user's first name and last name
-	 * @param u
-	 */
-	private String getUserLastNameFirstName(User u)
-	{
-		return u.getLastName() + "," + u.getFirstName();
-	}
-	
 	public void doUpload_all_upload(RunData data)
 	{
 		SessionState state = ((JetspeedRunData) data).getPortletSessionState(((JetspeedRunData) data).getJs_peid());
 		ParameterParser params = data.getParameters();
 		
 		String contextString = ToolManager.getCurrentPlacement().getContext();
-		String toolTitle = ToolManager.getTool("sakai.assignment").getTitle();
+		String toolTitle = ToolManager.getTool(ASSIGNMENT_TOOL_ID).getTitle();
+		String aReference = (String) state.getAttribute(EXPORT_ASSIGNMENT_REF);
+		String associateGradebookAssignment = null;
 		
-		boolean hasSubmissions = false;
+		boolean hasSubmissionText = false;
+		boolean hasSubmissionAttachment = false;
 		boolean hasGradeFile = false;
-		boolean hasComments = false;
+		boolean hasComment = false;
+		boolean hasFeedbackAttachment = false;
 		boolean releaseGrades = false;
 		
 		// check against the content elements selection
-		if (params.getString("studentSubmission") != null)
+		if (params.getString("studentSubmissionText") != null)
 		{
-			// should contain student submission information
-			hasSubmissions = true;
+			// should contain student submission text information
+			hasSubmissionText = true;
+		}
+		if (params.getString("studentSubmissionAttachment") != null)
+		{
+			// should contain student submission attachment information
+			hasSubmissionAttachment = true;
 		}
 		if (params.getString("gradeFile") != null)
 		{
 			// should contain grade file
 			hasGradeFile = true;	
 		}
-		if (params.getString("instructorComments") != null)
+		if (params.getString("feedbackComments") != null)
 		{
-			// comments.xml should be available
-			hasComments = true;
+			// comments.txt should be available
+			hasComment = true;
+		}
+		if (params.getString("feedbackAttachments") != null)
+		{
+			// feedback attachment
+			hasFeedbackAttachment = true;
 		}
 		if (params.getString("release") != null)
 		{
 			// comments.xml should be available
 			releaseGrades = params.getBoolean("release");
 		}
-		state.setAttribute(UPLOAD_ALL_HAS_SUBMISSIONS, Boolean.valueOf(hasSubmissions));
+		state.setAttribute(UPLOAD_ALL_HAS_SUBMISSION_TEXT, Boolean.valueOf(hasSubmissionText));
+		state.setAttribute(UPLOAD_ALL_HAS_SUBMISSION_ATTACHMENT, Boolean.valueOf(hasSubmissionAttachment));
 		state.setAttribute(UPLOAD_ALL_HAS_GRADEFILE, Boolean.valueOf(hasGradeFile));
-		state.setAttribute(UPLOAD_ALL_HAS_COMMENTS, Boolean.valueOf(hasComments));
+		state.setAttribute(UPLOAD_ALL_HAS_COMMENTS, Boolean.valueOf(hasComment));
+		state.setAttribute(UPLOAD_ALL_HAS_FEEDBACK_ATTACHMENT, Boolean.valueOf(hasFeedbackAttachment));
 		state.setAttribute(UPLOAD_ALL_RELEASE_GRADES, Boolean.valueOf(releaseGrades));
 		
-		if (!hasSubmissions && !hasGradeFile && !hasComments)
+		if (!hasSubmissionText && !hasSubmissionAttachment && !hasGradeFile && !hasComment && !hasFeedbackAttachment)
 		{
 			// has to choose one upload feature
 			addAlert(state, rb.getString("uploadall.alert.choose.element"));
@@ -9026,15 +9062,18 @@ public class AssignmentAction extends PagedResourceActionII
 			Assignment assignment = null;
 			try
 			{
-				assignment = AssignmentService.getAssignment((String) state.getAttribute(EXPORT_ASSIGNMENT_REF));
-				
+				assignment = AssignmentService.getAssignment(aReference);
+				associateGradebookAssignment = StringUtil.trimToNull(assignment.getProperties().getProperty(AssignmentService.PROP_ASSIGNMENT_ASSOCIATE_GRADEBOOK_ASSIGNMENT));
+
 				Iterator sIterator = AssignmentService.getSubmissions(assignment).iterator();
 				while (sIterator.hasNext())
 				{
 					AssignmentSubmission s = (AssignmentSubmission) sIterator.next();
 					User[] users = s.getSubmitters();
-					String uName = getUserLastNameFirstName(users[0]);
-					submissionTable.put(uName, new UploadGradeWrapper("", "", "", new Vector()));
+					if (users.length > 0 && users[0] != null)
+					{
+						submissionTable.put(users[0].getSortName(), new UploadGradeWrapper("", "", "", new Vector(), new Vector(), ""));
+					}
 				}
 			}
 			catch (Exception e)
@@ -9088,9 +9127,9 @@ public class AssignmentAction extends PagedResourceActionII
 					{
 						while ((entry=zin.getNextEntry()) != null)
 						{
-							if (!entry.isDirectory())
+							String entryName = entry.getName();
+							if (!entry.isDirectory() && entryName.indexOf("/._") == -1)
 							{
-								String entryName = entry.getName();
 								if (entryName.endsWith("grades.csv"))
 								{
 									if (hasGradeFile)
@@ -9112,12 +9151,27 @@ public class AssignmentAction extends PagedResourceActionII
 									        		try
 									        		{
 									        			User u = UserDirectoryService.getUserByEid(items[0]/*user id*/);
-									        			String name = getUserLastNameFirstName(u);
-									        			UploadGradeWrapper w = (UploadGradeWrapper) submissionTable.get(name);
-									        			if (w != null)
+									        			if (u != null)
 									        			{
-									        				w.setGrade(assignment.getContent().getTypeOfGrade() == Assignment.SCORE_GRADE_TYPE?scalePointGrade(state, items[3]):items[3]);
-									        				submissionTable.put(name, w);
+										        			UploadGradeWrapper w = (UploadGradeWrapper) submissionTable.get(u.getSortName());
+										        			if (w != null)
+										        			{
+										        				String itemString = items[3];
+										        				int gradeType = assignment.getContent().getTypeOfGrade();
+										        				if (gradeType == Assignment.SCORE_GRADE_TYPE)
+										        				{
+										        					validPointGrade(state, itemString);
+										        				}
+										        				else
+										        				{
+										        					validLetterGrade(state, itemString);
+										        				}
+										        				if (state.getAttribute(STATE_MESSAGE) == null)
+										        				{
+											        				w.setGrade(gradeType == Assignment.SCORE_GRADE_TYPE?scalePointGrade(state, itemString):itemString);
+											        				submissionTable.put(u.getSortName(), w);
+										        				}
+										        			}
 									        			}
 									        		}
 									        		catch (Exception e )
@@ -9134,16 +9188,23 @@ public class AssignmentAction extends PagedResourceActionII
 									String userName = "";
 									if (entryName.indexOf("/") != -1)
 									{
-										userName = entryName.substring(0, entryName.lastIndexOf("/"));
+										// remove the part of zip name
+										userName = entryName.substring(entryName.indexOf("/")+1);
+										// get out the user name part
 										if (userName.indexOf("/") != -1)
 										{
-											userName = userName.substring(userName.lastIndexOf("/")+1, userName.length());
+											userName = userName.substring(0, userName.indexOf("/"));
+										}
+										// remove the eid part
+										if (userName.indexOf("(") != -1)
+										{
+											userName = userName.substring(0, userName.indexOf("("));
 										}
 									}
-									if (hasComments && entryName.endsWith("comments.txt"))
+									if (hasComment && entryName.indexOf("comments") != -1)
 									{
 										// read the comments file
-								        String comment = StringUtil.trimToNull(readIntoString(zin));
+										String comment = getBodyTextFromZipHtml(zin);
 								        if (submissionTable.containsKey(userName) && comment != null)
 								        {
 								        		UploadGradeWrapper r = (UploadGradeWrapper) submissionTable.get(userName);
@@ -9151,62 +9212,39 @@ public class AssignmentAction extends PagedResourceActionII
 								        		submissionTable.put(userName, r);
 								        }
 									}
-									else if (hasSubmissions)
+									if (hasSubmissionText && entryName.indexOf("_submissionText") != -1)
 									{
-										if (entryName.endsWith("_submissionText.txt"))
-										{
-											// upload the student submission text along with the feedback text
-											String text = StringUtil.trimToNull(readIntoString(zin));
-											if (submissionTable.containsKey(userName) && text != null)
-									        {
-									        		UploadGradeWrapper r = (UploadGradeWrapper) submissionTable.get(userName);
-									        		r.setText(text);
-									        		submissionTable.put(userName, r);
-									        }
-										}
-										else
-										{
-											// upload all the files as instuctor attachments to the submission for grading purpose
-											String fName = entryName.substring(entryName.lastIndexOf("/") + 1, entryName.length());
-											ContentTypeImageService iService = (ContentTypeImageService) state.getAttribute(STATE_CONTENT_TYPE_IMAGE_SERVICE);
-											try
-											{
-												if (submissionTable.containsKey(userName))
-										        {
-													// get file extension for detecting content type
-													// ignore those hidden files
-													String extension = "";
-													if(fName.contains(".") && fName.indexOf(".") != 0)
-													{
-														// add the file as attachment
-														ResourceProperties properties = ContentHostingService.newResourceProperties();
-														properties.addProperty(ResourceProperties.PROP_DISPLAY_NAME, fName);
-														
-														String[] parts = fName.split("\\.");
-														if(parts.length > 1)
-														{
-															extension = parts[parts.length - 1];
-														}
-														String contentType = ((ContentTypeImageService) state.getAttribute(STATE_CONTENT_TYPE_IMAGE_SERVICE)).getContentType(extension);
-														ContentResourceEdit attachment = ContentHostingService.addAttachmentResource(fName);
-														attachment.setContent(readIntoBytes(zin, entryName, entry.getSize()));
-														attachment.setContentType(contentType);
-														attachment.getPropertiesEdit().addAll(properties);
-														ContentHostingService.commitResource(attachment);
-														
-											        		UploadGradeWrapper r = (UploadGradeWrapper) submissionTable.get(userName);
-											        		List attachments = r.getAttachments();
-											        		attachments.add(EntityManager.newReference(attachment.getReference()));
-											        		r.setAttachments(attachments);
-											        		submissionTable.put(userName, r);
-													}
-										        }
-											}
-											catch (Exception ee)
-											{
-												Log.warn("chef", ee.toString());
-											}
-										}
+										// upload the student submission text along with the feedback text
+										String text = getBodyTextFromZipHtml(zin);
+										if (submissionTable.containsKey(userName) && text != null)
+								        {
+								        		UploadGradeWrapper r = (UploadGradeWrapper) submissionTable.get(userName);
+								        		r.setText(text);
+								        		submissionTable.put(userName, r);
+								        }
+									}
+									if (hasSubmissionAttachment)
+									{
+										// upload the submission attachment
+										String submissionFolder = "/" + rb.getString("download.submission.attachment") + "/";
+										if ( entryName.indexOf(submissionFolder) != -1)
+											uploadZipAttachments(state, submissionTable, zin, entry, entryName, userName, "submission");
+									}
+									if (hasFeedbackAttachment)
+									{
+										// upload the feedback attachment
+										String submissionFolder = "/" + rb.getString("download.feedback.attachment") + "/";
+										if ( entryName.indexOf(submissionFolder) != -1)
+											uploadZipAttachments(state, submissionTable, zin, entry, entryName, userName, "feedback");
+									}
+									
+									// if this is a timestamp file
+									if (entryName.indexOf("timestamp") != -1)
+									{
+										byte[] timeStamp = readIntoBytes(zin, entryName, entry.getSize());
+										UploadGradeWrapper r = (UploadGradeWrapper) submissionTable.get(userName);
+						        		r.setSubmissionTimestamp(new String(timeStamp));
+						        		submissionTable.put(userName, r);
 									}
 								}
 							}
@@ -9231,50 +9269,86 @@ public class AssignmentAction extends PagedResourceActionII
 					{
 						AssignmentSubmission s = (AssignmentSubmission) sIterator.next();
 						User[] users = s.getSubmitters();
-						String uName = getUserLastNameFirstName(users[0]);
-						if (submissionTable.containsKey(uName))
+						if (users.length > 0 && users[0] != null)
 						{
-							// update the AssignmetnSubmission record
-							try
+							String uName = users[0].getSortName();
+							if (submissionTable.containsKey(uName))
 							{
-								AssignmentSubmissionEdit sEdit = AssignmentService.editSubmission(s.getReference());
-								
-								UploadGradeWrapper w = (UploadGradeWrapper) submissionTable.get(uName);
-								// add all attachment
-								if (hasSubmissions)
+								// update the AssignmetnSubmission record
+								try
 								{
+									AssignmentSubmissionEdit sEdit = AssignmentService.editSubmission(s.getReference());
 									
-									sEdit.clearFeedbackAttachments();
-									for (Iterator attachments = w.getAttachments().iterator(); attachments.hasNext();)
+									UploadGradeWrapper w = (UploadGradeWrapper) submissionTable.get(uName);
+									
+									// the submission text
+									if (hasSubmissionText)
 									{
-										sEdit.addFeedbackAttachment((Reference) attachments.next());
+										sEdit.setSubmittedText(w.getText());
+										sEdit.setFeedbackText(w.getText());
 									}
-									sEdit.setFeedbackText(w.getText());
+									
+									// the submission attachment
+									if (hasSubmissionAttachment)
+									{
+										sEdit.clearSubmittedAttachments();
+										for (Iterator attachments = w.getSubmissionAttachments().iterator(); attachments.hasNext();)
+										{
+											sEdit.addSubmittedAttachment((Reference) attachments.next());
+										}
+									}
+									
+									// the feedback attachment
+									if (hasFeedbackAttachment)
+									{
+										sEdit.clearFeedbackAttachments();
+										for (Iterator attachments = w.getFeedbackAttachments().iterator(); attachments.hasNext();)
+										{
+											sEdit.addFeedbackAttachment((Reference) attachments.next());
+										}
+									}
+									
+									// the feedback comment
+									if (hasComment)
+									{
+										sEdit.setFeedbackComment(w.getComment());
+									}
+									
+									// the grade file
+									if (hasGradeFile)
+									{
+										// set grade
+										sEdit.setGrade(w.getGrade());
+										sEdit.setGraded(true);
+									}
+									
+									// release or not
+									sEdit.setGradeReleased(releaseGrades);
+									sEdit.setReturned(releaseGrades);
+									if (releaseGrades)
+									{
+										sEdit.setTimeReturned(TimeService.newTime());
+										// update grade in gradebook
+										if (associateGradebookAssignment != null)
+										{
+											integrateGradebook(state, aReference, associateGradebookAssignment, null, null, null, -1, null, sEdit.getReference(), "update");
+										}
+									}
+									
+									// if the current submission lacks timestamp while the timestamp exists inside the zip file
+									if (StringUtil.trimToNull(w.getSubmissionTimeStamp()) != null && sEdit.getTimeSubmitted() == null)
+									{
+										sEdit.setTimeSubmitted(TimeService.newTimeGmt(w.getSubmissionTimeStamp()));
+										sEdit.setSubmitted(true);
+									}
+									
+									// commit
+									AssignmentService.commitEdit(sEdit);
 								}
-								
-								if (hasComments)
+								catch (Exception ee)
 								{
-									// add comment
-									sEdit.setFeedbackComment(w.getComment());
+									Log.debug("chef", ee.toString());
 								}
-								
-								if (hasGradeFile)
-								{
-									// set grade
-									sEdit.setGrade(w.getGrade());
-									sEdit.setGraded(true);
-								}
-								
-								// release or not
-								sEdit.setGradeReleased(releaseGrades);
-								sEdit.setReturned(releaseGrades);
-								
-								// commit
-								AssignmentService.commitEdit(sEdit);
-							}
-							catch (Exception ee)
-							{
-								Log.debug("chef", ee.toString());
 							}
 						}	
 					}
@@ -9288,6 +9362,91 @@ public class AssignmentAction extends PagedResourceActionII
 			cleanUploadAllContext(state);
 			state.setAttribute(STATE_MODE, MODE_INSTRUCTOR_GRADE_ASSIGNMENT);
 		}
+	}
+
+
+	/**
+	 * This is to get the submission or feedback attachment from the upload zip file into the submission object
+	 * @param state
+	 * @param submissionTable
+	 * @param zin
+	 * @param entry
+	 * @param entryName
+	 * @param userName
+	 * @param submissionOrFeedback
+	 */
+	private void uploadZipAttachments(SessionState state, Hashtable submissionTable, ZipInputStream zin, ZipEntry entry, String entryName, String userName, String submissionOrFeedback) {
+		// upload all the files as instuctor attachments to the submission for grading purpose
+		String fName = entryName.substring(entryName.lastIndexOf("/") + 1, entryName.length());
+		ContentTypeImageService iService = (ContentTypeImageService) state.getAttribute(STATE_CONTENT_TYPE_IMAGE_SERVICE);
+		try
+		{
+			if (submissionTable.containsKey(userName))
+		    {
+				// get file extension for detecting content type
+				// ignore those hidden files
+				String extension = "";
+				if(fName.contains(".") && fName.indexOf(".") != 0)
+				{
+					// add the file as attachment
+					ResourceProperties properties = ContentHostingService.newResourceProperties();
+					properties.addProperty(ResourceProperties.PROP_DISPLAY_NAME, fName);
+					
+					String[] parts = fName.split("\\.");
+					if(parts.length > 1)
+					{
+						extension = parts[parts.length - 1];
+					}
+					String contentType = ((ContentTypeImageService) state.getAttribute(STATE_CONTENT_TYPE_IMAGE_SERVICE)).getContentType(extension);
+					ContentResourceEdit attachment = ContentHostingService.addAttachmentResource(fName);
+					attachment.setContent(readIntoBytes(zin, entryName, entry.getSize()));
+					attachment.setContentType(contentType);
+					attachment.getPropertiesEdit().addAll(properties);
+					ContentHostingService.commitResource(attachment);
+					
+		    		UploadGradeWrapper r = (UploadGradeWrapper) submissionTable.get(userName);
+		    		List attachments = submissionOrFeedback.equals("submission")?r.getSubmissionAttachments():r.getFeedbackAttachments();
+		    		attachments.add(EntityManager.newReference(attachment.getReference()));
+		    		if (submissionOrFeedback.equals("submission"))
+		    		{
+		    			r.setSubmissionAttachments(attachments);
+		    		}
+		    		else
+		    		{
+		    			r.setFeedbackAttachments(attachments);
+		    		}
+		    		submissionTable.put(userName, r);
+				}
+		    }
+		}
+		catch (Exception ee)
+		{
+			Log.warn("chef", ee.toString());
+		}
+	}
+
+	private String getBodyTextFromZipHtml(ZipInputStream zin)
+	{
+		String rv = "";
+		try
+		{
+			rv = StringUtil.trimToNull(readIntoString(zin));
+		}
+		catch (IOException e)
+		{
+			Log.debug("chef", this + " " + e.toString());
+		}
+		if (rv != null)
+		{
+			int start = rv.indexOf("<body>");
+			int end = rv.indexOf("</body>");
+			if (start != -1 && end != -1)
+			{
+				// get the text in between
+				rv = rv.substring(start+6, end);
+			}
+		}
+		return rv;
 	}
 
 		private byte[] readIntoBytes(ZipInputStream zin, String fName, long length) throws IOException {
@@ -9345,7 +9504,9 @@ public class AssignmentAction extends PagedResourceActionII
 	 */
 	private void cleanUploadAllContext(SessionState state)
 	{
-		state.removeAttribute(UPLOAD_ALL_HAS_SUBMISSIONS);
+		state.removeAttribute(UPLOAD_ALL_HAS_SUBMISSION_TEXT);
+		state.removeAttribute(UPLOAD_ALL_HAS_SUBMISSION_ATTACHMENT);
+		state.removeAttribute(UPLOAD_ALL_HAS_FEEDBACK_ATTACHMENT);
 		state.removeAttribute(UPLOAD_ALL_HAS_GRADEFILE);
 		state.removeAttribute(UPLOAD_ALL_HAS_COMMENTS);
 		state.removeAttribute(UPLOAD_ALL_RELEASE_GRADES);
@@ -9380,21 +9541,33 @@ public class AssignmentAction extends PagedResourceActionII
 		String m_text = null;
 		
 		/**
+		 * the submission attachment list
+		 */
+		List m_submissionAttachments = EntityManager.newReferenceList();
+		
+		/**
 		 * the comment
 		 */
 		String m_comment = "";
 		
 		/**
-		 * the attachment list
+		 * the timestamp
 		 */
-		List m_attachments = EntityManager.newReferenceList();
+		String m_timeStamp="";
+		
+		/**
+		 * the feedback attachment list
+		 */
+		List m_feedbackAttachments = EntityManager.newReferenceList();
 
-		public UploadGradeWrapper(String grade, String text, String comment, List attachments)
+		public UploadGradeWrapper(String grade, String text, String comment, List submissionAttachments, List feedbackAttachments, String timeStamp)
 		{
 			m_grade = grade;
 			m_text = text;
 			m_comment = comment;
-			m_attachments = attachments;
+			m_submissionAttachments = submissionAttachments;
+			m_feedbackAttachments = feedbackAttachments;
+			m_timeStamp = timeStamp;
 		}
 
 		/**
@@ -9422,11 +9595,28 @@ public class AssignmentAction extends PagedResourceActionII
 		}
 		
 		/**
-		 * Returns the attachment list
+		 * Returns the submission attachment list
 		 */
-		public List getAttachments()
+		public List getSubmissionAttachments()
 		{
-			return m_attachments;
+			return m_submissionAttachments;
+		}
+		
+		/**
+		 * Returns the feedback attachment list
+		 */
+		public List getFeedbackAttachments()
+		{
+			return m_feedbackAttachments;
+		}
+		
+		/**
+		 * submission timestamp
+		 * @return
+		 */
+		public String getSubmissionTimeStamp()
+		{
+			return m_timeStamp;
 		}
 		
 		/**
@@ -9454,11 +9644,27 @@ public class AssignmentAction extends PagedResourceActionII
 		}
 		
 		/**
+		 * set the submission attachment list
+		 */
+		public void setSubmissionAttachments(List attachments)
+		{
+			m_submissionAttachments = attachments;
+		}
+		
+		/**
 		 * set the attachment list
 		 */
-		public void setAttachments(List attachments)
+		public void setFeedbackAttachments(List attachments)
 		{
-			m_attachments = attachments;
+			m_feedbackAttachments = attachments;
+		}
+		
+		/**
+		 * set the submission timestamp
+		 */
+		public void setSubmissionTimestamp(String timeStamp)
+		{
+			m_timeStamp = timeStamp;
 		}
 	}
 	
