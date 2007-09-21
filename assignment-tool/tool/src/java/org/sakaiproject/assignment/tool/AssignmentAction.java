@@ -627,6 +627,7 @@ public class AssignmentAction extends PagedResourceActionII
 	private static final String UPLOAD_ALL_HAS_SUBMISSION_ATTACHMENT = "upload_all_has_submission_attachment";
 	private static final String UPLOAD_ALL_HAS_GRADEFILE = "upload_all_has_gradefile";
 	private static final String UPLOAD_ALL_HAS_COMMENTS= "upload_all_has_comments";
+	private static final String UPLOAD_ALL_HAS_FEEDBACK_TEXT= "upload_all_has_feedback_text";
 	private static final String UPLOAD_ALL_HAS_FEEDBACK_ATTACHMENT = "upload_all_has_feedback_attachment";
 	private static final String UPLOAD_ALL_RELEASE_GRADES = "upload_all_release_grades";
 	
@@ -2273,6 +2274,8 @@ public class AssignmentAction extends PagedResourceActionII
 		context.put("hasSubmissionAttachment", state.getAttribute(UPLOAD_ALL_HAS_SUBMISSION_ATTACHMENT));
 		context.put("hasGradeFile", state.getAttribute(UPLOAD_ALL_HAS_GRADEFILE));
 		context.put("hasComments", state.getAttribute(UPLOAD_ALL_HAS_COMMENTS));
+		context.put("hasFeedbackText", state.getAttribute(UPLOAD_ALL_HAS_FEEDBACK_TEXT));
+		context.put("hasFeedbackAttachment", state.getAttribute(UPLOAD_ALL_HAS_FEEDBACK_ATTACHMENT));
 		context.put("releaseGrades", state.getAttribute(UPLOAD_ALL_RELEASE_GRADES));
 		
 		String template = (String) getContext(data).get("template");
@@ -9008,6 +9011,7 @@ public class AssignmentAction extends PagedResourceActionII
 		boolean hasSubmissionText = false;
 		boolean hasSubmissionAttachment = false;
 		boolean hasGradeFile = false;
+		boolean hasFeedbackText = false;
 		boolean hasComment = false;
 		boolean hasFeedbackAttachment = false;
 		boolean releaseGrades = false;
@@ -9028,6 +9032,11 @@ public class AssignmentAction extends PagedResourceActionII
 			// should contain grade file
 			hasGradeFile = true;	
 		}
+		if (params.getString("feedbackTexts") != null)
+		{
+			// inline text
+			hasFeedbackText = true;
+		}
 		if (params.getString("feedbackComments") != null)
 		{
 			// comments.txt should be available
@@ -9047,6 +9056,7 @@ public class AssignmentAction extends PagedResourceActionII
 		state.setAttribute(UPLOAD_ALL_HAS_SUBMISSION_ATTACHMENT, Boolean.valueOf(hasSubmissionAttachment));
 		state.setAttribute(UPLOAD_ALL_HAS_GRADEFILE, Boolean.valueOf(hasGradeFile));
 		state.setAttribute(UPLOAD_ALL_HAS_COMMENTS, Boolean.valueOf(hasComment));
+		state.setAttribute(UPLOAD_ALL_HAS_FEEDBACK_TEXT, Boolean.valueOf(hasFeedbackText));
 		state.setAttribute(UPLOAD_ALL_HAS_FEEDBACK_ATTACHMENT, Boolean.valueOf(hasFeedbackAttachment));
 		state.setAttribute(UPLOAD_ALL_RELEASE_GRADES, Boolean.valueOf(releaseGrades));
 		
@@ -9072,7 +9082,7 @@ public class AssignmentAction extends PagedResourceActionII
 					User[] users = s.getSubmitters();
 					if (users.length > 0 && users[0] != null)
 					{
-						submissionTable.put(users[0].getSortName(), new UploadGradeWrapper("", "", "", new Vector(), new Vector(), ""));
+						submissionTable.put(users[0].getSortName(), new UploadGradeWrapper("", "", "", new Vector(), new Vector(), "", ""));
 					}
 				}
 			}
@@ -9212,9 +9222,20 @@ public class AssignmentAction extends PagedResourceActionII
 								        		submissionTable.put(userName, r);
 								        }
 									}
+									if (hasFeedbackText && entryName.indexOf("feedbackText") != -1)
+									{
+										// upload the feedback text
+										String text = getBodyTextFromZipHtml(zin);
+										if (submissionTable.containsKey(userName) && text != null)
+								        {
+								        		UploadGradeWrapper r = (UploadGradeWrapper) submissionTable.get(userName);
+								        		r.setFeedbackText(text);
+								        		submissionTable.put(userName, r);
+								        }
+									}
 									if (hasSubmissionText && entryName.indexOf("_submissionText") != -1)
 									{
-										// upload the student submission text along with the feedback text
+										// upload the student submission text
 										String text = getBodyTextFromZipHtml(zin);
 										if (submissionTable.containsKey(userName) && text != null)
 								        {
@@ -9285,7 +9306,12 @@ public class AssignmentAction extends PagedResourceActionII
 									if (hasSubmissionText)
 									{
 										sEdit.setSubmittedText(w.getText());
-										sEdit.setFeedbackText(w.getText());
+									}
+									
+									// the feedback text
+									if (hasFeedbackText)
+									{
+										sEdit.setFeedbackText(w.getFeedbackText());
 									}
 									
 									// the submission attachment
@@ -9556,17 +9582,23 @@ public class AssignmentAction extends PagedResourceActionII
 		String m_timeStamp="";
 		
 		/**
+		 * the feedback text
+		 */
+		String m_feedbackText="";
+		
+		/**
 		 * the feedback attachment list
 		 */
 		List m_feedbackAttachments = EntityManager.newReferenceList();
 
-		public UploadGradeWrapper(String grade, String text, String comment, List submissionAttachments, List feedbackAttachments, String timeStamp)
+		public UploadGradeWrapper(String grade, String text, String comment, List submissionAttachments, List feedbackAttachments, String timeStamp, String feedbackText)
 		{
 			m_grade = grade;
 			m_text = text;
 			m_comment = comment;
 			m_submissionAttachments = submissionAttachments;
 			m_feedbackAttachments = feedbackAttachments;
+			m_feedbackText = feedbackText;
 			m_timeStamp = timeStamp;
 		}
 
@@ -9620,6 +9652,15 @@ public class AssignmentAction extends PagedResourceActionII
 		}
 		
 		/**
+		 * feedback text/incline comment
+		 * @return
+		 */
+		public String getFeedbackText()
+		{
+			return m_feedbackText;
+		}
+		
+		/**
 		 * set the grade string
 		 */
 		public void setGrade(String grade)
@@ -9665,6 +9706,14 @@ public class AssignmentAction extends PagedResourceActionII
 		public void setSubmissionTimestamp(String timeStamp)
 		{
 			m_timeStamp = timeStamp;
+		}
+		
+		/**
+		 * set the feedback text
+		 */
+		public void setFeedbackText(String feedbackText)
+		{
+			m_feedbackText = feedbackText;
 		}
 	}
 	
