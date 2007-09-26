@@ -3442,7 +3442,7 @@ public abstract class BaseAssignmentService implements AssignmentService, Entity
 								{
 									submittersString = submittersString.concat("; ");
 								}
-								String fullName = submitters[i].getLastName() + "," + submitters[i].getFirstName();
+								String fullName = submitters[i].getSortName();
 								submittersString = submittersString.concat(fullName);
 								gradesBuffer.append(submitters[i].getDisplayId() + "," + fullName + "," + s.getGradeDisplay() + "\n");
 							}
@@ -3469,75 +3469,38 @@ public abstract class BaseAssignmentService implements AssignmentService, Entity
 											out.closeEntry();
 										}
 										
+										// record submission timestamp
+										if (s.getSubmitted() && s.getTimeSubmitted() != null)
+										{
+											ZipEntry textEntry = new ZipEntry(submittersName + "timestamp.txt");
+											out.putNextEntry(textEntry);
+											byte[] b = (s.getTimeSubmitted().toString()).getBytes();
+											out.write(b);
+											textEntry.setSize(b.length);
+											out.closeEntry();
+										}
+										
 										// the comments.txt file to show instructor's comments
 										ZipEntry textEntry = new ZipEntry(submittersName + "comments.txt");
 										out.putNextEntry(textEntry);
 										out.write(FormattedText.encodeUnicode(s.getFeedbackComment()).getBytes());
 										out.closeEntry();
+										
+										// create an attachment folder for the feedback attachments
+										String feedbackSubAttachmentFolder = submittersName + rb.getString("download.feedback.attachment") + "/";
+										ZipEntry feedbackSubAttachmentFolderEntry = new ZipEntry(feedbackSubAttachmentFolder);
+										out.putNextEntry(feedbackSubAttachmentFolderEntry);
+										out.closeEntry();
 		
-										// create the attachment file(s)
-										List attachments = s.getSubmittedAttachments();
-										int attachedUrlCount = 0;
-										for (int j = 0; j < attachments.size(); j++)
-										{
-											Reference r = (Reference) attachments.get(j);
-											try
-											{
-												ContentResource resource = ContentHostingService.getResource(r.getId());
-		
-												String contentType = resource.getContentType();
-												
-												ResourceProperties props = r.getProperties();
-												String displayName = props.getPropertyFormatted(props.getNamePropDisplayName());
-		
-												// for URL content type, encode a redirect to the body URL
-												if (contentType.equalsIgnoreCase(ResourceProperties.TYPE_URL))
-												{
-													displayName = "attached_URL_" + attachedUrlCount;
-													attachedUrlCount++;
-												}
-		
-												// buffered stream input
-												InputStream content = resource.streamContent();
-												byte data[] = new byte[1024 * 10];
-												BufferedInputStream bContent = new BufferedInputStream(content, data.length);
-												
-												ZipEntry attachmentEntry = new ZipEntry(submittersName + displayName);
-												out.putNextEntry(attachmentEntry);
-												int bCount = -1;
-												while ((bCount = bContent.read(data, 0, data.length)) != -1) 
-												{
-													out.write(data, 0, bCount);
-												}
-												out.closeEntry();
-												content.close();
-											}
-											catch (PermissionException e)
-											{
-												M_log.debug(this + ": getSubmissionsZip--PermissionException submittersName="
-														+ submittersName + " attachment reference=" + r);
-											}
-											catch (IdUnusedException e)
-											{
-												M_log.debug(this + ": getSubmissionsZip--IdUnusedException submittersName="
-														+ submittersName + " attachment reference=" + r);
-											}
-											catch (TypeException e)
-											{
-												M_log.debug(this + ": getSubmissionsZip--TypeException: submittersName="
-														+ submittersName + " attachment reference=" + r);
-											}
-											catch (IOException e)
-											{
-												M_log.debug(this + ": getSubmissionsZip--IOException: Problem in creating the attachment file: submittersName="
-																+ submittersName + " attachment reference=" + r);
-											}
-											catch (ServerOverloadException e)
-											{
-												M_log.debug(this + ": getSubmissionsZip--ServerOverloadException: submittersName="
-														+ submittersName + " attachment reference=" + r);
-											}
-										} // for
+										// create a attachment folder for the submission attachments
+										String sSubAttachmentFolder = submittersName + rb.getString("download.submission.attachment") + "/";
+										ZipEntry sSubAttachmentFolderEntry = new ZipEntry(sSubAttachmentFolder);
+										out.putNextEntry(sSubAttachmentFolderEntry);
+										out.closeEntry();
+										// add all submission attachment into the submission attachment folder
+										zipAttachments(out, submittersName, sSubAttachmentFolder, s.getSubmittedAttachments());
+										// add all feedback attachment folder
+										zipAttachments(out, submittersName, feedbackSubAttachmentFolder, s.getFeedbackAttachments());
 		
 										added = true;
 									}
@@ -3578,6 +3541,72 @@ public abstract class BaseAssignmentService implements AssignmentService, Entity
 			M_log.debug(this + ": getSubmissionsZip--IOException unable to create the zip file for assignment "
 					+ assignmentTitle);
 		}
+	}
+
+
+
+	private void zipAttachments(ZipOutputStream out, String submittersName, String sSubAttachmentFolder, List attachments) {
+		int attachedUrlCount = 0;
+		for (int j = 0; j < attachments.size(); j++)
+		{
+			Reference r = (Reference) attachments.get(j);
+			try
+			{
+				ContentResource resource = ContentHostingService.getResource(r.getId());
+
+				String contentType = resource.getContentType();
+				
+				ResourceProperties props = r.getProperties();
+				String displayName = props.getPropertyFormatted(props.getNamePropDisplayName());
+
+				// for URL content type, encode a redirect to the body URL
+				if (contentType.equalsIgnoreCase(ResourceProperties.TYPE_URL))
+				{
+					displayName = "attached_URL_" + attachedUrlCount;
+					attachedUrlCount++;
+				}
+
+				// buffered stream input
+				InputStream content = resource.streamContent();
+				byte data[] = new byte[1024 * 10];
+				BufferedInputStream bContent = new BufferedInputStream(content, data.length);
+				
+				ZipEntry attachmentEntry = new ZipEntry(sSubAttachmentFolder + displayName);
+				out.putNextEntry(attachmentEntry);
+				int bCount = -1;
+				while ((bCount = bContent.read(data, 0, data.length)) != -1) 
+				{
+					out.write(data, 0, bCount);
+				}
+				out.closeEntry();
+				content.close();
+			}
+			catch (PermissionException e)
+			{
+				M_log.debug(this + ": getSubmissionsZip--PermissionException submittersName="
+						+ submittersName + " attachment reference=" + r);
+			}
+			catch (IdUnusedException e)
+			{
+				M_log.debug(this + ": getSubmissionsZip--IdUnusedException submittersName="
+						+ submittersName + " attachment reference=" + r);
+			}
+			catch (TypeException e)
+			{
+				M_log.debug(this + ": getSubmissionsZip--TypeException: submittersName="
+						+ submittersName + " attachment reference=" + r);
+			}
+			catch (IOException e)
+			{
+				M_log.debug(this + ": getSubmissionsZip--IOException: Problem in creating the attachment file: submittersName="
+								+ submittersName + " attachment reference=" + r);
+			}
+			catch (ServerOverloadException e)
+			{
+				M_log.debug(this + ": getSubmissionsZip--ServerOverloadException: submittersName="
+						+ submittersName + " attachment reference=" + r);
+			}
+		} // for
 	}
 
 	/**
