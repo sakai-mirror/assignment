@@ -136,6 +136,7 @@ public class AssignmentAction extends PagedResourceActionII
 {
 	private static ResourceLoader rb = new ResourceLoader("assignment");
 
+	private static final String ASSIGNMENT_TOOL_ID = "sakai.assignment.grades";
 	
 	private static final Boolean allowReviewService = ServerConfigurationService.getBoolean("assignment.useContentReview", false);
 	
@@ -8425,6 +8426,31 @@ public class AssignmentAction extends PagedResourceActionII
 
 	} // validPointGrade
 
+	/**
+	 * valid grade for letter based type
+	 */
+	private void validLetterGrade(SessionState state, String grade)
+	{
+		String VALID_CHARS_FOR_LETTER_GRADE = " ABCDEFGHIJKLMNOPQRSTUVWXYZ+-";
+		boolean invalid = false;
+		if (grade != null)
+		{
+			grade = grade.toUpperCase();
+			for (int i = 0; i < grade.length() && !invalid; i++)
+			{
+				char c = grade.charAt(i);
+				if (VALID_CHARS_FOR_LETTER_GRADE.indexOf(c) == -1)
+				{
+					invalid = true;
+				}
+			}
+			if (invalid)
+			{
+				addAlert(state, rb.getString("plesuse0"));
+			}
+		}
+	}
+
 	private void alertInvalidPoint(SessionState state, String grade)
 	{
 		String VALID_CHARS_FOR_INT = "-01234567890";
@@ -9310,7 +9336,8 @@ public class AssignmentAction extends PagedResourceActionII
 									// the grade file
 									if (hasGradeFile)
 									{
-										// set grade								String grade = StringUtil.trimToNull(w.getGrade());
+										// set grade
+										String grade = StringUtil.trimToNull(w.getGrade());
 										sEdit.setGrade(grade);
 										if (grade != null && !grade.equals(rb.getString("gen.nograd")) && !grade.equals("ungraded"))
 											sEdit.setGraded(true);
