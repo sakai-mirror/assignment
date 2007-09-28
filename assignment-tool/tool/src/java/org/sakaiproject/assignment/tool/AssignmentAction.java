@@ -2434,7 +2434,10 @@ public class AssignmentAction extends PagedResourceActionII
 								String submitterId = submitters[0].getId();
 								String gradeString = StringUtil.trimToNull(aSubmission.getGrade());
 								Double grade = (gradeString != null && aSubmission.getGradeReleased()) ? Double.valueOf(displayGrade(state,gradeString)) : null;
-								m.put(submitterId, grade);
+								/* Oncourse - don't push nulls to the gradebook unless released to student */
+								if (grade != null || aSubmission.getGradeReleased()) {
+									m.put(submitterId, grade);
+								}
 							}
 
 							// need to update only when there is at least one submission
@@ -2458,7 +2461,10 @@ public class AssignmentAction extends PagedResourceActionII
 											String submitterId = submitters[0].getId();
 											String gradeString = StringUtil.trimToNull(aSubmission.getGrade());
 											Double grade = (gradeString != null && aSubmission.getGradeReleased()) ? Double.valueOf(displayGrade(state,gradeString)) : null;
-											g.setAssignmentScore(gradebookUid, associateGradebookAssignment, submitterId, grade, assignmentToolTitle);
+											/* Oncourse - don't push nulls to the gradebook unless released to student */
+											if (grade != null || aSubmission.getGradeReleased()) {
+												g.setAssignmentScore(gradebookUid, associateGradebookAssignment, submitterId, grade, assignmentToolTitle);
+											}
 										}
 									}
 								}
@@ -2482,21 +2488,31 @@ public class AssignmentAction extends PagedResourceActionII
 								{
 									if (g.isExternalAssignmentDefined(gradebookUid, associateGradebookAssignment))
 									{
-										// the associated assignment is externally maintained
-										g.updateExternalAssessmentScore(gradebookUid, associateGradebookAssignment, submitters[0].getId(),
-												(gradeString != null && aSubmission.getGradeReleased()) ? Double.valueOf(displayGrade(state,gradeString)) : null);
+										/* Oncourse - don't push nulls to the gradebook unless released to student */
+										Double grade = (gradeString != null && aSubmission.getGradeReleased()) ? Double.valueOf(displayGrade(state,gradeString)) : null;
+										if (grade != null || aSubmission.getGradeReleased()) {
+											// the associated assignment is externally maintained
+											g.updateExternalAssessmentScore(gradebookUid, associateGradebookAssignment, submitters[0].getId(),	grade);
+										}
 									}
 									else if (g.isAssignmentDefined(gradebookUid, associateGradebookAssignment))
 									{
-										// the associated assignment is internal one, update records
-										g.setAssignmentScore(gradebookUid, associateGradebookAssignment, submitters[0].getId(),
-												(gradeString != null && aSubmission.getGradeReleased()) ? Double.valueOf(displayGrade(state,gradeString)) : null, assignmentToolTitle);
+										/* Oncourse - don't push nulls to the gradebook unless released to student */
+										Double grade = (gradeString != null && aSubmission.getGradeReleased()) ? Double.valueOf(displayGrade(state,gradeString)) : null;
+										if (grade != null || aSubmission.getGradeReleased()) {
+											// the associated assignment is internal one, update records
+											g.setAssignmentScore(gradebookUid, associateGradebookAssignment, submitters[0].getId(),
+													grade, assignmentToolTitle);
+										}
 									}
 								}
 								else
 								{
-									g.updateExternalAssessmentScore(gradebookUid, assignmentRef, submitters[0].getId(),
-											(gradeString != null && aSubmission.getGradeReleased()) ? Double.valueOf(displayGrade(state,gradeString)) : null);
+									/* Oncourse - don't push nulls to the gradebook unless released to student */
+									Double grade = (gradeString != null && aSubmission.getGradeReleased()) ? Double.valueOf(displayGrade(state,gradeString)) : null;
+									if (grade != null || aSubmission.getGradeReleased()) {
+										g.updateExternalAssessmentScore(gradebookUid, assignmentRef, submitters[0].getId(), grade);
+									}
 								}
 							}
 							catch (Exception e)
