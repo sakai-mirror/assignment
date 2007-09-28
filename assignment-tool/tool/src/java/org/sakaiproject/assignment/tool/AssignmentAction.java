@@ -8590,7 +8590,7 @@ public class AssignmentAction extends PagedResourceActionII
 	 */
 	private String processFormattedTextFromBrowser(SessionState state, String strFromBrowser, boolean checkForFormattingErrors)
 	{
-		StringBuilder alertMsg = new StringBuilder();
+		StringBuffer alertMsg = new StringBuffer();
 		try
 		{
 			boolean replaceWhitespaceTags = true;
