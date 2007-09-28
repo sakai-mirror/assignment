@@ -7912,10 +7912,10 @@ public abstract class BaseAssignmentService implements AssignmentService, Entity
 						retVal = rb.getString("gen.dra2") + " " + rb.getString("gen.inpro");
 				}
 			}
-
+	
 			return retVal;
 		}
-		
+
 		private String getGradeOrComment() {
 			String retVal;
 			if (getGrade() != null && getGrade().length() > 0)
