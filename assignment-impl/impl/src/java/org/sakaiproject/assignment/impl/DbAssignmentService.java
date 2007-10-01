@@ -399,7 +399,7 @@ public class DbAssignmentService extends BaseAssignmentService
 
 		public List getAll(String context)
 		{
-			return super.getAllResourcesWhere(FIELDS[0], context);
+			return super.getAllResourcesWhere(SUBMISSION_FIELDS[0], context);
 		}
 
 		public AssignmentSubmissionEdit put(String id, String context, String assignmentId)
@@ -407,12 +407,13 @@ public class DbAssignmentService extends BaseAssignmentService
 			// pack the context in an array
 			Object[] others = new Object[2];
 			others[0] = context;
-			//others[1] = assignmentId;
-			
+	
 			String constraintKey = SessionManager.getCurrentSessionUserId();
 			// add a unique constraint field to prevent duplicate submission records per student
 			// constraint is based on user EID but should not be accessible directly to the tool
 			others[1] = constraintKey;
+			
+			others[2] = assignmentId;
 			
 			return (AssignmentSubmissionEdit) super.putResource(id, others);
 		}
