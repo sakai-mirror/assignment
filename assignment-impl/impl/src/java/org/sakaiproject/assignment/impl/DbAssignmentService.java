@@ -405,7 +405,7 @@ public class DbAssignmentService extends BaseAssignmentService
 		public AssignmentSubmissionEdit put(String id, String context, String assignmentId)
 		{
 			// pack the context in an array
-			Object[] others = new Object[2];
+			Object[] others = new Object[3];
 			others[0] = context;
 	
 			String constraintKey = SessionManager.getCurrentSessionUserId();
