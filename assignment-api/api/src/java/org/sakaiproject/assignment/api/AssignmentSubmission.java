@@ -218,4 +218,10 @@ public interface AssignmentSubmission extends Entity
 	 */
 	public String getReviewIconUrl();
 	
+	/**
+	 *  a field added to the database to prevent duplicate submisions -- this field is meant to be inforced at the database layer and may not be accessible to the tool
+	 * @return
+	 */
+	public String getConstraintKey();
+	
 }
