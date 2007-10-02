@@ -7524,6 +7524,7 @@ public abstract class BaseAssignmentService implements AssignmentService, Entity
 			
 			m_id = submission.getId();
 			m_context = submission.getContext();
+			m_constraint = submission.getConstraintKey();
 			m_assignment = submission.getAssignmentId();
 			m_grade = submission.getGrade();
 			m_submitters = submission.getSubmitterIds();
