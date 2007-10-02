@@ -65,8 +65,7 @@ public class DbAssignmentService extends BaseAssignmentService
 	protected boolean m_locksInDb = true;
 
 	/** Extra fields to store in the db with the XML. */
-	protected static final String[] FIELDS = { "CONTEXT" };
-	protected static final String[] SUBMISSION_FIELDS = { "CONTEXT", "CONSTRAINT_KEY" };
+	protected static final String[] FIELDS = { "CONTEXT", "CONSTRAINT_KEY" };
 
 	/**********************************************************************************************************************************************************************************************************************************************************
 	 * Constructors, Dependencies and their setter methods
@@ -383,7 +382,7 @@ public class DbAssignmentService extends BaseAssignmentService
 		 */
 		public DbCachedAssignmentSubmissionStorage(AssignmentSubmissionStorageUser submission)
 		{
-			super(m_submissionsTableName, "SUBMISSION_ID", SUBMISSION_FIELDS, m_locksInDb, "submission", submission, m_sqlService);
+			super(m_submissionsTableName, "SUBMISSION_ID", FIELDS, m_locksInDb, "submission", submission, m_sqlService);
 
 		} // DbCachedAssignmentSubmissionStorage
 
@@ -399,21 +398,20 @@ public class DbAssignmentService extends BaseAssignmentService
 
 		public List getAll(String context)
 		{
-			return super.getAllResourcesWhere(SUBMISSION_FIELDS[0], context);
+			return super.getAllResourcesWhere(FIELDS[0], context);
 		}
 
 		public AssignmentSubmissionEdit put(String id, String context, String assignmentId)
 		{
 			// pack the context in an array
-			Object[] others = new Object[3];
+			Object[] others = new Object[2];
 			others[0] = context;
-	
+			others[1] = assignmentId;
+			
 			String constraintKey = SessionManager.getCurrentSessionUserId();
 			// add a unique constraint field to prevent duplicate submission records per student
 			// constraint is based on user EID but should not be accessible directly to the tool
-			others[1] = constraintKey;
-			
-			others[2] = assignmentId;
+			others[2] = constraintKey;
 			
 			return (AssignmentSubmissionEdit) super.putResource(id, others);
 		}

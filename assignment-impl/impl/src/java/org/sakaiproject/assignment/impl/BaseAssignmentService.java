@@ -7016,8 +7016,6 @@ public abstract class BaseAssignmentService implements AssignmentService, Entity
 		protected String m_id;
 
 		protected String m_assignment;
-		
-		protected String m_constraint;
 
 		protected String m_context;
 
@@ -7140,7 +7138,7 @@ public abstract class BaseAssignmentService implements AssignmentService, Entity
 		/**
 		 * Constructor used by addSubmission.
 		 */
-		public BaseAssignmentSubmission(String id, String context, String constraintKey, String assignId)
+		public BaseAssignmentSubmission(String id, String context, String assignId)
 		{
 			
 			// must set initial review status
@@ -7150,7 +7148,6 @@ public abstract class BaseAssignmentService implements AssignmentService, Entity
 			
 			m_id = id;
 			m_context = context;
-			m_constraint = constraintKey;
 			m_assignment = assignId;
 			m_properties = new BaseResourcePropertiesEdit();
 			addLiveProperties(m_properties);
@@ -7524,7 +7521,6 @@ public abstract class BaseAssignmentService implements AssignmentService, Entity
 			
 			m_id = submission.getId();
 			m_context = submission.getContext();
-			m_constraint = submission.getConstraintKey();
 			m_assignment = submission.getAssignmentId();
 			m_grade = submission.getGrade();
 			m_submitters = submission.getSubmitterIds();
@@ -7641,11 +7637,6 @@ public abstract class BaseAssignmentService implements AssignmentService, Entity
 		public String getAssignmentId()
 		{
 			return m_assignment;
-		}
-		
-		public String getConstraintKey()
-		{
-			return m_constraint;
 		}
 
 		/**
@@ -9260,10 +9251,7 @@ public abstract class BaseAssignmentService implements AssignmentService, Entity
 		 */
 		public Entity newResource(Entity container, String id, Object[] others)
 		{
-			//others[0] -> context
-			//others[1] -> constraintKey
-			//others[2] -> assignmentId
-			return new BaseAssignmentSubmission(id, (String) others[0], (String) others[1], (String) others[2]);
+			return new BaseAssignmentSubmission(id, (String) others[0], (String) others[1]);
 		}
 
 		/**
@@ -9343,10 +9331,7 @@ public abstract class BaseAssignmentService implements AssignmentService, Entity
 		 */
 		public Edit newResourceEdit(Entity container, String id, Object[] others)
 		{
-			//others[0] -> context
-			//others[1] -> constraintKey
-			//others[2] -> assignmentId
-			BaseAssignmentSubmissionEdit e = new BaseAssignmentSubmissionEdit(id, (String) others[0], (String) others[1], (String) others[1]);
+			BaseAssignmentSubmissionEdit e = new BaseAssignmentSubmissionEdit(id, (String) others[0], (String) others[1]);
 			e.activate();
 			return e;
 		}
@@ -9392,8 +9377,6 @@ public abstract class BaseAssignmentService implements AssignmentService, Entity
 		{
 			Object rv[] = new Object[1];
 			rv[0] = ((AssignmentSubmission) r).getAssignmentId();
-			rv[1] = ((AssignmentSubmission) r).getConstraintKey();
-			
 			return rv;
 		}
 
