@@ -9375,8 +9375,14 @@ public abstract class BaseAssignmentService implements AssignmentService, Entity
 		 */
 		public Object[] storageFields(Entity r)
 		{
-			Object rv[] = new Object[1];
+			Object rv[] = new Object[2];
 			rv[0] = ((AssignmentSubmission) r).getAssignmentId();
+			
+			User[] submitters = ((AssignmentSubmission) r).getSubmitters();
+			if(submitters != null) {
+				rv[1] = submitters[0].getId();
+			}
+			
 			return rv;
 		}
 

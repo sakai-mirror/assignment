@@ -65,6 +65,7 @@ public class DbAssignmentService extends BaseAssignmentService
 
 	/** Extra fields to store in the db with the XML. */
 	protected static final String[] FIELDS = { "CONTEXT" };
+	protected static final String[] SUBMISSION_FIELDS = { "CONTEXT", "SUBMITTER0" };
 
 	/**********************************************************************************************************************************************************************************************************************************************************
 	 * Constructors, Dependencies and their setter methods
@@ -381,7 +382,7 @@ public class DbAssignmentService extends BaseAssignmentService
 		 */
 		public DbCachedAssignmentSubmissionStorage(AssignmentSubmissionStorageUser submission)
 		{
-			super(m_submissionsTableName, "SUBMISSION_ID", FIELDS, m_locksInDb, "submission", submission, m_sqlService);
+			super(m_submissionsTableName, "SUBMISSION_ID", SUBMISSION_FIELDS, m_locksInDb, "submission", submission, m_sqlService);
 
 		} // DbCachedAssignmentSubmissionStorage
 
