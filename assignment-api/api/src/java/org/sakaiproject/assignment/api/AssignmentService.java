@@ -488,7 +488,7 @@ public interface AssignmentService extends EntityProducer
 	 * @throws PermissionException
 	 *         if the current User does not have permission to do this.
 	 */
-	public AssignmentSubmissionEdit addSubmission(String context, String assignmentId) throws PermissionException;
+	public AssignmentSubmissionEdit addSubmission(String context, String assignmentId, User submitters[]) throws PermissionException;
 
 	/**
 	 * Add a new AssignmentSubmission to the directory, from a definition in XML. Must commitEdit() to make official, or cancelEdit() when done!

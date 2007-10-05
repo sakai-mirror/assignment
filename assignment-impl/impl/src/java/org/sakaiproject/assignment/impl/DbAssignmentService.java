@@ -36,6 +36,7 @@ import org.sakaiproject.assignment.api.AssignmentSubmission;
 import org.sakaiproject.assignment.api.AssignmentSubmissionEdit;
 import org.sakaiproject.db.api.SqlReader;
 import org.sakaiproject.db.api.SqlService;
+import org.sakaiproject.user.api.User;
 import org.sakaiproject.util.BaseDbSingleStorage;
 import org.sakaiproject.util.Xml;
 import org.w3c.dom.Document;
@@ -398,15 +399,16 @@ public class DbAssignmentService extends BaseAssignmentService
 
 		public List getAll(String context)
 		{
-			return super.getAllResourcesWhere(FIELDS[0], context);
+			return super.getAllResourcesWhere(SUBMISSION_FIELDS[0], context);
 		}
 
-		public AssignmentSubmissionEdit put(String id, String context, String assignmentId)
+		public AssignmentSubmissionEdit put(String id, String context, String assignmentId, User submitters[])
 		{
 			// pack the context in an array
-			Object[] others = new Object[2];
+			Object[] others = new Object[3];
 			others[0] = context;
 			others[1] = assignmentId;
+			others[2] = submitters;
 			return (AssignmentSubmissionEdit) super.putResource(id, others);
 		}
 

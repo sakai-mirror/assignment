@@ -1746,7 +1746,7 @@ public abstract class BaseAssignmentService implements AssignmentService, Entity
 	 * @throws PermissionException
 	 *         if the current User does not have permission to do this.
 	 */
-	public AssignmentSubmissionEdit addSubmission(String context, String assignmentId) throws PermissionException
+	public AssignmentSubmissionEdit addSubmission(String context, String assignmentId, User submitters[]) throws PermissionException
 	{
 		if (M_log.isDebugEnabled()) M_log.debug("ASSIGNMENT : BASE SERVICE : ENTERING ADD SUBMISSION");
 
@@ -1771,7 +1771,7 @@ public abstract class BaseAssignmentService implements AssignmentService, Entity
 		if (M_log.isDebugEnabled()) M_log.debug("ASSIGNMENT : BASE SERVICE : ADD SUBMISSION : UNLOCKED");
 
 		// storage
-		AssignmentSubmissionEdit submission = m_submissionStorage.put(submissionId, context, assignmentId);
+		AssignmentSubmissionEdit submission = m_submissionStorage.put(submissionId, context, assignmentId, submitters);
 
 		if (M_log.isDebugEnabled())
 			M_log.debug("ASSIGNMENT : BASE SERVICE : LEAVING ADD SUBMISSION : REF : " + submission.getReference());
@@ -1808,7 +1808,7 @@ public abstract class BaseAssignmentService implements AssignmentService, Entity
 
 		// reserve a submission with this id from the info store - if it's in use, this will return null
 		AssignmentSubmissionEdit submission = m_submissionStorage.put(submissionFromXml.getId(), submissionFromXml.getContext(),
-				submissionFromXml.getAssignmentId());
+				submissionFromXml.getAssignmentId(), submissionFromXml.getSubmitters());
 		if (submission == null)
 		{
 			throw new IdUsedException(submissionFromXml.getId());
@@ -7138,7 +7138,7 @@ public abstract class BaseAssignmentService implements AssignmentService, Entity
 		/**
 		 * Constructor used by addSubmission.
 		 */
-		public BaseAssignmentSubmission(String id, String context, String assignId)
+		public BaseAssignmentSubmission(String id, String context, String assignId, User[] submitters)
 		{
 			
 			// must set initial review status
@@ -7164,9 +7164,17 @@ public abstract class BaseAssignmentService implements AssignmentService, Entity
 			m_grade = "";
 			m_timeLastModified = TimeService.newTime();
 
-			String currentUser = SessionManager.getCurrentSessionUserId();
-			if (currentUser == null) currentUser = "";
-			m_submitters.add(currentUser);
+			if(submitters == null) {
+				String currentUser = SessionManager.getCurrentSessionUserId();
+				if (currentUser == null) currentUser = "";
+				m_submitters.add(currentUser);
+			} else {
+				for(int i = 0; i < submitters.length; i++) {
+					if(submitters[i] != null) {
+						m_submitters.add(submitters[i].getId());
+					}
+				}
+			}
 		}
 
 		
@@ -7994,9 +8002,9 @@ public abstract class BaseAssignmentService implements AssignmentService, Entity
 		 * @param id
 		 *        The AssignmentSubmission id.
 		 */
-		public BaseAssignmentSubmissionEdit(String id, String context, String assignmentId)
+		public BaseAssignmentSubmissionEdit(String id, String context, String assignmentId, User[] submitters)
 		{
-			super(id, context, assignmentId);
+			super(id, context, assignmentId, submitters);
 
 		} // BaseAssignmentSubmissionEdit
 
@@ -8606,9 +8614,11 @@ public abstract class BaseAssignmentService implements AssignmentService, Entity
 		 *        The AssignmentSubmission id.
 		 * @param context
 		 *        The context.
+		 * @param submitters
+		 * 		  user(s) who submitted the submission
 		 * @return The locked AssignmentSubmission object with this id, or null if the id is in use.
 		 */
-		public AssignmentSubmissionEdit put(String id, String context, String assignmentId);
+		public AssignmentSubmissionEdit put(String id, String context, String assignmentId, User submitters[]);
 
 		/**
 		 * Get a lock on the AssignmentSubmission with this id, or null if a lock cannot be gotten.
@@ -9251,7 +9261,7 @@ public abstract class BaseAssignmentService implements AssignmentService, Entity
 		 */
 		public Entity newResource(Entity container, String id, Object[] others)
 		{
-			return new BaseAssignmentSubmission(id, (String) others[0], (String) others[1]);
+			return new BaseAssignmentSubmission(id, (String) others[0], (String) others[1], (User[]) others[2]);
 		}
 
 		/**
@@ -9331,7 +9341,7 @@ public abstract class BaseAssignmentService implements AssignmentService, Entity
 		 */
 		public Edit newResourceEdit(Entity container, String id, Object[] others)
 		{
-			BaseAssignmentSubmissionEdit e = new BaseAssignmentSubmissionEdit(id, (String) others[0], (String) others[1]);
+			BaseAssignmentSubmissionEdit e = new BaseAssignmentSubmissionEdit(id, (String) others[0], (String) others[1], (User[]) others[2]);
 			e.activate();
 			return e;
 		}
@@ -9379,8 +9389,10 @@ public abstract class BaseAssignmentService implements AssignmentService, Entity
 			rv[0] = ((AssignmentSubmission) r).getAssignmentId();
 			
 			User[] submitters = ((AssignmentSubmission) r).getSubmitters();
-			if(submitters != null) {
+			if(submitters != null && submitters[0] != null) {
 				rv[1] = submitters[0].getId();
+			} else {
+				M_log.error(new Exception("Unique constraint is in force -- submitter[0] cannot be null"));
 			}
 			
 			return rv;

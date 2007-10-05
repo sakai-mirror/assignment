@@ -26,6 +26,7 @@ import java.util.Set;
 import java.util.Vector;
 
 import org.sakaiproject.component.cover.ComponentManager;
+import org.sakaiproject.user.api.User;
 
 /**
  * <p>
@@ -448,13 +449,13 @@ public class AssignmentService {
 	}
 
 	public static org.sakaiproject.assignment.api.AssignmentSubmissionEdit addSubmission(
-			java.lang.String param0, java.lang.String param1)
+			java.lang.String param0, java.lang.String param1, User[] param2)
 			throws org.sakaiproject.exception.PermissionException {
 		org.sakaiproject.assignment.api.AssignmentService service = getInstance();
 		if (service == null)
 			return null;
 
-		return service.addSubmission(param0, param1);
+		return service.addSubmission(param0, param1, param2);
 	}
 
 	public static org.sakaiproject.assignment.api.AssignmentSubmissionEdit mergeSubmission(
