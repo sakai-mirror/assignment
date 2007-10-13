@@ -26,4 +26,6 @@
   <classpathentry combineaccessrules="false" kind="src" path="/email-api"/>
   <classpathentry combineaccessrules="false" kind="src" path="/content-review-api"/>
   <classpathentry kind="output" path="bin"/>
+  <classpathentry kind="var" path="M2_REPO/commons-dbcp/commons-dbcp/1.2.1/commons-dbcp-1.2.1.jar"/>
+  <classpathentry kind="var" path="M2_REPO/commons-collections/commons-collections/3.2/commons-collections-3.2.jar"/>
 </classpath>
