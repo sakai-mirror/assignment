@@ -7259,7 +7259,7 @@ public class AssignmentAction extends PagedResourceActionII
 			}
 
 			// sort ascending or descending
-			if (m_asc.equals(Boolean.FALSE.toString()))
+			if (!Boolean.valueOf(m_asc))
 			{
 				result = -result;
 			}
