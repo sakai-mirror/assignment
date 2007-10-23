@@ -12,6 +12,12 @@ CLASSPATH="$CLASSPATH:$HOME/.m2/repository/org/sakaiproject/sakai-assignment-imp
 CLASSPATH="$CLASSPATH:$HOME/.m2/repository/org/sakaiproject/sakai-util-log/M2/sakai-util-log-M2.jar"
 CLASSPATH="$CLASSPATH:$HOME/.m2/repository/log4j/log4j/1.2.9/log4j-1.2.9.jar"
 
+##### JDBC DRIVER #####
+## MYSQL ##
+CLASSPATH="$CLASSPATH:$CATALINA_HOME/common/lib/mysql-connector-java-3.1.11.jar"
+## ORACLE ##
+CLASSPATH="$CLASSPATH:$CATALINA_HOME/common/lib/ojdbc-14.jar"
+
 java $JAVA_OPTS  \
       -classpath "$CLASSPATH" \
 	org.sakaiproject.assignment.impl.conversion.impl.UpgradeSchema "$@" 
