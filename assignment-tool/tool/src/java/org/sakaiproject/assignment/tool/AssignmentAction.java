@@ -9130,19 +9130,24 @@ public class AssignmentAction extends PagedResourceActionII
 			// constructor the hashtable for all submission objects
 			Hashtable submissionTable = new Hashtable();
 			Assignment assignment = null;
+			List submissions = null;
 			try
 			{
 				assignment = AssignmentService.getAssignment(aReference);
 				associateGradebookAssignment = StringUtil.trimToNull(assignment.getProperties().getProperty(AssignmentService.PROP_ASSIGNMENT_ASSOCIATE_GRADEBOOK_ASSIGNMENT));
 
-				Iterator sIterator = AssignmentService.getSubmissions(assignment).iterator();
-				while (sIterator.hasNext())
+				submissions = AssignmentService.getSubmissions(assignment);
+				if (submissions != null)
 				{
-					AssignmentSubmission s = (AssignmentSubmission) sIterator.next();
-					User[] users = s.getSubmitters();
-					if (users.length > 0 && users[0] != null)
+					Iterator sIterator = submissions.iterator();
+					while (sIterator.hasNext())
 					{
-						submissionTable.put(users[0].getSortName(), new UploadGradeWrapper("", "", "", new Vector(), new Vector(), "", ""));
+						AssignmentSubmission s = (AssignmentSubmission) sIterator.next();
+						User[] users = s.getSubmitters();
+						if (users.length > 0 && users[0] != null)
+						{
+							submissionTable.put(users[0].getSortName(), new UploadGradeWrapper("", "", "", new Vector(), new Vector(), "", ""));
+						}
 					}
 				}
 			}
@@ -9270,62 +9275,67 @@ public class AssignmentAction extends PagedResourceActionII
 										{
 											userName = userName.substring(0, userName.indexOf("("));
 										}
+										userName=StringUtil.trimToNull(userName);
 									}
-									if (hasComment && entryName.indexOf("comments") != -1)
+									if (submissionTable.containsKey(userName))
 									{
-										// read the comments file
-										String comment = getBodyTextFromZipHtml(zin);
-								        if (submissionTable.containsKey(userName) && comment != null)
-								        {
-								        		UploadGradeWrapper r = (UploadGradeWrapper) submissionTable.get(userName);
-								        		r.setComment(comment);
-								        		submissionTable.put(userName, r);
-								        }
-									}
-									if (hasFeedbackText && entryName.indexOf("feedbackText") != -1)
-									{
-										// upload the feedback text
-										String text = getBodyTextFromZipHtml(zin);
-										if (submissionTable.containsKey(userName) && text != null)
-								        {
-								        		UploadGradeWrapper r = (UploadGradeWrapper) submissionTable.get(userName);
-								        		r.setFeedbackText(text);
-								        		submissionTable.put(userName, r);
-								        }
-									}
-									if (hasSubmissionText && entryName.indexOf("_submissionText") != -1)
-									{
-										// upload the student submission text
-										String text = getBodyTextFromZipHtml(zin);
-										if (submissionTable.containsKey(userName) && text != null)
-								        {
-								        		UploadGradeWrapper r = (UploadGradeWrapper) submissionTable.get(userName);
-								        		r.setText(text);
-								        		submissionTable.put(userName, r);
-								        }
-									}
-									if (hasSubmissionAttachment)
-									{
-										// upload the submission attachment
-										String submissionFolder = "/" + rb.getString("download.submission.attachment") + "/";
-										if ( entryName.indexOf(submissionFolder) != -1)
-											uploadZipAttachments(state, submissionTable, zin, entry, entryName, userName, "submission");
-									}
-									if (hasFeedbackAttachment)
-									{
-										// upload the feedback attachment
-										String submissionFolder = "/" + rb.getString("download.feedback.attachment") + "/";
-										if ( entryName.indexOf(submissionFolder) != -1)
-											uploadZipAttachments(state, submissionTable, zin, entry, entryName, userName, "feedback");
-									}
-									
-									// if this is a timestamp file
-									if (entryName.indexOf("timestamp") != -1)
-									{
-										byte[] timeStamp = readIntoBytes(zin, entryName, entry.getSize());
-										UploadGradeWrapper r = (UploadGradeWrapper) submissionTable.get(userName);
-						        		r.setSubmissionTimestamp(new String(timeStamp));
-						        		submissionTable.put(userName, r);
+										if (hasComment && entryName.indexOf("comments") != -1)
+										{
+											// read the comments file
+											String comment = getBodyTextFromZipHtml(zin);
+									        if (comment != null)
+									        {
+									        		UploadGradeWrapper r = (UploadGradeWrapper) submissionTable.get(userName);
+									        		r.setComment(comment);
+									        		submissionTable.put(userName, r);
+									        }
+										}
+										
+										if (hasFeedbackText && entryName.indexOf("feedbackText") != -1)
+										{
+											// upload the feedback text
+											String text = getBodyTextFromZipHtml(zin);
+											if (text != null)
+									        {
+									        		UploadGradeWrapper r = (UploadGradeWrapper) submissionTable.get(userName);
+									        		r.setFeedbackText(text);
+									        		submissionTable.put(userName, r);
+									        }
+										}
+										if (hasSubmissionText && entryName.indexOf("_submissionText") != -1)
+										{
+											// upload the student submission text
+											String text = getBodyTextFromZipHtml(zin);
+											if (text != null)
+									        {
+									        		UploadGradeWrapper r = (UploadGradeWrapper) submissionTable.get(userName);
+									        		r.setText(text);
+									        		submissionTable.put(userName, r);
+									        }
+										}
+										if (hasSubmissionAttachment)
+										{
+											// upload the submission attachment
+											String submissionFolder = "/" + rb.getString("download.submission.attachment") + "/";
+											if ( entryName.indexOf(submissionFolder) != -1)
+												uploadZipAttachments(state, submissionTable, zin, entry, entryName, userName, "submission");
+										}
+										if (hasFeedbackAttachment)
+										{
+											// upload the feedback attachment
+											String submissionFolder = "/" + rb.getString("download.feedback.attachment") + "/";
+											if ( entryName.indexOf(submissionFolder) != -1)
+												uploadZipAttachments(state, submissionTable, zin, entry, entryName, userName, "feedback");
+										}
+										
+										// if this is a timestamp file
+										if (entryName.indexOf("timestamp") != -1)
+										{
+											byte[] timeStamp = readIntoBytes(zin, entryName, entry.getSize());
+											UploadGradeWrapper r = (UploadGradeWrapper) submissionTable.get(userName);
+							        		r.setSubmissionTimestamp(new String(timeStamp));
+							        		submissionTable.put(userName, r);
+										}
 									}
 								}
 							}
@@ -9468,8 +9478,6 @@ public class AssignmentAction extends PagedResourceActionII
 		ContentTypeImageService iService = (ContentTypeImageService) state.getAttribute(STATE_CONTENT_TYPE_IMAGE_SERVICE);
 		try
 		{
-			if (submissionTable.containsKey(userName))
-		    {
 				// get file extension for detecting content type
 				// ignore those hidden files
 				String extension = "";
@@ -9504,7 +9512,6 @@ public class AssignmentAction extends PagedResourceActionII
 		    		}
 		    		submissionTable.put(userName, r);
 				}
-		    }
 		}
 		catch (Exception ee)
 		{
