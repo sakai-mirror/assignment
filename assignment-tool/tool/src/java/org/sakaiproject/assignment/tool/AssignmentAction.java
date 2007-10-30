@@ -9100,6 +9100,19 @@ public class AssignmentAction extends PagedResourceActionII
 				assignment = AssignmentService.getAssignment(aReference);
 				associateGradebookAssignment = StringUtil.trimToNull(assignment.getProperties().getProperty(AssignmentService.PROP_ASSIGNMENT_ASSOCIATE_GRADEBOOK_ASSIGNMENT));
 				submissions =  AssignmentService.getSubmissions(assignment);
+				if (submissions != null)
+				{
+					Iterator sIterator = submissions.iterator();
+					while (sIterator.hasNext())
+					{
+						AssignmentSubmission s = (AssignmentSubmission) sIterator.next();
+						User[] users = s.getSubmitters();
+						if (users.length > 0 && users[0] != null)
+						{
+							submissionTable.put(users[0].getSortName(), new UploadGradeWrapper(s.getGrade(), s.getSubmittedText(), s.getFeedbackComment(), s.getSubmittedAttachments(), s.getFeedbackAttachments(), (s.getSubmitted() && s.getTimeSubmitted() != null)?s.getTimeSubmitted().toString():"", s.getFeedbackText()));
+						}
+					}
+				}
 			}
 			catch (Exception e)
 			{
