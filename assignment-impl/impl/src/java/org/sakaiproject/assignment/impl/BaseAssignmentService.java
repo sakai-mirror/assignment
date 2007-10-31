@@ -4837,6 +4837,10 @@ public abstract class BaseAssignmentService implements AssignmentService, Entity
 			{
 				M_log.warn(e.getMessage(), e);
 			}
+			if (submission != null)
+			{
+				closeTime = submission.getCloseTime();
+			}
 			
 			if (submission == null || (submission != null && submission.getTimeSubmitted() == null))
 			{
@@ -4853,7 +4857,7 @@ public abstract class BaseAssignmentService implements AssignmentService, Entity
 				else
 				{
 					// returned 
-					if (submission.getResubmissionNum()!=0 && currentTime.before(submission.getCloseTime()))
+					if (submission.getResubmissionNum()!=0 && currentTime.before(closeTime))
 					{
 						// return true for returned submission but allow for resubmit and before the close time
 						return true;
@@ -7949,7 +7953,7 @@ public abstract class BaseAssignmentService implements AssignmentService, Entity
 		public Time getCloseTime()
 		{
 			String closeTimeString = StringUtil.trimToNull(m_properties.getProperty(AssignmentSubmission.ALLOW_RESUBMIT_CLOSETIME));
-			if (closeTimeString != null)
+			if (closeTimeString != null && getResubmissionNum() != 0)
 			{
 				// return the close time if it is set
 				return TimeService.newTime(Long.parseLong(closeTimeString));
