@@ -3492,7 +3492,9 @@ public abstract class BaseAssignmentService implements AssignmentService, Entity
 											String entryName = submittersName + submittersString + "_submissionText.txt";
 											ZipEntry textEntry = new ZipEntry(entryName);
 											out.putNextEntry(textEntry);
-											out.write(FormattedText.encodeUnicode(submittedText).getBytes());
+											byte[] text = submittedText.getBytes();
+											out.write(text);
+											textEntry.setSize(text.length);
 											out.closeEntry();
 										}
 										
@@ -3517,7 +3519,9 @@ public abstract class BaseAssignmentService implements AssignmentService, Entity
 										// the comments.txt file to show instructor's comments
 										ZipEntry textEntry = new ZipEntry(submittersName + "comments.txt");
 										out.putNextEntry(textEntry);
-										out.write(FormattedText.encodeUnicode(s.getFeedbackComment()).getBytes());
+										byte[] b = FormattedText.encodeUnicode(s.getFeedbackComment()).getBytes();
+										out.write(b);
+										textEntry.setSize(b.length);
 										out.closeEntry();
 										
 										// create an attachment folder for the feedback attachments
@@ -3561,7 +3565,9 @@ public abstract class BaseAssignmentService implements AssignmentService, Entity
 			// create a grades.csv file into zip
 			ZipEntry gradesCSVEntry = new ZipEntry(root + "grades.csv");
 			out.putNextEntry(gradesCSVEntry);
-			out.write(gradesBuffer.toString().getBytes());
+			byte[] grades = gradesBuffer.toString().getBytes();
+			out.write(grades);
+			gradesCSVEntry.setSize(grades.length);
 			out.closeEntry();
 			
 			// Complete the ZIP file

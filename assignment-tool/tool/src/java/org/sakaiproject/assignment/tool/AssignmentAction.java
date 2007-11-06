@@ -9204,7 +9204,7 @@ public class AssignmentAction extends PagedResourceActionII
 							String entryName = entry.getName();
 							if (!entry.isDirectory() && entryName.indexOf("/._") == -1)
 							{
-								if (entryName.endsWith("grades.csv"))
+								if (entryName.endsWith("grades.csv") && !entryName.endsWith("._grades.csv"))
 								{
 									if (hasGradeFile)
 									{
@@ -9571,14 +9571,31 @@ public class AssignmentAction extends PagedResourceActionII
 			return data;
 	}
 	
-	private String readIntoString(ZipInputStream zin) throws IOException {
-		byte[] buf = new byte[1024];
-		int len;
-		StringBuffer b = new StringBuffer();
-		while ((len = zin.read(buf)) > 0) {
-		    b.append(new String(buf));
-		}
-		return b.toString();
+	private String readIntoString(ZipInputStream zin) throws IOException 
+	{
+		StringBuffer buffer = new StringBuffer();
+		int size = 2048;
+		byte[] data = new byte[2048];
+		while (true)
+		{
+			try
+			{
+				size = zin.read(data, 0, data.length);
+				if (size > 0)
+				{
+					buffer.append(new String(data, 0, size));
+	             }
+	             else
+	             {
+	                 break;
+	             }
+			}
+			catch (IOException e)
+			{
+				Log.debug("chef", "readIntoString " + e.toString());
+			}
+         }
+		return buffer.toString();
 	}
 	/**
 	 * 
