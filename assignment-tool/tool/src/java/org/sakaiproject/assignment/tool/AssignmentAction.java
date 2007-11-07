@@ -3008,6 +3008,12 @@ public class AssignmentAction extends PagedResourceActionII
 				sEdit.setTimeReturned(TimeService.newTime());
 				sEdit.setHonorPledgeFlag(Boolean.FALSE.booleanValue());
 			}
+			else if (gradeOption.equals("save"))
+			{
+				sEdit.setGradeReleased(false);
+				sEdit.setReturned(false);
+				sEdit.setTimeReturned(null);
+			}
 
 			if (state.getAttribute(AssignmentSubmission.ALLOW_RESUBMIT_NUMBER) != null)
 			{
@@ -9203,7 +9209,7 @@ public class AssignmentAction extends PagedResourceActionII
 							String entryName = entry.getName();
 							if (!entry.isDirectory() && entryName.indexOf("/.") == -1)
 							{
-								if (entryName.endsWith("grades.csv") && !entryName.endsWith("._grades.csv"))
+								if (entryName.endsWith("grades.csv"))
 								{
 									if (hasGradeFile)
 									{
