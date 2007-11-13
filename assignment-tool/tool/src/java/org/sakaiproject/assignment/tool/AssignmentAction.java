@@ -3014,18 +3014,7 @@ public class AssignmentAction extends PagedResourceActionII
 				}
 				else
 				{
-					if (!grade.equals(""))
-					{
-						if (typeOfGrade == 3)
-						{
-							sEdit.setGrade(grade);
-						}
-						else
-						{
-							sEdit.setGrade(grade);
-						}
-						sEdit.setGraded(true);
-					}
+					sEdit.setGrade(grade);
 				}
 			}
 
