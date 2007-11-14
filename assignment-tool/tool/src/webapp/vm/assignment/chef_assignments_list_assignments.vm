@@ -387,7 +387,7 @@ function allowClick(object)
 										#else
 											#if($!allowSubmit)
 												## for those who can submit
-												#if ($!submission && ($!submitTime || $!submissionReturned))
+												#if ($!submission && $!submitTime)
 													## is there a submission already?
 													#set($allowResubmitNumber=$!submissionProperties.getProperty($!allowResubmitNumberProp))
 													#if(!$!allowResubmitNumber.equals("0"))
@@ -397,14 +397,14 @@ function allowClick(object)
 														#end
 													#end
 													## if not submitted or returned and still allowed to submit within the due time
-													#if (($!submissionReturned && !$!allowResubmitNumber.equals("0") && $!allowResubmitCloseTime && $currentTime.before($!allowResubmitCloseTime)) || (!$!submissionSubmitted && !$!submissionReturned))
+													#if (($!submissionReturned && !$!allowResubmitNumber.equals("0") && $!allowResubmitCloseTime && $currentTime.before($!allowResubmitCloseTime)) || !$!submissionSubmitted)
 														## go to view submission page when (1) submission has been returned and allow for resubmit;(2)submission has not been posted yet.
 														<h4><a href="#toolLinkParam("AssignmentAction" "doView_submission" "assignmentReference=$validator.escapeUrl($assignment.Reference)")">$validator.limit($validator.escapeHtml($assignment.getTitle()), 40)</a></h4>
 													#else
 														<h4><a href="#toolLinkParam("AssignmentAction" "doView_grade" "submissionId=$validator.escapeUrl($submission.Reference)")">$validator.limit($validator.escapeHtml($assignment.getTitle()), 40)</a></h4>														
 													#end
 												#else
-												 <h4><a href="#toolLinkParam("AssignmentAction" "doView_submission" "assignmentReference=$validator.escapeUrl($assignment.Reference)")">$validator.limit($validator.escapeHtml($assignment.getTitle()), 40)</a></h4>
+													<h4><a href="#toolLinkParam("AssignmentAction" "doView_submission" "assignmentReference=$validator.escapeUrl($assignment.Reference)")">$validator.limit($validator.escapeHtml($assignment.getTitle()), 40)</a></h4>
 												#end
 												#if ($taggable)
 													<div class="itemAction">
@@ -491,7 +491,41 @@ function allowClick(object)
 									#end
 								#else
 									#if ($!submission)
-										$submission.getStatus()
+										#if ($submissionSubmitted && $submitTime)
+											#if ($submissionReturned)
+												#if ($!submitTime && $submission.TimeReturned.after($submitTime) || !$submitTime)
+													$tlang.getString("gen.returned")
+												#else
+													$tlang.getString("gen.resub") #if($!submitTime)$submitTime.toStringLocalFull()#end
+													#if ($!submitTime && $submitTime.after($assignment.DueTime))
+														<span class="highlight"> $tlang.getString("gen.late")</span>
+													#end
+												#end
+											#elseif ($submission.getGraded() && $submission.getGradeReleased())
+												#if ($!withGrade)
+													$tlang.getString("grad3")
+												#else
+													$tlang.getString("gen.commented")
+												#end
+											#else
+												#if($!submitTime)
+													#if ($!assignment.Content.TypeOfSubmission == $!typeNonElectronic)
+														##for non electronic submissions
+														$tlang.getString("nonelec")
+													#else
+														$tlang.getString("gen.subm4") $submitTime.toStringLocalFull()
+													#end
+												#end
+												#if ($!submitTime && $submitTime.after($assignment.DueTime))
+													<span class="highlight">$tlang.getString("gen.late2")</span>
+												#end
+											#end
+										#elseif (!$submissionSubmitted)
+											## drafts
+											<span class="highlight">$tlang.getString("gen.dra2")</span> $tlang.getString("gen.inpro")
+										#else
+											$tlang.getString("gen.notsta")
+										#end
 									#else
 										$tlang.getString("gen.notsta")
 									#end
