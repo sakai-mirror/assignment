@@ -36,6 +36,7 @@ import org.sakaiproject.assignment.api.AssignmentSubmission;
 import org.sakaiproject.assignment.api.AssignmentSubmissionEdit;
 import org.sakaiproject.db.api.SqlReader;
 import org.sakaiproject.db.api.SqlService;
+import org.sakaiproject.entity.api.Entity;
 import org.sakaiproject.user.api.User;
 import org.sakaiproject.util.BaseDbSingleStorage;
 import org.sakaiproject.util.Xml;
@@ -394,13 +395,71 @@ public class DbAssignmentService extends BaseAssignmentService
 
 		public AssignmentSubmission get(String id)
 		{
-			return (AssignmentSubmission) super.getResource(id);
+			//oncourse 11/24/07 -Chen
+			//return (AssignmentSubmission) super.getResource(id);
+			return (AssignmentSubmission) getResource(id);
+
 		}
 
 		public List getAll(String context)
 		{
-			return super.getAllResourcesWhere(SUBMISSION_FIELDS[0], context);
+			//oncourse 11/24/07 -Chen
+			//return super.getAllResourcesWhere(SUBMISSION_FIELDS[0], context);
+			return getAllResourcesWhere(SUBMISSION_FIELDS[0], context);
 		}
+		
+		//oncourse 11/24/07 -Chen
+		public Entity getResource(String id)
+		{
+			Entity entry = null;
+			
+			String sql = "select XML from " + m_resourceTableName + " where ( " + m_resourceTableIdField + " = ? )";
+
+			Object fields[] = new Object[1];
+			fields[0] = caseId(id);
+			List xml = m_sql.dbRead(sql, fields, null);
+			if (!xml.isEmpty())
+			{
+				String xmlBeforeCorrection = (String) xml.get(0);
+				String correctedXml = xmlBeforeCorrection.substring(0, xmlBeforeCorrection.lastIndexOf("</submission>") + 13);
+				entry = readResource(correctedXml);
+			}
+			return entry;
+		}
+
+		//oncourse 11/24/07 -Chen
+		protected List loadResources(String sql, Object[] fields)
+		{
+			List all = m_sql.dbRead(sql, fields, new SqlReader()
+			{
+				public Object readSqlResultRecord(ResultSet result)
+				{
+					try
+					{
+						String xml = result.getString(1);
+						String correctedXml = xml.substring(0, xml.lastIndexOf("</submission>") + 13);
+						Entity entry = readResource(correctedXml);
+						return entry;
+					}
+					catch (SQLException ignore)
+					{
+						return null;
+					}
+				}
+			});
+			return all;
+		}
+
+		//oncourse 11/24/07 -Chen
+		public List getAllResourcesWhere(String field, String value)
+		{
+			String sql = "select XML from " + m_resourceTableName + " where " + field + " = ?";
+			Object[] fields = new Object[1];
+			fields[0] = value;
+
+			return loadResources(sql, fields);
+		}
+
 
 		public AssignmentSubmissionEdit put(String id, String context, String assignmentId, User submitters[])
 		{
