@@ -3476,6 +3476,8 @@ public abstract class BaseAssignmentService implements AssignmentService, Entity
 									fullName=fullName.concat(",");
 								}
 								submittersString = submittersString.concat(fullName);
+								// add the eid to the end of it to guarantee folder name uniqness
+								submittersString = submittersString + "(" + submitters[i].getDisplayId() + ")";
 								gradesBuffer.append(submitters[i].getDisplayId() + "," + fullName + "," + s.getGradeDisplay() + "\n");
 							}
 							

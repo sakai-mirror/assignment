@@ -9358,6 +9358,7 @@ public class AssignmentAction extends PagedResourceActionII
 											userName = userName.substring(0, userName.indexOf("("));
 										}
 										userName=StringUtil.trimToNull(userName);
+
 									}
 									if (submissionTable.containsKey(userName))
 									{
