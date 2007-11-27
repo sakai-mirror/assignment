@@ -1,0 +1,60 @@
+/**********************************************************************************
+ * $URL: https://source.sakaiproject.org/svn/entity/trunk/entity-api/api/src/java/org/sakaiproject/entity/api/serialize/EntityReaderHandler.java $
+ * $Id: EntityReaderHandler.java 35033 2007-09-13 15:28:07Z ian@caret.cam.ac.uk $
+ ***********************************************************************************
+ *
+ * Copyright (c) 2003, 2004, 2005, 2006, 2007 The Sakai Foundation.
+ *
+ * Licensed under the Educational Community License, Version 1.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *      http://www.opensource.org/licenses/ecl1.php
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ *
+ **********************************************************************************/
+
+package org.sakaiproject.entity.api.serialize;
+
+import org.sakaiproject.entity.api.Entity;
+
+/**
+ * <pre>
+ *  An Entity Reader handler provides methods to read resources and containers
+ *  from storage and to serialize them back out to storage.
+ *  
+ * </pre>
+ * 
+ * @author ieb
+ */
+public interface EntityReaderHandler
+{
+
+	/**
+	 * @param entry
+	 * @return
+	 * @throws EntityParseException
+	 */
+	byte[] serialize(Entity entry) throws EntityParseException;
+
+	/**
+	 * @param xml
+	 * @return
+	 * @throws EntityParseException
+	 */
+	Entity parse(String xml, byte[] blob) throws EntityParseException;
+
+	/**
+	 * returns true if the implementation will parse the target
+	 * 
+	 * @param xml
+	 * @return
+	 */
+	boolean accept(byte[] blob);
+
+}

@@ -1726,19 +1726,9 @@ public abstract class BaseAssignmentService implements AssignmentService, Entity
 	}
 
 	/**
-	 * Adds an AssignmentSubmission to the service.
-	 * 
-	 * @param context -
-	 *        Describes the portlet context - generated with DefaultId.getChannel().
-	 * @return The new AssignmentSubmission.
-	 * @exception IdInvalidException
-	 *            if the submission id is invalid.
-	 * @exception IdUsedException
-	 *            if the submission id is already used.
-	 * @throws PermissionException
-	 *         if the current User does not have permission to do this.
+	 * {@inheritDoc}
 	 */
-	public AssignmentSubmissionEdit addSubmission(String context, String assignmentId) throws PermissionException
+	public AssignmentSubmissionEdit addSubmission(String context, String assignmentId, String submitterId) throws PermissionException
 	{
 		if (M_log.isDebugEnabled()) M_log.debug("ASSIGNMENT : BASE SERVICE : ENTERING ADD SUBMISSION");
 
@@ -1763,8 +1753,10 @@ public abstract class BaseAssignmentService implements AssignmentService, Entity
 		if (M_log.isDebugEnabled()) M_log.debug("ASSIGNMENT : BASE SERVICE : ADD SUBMISSION : UNLOCKED");
 
 		// storage
-		AssignmentSubmissionEdit submission = m_submissionStorage.put(submissionId, context, assignmentId);
+		AssignmentSubmissionEdit submission = m_submissionStorage.put(submissionId, assignmentId, submitterId, null, null, null);
 
+		submission.setContext(context);
+		
 		if (M_log.isDebugEnabled())
 			M_log.debug("ASSIGNMENT : BASE SERVICE : LEAVING ADD SUBMISSION : REF : " + submission.getReference());
 
@@ -1799,8 +1791,12 @@ public abstract class BaseAssignmentService implements AssignmentService, Entity
 		unlock(SECURE_ADD_ASSIGNMENT_SUBMISSION, submissionFromXml.getReference());
 
 		// reserve a submission with this id from the info store - if it's in use, this will return null
-		AssignmentSubmissionEdit submission = m_submissionStorage.put(submissionFromXml.getId(), submissionFromXml.getContext(),
-				submissionFromXml.getAssignmentId());
+		AssignmentSubmissionEdit submission = m_submissionStorage.put(	submissionFromXml.getId(), 
+																		submissionFromXml.getAssignmentId(),
+																		submissionFromXml.getSubmitterIdString(),
+																		submissionFromXml.getTimeSubmittedString(),
+																		Boolean.valueOf(submissionFromXml.getSubmitted()).toString(),
+																		Boolean.valueOf(submissionFromXml.getGraded()).toString());
 		if (submission == null)
 		{
 			throw new IdUsedException(submissionFromXml.getId());
@@ -2451,76 +2447,30 @@ public abstract class BaseAssignmentService implements AssignmentService, Entity
 	 * @throws PermissionException
 	 *         if the current user is not allowed to access this.
 	 */
-	public AssignmentSubmission getSubmission(String assignmentReference, User person) throws IdUnusedException,
-			PermissionException
+	public AssignmentSubmission getSubmission(String assignmentReference, User person)
 	{
-		// M_log.info("ASSIGNMENT : BASE SERVICE : ENTERING GET SUBMISSION(assignmentRef, User)");
-		// M_log.info("ASSIGNMENT : BASE SERVICE : GET SUBMISSION(assignmentRef, User) : REF : " + assignmentReference);
-		AssignmentSubmission retVal = null;
-		AssignmentSubmission sub = null;
-		List submitters = null;
-		String aUserId = null;
+		AssignmentSubmission submission = null;
 
 		String assignmentId = assignmentId(assignmentReference);
-
-		if (!m_assignmentStorage.check(assignmentId)) throw new IdUnusedException(assignmentId);
-
+		
 		if ((assignmentReference != null) && (person != null))
 		{
-			Assignment assign = m_assignmentStorage.get(assignmentId);
+			submission = m_submissionStorage.get(assignmentId, person.getId());
+		}
 
-			// Match User and Assignment
-			if (assign != null)
+		if (submission != null)
+		{
+			try
 			{
-				if (M_log.isDebugEnabled()) M_log.debug("getSubmission : Got assignment with id : " + assign.getId());
-
-				try
-				{
-					List submissions = getSubmissions(assign.getId());
-					for (int z = 0; z < submissions.size(); z++)
-					{
-						sub = (AssignmentSubmission) submissions.get(z);
-						if (M_log.isDebugEnabled()) M_log.debug("getSubmission : submission id found : " + sub.getId());
-						if (sub != null)
-						{
-							// M_log.info("ASSIGNMENT : BASE SERVICE : GET SUBMISSION(assignmentRef, User) : submission parent assignment id : " + sub.getAssignmentId());
-							if (sub.getAssignmentId().equals(assignmentId))
-							{
-								// M_log.info("ASSIGNMENT : BASE SERVICE : GET SUBMISSION(assignmentRef, User) : SUB'S PARENT ASSIGNMENT ID MATCHES ASSIGNMENT ID");
-								submitters = sub.getSubmitterIds();
-								for (int a = 0; a < submitters.size(); a++)
-								{
-									aUserId = (String) submitters.get(a);
-									if (M_log.isDebugEnabled())
-										M_log.debug("getSubmission : comparing aUser id : " + aUserId + " and chosen user id : "
-												+ person.getId());
-									if (aUserId.equals(person.getId()))
-									{
-										if (M_log.isDebugEnabled())
-											M_log.debug("getSubmission : found a match : return value is " + sub.getId());
-										retVal = sub;
-									}
-								}
-							}
-						}
-					}
-				}
-				catch (Exception e)
-				{
-					M_log.warn("getSubmission : EXCEPTION : " + e);
-				}
+				unlock2(SECURE_ACCESS_ASSIGNMENT_SUBMISSION, SECURE_ACCESS_ASSIGNMENT, submission.getReference());
+			}
+			catch (PermissionException e)
+			{
+				return null;
 			}
 		}
 
-		if (retVal != null)
-		{
-			unlock2(SECURE_ACCESS_ASSIGNMENT_SUBMISSION, SECURE_ACCESS_ASSIGNMENT, retVal.getReference());
-
-			// track event
-			// EventTrackingService.post(EventTrackingService.newEvent(EVENT_ACCESS_ASSIGNMENT_SUBMISSION, retVal.getReference(), false));
-		}
-
-		return retVal;
+		return submission;
 	}
 
 	/**
@@ -2572,6 +2522,24 @@ public abstract class BaseAssignmentService implements AssignmentService, Entity
 		}
 		
 		return retVal;
+	}
+	
+	/**
+	 * {@inheritDoc}
+	 */
+	public int getSubmittedSubmissionsCount(String assignmentId)
+	{
+		return m_submissionStorage.getSubmittedSubmissionsCount(assignmentId);
+		
+	}
+	
+	/**
+	 * {@inheritDoc}
+	 */
+	public int getUngradedSubmissionsCount(String assignmentId)
+	{
+		return m_submissionStorage.getUngradedSubmissionsCount(assignmentId);
+		
 	}
 
 	/**
@@ -4765,18 +4733,7 @@ public abstract class BaseAssignmentService implements AssignmentService, Entity
 			// get user's submission
 			AssignmentSubmission submission = null;
 			
-			try
-			{
-				submission = getSubmission(a.getReference(), u);
-			}
-			catch (IdUnusedException e)
-			{
-				M_log.warn(e.getMessage(), e);
-			}
-			catch (PermissionException e)
-			{
-				M_log.warn(e.getMessage(), e);
-			}
+			submission = getSubmission(a.getReference(), u);
 			if (submission != null)
 			{
 				closeTime = submission.getCloseTime();
@@ -7094,7 +7051,7 @@ public abstract class BaseAssignmentService implements AssignmentService, Entity
 		/**
 		 * Constructor used by addSubmission.
 		 */
-		public BaseAssignmentSubmission(String id, String context, String assignId)
+		public BaseAssignmentSubmission(String id, String assignId, String submitterId, String submitTime, String submitted, String graded)
 		{
 			
 			// must set initial review status
@@ -7103,7 +7060,6 @@ public abstract class BaseAssignmentService implements AssignmentService, Entity
 			m_reviewReport = "Not available yet";
 			
 			m_id = id;
-			m_context = context;
 			m_assignment = assignId;
 			m_properties = new BaseResourcePropertiesEdit();
 			addLiveProperties(m_properties);
@@ -7120,9 +7076,26 @@ public abstract class BaseAssignmentService implements AssignmentService, Entity
 			m_grade = "";
 			m_timeLastModified = TimeService.newTime();
 
-			String currentUser = SessionManager.getCurrentSessionUserId();
-			if (currentUser == null) currentUser = "";
-			m_submitters.add(currentUser);
+			if (submitterId == null)
+			{
+				String currentUser = SessionManager.getCurrentSessionUserId();
+				if (currentUser == null) currentUser = "";
+				m_submitters.add(currentUser);
+			}
+			else
+			{
+				m_submitters.add(submitterId);
+			}
+			
+			if (submitted != null)
+			{
+				m_submitted = Boolean.valueOf(submitted).booleanValue();
+			}
+			
+			if (graded != null)
+			{
+				m_graded = Boolean.valueOf(graded).booleanValue();
+			}
 		}
 
 		
@@ -7650,6 +7623,23 @@ public abstract class BaseAssignmentService implements AssignmentService, Entity
 			return m_submitters;
 		}
 
+
+		/**
+		 * {@inheritDoc}
+		 */
+		public String getSubmitterIdString ()
+		{
+			String rv = "";
+			if (m_submitters != null)
+			{
+				for (int j = 0; j < m_submitters.size(); j++)
+				{
+					rv = rv.concat((String) m_submitters.get(j));
+				}
+			}
+			return rv;
+		}
+		
 		/**
 		 * Set the time at which this response was submitted; null signifies the response is unsubmitted.
 		 * 
@@ -7660,6 +7650,18 @@ public abstract class BaseAssignmentService implements AssignmentService, Entity
 			return m_timeSubmitted;
 		}
 
+
+		/**
+		 * @inheritDoc
+		 */
+		public String getTimeSubmittedString()
+		{
+			if ( m_timeSubmitted == null )
+				return "";
+			else
+				return m_timeSubmitted.toStringLocalFull();
+		}
+		
 		/**
 		 * Get whether the grade has been released.
 		 * 
@@ -8057,9 +8059,9 @@ public abstract class BaseAssignmentService implements AssignmentService, Entity
 		 * @param id
 		 *        The AssignmentSubmission id.
 		 */
-		public BaseAssignmentSubmissionEdit(String id, String context, String assignmentId)
+		public BaseAssignmentSubmissionEdit(String id, String assignmentId, String submitterId, String submitTime, String submitted, String graded)
 		{
-			super(id, context, assignmentId);
+			super(id, assignmentId, submitterId, submitTime, submitted, graded);
 
 		} // BaseAssignmentSubmissionEdit
 
@@ -8655,6 +8657,35 @@ public abstract class BaseAssignmentService implements AssignmentService, Entity
 		 * @return The AssignmentSubmission with this id, or null if not found.
 		 */
 		public AssignmentSubmission get(String id);
+		
+		/**
+		 * Get the AssignmentSubmission with this assignment id and user id.
+		 * 
+		 * @param assignmentId
+		 *        The Assignment id.
+		 * @param userId
+		 * 		  The user id
+		 * @return The AssignmentSubmission with this id, or null if not found.
+		 */
+		public AssignmentSubmission get(String assignmentId, String userId);
+		
+		/**
+		 * Get the number of submissions which has been submitted.
+		 * 
+		 * @param assignmentId -
+		 *        the id of Assignment who's submissions you would like.
+		 * @return List over all the submissions for an Assignment.
+		 */
+		public int getSubmittedSubmissionsCount(String assignmentId);
+		
+		/**
+		 * Get the number of submissions which has not been submitted and graded.
+		 * 
+		 * @param assignment -
+		 *        the Assignment who's submissions you would like.
+		 * @return List over all the submissions for an Assignment.
+		 */
+		public int getUngradedSubmissionsCount(String assignmentId);
 
 		/**
 		 * Get all AssignmentSubmissions.
@@ -8672,7 +8703,7 @@ public abstract class BaseAssignmentService implements AssignmentService, Entity
 		 *        The context.
 		 * @return The locked AssignmentSubmission object with this id, or null if the id is in use.
 		 */
-		public AssignmentSubmissionEdit put(String id, String context, String assignmentId);
+		public AssignmentSubmissionEdit put(String id, String assignmentId, String submitterId, String submitTime, String submitted, String graded);
 
 		/**
 		 * Get a lock on the AssignmentSubmission with this id, or null if a lock cannot be gotten.
@@ -9315,7 +9346,7 @@ public abstract class BaseAssignmentService implements AssignmentService, Entity
 		 */
 		public Entity newResource(Entity container, String id, Object[] others)
 		{
-			return new BaseAssignmentSubmission(id, (String) others[0], (String) others[1]);
+			return new BaseAssignmentSubmission(id, (String) others[0], (String) others[1], (String) others[2], (String) others[3], (String) others[4]);
 		}
 
 		/**
@@ -9395,7 +9426,7 @@ public abstract class BaseAssignmentService implements AssignmentService, Entity
 		 */
 		public Edit newResourceEdit(Entity container, String id, Object[] others)
 		{
-			BaseAssignmentSubmissionEdit e = new BaseAssignmentSubmissionEdit(id, (String) others[0], (String) others[1]);
+			BaseAssignmentSubmissionEdit e = new BaseAssignmentSubmissionEdit(id, (String) others[0], (String) others[1], (String) others[2], (String) others[3], (String) others[4]);
 			e.activate();
 			return e;
 		}
@@ -9439,8 +9470,24 @@ public abstract class BaseAssignmentService implements AssignmentService, Entity
 		 */
 		public Object[] storageFields(Entity r)
 		{
-			Object rv[] = new Object[1];
+			/*"context", "SUBMITTER_ID", "SUBMIT_TIME", "SUBMITTED", "GRADED"*/
+			Object rv[] = new Object[5];
 			rv[0] = ((AssignmentSubmission) r).getAssignmentId();
+			
+			User[] submitters = ((AssignmentSubmission) r).getSubmitters();
+			if(submitters != null && submitters[0] != null) 
+			{
+ 				rv[1] = submitters[0].getId();
+			} else {
+				M_log.error(new Exception("Unique constraint is in force -- submitter[0] cannot be null"));
+ 			}
+			
+			rv[2] = ((AssignmentSubmission) r).getTimeSubmittedString();
+			
+			rv[3] = Boolean.valueOf(((AssignmentSubmission) r).getSubmitted()).toString();
+			
+			rv[4] = Boolean.valueOf(((AssignmentSubmission) r).getGraded()).toString();
+			
 			return rv;
 		}
 

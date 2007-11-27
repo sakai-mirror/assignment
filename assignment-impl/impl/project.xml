@@ -166,6 +166,22 @@
 			<artifactId>commons-logging</artifactId>
 			<version>1.0.4</version>
 		</dependency>
+		<dependency>
+      		<groupId>commons-dbcp</groupId>
+      		<artifactId>commons-dbcp</artifactId>
+      		<version>1.2.2</version>
+      		<type>jar</type>
+    	</dependency>
+    	
+    	<dependency>
+			<groupId>commons-collections</groupId>
+			<artifactId>commons-collections</artifactId>
+			<version>3.1</version>
+			<properties>
+				<!-- deploy dependency jar to "shared", "common" or "server": use <war.bundle>true</war.bundle> to include in war -->
+				<deploy.target>shared</deploy.target>
+			</properties>
+		</dependency>
 
 	</dependencies>
 
