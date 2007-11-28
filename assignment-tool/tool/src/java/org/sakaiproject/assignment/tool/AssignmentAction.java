@@ -447,6 +447,8 @@ public class AssignmentAction extends PagedResourceActionII
 
 	private static final String NEW_ASSIGNMENT_GROUPS = "new_assignment_groups";
 	
+	private static final String NEW_ASSIGNMENT_PAST_CLOSE_DATE = "new_assignment_past_close_date";
+	
 	/**************************** assignment year range *************************/
 	private static final String NEW_ASSIGNMENT_YEAR_RANGE_FROM = "new_assignment_year_range_from";
 	private static final String NEW_ASSIGNMENT_YEAR_RANGE_TO = "new_assignment_year_range_to";
@@ -6413,6 +6415,7 @@ public class AssignmentAction extends PagedResourceActionII
 	{
 
 		ParameterParser params = data.getParameters();
+		int typeOfGrade = -1;
 
 		boolean withGrade = state.getAttribute(WITH_GRADES) != null ? ((Boolean) state.getAttribute(WITH_GRADES)).booleanValue()
 				: false;
@@ -6447,12 +6450,12 @@ public class AssignmentAction extends PagedResourceActionII
 			String grade = (String) state.getAttribute(GRADE_SUBMISSION_GRADE);
 
 			Assignment a = AssignmentService.getSubmission(sId).getAssignment();
-			int typeOfGrade = a.getContent().getTypeOfGrade();
+			typeOfGrade = a.getContent().getTypeOfGrade();
 
 			if (withGrade)
 			{
 				// do grade validation only for Assignment with Grade tool
-				if (typeOfGrade == 3)
+				if (typeOfGrade == Assignment.SCORE_GRADE_TYPE)
 				{
 					if ((grade.length() == 0))
 					{
@@ -6491,17 +6494,13 @@ public class AssignmentAction extends PagedResourceActionII
 								}
 							}
 							
-							if (state.getAttribute(STATE_MESSAGE) == null)
-							{
-								grade = scalePointGrade(state, grade);
-							}
 							state.setAttribute(GRADE_SUBMISSION_GRADE, grade);
 						}
 					}
 				}
 
 				// if ungraded and grade type is not "ungraded" type
-				if ((grade == null || grade.equals("ungraded")) && (typeOfGrade != 1) && gradeOption.equals("release"))
+				if ((grade == null || grade.equals("ungraded")) && (typeOfGrade != Assignment.UNGRADED_GRADE_TYPE) && gradeOption.equals("release"))
 				{
 					addAlert(state, rb.getString("plespethe2"));
 				}
@@ -6547,9 +6546,18 @@ public class AssignmentAction extends PagedResourceActionII
 				Time closeTime = TimeService.newTimeLocal(closeYear, closeMonth, closeDay, closeHour, closeMin, 0, 0);
 				state.setAttribute(AssignmentSubmission.ALLOW_RESUBMIT_CLOSETIME, String.valueOf(closeTime.getTime()));
 				// validate date
-				if (closeTime.before(TimeService.newTime()))
+				if (closeTime.before(TimeService.newTime()) && state.getAttribute(NEW_ASSIGNMENT_PAST_CLOSE_DATE) == null)
 				{
-					addAlert(state, rb.getString("assig4"));
+					state.setAttribute(NEW_ASSIGNMENT_PAST_CLOSE_DATE, Boolean.TRUE);
+				}
+				else
+				{
+					// clean the attribute after user confirm
+					state.removeAttribute(NEW_ASSIGNMENT_PAST_CLOSE_DATE);
+				}
+				if (state.getAttribute(NEW_ASSIGNMENT_PAST_CLOSE_DATE) != null)
+				{
+					addAlert(state, rb.getString("acesubdea4"));
 				}
 				if (!Validator.checkDate(closeDay, closeMonth, closeYear))
 				{
@@ -6567,6 +6575,13 @@ public class AssignmentAction extends PagedResourceActionII
 				state.removeAttribute(ALLOW_RESUBMIT_CLOSEAMPM);
 				state.removeAttribute(AssignmentSubmission.ALLOW_RESUBMIT_CLOSETIME);
 			}
+		}
+		
+		if (state.getAttribute(STATE_MESSAGE) == null)
+		{
+			String grade = (String) state.getAttribute(GRADE_SUBMISSION_GRADE);
+			grade = (typeOfGrade == Assignment.SCORE_GRADE_TYPE)?scalePointGrade(state, grade):grade;
+			state.setAttribute(GRADE_SUBMISSION_GRADE, grade);
 		}
 	}
 
