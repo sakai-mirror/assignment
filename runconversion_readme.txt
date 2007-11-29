@@ -1,4 +1,4 @@
-In order to compile the post-2-4 assignment module with conversion code, you will need to have at lease r38224 version of the util module. 
+In order to compile the post-2-4 assignment module with conversion code, you will need to have at least r38224 version of the 2.4.x util module. 
 
 The following steps are required to run the conversion from 2.4 to 2.5 
 database schema for assignment (AssignmentService) to improve performance
