@@ -56,6 +56,7 @@ public class SchemaConversionController
 			connection = datasource.getConnection();
 			addColumns(connection, convert, driver);
 			createRegisterTable(connection, convert, driver);
+			connection.commit();
 		}
 		catch (Exception e)
 		{
@@ -77,7 +78,6 @@ public class SchemaConversionController
 
 			try
 			{
-				connection.commit();
 				connection.close();
 
 			}
