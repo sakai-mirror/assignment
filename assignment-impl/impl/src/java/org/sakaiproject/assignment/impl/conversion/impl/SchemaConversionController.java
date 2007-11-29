@@ -77,6 +77,7 @@ public class SchemaConversionController
 
 			try
 			{
+				connection.commit();
 				connection.close();
 
 			}
