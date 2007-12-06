@@ -8497,7 +8497,7 @@ public class AssignmentAction extends PagedResourceActionII
 	} // add2ndToolbarFields
 
 	/**
-	 * valid grade?
+	 * valid grade for point based type
 	 */
 	private void validPointGrade(SessionState state, String grade)
 	{
