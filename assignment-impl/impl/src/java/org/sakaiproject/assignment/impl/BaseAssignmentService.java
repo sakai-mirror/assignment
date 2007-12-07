@@ -27,6 +27,7 @@ import java.io.IOException;
 import java.io.OutputStream;
 import java.util.Collection;
 import java.util.Comparator;
+import java.util.HashSet;
 import java.util.Hashtable;
 import java.util.Iterator;
 import java.util.List;
@@ -1965,7 +1966,50 @@ public abstract class BaseAssignmentService implements AssignmentService, Entity
 			// need to send notification email
 			String context = s.getContext();
 			
+			// compare the list of users with the receive.notifications and list of users who can actually grade this assignment
 			List receivers = allowReceiveSubmissionNotificationUsers(context);
+			List allowGradeAssignmentUsers = allowGradeAssignmentUsers(a.getReference());
+			receivers.retainAll(allowGradeAssignmentUsers);
+			
+			String submitterId = s.getSubmitterIdString();
+			
+			// filter out users who's not able to grade this submission
+			List finalReceivers = new Vector();
+			
+			HashSet receiverSet = new HashSet();
+			if (a.getAccess().equals(Assignment.AssignmentAccess.GROUPED))
+			{
+				Collection groups = a.getGroups();
+				for (Iterator gIterator = groups.iterator(); gIterator.hasNext();)
+				{
+					String g = (String) gIterator.next();
+					try
+					{
+						AuthzGroup aGroup = AuthzGroupService.getAuthzGroup(g);
+						if (aGroup.isAllowed(submitterId, AssignmentService.SECURE_ADD_ASSIGNMENT_SUBMISSION))
+						{
+							for (Iterator rIterator = receivers.iterator(); rIterator.hasNext();)
+							{
+								User rUser = (User) rIterator.next();
+								String rUserId = rUser.getId();
+								if (!receiverSet.contains(rUserId) && aGroup.isAllowed(rUserId, AssignmentService.SECURE_GRADE_ASSIGNMENT_SUBMISSION))
+								{
+									finalReceivers.add(rUser);
+									receiverSet.add(rUserId);
+								}
+							}
+						}
+					}
+					catch (Exception e)
+					{
+						M_log.warn("notificationToInstructors, group id =" + g);
+					}
+				}
+			}
+			else
+			{
+				finalReceivers.addAll(receivers);
+			}
 			
 			List headers = new Vector();
 			headers.add(rb.getString("noti.subject.label") + rb.getString("noti.subject.content"));
@@ -1975,12 +2019,12 @@ public abstract class BaseAssignmentService implements AssignmentService, Entity
 			if (notiOption.equals(Assignment.ASSIGNMENT_INSTRUCTOR_NOTIFICATIONS_EACH))
 			{
 				// send the message immidiately
-				EmailService.sendToUsers(receivers, headers, messageBody);
+				EmailService.sendToUsers(finalReceivers, headers, messageBody);
 			}
 			else if (notiOption.equals(Assignment.ASSIGNMENT_INSTRUCTOR_NOTIFICATIONS_DIGEST))
 			{
 				// digest the message to each user
-				for (Iterator iReceivers = receivers.iterator(); iReceivers.hasNext();)
+				for (Iterator iReceivers = finalReceivers.iterator(); iReceivers.hasNext();)
 				{
 					User user = (User) iReceivers.next();
 					DigestService.digest(user.getId(), rb.getString("noti.subject.label") + rb.getString("noti.subject.content")/*the subject*/, messageBody);
@@ -2777,6 +2821,48 @@ public abstract class BaseAssignmentService implements AssignmentService, Entity
 	{
 		return getGroupsAllowFunction(SECURE_ADD_ASSIGNMENT, context, null);
 	}
+	
+	/**
+	 * @inheritDoc
+	 */
+	public Collection getGroupsAllowGradeAssignment(String context, String assignmentReference)
+	{
+		Collection rv = new Vector();
+		if (allowGradeSubmission(assignmentReference))
+		{
+			// only if the user is allowed to group at all
+			Collection allAllowedGroups = getGroupsAllowFunction(SECURE_GRADE_ASSIGNMENT_SUBMISSION, context, null);
+			try
+			{
+				Assignment a = getAssignment(assignmentReference);
+				if (a.getAccess() == Assignment.AssignmentAccess.SITE)
+				{
+					// for site-scope assignment, return all groups
+					rv = allAllowedGroups;
+				}
+				else
+				{
+					Collection aGroups = a.getGroups();
+					// for grouped assignment, return only those also allowed for grading
+					for (Iterator i = allAllowedGroups.iterator(); i.hasNext();)
+					{
+						Group g = (Group) i.next();
+						if (aGroups.contains(g.getReference()))
+						{
+							rv.add(g);
+						}
+					}
+					rv = allAllowedGroups;
+				}
+			}
+			catch (Exception e)
+			{
+				M_log.info(this + e.getMessage() + assignmentReference);
+			}
+		}
+			
+		return rv;
+	}
 
 	/** 
 	 * @inherit
@@ -2994,19 +3080,16 @@ public abstract class BaseAssignmentService implements AssignmentService, Entity
 
 		return unlockCheck(SECURE_ADD_ASSIGNMENT_SUBMISSION, resourceString);
 	}
-
+	
 	/**
-	 * Get the List of Users who can addSubmission() for this assignment.
-	 * 
-	 * @param assignmentReference -
-	 *        a reference to an assignment
-	 * @return the List (User) of users who can addSubmission() for this assignment.
+	 * Get the list of Users who can do certain function for this assignment
+	 * @inheritDoc
 	 */
-	public List allowAddSubmissionUsers(String assignmentReference)
+	public List allowAssignmentFunctionUsers(String assignmentReference, String function)
 	{
 		List rv = new Vector();
 		
-		rv = SecurityService.unlockUsers(SECURE_ADD_ASSIGNMENT_SUBMISSION, assignmentReference);
+		rv = SecurityService.unlockUsers(function, assignmentReference);
 		
 		// get the list of users who have SECURE_ALL_GROUPS
 		List allGroupUsers = new Vector();
@@ -3026,8 +3109,33 @@ public abstract class BaseAssignmentService implements AssignmentService, Entity
 		rv.addAll(allGroupUsers);
 		
 		return rv;
+	}
+	
+	/**
+	 * Get the List of Users who can addSubmission() for this assignment.
+	 * 
+	 * @param assignmentReference -
+	 *        a reference to an assignment
+	 * @return the List (User) of users who can addSubmission() for this assignment.
+	 */
+	public List allowAddSubmissionUsers(String assignmentReference)
+	{
+		return allowAssignmentFunctionUsers(assignmentReference, SECURE_ADD_ASSIGNMENT_SUBMISSION);
 
 	} // allowAddSubmissionUsers
+	
+	/**
+	 * Get the List of Users who can grade submission for this assignment.
+	 * 
+	 * @param assignmentReference -
+	 *        a reference to an assignment
+	 * @return the List (User) of users who can grade submission for this assignment.
+	 */
+	public List allowGradeAssignmentUsers(String assignmentReference)
+	{
+		return allowAssignmentFunctionUsers(assignmentReference, SECURE_GRADE_ASSIGNMENT_SUBMISSION);
+
+	} // allowGradeAssignmentUsers
 	
 	/**
 	 * @inheritDoc
@@ -3390,14 +3498,85 @@ public abstract class BaseAssignmentService implements AssignmentService, Entity
 		try
 		{
 			Assignment a = getAssignment(assignmentReferenceFromSubmissionsZipReference(ref));
-			Iterator submissions = getSubmissions(a).iterator();
+			String contextString = a.getContext();
+			String groupReference = groupReferenceFromSubmissionsZipReference(ref);
+			List allSubmissions = getSubmissions(a);
+			List submissions = new Vector();
+			
+			// group or site
+			String authzGroupId = "";
+			if (groupReference == null)
+			{
+				// view all groups
+				if (allowAllGroups(contextString))
+				{
+					// if have site level control
+					submissions = allSubmissions;
+				}
+				else
+				{
+					// iterate through all allowed-grade-group
+					Collection gCollection = getGroupsAllowGradeAssignment(contextString, a.getReference());
+					// prevent multiple entries
+					HashSet userIdSet = new HashSet();
+					for (Iterator iGCollection = gCollection.iterator(); iGCollection.hasNext();)
+					{
+						Group g = (Group) iGCollection.next();
+						String gReference = g.getReference();
+						try
+						{
+							AuthzGroup group = AuthzGroupService.getAuthzGroup(gReference);
+							Set grants = group.getUsers();
+							for (int i = 0; i<allSubmissions.size();i++)
+							{
+								// see if the submitters is in the group
+								AssignmentSubmission s = (AssignmentSubmission) allSubmissions.get(i);
+								String submitterId = s.getSubmitterIdString();
+								if (!userIdSet.contains(submitterId) && grants.contains(submitterId))
+								{
+									submissions.add(s);
+									userIdSet.add(submitterId);
+								}
+							}
+						}
+						catch (Exception ee)
+						{
+							M_log.info(this + ee.getMessage() + gReference);
+						}
+					}
+					
+				}
+			}
+			else
+			{
+				// just one group
+				try
+				{
+					AuthzGroup group = AuthzGroupService.getAuthzGroup(groupReference);
+					Set grants = group.getUsers();
+					for (int i = 0; i<allSubmissions.size();i++)
+					{
+						// see if the submitters is in the group
+						AssignmentSubmission s = (AssignmentSubmission) allSubmissions.get(i);
+						if (grants.contains(s.getSubmitterIdString()))
+						{
+							submissions.add(s);
+						}
+					}
+				}
+				catch (Exception ee)
+				{
+					M_log.info(this + ee.getMessage() + groupReference);
+				}
+				
+			}
 
 			StringBuffer exceptionMessage = new StringBuffer();
 
 			if (allowGradeSubmission(a.getReference()))
 			{
-				zipSubmissions(a.getReference(), a.getTitle(), a.getContent().getTypeOfGradeString(a.getContent().getTypeOfGrade()), a.getContent().getTypeOfSubmission(), submissions, outputStream, exceptionMessage);
-
+				zipSubmissions(a.getReference(), a.getTitle(), a.getContent().getTypeOfGradeString(a.getContent().getTypeOfGrade()), a.getContent().getTypeOfSubmission(), submissions.iterator(), outputStream, exceptionMessage);
+				
 				if (exceptionMessage.length() > 0)
 				{
 					// log any error messages
@@ -3704,6 +3883,27 @@ public abstract class BaseAssignmentService implements AssignmentService, Entity
 	{
 		// remove the String part relating to submissions zip reference
 		return sReference.substring(sReference.lastIndexOf(Entity.SEPARATOR + "assignment"));
+
+	} // assignmentReferenceFromSubmissionsZipReference
+	
+	/**
+	 * Decode the submissionsZipReference string to get the group reference String
+	 * 
+	 * @param sReference
+	 *        The submissionZipReference String
+	 * @return The group reference String
+	 */
+	private String groupReferenceFromSubmissionsZipReference(String sReference)
+	{
+		// remove the String part relating to submissions zip reference
+		if (sReference.indexOf(Entity.SEPARATOR +"site") != -1)
+		{
+			return sReference.substring(sReference.lastIndexOf(Entity.SEPARATOR + "site"));
+		}
+		else
+		{
+			return null;
+		}
 
 	} // assignmentReferenceFromSubmissionsZipReference
 

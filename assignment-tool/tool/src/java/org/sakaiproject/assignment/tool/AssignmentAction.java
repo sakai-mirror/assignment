@@ -635,6 +635,9 @@ public class AssignmentAction extends PagedResourceActionII
 	private static final String UPLOAD_ALL_HAS_FEEDBACK_ATTACHMENT = "upload_all_has_feedback_attachment";
 	private static final String UPLOAD_ALL_RELEASE_GRADES = "upload_all_release_grades";
 	
+	// view all or grouped submission list
+	private static final String VIEW_SUBMISSION_LIST_OPTION = "view_submission_list_option";
+	
 	/**
 	 * central place for dispatching the build routines based on the state name
 	 */
@@ -8334,71 +8337,130 @@ public class AssignmentAction extends PagedResourceActionII
 		}
 		else if (mode.equalsIgnoreCase(MODE_INSTRUCTOR_GRADE_ASSIGNMENT))
 		{
+			// range
+			Collection groups = new Vector();
 			try
 			{
 				Assignment a = AssignmentService.getAssignment((String) state.getAttribute(EXPORT_ASSIGNMENT_REF));
-				Iterator submissionsIterator = AssignmentService.getSubmissions(a).iterator();
-				List submissions = new Vector();
-				while (submissionsIterator.hasNext())
+				
+				// all submissions
+				List submissions = AssignmentService.getSubmissions(a);
+				
+				// now are we view all sections/groups or just specific one?
+				String allOrOneGroup = (String) state.getAttribute(VIEW_SUBMISSION_LIST_OPTION);
+				if (allOrOneGroup.equals(rb.getString("gen.viewallgroupssections")))
 				{
-					submissions.add(submissionsIterator.next());
+					if (AssignmentService.allowAllGroups(contextString))
+					{
+						// site range
+						groups.add(SiteService.getSite(contextString));
+					}
+					else
+					{
+						// get all groups user can grade
+						groups = AssignmentService.getGroupsAllowGradeAssignment(contextString, a.getReference());
+					}
 				}
-
-				//	get all active site users
-				String authzGroupId = SiteService.siteReference(contextString);
+				else
+				{
+					// filter out only those submissions from the selected-group members
+					try
+					{
+						Group group = SiteService.getSite(contextString).getGroup(allOrOneGroup);
+						groups.add(group);
+					}
+					catch (Exception e)
+					{
+						Log.warn("chef", e.getMessage() + " groupId=" + allOrOneGroup);
+					}
+				}
 
 				// all users that can submit
 				List allowAddSubmissionUsers = AssignmentService.allowAddSubmissionUsers((String) state.getAttribute(EXPORT_ASSIGNMENT_REF));
 
-				try
+				HashSet userIdSet = new HashSet();
+				for (Iterator iGroup=groups.iterator(); iGroup.hasNext();)
 				{
-					AuthzGroup group = AuthzGroupService.getAuthzGroup(authzGroupId);
-					Set grants = group.getUsers();
-					for (Iterator iUserIds = grants.iterator(); iUserIds.hasNext();)
+					Object nGroup = iGroup.next();
+					String authzGroupRef = (nGroup instanceof Group)? ((Group) nGroup).getReference():((nGroup instanceof Site))?((Site) nGroup).getReference():null;
+					if (authzGroupRef != null)
 					{
-						String userId = (String) iUserIds.next();
 						try
 						{
-							User u = UserDirectoryService.getUser(userId);
-							// only include those users that can submit to this assignment
-							if (u != null && allowAddSubmissionUsers.contains(u))
+							AuthzGroup group = AuthzGroupService.getAuthzGroup(authzGroupRef);
+							Set grants = group.getUsers();
+							for (Iterator iUserIds = grants.iterator(); iUserIds.hasNext();)
 							{
-								boolean found = false;
-								for (int i = 0; !found && i<submissions.size();i++)
+								String userId = (String) iUserIds.next();
+								
+								// don't show user multiple times
+								if (!userIdSet.contains(userId))
 								{
-									AssignmentSubmission s = (AssignmentSubmission) submissions.get(i);
-									if (s.getSubmitterIds().contains(userId))
+									try
 									{
-										returnResources.add(new UserSubmission(u, s));
-										found = true;
+										User u = UserDirectoryService.getUser(userId);
+										// only include those users that can submit to this assignment
+										if (u != null && allowAddSubmissionUsers.contains(u))
+										{
+											boolean found = false;
+											for (int i = 0; !found && i<submissions.size();i++)
+											{
+												AssignmentSubmission s = (AssignmentSubmission) submissions.get(i);
+												if (s.getSubmitterIds().contains(userId))
+												{
+													returnResources.add(new UserSubmission(u, s));
+													found = true;
+												}
+											}
+											
+		
+											// add those users who haven't made any submissions
+											if (!found)
+											{
+												// construct fake submissions for grading purpose if the user has right for grading
+												if (AssignmentService.allowGradeSubmission(a.getReference()))
+												{
+												
+													// temporarily allow the user to read and write from assignments (asn.revise permission)
+											        SecurityService.pushAdvisor(new SecurityAdvisor()
+											            {
+											                public SecurityAdvice isAllowed(String userId, String function, String reference)
+											                {
+											                    return SecurityAdvice.ALLOWED;
+											                }
+											            });
+											        
+													AssignmentSubmissionEdit s = AssignmentService.addSubmission(contextString, a.getId(), userId);
+													s.setSubmitted(true);
+													s.setAssignment(a);
+													AssignmentService.commitEdit(s);
+													
+													// update the UserSubmission list by adding newly created Submission object
+													AssignmentSubmission sub = AssignmentService.getSubmission(s.getReference());
+													returnResources.add(new UserSubmission(u, sub));
+			
+											        // clear the permission
+											        SecurityService.clearAdvisors();
+												}
+											}
+										}
 									}
-								}
-
-								// add those users who haven't made any submissions
-								if (!found)
-								{
-									// construct fake submissions for grading purpose
+									catch (Exception e)
+									{
+										Log.warn("chef", this + e.toString() + " here userId = " + userId);
+									}
 									
-									AssignmentSubmissionEdit s = AssignmentService.addSubmission(contextString, a.getId(), userId);
-									s.setSubmitted(true);
-									s.setAssignment(a);
-									AssignmentService.commitEdit(s);
-									
-									// update the UserSubmission list by adding newly created Submission object
-									AssignmentSubmission sub = AssignmentService.getSubmission(s.getReference());
-									returnResources.add(new UserSubmission(u, sub));
+									// add userId into set to prevent showing user multiple times
+									userIdSet.add(userId);
 								}
 							}
+							
 						}
-						catch (Exception e)
+						catch (Exception eee)
 						{
-							Log.warn("chef", this + e.toString() + " here userId = " + userId);
+							Log.warn("chef", eee.getMessage() + " authGroupId=" + authzGroupRef);
 						}
 					}
-				}
-				catch (Exception e)
-				{
-					Log.warn("chef", e.getMessage() + " authGroupId=" + authzGroupId);
 				}
 
 			}
