@@ -2484,9 +2484,9 @@ public class AssignmentAction extends PagedResourceActionII
 				}
 				else if (addUpdateRemoveAssignment.equals("update"))
 				{
-					// no need for updating external assignment
-					/*if (associateGradebookAssignment != null && isExternalAssociateAssignmentDefined)
+					if (associateGradebookAssignment != null && isExternalAssociateAssignmentDefined)
 					{
+						// if there is an external entry created in Gradebook based on this assignment, update it
 						try
 						{
 						    Assignment a = AssignmentService.getAssignment(associateGradebookAssignment);
@@ -2498,8 +2498,7 @@ public class AssignmentAction extends PagedResourceActionII
 				        {
 				        		Log.warn("chef", rb.getString("cannot_find_assignment") + assignmentRef + ": " + e.getMessage());
 				        }
-					}*/
-					
+					}
 				}	// addUpdateRemove != null
 				else if (addUpdateRemoveAssignment.equals("remove"))
 				{
