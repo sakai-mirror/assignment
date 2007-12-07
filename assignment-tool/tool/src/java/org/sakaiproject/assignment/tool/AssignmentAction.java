@@ -2215,7 +2215,7 @@ public class AssignmentAction extends PagedResourceActionII
 					
 					// sort the assignments into the default order before adding
 					Iterator assignmentSorter = AssignmentService.getAssignmentsForContext(contextString, userId);
-					Iterator assignmentSortFinal = new SortedIterator(assignmentSorter, new AssignmentComparator(state, "default", Boolean.TRUE.toString()));
+					Iterator assignmentSortFinal = new SortedIterator(assignmentSorter, new AssignmentComparator(state, SORTED_BY_DEFAULT, Boolean.TRUE.toString()));
 
 					showStudentAssignments.put(user, assignmentSortFinal);
 				}
@@ -7310,6 +7310,11 @@ public class AssignmentAction extends PagedResourceActionII
 		public int compare(Object o1, Object o2)
 		{
 			int result = -1;
+			
+			if (m_criteria == null)
+			{
+				m_criteria = SORTED_BY_DEFAULT;
+			}
 
 			/** *********** for sorting assignments ****************** */
 			if (m_criteria.equals(SORTED_BY_DEFAULT))
@@ -8265,10 +8270,10 @@ public class AssignmentAction extends PagedResourceActionII
 								returnResources.add(a);
 							}
 						}
-						else if (deleted.equalsIgnoreCase(Boolean.TRUE.toString()) && AssignmentService.getSubmission(a.getReference(), (User) state
+						else if (deleted.equalsIgnoreCase(Boolean.TRUE.toString()) && (a.getContent().getTypeOfSubmission() != Assignment.NON_ELECTRONIC_ASSIGNMENT_SUBMISSION) && AssignmentService.getSubmission(a.getReference(), (User) state
 								.getAttribute(STATE_USER)) != null)
 						{
-							// and those deleted assignments but the user has made submissions to them
+							// and those deleted but not non-electronic assignments but the user has made submissions to them
 							returnResources.add(a);
 						}
 					}
