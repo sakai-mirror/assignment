@@ -2849,16 +2849,8 @@ public abstract class BaseAssignmentService implements AssignmentService, Entity
 				}
 				else
 				{
-					Collection aGroups = a.getGroups();
 					// for grouped assignment, return only those also allowed for grading
-					for (Iterator i = allAllowedGroups.iterator(); i.hasNext();)
-					{
-						Group g = (Group) i.next();
-						if (aGroups.contains(g.getReference()))
-						{
-							rv.add(g);
-						}
-					}
+					allAllowedGroups.retainAll(a.getGroups());
 					rv = allAllowedGroups;
 				}
 			}
@@ -3583,7 +3575,7 @@ public abstract class BaseAssignmentService implements AssignmentService, Entity
 			if (allowGradeSubmission(a.getReference()))
 			{
 				zipSubmissions(a.getReference(), a.getTitle(), a.getContent().getTypeOfGradeString(a.getContent().getTypeOfGrade()), a.getContent().getTypeOfSubmission(), submissions.iterator(), outputStream, exceptionMessage);
-				
+
 				if (exceptionMessage.length() > 0)
 				{
 					// log any error messages
@@ -3889,7 +3881,14 @@ public abstract class BaseAssignmentService implements AssignmentService, Entity
 	private String assignmentReferenceFromSubmissionsZipReference(String sReference)
 	{
 		// remove the String part relating to submissions zip reference
-		return sReference.substring(sReference.lastIndexOf(Entity.SEPARATOR + "assignment"));
+		if (sReference.indexOf(Entity.SEPARATOR +"site") == -1)
+		{
+			return sReference.substring(sReference.lastIndexOf(Entity.SEPARATOR + "assignment"));
+		}
+		else
+		{
+			return sReference.substring(sReference.lastIndexOf(Entity.SEPARATOR + "assignment"), sReference.indexOf(Entity.SEPARATOR +"site"));
+		}
 
 	} // assignmentReferenceFromSubmissionsZipReference
 	

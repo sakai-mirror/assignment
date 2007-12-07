@@ -87,6 +87,7 @@ import org.sakaiproject.content.api.ContentResourceEdit;
 import org.sakaiproject.content.api.ContentTypeImageService;
 import org.sakaiproject.content.api.FilePickerHelper;
 import org.sakaiproject.content.cover.ContentHostingService;
+import org.sakaiproject.entity.api.Entity;
 import org.sakaiproject.entity.api.Reference;
 import org.sakaiproject.entity.api.ResourceProperties;
 import org.sakaiproject.entity.api.ResourcePropertiesEdit;
@@ -1978,6 +1979,44 @@ public class AssignmentAction extends PagedResourceActionII
 				context.put("defaultGrade", defaultGrade);
 			}
 			
+			// groups
+			if (state.getAttribute(VIEW_SUBMISSION_LIST_OPTION) == null)
+			{
+				state.setAttribute(VIEW_SUBMISSION_LIST_OPTION, rb.getString("gen.viewallgroupssections"));
+			}
+			String view = (String)state.getAttribute(VIEW_SUBMISSION_LIST_OPTION);
+			context.put("view", view);
+			// access point url for zip file download
+			String contextString = (String) state.getAttribute(STATE_CONTEXT_STRING);
+			String accessPointUrl = ServerConfigurationService.getAccessUrl().concat(AssignmentService.submissionsZipReference(
+					contextString, (String) state.getAttribute(EXPORT_ASSIGNMENT_REF)));
+			if (!view.equals(rb.getString("gen.viewallgroupssections")))
+			{
+				// append the group info to the end
+				accessPointUrl = accessPointUrl.concat(view);
+			}
+			context.put("accessPointUrl", accessPointUrl);
+				
+			if (AssignmentService.getAllowGroupAssignments())
+			{
+				Collection groupsAllowGradeAssignment = AssignmentService.getGroupsAllowGradeAssignment((String) state.getAttribute(STATE_CONTEXT_STRING), assignment.getReference());
+				
+				// group list which user can add message to
+				if (groupsAllowGradeAssignment.size() > 0)
+				{
+					String sort = (String) state.getAttribute(SORTED_BY);
+					String asc = (String) state.getAttribute(SORTED_ASC);
+					if (sort == null || (!sort.equals(SORTED_BY_GROUP_TITLE) && !sort.equals(SORTED_BY_GROUP_DESCRIPTION)))
+					{
+						sort = SORTED_BY_GROUP_TITLE;
+						asc = Boolean.TRUE.toString();
+						state.setAttribute(SORTED_BY, sort);
+						state.setAttribute(SORTED_ASC, asc);
+					}
+					context.put("groups", new SortedIterator(groupsAllowGradeAssignment.iterator(), new AssignmentComparator(state, sort, asc)));
+				}
+			}
+			
 			// for non-electronic assignment
 			if (assignment.getContent() != null && assignment.getContent().getTypeOfSubmission() == Assignment.NON_ELECTRONIC_ASSIGNMENT_SUBMISSION)
 			{
@@ -2058,16 +2097,12 @@ public class AssignmentAction extends PagedResourceActionII
 		add2ndToolbarFields(data, context);
 
 		pagingInfoToContext(state, context);
-
-		String contextString = (String) state.getAttribute(STATE_CONTEXT_STRING);
-		context.put("accessPointUrl", (ServerConfigurationService.getAccessUrl()).concat(AssignmentService.submissionsZipReference(
-				contextString, (String) state.getAttribute(EXPORT_ASSIGNMENT_REF))));
-
+		
 		String template = (String) getContext(data).get("template");
 		
 		return template + TEMPLATE_INSTRUCTOR_GRADE_ASSIGNMENT;
 
-	} // build_instructor_grade_assignment_context
+	} // build_instructor_grade_assignment_context // build_instructor_grade_assignment_context
 
 	/**
 	 * build the instructor view of an assignment
@@ -2654,6 +2689,19 @@ public class AssignmentAction extends PagedResourceActionII
 		} // try
 
 	} // doView_submission
+	
+	/**
+	 * Action is to view the content of one specific assignment submission
+	 */
+	public void doView_submission_list_option(RunData data)
+	{
+		SessionState state = ((JetspeedRunData) data).getPortletSessionState(((JetspeedRunData) data).getJs_peid());
+		
+		ParameterParser params = data.getParameters();
+		String view = params.getString("view");
+		state.setAttribute(VIEW_SUBMISSION_LIST_OPTION, view);
+
+	} // doView_submission_list_option
 
 	/**
 	 * Preview of the submission
