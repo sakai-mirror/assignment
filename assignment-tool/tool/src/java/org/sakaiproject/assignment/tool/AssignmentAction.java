@@ -8374,7 +8374,8 @@ public class AssignmentAction extends PagedResourceActionII
 						.getAttribute(STATE_CONTEXT_STRING));
 			}
 			else if (allowAddAssignment && view.equals(MODE_STUDENT_VIEW)
-					|| !allowAddAssignment)
+					|| (!allowAddAssignment && AssignmentService.allowAddSubmission((String) state
+						.getAttribute(STATE_CONTEXT_STRING))))
 			{
 				// in the student list view of assignments
 				Iterator assignments = AssignmentService
@@ -8411,6 +8412,12 @@ public class AssignmentAction extends PagedResourceActionII
 						addAlert(state, rb.getString("youarenot14"));
 					}
 				}
+			}
+			else
+			{
+				// read all Assignments
+				returnResources = AssignmentService.getListAssignmentsForContext((String) state
+						.getAttribute(STATE_CONTEXT_STRING));
 			}
 			
 			state.setAttribute(HAS_MULTIPLE_ASSIGNMENTS, Boolean.valueOf(returnResources.size() > 1));
