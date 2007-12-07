@@ -638,6 +638,9 @@ public class AssignmentAction extends PagedResourceActionII
 	// view all or grouped submission list
 	private static final String VIEW_SUBMISSION_LIST_OPTION = "view_submission_list_option";
 	
+	// this is to track whether the site has multiple assignment, hence if true, show the reorder link
+	private static final String HAS_MULTIPLE_ASSIGNMENTS = "has_multiple_assignments";
+	
 	/**
 	 * central place for dispatching the build routines based on the state name
 	 */
@@ -664,12 +667,6 @@ public class AssignmentAction extends PagedResourceActionII
 		// allow all.groups?
 		boolean allowAllGroups = AssignmentService.allowAllGroups(contextString);
 		context.put("allowAllGroups", Boolean.valueOf(allowAllGroups));
-		
-		// this is a check for seeing if there are any assignments.  The check is used to see if we display a Reorder link in the vm files
-		Vector assignments = iterator_to_vector(AssignmentService.getAssignmentsForContext((String) state.getAttribute(STATE_CONTEXT_STRING)));
-		boolean assignmentscheck = (assignments.size() > 0) ? true : false;
-		context.put("assignmentscheck", Boolean.valueOf(assignmentscheck));
-
 		
 		//Is the review service allowed?
 		context.put("allowReviewService", allowReviewService);
@@ -828,6 +825,12 @@ public class AssignmentAction extends PagedResourceActionII
 			template = build_list_assignments_context(portlet, context, data, state);
 		}
 
+		// this is a check for seeing if there are any assignments.  The check is used to see if we display a Reorder link in the vm files
+		if (state.getAttribute(HAS_MULTIPLE_ASSIGNMENTS) != null)
+		{
+			context.put("assignmentscheck", state.getAttribute(HAS_MULTIPLE_ASSIGNMENTS));
+		}
+		
 		return template;
 
 	} // buildNormalContext
@@ -8290,6 +8293,8 @@ public class AssignmentAction extends PagedResourceActionII
 					}
 				}
 			}
+			
+			state.setAttribute(HAS_MULTIPLE_ASSIGNMENTS, Boolean.valueOf(returnResources.size() > 1));
 		}
 		else if (mode.equalsIgnoreCase(MODE_INSTRUCTOR_REORDER_ASSIGNMENT))
 		{
