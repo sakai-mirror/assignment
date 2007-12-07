@@ -225,6 +225,11 @@ public abstract class BaseAssignmentService implements AssignmentService, Entity
 	public static final String EVENT_GRADE_ASSIGNMENT_SUBMISSION = "asn.grade.submission";
 
 	
+	protected static final String GROUP_NAME = "authzGroup";
+	
+	// the file types for zip download
+	protected static final String ZIP_COMMENT_FILE_TYPE = ".txt";
+	protected static final String ZIP_SUBMITTED_TEXT_FILE_TYPE = ".html";
 
 //	spring service injection
 	
@@ -3491,8 +3496,7 @@ public abstract class BaseAssignmentService implements AssignmentService, Entity
 										if (typeOfSubmission != Assignment.ATTACHMENT_ONLY_ASSIGNMENT_SUBMISSION)
 										{
 											// create the text file only when a text submission is allowed
-											String entryName = submittersName + submittersString + "_submissionText.txt";
-											ZipEntry textEntry = new ZipEntry(entryName);
+											ZipEntry textEntry = new ZipEntry(submittersName + submittersString + "_submissionText" + ZIP_SUBMITTED_TEXT_FILE_TYPE);
 											out.putNextEntry(textEntry);
 											byte[] text = submittedText.getBytes();
 											out.write(text);
@@ -3519,7 +3523,7 @@ public abstract class BaseAssignmentService implements AssignmentService, Entity
 										out.closeEntry();
 										
 										// the comments.txt file to show instructor's comments
-										ZipEntry textEntry = new ZipEntry(submittersName + "comments.txt");
+										ZipEntry textEntry = new ZipEntry(submittersName + "comments" + ZIP_COMMENT_FILE_TYPE);
 										out.putNextEntry(textEntry);
 										byte[] b = FormattedText.encodeUnicode(s.getFeedbackComment()).getBytes();
 										out.write(b);
