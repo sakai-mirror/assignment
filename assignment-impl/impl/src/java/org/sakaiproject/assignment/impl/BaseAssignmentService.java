@@ -5345,6 +5345,10 @@ public abstract class BaseAssignmentService implements AssignmentService, Entity
 		 */
 		public Time getCloseTime()
 		{
+			if (m_closeTime == null)
+			{
+				m_closeTime = m_dueTime;
+			}
 			return m_closeTime;
 		}
 
