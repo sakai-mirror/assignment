@@ -3408,6 +3408,7 @@ public class AssignmentAction extends PagedResourceActionII
 	
 							// for resubmissions
 							// when resubmit, keep the Returned flag on till the instructor grade again.
+							Time now = TimeService.newTime();
 							ResourcePropertiesEdit sPropertiesEdit = sEdit.getPropertiesEdit();
 							if (sEdit.getGraded())
 							{
@@ -3446,7 +3447,7 @@ public class AssignmentAction extends PagedResourceActionII
 										previousGrades = "";
 									}
 								}
-								previousGrades = previousGrades.concat(sEdit.getGradeDisplay() + " ");
+								previousGrades = rb.getString("gen.subm6") + now.toStringLocalFull() + "<p />" + sEdit.getGradeDisplay() + "<p />" +previousGrades;
 
 								sPropertiesEdit.addProperty(ResourceProperties.PROP_SUBMISSION_SCALED_PREVIOUS_GRADES,
 										previousGrades);
@@ -3461,7 +3462,7 @@ public class AssignmentAction extends PagedResourceActionII
 										.getProperty(ResourceProperties.PROP_SUBMISSION_PREVIOUS_FEEDBACK_TEXT) != null ? sPropertiesEdit
 										.getProperty(ResourceProperties.PROP_SUBMISSION_PREVIOUS_FEEDBACK_TEXT)
 										: "";
-								feedbackTextHistory = sEdit.getFeedbackText() + "\n" + feedbackTextHistory;
+								feedbackTextHistory = rb.getString("gen.subm6") + now.toStringLocalFull() + "<p />" + sEdit.getFeedbackText() + "<p />" + feedbackTextHistory;
 								sPropertiesEdit.addProperty(ResourceProperties.PROP_SUBMISSION_PREVIOUS_FEEDBACK_TEXT,
 										feedbackTextHistory);
 	
@@ -3470,7 +3471,7 @@ public class AssignmentAction extends PagedResourceActionII
 										.getProperty(ResourceProperties.PROP_SUBMISSION_PREVIOUS_FEEDBACK_COMMENT) != null ? sPropertiesEdit
 										.getProperty(ResourceProperties.PROP_SUBMISSION_PREVIOUS_FEEDBACK_COMMENT)
 										: "";
-								feedbackCommentHistory = sEdit.getFeedbackComment() + "\n" + feedbackCommentHistory;
+								feedbackCommentHistory = rb.getString("gen.subm6") + now.toStringLocalFull() + "<p />" + sEdit.getFeedbackComment() + "<p />" + feedbackCommentHistory;
 								sPropertiesEdit.addProperty(ResourceProperties.PROP_SUBMISSION_PREVIOUS_FEEDBACK_COMMENT,
 										feedbackCommentHistory);
 								
@@ -3480,10 +3481,12 @@ public class AssignmentAction extends PagedResourceActionII
 										.getProperty(PROP_SUBMISSION_PREVIOUS_FEEDBACK_ATTACHMENTS)
 										: "";
 								List feedbackAttachments = sEdit.getFeedbackAttachments();
+								String att = rb.getString("gen.subm6") + now.toStringLocalFull() + "<p />";
 								for (int k = 0; k<feedbackAttachments.size();k++)
 								{
-									feedbackAttachmentHistory = ((Reference) feedbackAttachments.get(k)).getReference() + "," + feedbackAttachmentHistory;
+									att = att + ((Reference) feedbackAttachments.get(k)).getReference() + "<p />";
 								}
+								feedbackAttachmentHistory = att + feedbackAttachmentHistory;
 								
 								sPropertiesEdit.addProperty(PROP_SUBMISSION_PREVIOUS_FEEDBACK_ATTACHMENTS,
 										feedbackAttachmentHistory);
