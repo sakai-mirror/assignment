@@ -134,6 +134,7 @@ import org.sakaiproject.util.SortedIterator;
 import org.sakaiproject.util.StorageUser;
 import org.sakaiproject.util.StringUtil;
 import org.sakaiproject.util.Validator;
+import org.sakaiproject.util.Web;
 import org.sakaiproject.util.Xml;
 import org.sakaiproject.util.commonscodec.CommonsCodecBase64;
 import org.w3c.dom.Document;
@@ -2016,15 +2017,12 @@ public abstract class BaseAssignmentService implements AssignmentService, Entity
 				finalReceivers.addAll(receivers);
 			}
 			
-			List headers = new Vector();
-			headers.add(rb.getString("noti.subject.label") + rb.getString("noti.subject.content"));
-			
 			String messageBody = getNotificationMessage(s);
 			
 			if (notiOption.equals(Assignment.ASSIGNMENT_INSTRUCTOR_NOTIFICATIONS_EACH))
 			{
 				// send the message immidiately
-				EmailService.sendToUsers(finalReceivers, headers, messageBody);
+				EmailService.sendToUsers(finalReceivers, getHeaders(null), messageBody);
 			}
 			else if (notiOption.equals(Assignment.ASSIGNMENT_INSTRUCTOR_NOTIFICATIONS_DIGEST))
 			{
@@ -2032,7 +2030,7 @@ public abstract class BaseAssignmentService implements AssignmentService, Entity
 				for (Iterator iReceivers = finalReceivers.iterator(); iReceivers.hasNext();)
 				{
 					User user = (User) iReceivers.next();
-					DigestService.digest(user.getId(), rb.getString("noti.subject.label") + rb.getString("noti.subject.content")/*the subject*/, messageBody);
+					DigestService.digest(user.getId(), getSubject(), messageBody);
 				}
 			}
 		}
@@ -2053,17 +2051,103 @@ public abstract class BaseAssignmentService implements AssignmentService, Entity
 			{
 				List receivers = new Vector();
 				receivers.add(u);
-				List headers = new Vector();
-				headers.add(rb.getString("noti.subject.label") + rb.getString("noti.subject.content"));
 				
-				String messageBody = getNotificationMessage(s);
-				EmailService.sendToUsers(receivers, headers, messageBody);
+				EmailService.sendToUsers(receivers, getHeaders(u.getEmail()), getNotificationMessage(s));
 			}
 		}
 	}
-
-	private String getNotificationMessage(AssignmentSubmission s) 
+	
+	protected List<String> getHeaders(String receiverEmail)
 	{
+		List<String> rv = new Vector<String>();
+		
+		rv.add("MIME-Version: 1.0");
+		rv.add("Content-Type: multipart/alternative; boundary=\""+MULTIPART_BOUNDARY+"\"");
+		// set the subject
+		rv.add(getSubject());
+
+		// from
+		rv.add(getFrom());
+		
+		// to
+		if (StringUtil.trimToNull(receiverEmail) != null)
+		{
+			rv.add("To: " + receiverEmail);
+		}
+		
+		return rv;
+	}
+	
+	protected String getSubject()
+	{
+		return rb.getString("noti.subject.label") + " " + rb.getString("noti.subject.content");
+	}
+	
+	protected String getFrom()
+	{
+		return "From: " + "\"" + m_serverConfigurationService.getString("ui.service", "Sakai") + "\"<no-reply@"+ m_serverConfigurationService.getServerName() + ">";
+	}
+	
+	private final String MULTIPART_BOUNDARY = "======sakai-multi-part-boundary======";
+	private final String BOUNDARY_LINE = "\n\n--"+MULTIPART_BOUNDARY+"\n";
+	private final String TERMINATION_LINE = "\n\n--"+MULTIPART_BOUNDARY+"--\n\n";
+	private final String MIME_ADVISORY = "This message is for MIME-compliant mail readers.";
+	
+	/**
+	 * Get the message for the email.
+	 * 
+	 * @param event
+	 *        The event that matched criteria to cause the notification.
+	 * @return the message for the email.
+	 */
+	protected String getNotificationMessage(AssignmentSubmission s)
+	{	
+		StringBuilder message = new StringBuilder();
+		message.append(MIME_ADVISORY);
+		message.append(BOUNDARY_LINE);
+		message.append(plainTextHeaders());
+		message.append(plainTextContent(s));
+		message.append(BOUNDARY_LINE);
+		message.append(htmlHeaders());
+		message.append(htmlPreamble());
+		message.append(htmlContent(s));
+		message.append(htmlEnd());
+		message.append(TERMINATION_LINE);
+		return message.toString();
+	}
+	
+	protected String plainTextHeaders() {
+		return "Content-Type: text/plain\n\n";
+	}
+	
+	protected String plainTextContent(AssignmentSubmission s) {
+		return htmlContent(s);
+	}
+	
+	protected String htmlHeaders() {
+		return "Content-Type: text/html\n\n";
+	}
+	
+	protected String htmlPreamble() {
+		StringBuilder buf = new StringBuilder();
+		buf.append("<!DOCTYPE html PUBLIC \"-//W3C//DTD HTML 4.01 Transitional//EN\"\n");
+		buf.append("    \"http://www.w3.org/TR/html4/loose.dtd\">\n");
+		buf.append("<html>\n");
+		buf.append("  <head><title>");
+		buf.append(getSubject());
+		buf.append("</title></head>\n");
+		buf.append("  <body>\n");
+		return buf.toString();
+	}
+	
+	protected String htmlEnd() {
+		return "\n  </body>\n</html>\n";
+	}
+
+	private String htmlContent(AssignmentSubmission s) 
+	{
+		String newline = "<br />\n";
+		
 		Assignment a = s.getAssignment();
 		
 		String context = s.getContext();
@@ -2083,11 +2167,11 @@ public abstract class BaseAssignmentService implements AssignmentService, Entity
 		
 		StringBuffer buffer = new StringBuffer();
 		// site title and id
-		buffer.append(rb.getString("noti.site.title") + " " + siteTitle +"\n");
-		buffer.append(rb.getString("noti.site.id") + " " + siteId +"\n\n");
+		buffer.append(rb.getString("noti.site.title") + " " + siteTitle + newline);
+		buffer.append(rb.getString("noti.site.id") + " " + siteId +newline + newline);
 		// assignment title and due date
-		buffer.append(rb.getString("noti.assignment") + " " + a.getTitle()+"\n");
-		buffer.append(rb.getString("noti.assignment.duedate") + " " + a.getDueTime().toStringLocalFull()+"\n\n");
+		buffer.append(rb.getString("noti.assignment") + " " + a.getTitle()+newline);
+		buffer.append(rb.getString("noti.assignment.duedate") + " " + a.getDueTime().toStringLocalFull()+newline + newline);
 		// submitter name and id
 		User[] submitters = s.getSubmitters();
 		String submitterNames = "";
@@ -2108,26 +2192,26 @@ public abstract class BaseAssignmentService implements AssignmentService, Entity
 		{
 			buffer.append("( " + submitterIds + " )");
 		}
-		buffer.append("\n\n");
+		buffer.append(newline + newline);
 		
 		// submit time
-		buffer.append(rb.getString("noti.submit.id") + " " + s.getId() + "\n");
+		buffer.append(rb.getString("noti.submit.id") + " " + s.getId() + newline);
 		
 		// submit time 
-		buffer.append(rb.getString("noti.submit.time") + " " + s.getTimeSubmitted().toStringLocalFull() + "\n\n");
+		buffer.append(rb.getString("noti.submit.time") + " " + s.getTimeSubmitted().toStringLocalFull() + newline + newline);
 		
 		// submit text
 		String text = StringUtil.trimToNull(s.getSubmittedText());
 		if ( text != null)
 		{
-			buffer.append(rb.getString("noti.submit.text") + "\n\n" + text + "\n\n");
+			buffer.append(rb.getString("noti.submit.text") + newline + newline + Validator.escapeHtmlFormattedText(text) + newline + newline);
 		}
 		
 		// attachment if any
 		List attachments = s.getSubmittedAttachments();
 		if (attachments != null && attachments.size() >0)
 		{
-			buffer.append(rb.getString("noti.submit.attachments") + "\n\n");
+			buffer.append(rb.getString("noti.submit.attachments") + newline + newline);
 			for (int j = 0; j<attachments.size(); j++)
 			{
 				Reference r = (Reference) attachments.get(j);
