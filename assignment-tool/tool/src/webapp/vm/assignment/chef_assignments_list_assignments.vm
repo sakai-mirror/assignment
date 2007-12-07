@@ -449,6 +449,7 @@ function allowClick(object)
 									#end
 							</td>
 							#if ($!groups)
+							<td  style="padding-bottom:0">
 								## only show it when there is at least one group
 								## assignment range
 								#set($for="")
@@ -472,7 +473,7 @@ function allowClick(object)
 								#end
 								<td  style="padding-bottom:0">
 									$!for
-								</td>
+							</td>
 							#end
 							<td headers="status">
 								#if ($allowAddAssignment && $!view.equals('lisofass1'))
@@ -519,17 +520,6 @@ function allowClick(object)
 											#set($totalNumber = $ungradedNumber)
 										#end
 									#end
-								## 1- text only; 2-attachment only; 3-text and attachment; 4-Non-electronic
-								#set ( $submissionType = $assignment.Content.TypeOfSubmission)
-								#if ($!submissionType == 4)
-									## non-electronic assignment
-									#set ($allowSubmitUsers = $!service.allowAddSubmissionUsers($!assignment.getReference()))
-									#set($totalNumber=$!allowSubmitUsers.size())
-									##if ungraded number is greater than total number, set it to be equal
-									#if ($ungradedNumber > $totalNumber)
-										#set($ungradedNumber=$totalNumber)
-									#end
-								#end
 									<a href="#" onclick="if(allowClick(this)){window.location='#toolLinkParam("$action" "doGrade_assignment" "assignmentId=$validator.escapeUrl($assignmentReference)")';}" >
 									$!totalNumber/$!ungradedNumber</a>
 								</td>
