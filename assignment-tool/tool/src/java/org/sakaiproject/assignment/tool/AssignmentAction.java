@@ -2319,7 +2319,7 @@ public class AssignmentAction extends PagedResourceActionII
     **/
    private String getToolTitle()
    {
-      Tool tool = ToolManager.getTool("sakai.assignment.grades");
+      Tool tool = ToolManager.getTool(ASSIGNMENT_TOOL_ID);
       String toolTitle = null;
 
       if (tool == null)
@@ -9264,7 +9264,7 @@ public class AssignmentAction extends PagedResourceActionII
 		state.setAttribute(UPLOAD_ALL_HAS_FEEDBACK_ATTACHMENT, Boolean.valueOf(hasFeedbackAttachment));
 		state.setAttribute(UPLOAD_ALL_RELEASE_GRADES, Boolean.valueOf(releaseGrades));
 		
-		if (!hasSubmissionText && !hasSubmissionAttachment && !hasGradeFile && !hasComment && !hasFeedbackAttachment)
+		if (!hasSubmissionText && !hasSubmissionAttachment && !hasFeedbackText && !hasGradeFile && !hasComment && !hasFeedbackAttachment)
 		{
 			// has to choose one upload feature
 			addAlert(state, rb.getString("uploadall.alert.choose.element"));
@@ -9419,7 +9419,6 @@ public class AssignmentAction extends PagedResourceActionII
 											userEid = userEid.substring(userEid.indexOf("(")+1, userEid.indexOf(")"));
 										}
 										userEid=StringUtil.trimToNull(userEid);
-
 									}
 									if (submissionTable.containsKey(userEid))
 									{
@@ -9434,7 +9433,6 @@ public class AssignmentAction extends PagedResourceActionII
 									        		submissionTable.put(userEid, r);
 									        }
 										}
-										
 										if (hasFeedbackText && entryName.indexOf("feedbackText") != -1)
 										{
 											// upload the feedback text
@@ -9635,7 +9633,7 @@ public class AssignmentAction extends PagedResourceActionII
 			state.setAttribute(STATE_MODE, MODE_INSTRUCTOR_GRADE_ASSIGNMENT);
 		}
 	}
-
+	
 	/**
 	 * This is to get the submission or feedback attachment from the upload zip file into the submission object
 	 * @param state
