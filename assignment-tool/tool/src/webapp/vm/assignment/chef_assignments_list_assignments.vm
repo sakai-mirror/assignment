@@ -352,7 +352,7 @@ function allowClick(object)
 													#end
 												#end
 											#end
-											#if (!$assignment.draft && $allowGradeSubmission)#if($prevAction) | #end
+											#if (!$assignment.draft && $!service.allowGradeSubmission($assignment.getReference()))#if($prevAction) | #end
 											<a href="#" onclick="if(allowClick(this)){window.location='#toolLinkParam("$action" "doGrade_assignment" "assignmentId=$validator.escapeUrl($assignmentReference)")';}" >#if ($withGrade)$!tlang.getString("grad1")#else$!tlang.getString("viewsubmissions")#end</a>#end										
 										</div>
 									#else
@@ -503,7 +503,7 @@ function allowClick(object)
 							<td headers="dueDate">
 								$!assignment.dueTime.toStringLocalFull()
 							</td>
-							#if ($!allowGradeSubmission)
+							#if ($!service.allowGradeSubmission($assignment.getReference()))
 								#if ($!view.equals('lisofass1'))
 								<td headers="num_submissions" class="specialLink">
 									## 1- text only; 2-attachment only; 3-text and attachment; 4-Non-electronic
