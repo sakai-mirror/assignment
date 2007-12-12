@@ -15,9 +15,9 @@ CLASSPATH="$CLASSPATH:$CATALINA_HOME/shared/lib/commons-collections-3.1.jar"
 
 ##### JDBC DRIVER #####
 ## MYSQL ##
-CLASSPATH="$CLASSPATH:$CATALINA_HOME/common/lib/mysql-connector-java-5.1.5-bin.jar"
+CLASSPATH="$CLASSPATH:$CATALINA_HOME/common/lib/mysql-connector-java-3.1.14-bin.jar"
 ## ORACLE ##
-CLASSPATH="$CLASSPATH:$CATALINA_HOME/common/lib/ojdbc-14.jar"
+CLASSPATH="$CLASSPATH:$CATALINA_HOME/common/lib/ojdbc14.jar"
 
 java $JAVA_OPTS  \
       -classpath "$CLASSPATH" \

@@ -50,7 +50,7 @@ public class SubmitterIdAssignmentsConversionHandler implements SchemaConversion
 	 */
 	public Object getSource(String id, ResultSet rs) throws SQLException
 	{
-		return rs.getString(1);
+		return rs.next()?rs.getString(1):null;
 	}
 
 	/*

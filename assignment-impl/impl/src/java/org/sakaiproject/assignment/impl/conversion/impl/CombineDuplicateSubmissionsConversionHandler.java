@@ -39,10 +39,10 @@ import org.sakaiproject.util.StringUtil;
 public class CombineDuplicateSubmissionsConversionHandler implements SchemaConversionHandler 
 {
 	private static final Log log = LogFactory.getLog(CombineDuplicateSubmissionsConversionHandler.class);
-
+	
 	public boolean convertSource(String id, Object source, PreparedStatement updateRecord) throws SQLException 
 	{
-		List<String> xml = (List<String>) source;
+		List<String> xml = (List<String>) source;	
 		SortedSet<String> identifiers = new TreeSet<String>();
 
 		List<AssignmentSubmissionAccess> saxlist = new ArrayList<AssignmentSubmissionAccess>();
@@ -71,12 +71,18 @@ public class CombineDuplicateSubmissionsConversionHandler implements SchemaConve
 			AssignmentSubmissionAccess result = saxlist.get(0);
 			
 			String xml0 = result.toXml();
+			String submitTime0 = result.getDatesubmitted();
+			String submitted0 = result.getSubmitted();
+			String graded0 = result.getGraded();
 			String id0 = result.getId();
 			
 			log.info("updating \"" + id0 + " (revising XML as follows:\n" + xml0);
 			
 			updateRecord.setString(1, xml0);
-			updateRecord.setString(2, id0);
+			updateRecord.setString(2, submitTime0);
+			updateRecord.setString(3, submitted0);
+			updateRecord.setString(4, graded0);
+			updateRecord.setString(5, id0);
 			return true;
 		}
 		else {
@@ -106,6 +112,39 @@ public class CombineDuplicateSubmissionsConversionHandler implements SchemaConve
 			keepItem = item2;
 			removeItem = item1;
 		}
+		else if("true".equals(item2.getSubmitted()) && item2.getDatesubmitted() != null
+				&& ("true".equals(item1.getSubmitted()) && item1.getDatesubmitted() != null))
+		{
+			// both are valid in terms of submission status and submit date
+			Integer t1 = getIntegerObject(item1.getDatesubmitted());
+			Integer t2 = getIntegerObject(item2.getDatesubmitted());
+			if (t1 != null && t2 != null)
+			{
+				if (t1.intValue() < t2.intValue())
+				{
+					// consider the earlier one as the true submission
+					keepItem = item1;
+					removeItem = item2;
+				}
+				else
+				{
+					keepItem = item2;
+					removeItem = item1;
+				}
+			}
+			else if (t1 != null)
+			{
+				// keep whichever is not null
+				keepItem = item1;
+				removeItem = item2;
+			}
+			else
+			{
+				// keep whichever is not null
+				keepItem = item2;
+				removeItem = item1;
+			}
+		}
 		else
 		{
 			// if there is no student submission, just duplicate instructor record
@@ -131,67 +170,69 @@ public class CombineDuplicateSubmissionsConversionHandler implements SchemaConve
 
 		// need to verify whether student or instructor data 
 		// takes precedence if both exist
-		if(keepItem.getDatereturned() == null)
+		if(keepItem.getDatereturned() == null && removeItem.getDatereturned() != null)
 		{
 			keepItem.setDatereturned(removeItem.getDatereturned());
 		}
-		if(keepItem.getDatesubmitted() == null)
+		if(keepItem.getDatesubmitted() == null && removeItem.getDatesubmitted() != null)
 		{
 			keepItem.setDatesubmitted(removeItem.getDatesubmitted());
 		}
 		
-		List feedbackattachments = keepItem.getFeedbackattachments();
-		if(feedbackattachments == null || feedbackattachments.isEmpty())
+		List<String> feedbackattachments = keepItem.getFeedbackattachments();
+		List<String> rFeedbackAttachments = removeItem.getFeedbackattachments();
+		if((feedbackattachments == null || feedbackattachments.isEmpty()) 
+			&& (rFeedbackAttachments != null && !rFeedbackAttachments.isEmpty()))
 		{
-			keepItem.setFeedbackattachments(removeItem.getFeedbackattachments());
+			keepItem.setFeedbackattachments(rFeedbackAttachments);
 		}
-		if(keepItem.getFeedbackcomment() == null)
+		
+		List<String> submittedAttachments = keepItem.getSubmittedattachments();
+		List<String> rSubmittedAttachments = removeItem.getSubmittedattachments();
+		if((submittedAttachments == null || submittedAttachments.isEmpty()) 
+			&& (rSubmittedAttachments != null && !rSubmittedAttachments.isEmpty()))
+		{
+			keepItem.setSubmittedattachments(rSubmittedAttachments);
+		}
+		
+		if(keepItem.getFeedbackcomment() == null && removeItem.getFeedbackcomment() != null)
 		{
 			keepItem.setFeedbackcomment(removeItem.getFeedbackcomment());
 		}
-		if(keepItem.getFeedbackcomment_html() == null)
+		if(keepItem.getFeedbackcomment_html() == null && removeItem.getFeedbackcomment_html() != null)
 		{
 			keepItem.setFeedbackcomment_html(removeItem.getFeedbackcomment_html());
 		}
-		if(keepItem.getFeedbacktext() == null)
+		if(keepItem.getFeedbacktext() == null && removeItem.getFeedbacktext() != null)
 		{
 			keepItem.setFeedbacktext(keepItem.getFeedbacktext());
 		}
-		if(keepItem.getFeedbacktext_html() == null)
+		if(keepItem.getFeedbacktext_html() == null && removeItem.getFeedbacktext_html() != null)
 		{
 			keepItem.setFeedbacktext_html(removeItem.getFeedbacktext_html());
 		}
-		if(keepItem.getGrade() == null)
+		if(keepItem.getGrade() == null && removeItem.getGrade() != null)
 		{
+			// set the grade attributes to be the same as remove item's
 			keepItem.setGrade(removeItem.getGrade());
-		}
-		if(keepItem.getGraded() == null)
-		{
 			keepItem.setGraded(removeItem.getGraded());
-		}
-		if(keepItem.getGradereleased() == null)
-		{
 			keepItem.setGradereleased(removeItem.getGradereleased());
 		}
-		if(keepItem.getReturned() == null)
+		if(keepItem.getReturned() == null && removeItem.getReturned() != null)
 		{
 			keepItem.setReturned(removeItem.getReturned());
 		}
-		if(keepItem.getReviewReport() == null)
+		if(keepItem.getReviewReport() == null && removeItem.getReviewReport() != null)
 		{
 			keepItem.setReviewReport(removeItem.getReviewReport());
 		}
-		if(keepItem.getReviewScore() == null)
+		if(keepItem.getReviewScore() == null && removeItem.getReviewScore() != null)
 		{
 			keepItem.setReviewScore(removeItem.getReviewScore());
 		}
-		if(keepItem.getReviewStatus() == null)
+		if(keepItem.getReviewStatus() == null && removeItem.getReviewStatus() != null)
 		{
 			keepItem.setReviewStatus(removeItem.getReviewStatus());
-		}
-		if(keepItem.getScaled_grade() == null)
-		{
-			keepItem.setScaled_grade(removeItem.getScaled_grade());
 		}
 		// what to do with properties????
 		/// for now, we dump all the properties of the removeItem
@@ -211,7 +252,6 @@ public class CombineDuplicateSubmissionsConversionHandler implements SchemaConve
 		{
 			xml.add(rs.getString(1));
 		}
-		
 		return xml;
 	}
 
@@ -227,5 +267,30 @@ public class CombineDuplicateSubmissionsConversionHandler implements SchemaConve
 	{
 		
 	}
-
+	
+	/**
+	 * get Integer based on passed string. Truncate the String if necessary
+	 * @param timeString
+	 * @return
+	 */
+	private Integer getIntegerObject(String timeString)
+	{
+		Integer rv = null;
+		
+		int max_length = Integer.valueOf(Integer.MAX_VALUE).toString().length();
+		if (timeString.length() > max_length)
+		{
+			timeString = timeString.substring(0, max_length);
+		}
+		
+		try
+		{
+			rv = Integer.parseInt(timeString);
+		}
+		catch (Exception e)
+		{
+			// ignore
+		}
+		return rv;
+	}
 }

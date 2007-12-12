@@ -45,7 +45,7 @@ public class RemoveDuplicateSubmissionsConversionHandler implements
 
 	public Object getSource(String id, ResultSet rs) throws SQLException 
 	{
-		return rs.getString(1);
+		return rs.next()?rs.getString(1):null;
 	}
 
 	public Object getValidateSource(String id, ResultSet rs) throws SQLException 

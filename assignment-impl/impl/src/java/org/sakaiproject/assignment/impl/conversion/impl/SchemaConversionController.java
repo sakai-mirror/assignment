@@ -140,10 +140,7 @@ public class SchemaConversionController
 				selectRecord.setString(1, id);
 				rs = selectRecord.executeQuery();
 				Object source = null;
-				if (rs.next())
-				{
-					source = convert.getSource(id, rs);
-				}
+				source = convert.getSource(id, rs);
 				rs.close();
 				if (source != null)
 				{
