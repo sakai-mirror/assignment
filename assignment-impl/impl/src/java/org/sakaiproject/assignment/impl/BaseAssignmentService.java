@@ -9776,6 +9776,43 @@ public abstract class BaseAssignmentService implements AssignmentService, Entity
 			return result;
 		}
 	}
+	
+	public void transferCopyEntities(String fromContext, String toContext, List ids, boolean cleanup)
+	{	
+		try
+		{
+			if(cleanup == true)
+			{
+				String toSiteId = toContext;
+				
+				Iterator assignmentsIter = getAssignmentsForContext(toSiteId);
+	 
+				while (assignmentsIter.hasNext())
+				{
+					Assignment assignment = (Assignment) assignmentsIter.next();
+					
+					String assignmentId = assignment.getId();
+					
+					AssignmentEdit aEdit = editAssignment(assignmentId);
+					
+					try
+					{
+						removeAssignment(aEdit);
+					}
+					catch (Exception e)
+					{
+						M_log.debug("Remove Assignment Error" + e);
+					}				
+				}
+				   
+			}
+			transferCopyEntities(fromContext, toContext, ids);
+		}
+		catch (Exception e)
+		{
+			M_log.debug("importSiteClean: End removing Assignmnet data" + e);
+		}			
+	}
 
 } // BaseAssignmentService
 
