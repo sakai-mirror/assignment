@@ -21,6 +21,7 @@
 
 package org.sakaiproject.assignment.impl.conversion.impl;
 
+import java.io.StringReader;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
@@ -78,7 +79,7 @@ public class CombineDuplicateSubmissionsConversionHandler implements SchemaConve
 			
 			log.info("updating \"" + id0 + " (revising XML as follows:\n" + xml0);
 			
-			updateRecord.setString(1, xml0);
+			updateRecord.setCharacterStream(1, new StringReader(xml0), xml0.length());
 			updateRecord.setString(2, submitTime0);
 			updateRecord.setString(3, submitted0);
 			updateRecord.setString(4, graded0);
