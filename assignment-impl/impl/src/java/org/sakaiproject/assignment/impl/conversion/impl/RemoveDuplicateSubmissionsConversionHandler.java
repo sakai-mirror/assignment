@@ -36,6 +36,24 @@ public class RemoveDuplicateSubmissionsConversionHandler implements
 		SchemaConversionHandler 
 {
 
+	// db driver
+	private String m_dbDriver = null;
+	/**
+	 * {@inheritDoc}
+	 */
+	public String getDbDriver()
+	{
+		return m_dbDriver;
+	}
+	
+	/**
+	 * {@inheritDoc}
+	 */
+	public void setDbDriver(String dbDriver)
+	{
+		m_dbDriver = dbDriver;
+	}
+	
 	public boolean convertSource(String id, Object source, PreparedStatement updateRecord) throws SQLException 
 	{
 		updateRecord.setString(1, id);

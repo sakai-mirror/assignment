@@ -22,6 +22,7 @@
 package org.sakaiproject.assignment.impl.conversion.impl;
 
 import java.io.StringReader;
+import java.io.UnsupportedEncodingException;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
@@ -40,6 +41,24 @@ import org.sakaiproject.util.StringUtil;
 public class CombineDuplicateSubmissionsConversionHandler implements SchemaConversionHandler 
 {
 	private static final Log log = LogFactory.getLog(CombineDuplicateSubmissionsConversionHandler.class);
+	
+	// db driver
+	private String m_dbDriver = null;
+	/**
+	 * {@inheritDoc}
+	 */
+	public String getDbDriver()
+	{
+		return m_dbDriver;
+	}
+	
+	/**
+	 * {@inheritDoc}
+	 */
+	public void setDbDriver(String dbDriver)
+	{
+		m_dbDriver = dbDriver;
+	}
 	
 	public boolean convertSource(String id, Object source, PreparedStatement updateRecord) throws SQLException 
 	{
@@ -79,7 +98,26 @@ public class CombineDuplicateSubmissionsConversionHandler implements SchemaConve
 			
 			log.info("updating \"" + id0 + " (revising XML as follows:\n" + xml0);
 			
-			updateRecord.setCharacterStream(1, new StringReader(xml0), xml0.length());
+			if (getDbDriver().indexOf("mysql") != -1)
+			{
+				// see http://bugs.sakaiproject.org/jira/browse/SAK-1737
+				// MySQL setCharacterStream() is broken and truncates UTF-8
+				// international characters sometimes. So use setBytes()
+				// instead (just for MySQL).
+				try
+				{
+					updateRecord.setBytes(1, xml0.getBytes("UTF-8"));
+				}
+				catch (UnsupportedEncodingException e)
+				{
+					log.info(e.getMessage() + xml0);
+				}
+			}
+			else
+			{
+				updateRecord.setCharacterStream(1, new StringReader(xml0), xml0.length());
+			}
+			
 			updateRecord.setString(2, submitTime0);
 			updateRecord.setString(3, submitted0);
 			updateRecord.setString(4, graded0);
@@ -180,39 +218,28 @@ public class CombineDuplicateSubmissionsConversionHandler implements SchemaConve
 			keepItem.setDatesubmitted(removeItem.getDatesubmitted());
 		}
 		
-		List<String> feedbackattachments = keepItem.getFeedbackattachments();
-		List<String> rFeedbackAttachments = removeItem.getFeedbackattachments();
-		if((feedbackattachments == null || feedbackattachments.isEmpty()) 
-			&& (rFeedbackAttachments != null && !rFeedbackAttachments.isEmpty()))
-		{
-			keepItem.setFeedbackattachments(rFeedbackAttachments);
-		}
+		// feedback attachments
+		keepItem.setFeedbackattachments(combineAttachments(keepItem.getFeedbackattachments(), removeItem.getFeedbackattachments()));
 		
-		List<String> submittedAttachments = keepItem.getSubmittedattachments();
-		List<String> rSubmittedAttachments = removeItem.getSubmittedattachments();
-		if((submittedAttachments == null || submittedAttachments.isEmpty()) 
-			&& (rSubmittedAttachments != null && !rSubmittedAttachments.isEmpty()))
-		{
-			keepItem.setSubmittedattachments(rSubmittedAttachments);
-		}
+		// submitted attachments
+		keepItem.setSubmittedattachments(combineAttachments(keepItem.getSubmittedattachments(), removeItem.getSubmittedattachments()));
 		
-		if(keepItem.getFeedbackcomment() == null && removeItem.getFeedbackcomment() != null)
-		{
-			keepItem.setFeedbackcomment(removeItem.getFeedbackcomment());
-		}
-		if(keepItem.getFeedbackcomment_html() == null && removeItem.getFeedbackcomment_html() != null)
-		{
-			keepItem.setFeedbackcomment_html(removeItem.getFeedbackcomment_html());
-		}
-		if(keepItem.getFeedbacktext() == null && removeItem.getFeedbacktext() != null)
-		{
-			keepItem.setFeedbacktext(keepItem.getFeedbacktext());
-		}
-		if(keepItem.getFeedbacktext_html() == null && removeItem.getFeedbacktext_html() != null)
-		{
-			keepItem.setFeedbacktext_html(removeItem.getFeedbacktext_html());
-		}
-		if(keepItem.getGrade() == null && removeItem.getGrade() != null)
+		// feedback comment
+		keepItem.setFeedbackcomment(combineText(StringUtil.trimToNull(keepItem.getFeedbackcomment()), StringUtil.trimToNull(removeItem.getFeedbackcomment())));
+		
+		// feedback_comment_html
+		keepItem.setFeedbackcomment_html(combineText(StringUtil.trimToNull(keepItem.getFeedbackcomment_html()), StringUtil.trimToNull(removeItem.getFeedbackcomment_html())));
+
+		// feedback text
+		keepItem.setFeedbacktext(combineText(StringUtil.trimToNull(keepItem.getFeedbacktext()), StringUtil.trimToNull(removeItem.getFeedbacktext())));
+
+		// feedback_text_html
+		keepItem.setFeedbacktext_html(combineText(StringUtil.trimToNull(keepItem.getFeedbacktext_html()), StringUtil.trimToNull(removeItem.getFeedbacktext_html())));
+
+		// grade
+		String grade = StringUtil.trimToNull(keepItem.getGrade());
+		String rGrade = StringUtil.trimToNull(removeItem.getGrade());
+		if(grade == null && rGrade != null)
 		{
 			// set the grade attributes to be the same as remove item's
 			keepItem.setGrade(removeItem.getGrade());
@@ -223,6 +250,8 @@ public class CombineDuplicateSubmissionsConversionHandler implements SchemaConve
 		{
 			keepItem.setReturned(removeItem.getReturned());
 		}
+		
+		// review
 		if(keepItem.getReviewReport() == null && removeItem.getReviewReport() != null)
 		{
 			keepItem.setReviewReport(removeItem.getReviewReport());
@@ -244,6 +273,60 @@ public class CombineDuplicateSubmissionsConversionHandler implements SchemaConve
 		
 
 		return keepItem;
+	}
+
+	/**
+	 * 
+	 * @param feedbackComment
+	 * @param rFeedbackComment
+	 * @return
+	 */
+	private String combineText(String text, String rText) {
+		if(rText != null)
+		{
+			if (text == null)
+			{
+				// use the rText instead
+				text = rText;
+			}
+			else if (!text.equals(rText))
+			{
+				// concatenate with the rText
+				text.concat("<p>" + rText + "</p>");
+			}
+		}
+		return text;
+	}
+
+	/**
+	 * coombine attachments
+	 * @param attachments
+	 * @param rAttachments
+	 * @return
+	 */
+	private List<String> combineAttachments(List<String> attachments, List<String> rAttachments) {
+		if(rAttachments != null && !rAttachments.isEmpty())
+		{
+			if (attachments == null || attachments.isEmpty())
+			{
+				// if keepItem's attachment is empty, use the removeItem's instead
+				attachments = rAttachments;
+			}
+			else
+			{
+				// find the missing attachment from removeItem, and add them to keepItem
+				for(int i=0; i<rAttachments.size();i++)
+				{
+					String rAttachment = rAttachments.get(i);
+					if (!attachments.contains(rAttachment))
+					{
+						// add this attachment from removeItem
+						attachments.add(rAttachment);
+					}
+				}
+			}
+		}
+		return attachments;
 	}
 
 	public Object getSource(String id, ResultSet rs) throws SQLException 
