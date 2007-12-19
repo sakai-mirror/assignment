@@ -293,6 +293,10 @@ public class AssignmentAction extends PagedResourceActionII
 
 	/** the submission answer to Honor Pledge * */
 	private static final String VIEW_SUBMISSION_HONOR_PLEDGE_YES = "Assignment.view_submission_honor_pledge_yes";
+	
+	//ONCOURSE
+	private static final String VIEW_SUBMISSION_CONFIRM_SUBMIT = "Assignment.view_submission_confirm_submit";
+	// END ONCOURSE
 
 	/** ***************** student's preview of submission *************************** */
 	/** the assignment id * */
@@ -2781,6 +2785,8 @@ public class AssignmentAction extends PagedResourceActionII
 
 		// back to the student list view of assignments
 		state.setAttribute(STATE_MODE, MODE_LIST_ASSIGNMENTS);
+		
+		state.removeAttribute(VIEW_SUBMISSION_CONFIRM_SUBMIT); // ONCOURSE
 
 	} // doCancel_show_submission
 
@@ -3137,6 +3143,8 @@ public class AssignmentAction extends PagedResourceActionII
 	{
 		SessionState state = ((JetspeedRunData) data).getPortletSessionState(((JetspeedRunData) data).getJs_peid());
 		ParameterParser params = data.getParameters();
+		
+		state.removeAttribute(VIEW_SUBMISSION_CONFIRM_SUBMIT); // ONCOURSE
 
 		// retrieve the submission text (as formatted text)
 		boolean checkForFormattingErrors = true; // the student is submitting something - so check for errors
@@ -3350,6 +3358,17 @@ public class AssignmentAction extends PagedResourceActionII
 					}
 				}
 			}
+			
+			// ONCOURSE
+			if (state.getAttribute(STATE_MESSAGE) == null) {
+				if (state.getAttribute(VIEW_SUBMISSION_CONFIRM_SUBMIT) == null) {
+					addAlert(state, rb.getString("stuviewsubm.warning"));
+					state.setAttribute(VIEW_SUBMISSION_CONFIRM_SUBMIT, Boolean.TRUE);
+				} else {
+					state.removeAttribute(VIEW_SUBMISSION_CONFIRM_SUBMIT); 
+				}
+			}
+			// END ONCOURSE
 	
 			if ((state.getAttribute(STATE_MESSAGE) == null) && (a != null))
 			{
