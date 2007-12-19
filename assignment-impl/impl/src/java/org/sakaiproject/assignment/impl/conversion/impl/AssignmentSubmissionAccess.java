@@ -63,7 +63,7 @@ public class AssignmentSubmissionAccess implements SerializableSubmissionAccess,
 			.getLog(AssignmentSubmissionAccess.class);
 
 	private SAXParserFactory parserFactory;
-	private SAXSerializablePropertiesAccess saxSerializableProperties = new SAXSerializablePropertiesAccess();
+	protected SAXSerializablePropertiesAccess saxSerializableProperties = new SAXSerializablePropertiesAccess();
 
 	protected String id = null;
 
@@ -349,9 +349,25 @@ public class AssignmentSubmissionAccess implements SerializableSubmissionAccess,
 					setDatereturned(StringUtil.trimToNull(attributes.getValue("datereturned")));
 					setDatesubmitted(StringUtil.trimToNull(attributes.getValue("datesubmitted")));
 					setFeedbackcomment(StringUtil.trimToNull(attributes.getValue("feedbackcomment")));
-					setFeedbackcomment_html(StringUtil.trimToNull(attributes.getValue("feedbackcomment-html")));
+					if (StringUtil.trimToNull(attributes.getValue("feedbackcomment-html"))  != null)
+					{
+						setFeedbackcomment_html(StringUtil.trimToNull(attributes.getValue("feedbackcomment-html")));
+					}
+					else if (StringUtil.trimToNull(attributes.getValue("feedbackcomment-formatted"))  != null)
+					{
+						setFeedbackcomment_html(StringUtil.trimToNull(attributes.getValue("feedbackcomment-formatted")));
+					}
 					setFeedbacktext(StringUtil.trimToNull(attributes.getValue("feedbacktext")));
-					setFeedbacktext_html(StringUtil.trimToNull(attributes.getValue("feedbacktext-html")));
+					
+					if (StringUtil.trimToNull(attributes.getValue("feedbacktext-html")) != null)
+					{
+						setFeedbacktext_html(StringUtil.trimToNull(attributes.getValue("feedbacktext-html")));
+					}
+					else if (StringUtil.trimToNull(attributes.getValue("feedbacktext-formatted")) != null)
+					{
+						setFeedbacktext_html(StringUtil.trimToNull(attributes.getValue("feedbacktext-formatted")));
+					}
+						
 					
 					// get grade
 					String grade = StringUtil.trimToNull(attributes.getValue("scaled_grade"));

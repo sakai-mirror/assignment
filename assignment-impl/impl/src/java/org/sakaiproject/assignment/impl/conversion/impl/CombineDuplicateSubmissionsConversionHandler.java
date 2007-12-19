@@ -28,15 +28,21 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 import java.util.SortedSet;
 import java.util.TreeSet;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.sakaiproject.assignment.impl.conversion.api.SchemaConversionHandler;
+import org.sakaiproject.entity.api.ResourceProperties;
+import org.sakaiproject.entity.cover.EntityManager;
+
+import org.apache.commons.codec.binary.Base64;
 
 
 import org.sakaiproject.util.StringUtil;
+import org.sakaiproject.util.commonscodec.CommonsCodecBase64;
 
 public class CombineDuplicateSubmissionsConversionHandler implements SchemaConversionHandler 
 {
@@ -96,7 +102,7 @@ public class CombineDuplicateSubmissionsConversionHandler implements SchemaConve
 			String graded0 = result.getGraded();
 			String id0 = result.getId();
 			
-			log.info("updating \"" + id0 + " (revising XML as follows:\n" + xml0);
+			log.info("updating \"" + id0 + " revising XML");
 			
 			if (getDbDriver().indexOf("mysql") != -1)
 			{
@@ -133,6 +139,8 @@ public class CombineDuplicateSubmissionsConversionHandler implements SchemaConve
 	{
 		AssignmentSubmissionAccess keepItem=item1;
 		AssignmentSubmissionAccess removeItem=item2;
+		
+		boolean usePreviousRecords = false;
 
 		// for normal assignment
 		//it is student-generated	(submitted==TRUE && dateSubmittted==SOME_TIMESTAMP) or submitted=false),
@@ -159,17 +167,60 @@ public class CombineDuplicateSubmissionsConversionHandler implements SchemaConve
 			Integer t2 = getIntegerObject(item2.getDatesubmitted());
 			if (t1 != null && t2 != null)
 			{
-				if (t1.intValue() < t2.intValue())
+				String grade1= StringUtil.trimToNull(item1.getGrade());
+				String grade2 = StringUtil.trimToNull(item2.getGrade());
+				if (item1.getGradereleased().equalsIgnoreCase(Boolean.TRUE.toString()) && item2.getGradereleased().equalsIgnoreCase(Boolean.TRUE.toString()))
 				{
-					// consider the earlier one as the true submission
+					// if both grades has been released
+					if (nonDefaultGrade(grade1) && nonDefaultGrade(grade2) && !grade1.equals(grade2))
+					{
+						// if both grades are release and are different, set the previous one as previous grade and keep the later one as the current grade
+						// to-do: don't have a good way to modify all previous properties right now
+						usePreviousRecords = true;
+						if (t1.intValue() < t2.intValue())
+						{
+							// keep the later one
+							keepItem = item2;
+							removeItem = item1;
+						}
+						else
+						{
+							keepItem = item1;
+							removeItem = item2;
+						}
+					}
+					else if (nonDefaultGrade(grade1) && !nonDefaultGrade(grade2))
+					{
+						keepItem = item1;
+						removeItem = item2;
+					}
+					else if (!nonDefaultGrade(grade1) && nonDefaultGrade(grade2))
+					{
+						keepItem = item2;
+						removeItem = item1;
+					}
+					else
+					{
+						// both are default grade
+					}
+				}
+				else if (item1.getGradereleased().equalsIgnoreCase(Boolean.TRUE.toString()))
+				{
+					// keep the released grade one
 					keepItem = item1;
 					removeItem = item2;
 				}
-				else
+				else if (item2.getGradereleased().equalsIgnoreCase(Boolean.TRUE.toString()))
 				{
+					// keep the released grade one
 					keepItem = item2;
 					removeItem = item1;
 				}
+				else
+				{
+					// neither been released
+				}
+					
 			}
 			else if (t1 != null)
 			{
@@ -183,7 +234,7 @@ public class CombineDuplicateSubmissionsConversionHandler implements SchemaConve
 				keepItem = item2;
 				removeItem = item1;
 			}
-		}
+		}	
 		else
 		{
 			// if there is no student submission, just duplicate instructor record
@@ -218,38 +269,86 @@ public class CombineDuplicateSubmissionsConversionHandler implements SchemaConve
 			keepItem.setDatesubmitted(removeItem.getDatesubmitted());
 		}
 		
+		// in case we need to update the previous gradeing info inside properties
+		if (usePreviousRecords)
+		{
+			log.info("need to update previous grading information keepItem id=" + keepItem.getId() + " removeItem id=" + removeItem.getId());
+			
+			Map<String, Object> propertiesMap = keepItem.saxSerializableProperties.getSerializableProperties();
+			
+			// the properties definition copied from ResourceProperties.java file 
+			/** Property for assignment submission's previous grade (user settable). [String] */
+			String PROP_SUBMISSION_PREVIOUS_GRADES = "CHEF:submission_previous_grades";
+
+			/** Property for assignment submission's scaled previous grade (user settable). [String] */
+			String PROP_SUBMISSION_SCALED_PREVIOUS_GRADES = "CHEF:submission_scaled_previous_grades";
+
+			/** Property for assignment submission's previous inline feedback text (user settable). [String] */
+			String PROP_SUBMISSION_PREVIOUS_FEEDBACK_TEXT = "CHEF:submission_previous_feedback_text";
+
+			/** Property for assignment submission's previous feedback comment (user settable). [String] */
+			String PROP_SUBMISSION_PREVIOUS_FEEDBACK_COMMENT = "CHEF:submission_previous_feedback_comment";
+			
+			// the properties definition from AssignmentAction.java
+			/** property for previous feedback attachments **/
+			String PROP_SUBMISSION_PREVIOUS_FEEDBACK_ATTACHMENTS = "prop_submission_previous_feedback_attachments";
+			
+			propertiesMap.put(PROP_SUBMISSION_PREVIOUS_GRADES, combineText((String) propertiesMap.get(PROP_SUBMISSION_PREVIOUS_GRADES), removeItem.getGrade(), "graded on " + removeItem.getDatereturned()));
+			
+			propertiesMap.put(PROP_SUBMISSION_PREVIOUS_FEEDBACK_TEXT, combineText((String) propertiesMap.get(PROP_SUBMISSION_PREVIOUS_FEEDBACK_TEXT), removeItem.getFeedbacktext(), "graded on " + removeItem.getDatereturned()));
+			
+			propertiesMap.put(PROP_SUBMISSION_PREVIOUS_FEEDBACK_COMMENT, combineText((String) propertiesMap.get(PROP_SUBMISSION_PREVIOUS_FEEDBACK_COMMENT), removeItem.getFeedbackcomment(), "graded on " + removeItem.getDatereturned()));
+			
+			String previousAttachments = (String) propertiesMap.get(PROP_SUBMISSION_PREVIOUS_FEEDBACK_COMMENT);
+			List<String> attachments = removeItem.getFeedbackattachments();
+			if (attachments != null && attachments.size() > 0)
+			{
+				if (previousAttachments == null)
+				{
+					previousAttachments = "";
+				}
+				
+				// add the attachments
+				for (int k =0; k < attachments.size(); k++)
+				{
+					String nAttachment = (String) attachments.get(k);
+					if (previousAttachments.indexOf(nAttachment) == -1)
+					{
+						previousAttachments = previousAttachments.concat(",").concat(nAttachment);
+					}
+				}
+				propertiesMap.put(PROP_SUBMISSION_PREVIOUS_FEEDBACK_ATTACHMENTS, previousAttachments);
+			}
+			// reset the properties
+			keepItem.saxSerializableProperties.setSerializableProperties(propertiesMap);
+		}
+		
 		// feedback attachments
 		keepItem.setFeedbackattachments(combineAttachments(keepItem.getFeedbackattachments(), removeItem.getFeedbackattachments()));
 		
 		// submitted attachments
 		keepItem.setSubmittedattachments(combineAttachments(keepItem.getSubmittedattachments(), removeItem.getSubmittedattachments()));
 		
+		if (removeItem.getDatesubmitted() != null)
+		{
+			//submission text
+			keepItem.setSubmittedtext(combineText(keepItem.getSubmittedtext(), removeItem.getSubmittedtext(), "submitted on " + removeItem.getDatesubmitted()));
+			
+			//submission_text_html
+			keepItem.setSubmittedtext_html(combineText(keepItem.getSubmittedtext_html(), removeItem.getSubmittedtext_html(), "submitted on " + removeItem.getDatesubmitted()));
+		}
+		
 		// feedback comment
-		keepItem.setFeedbackcomment(combineText(StringUtil.trimToNull(keepItem.getFeedbackcomment()), StringUtil.trimToNull(removeItem.getFeedbackcomment())));
+		keepItem.setFeedbackcomment(combineText(keepItem.getFeedbackcomment(), removeItem.getFeedbackcomment(), "commented on " + removeItem.getDatereturned()));
 		
 		// feedback_comment_html
-		keepItem.setFeedbackcomment_html(combineText(StringUtil.trimToNull(keepItem.getFeedbackcomment_html()), StringUtil.trimToNull(removeItem.getFeedbackcomment_html())));
+		keepItem.setFeedbackcomment_html(combineText(keepItem.getFeedbackcomment_html(), removeItem.getFeedbackcomment_html(), "commented on " + removeItem.getDatereturned()));
 
 		// feedback text
-		keepItem.setFeedbacktext(combineText(StringUtil.trimToNull(keepItem.getFeedbacktext()), StringUtil.trimToNull(removeItem.getFeedbacktext())));
+		keepItem.setFeedbacktext(combineText(keepItem.getFeedbacktext(), removeItem.getFeedbacktext(), "commented on " + removeItem.getDatereturned()));
 
 		// feedback_text_html
-		keepItem.setFeedbacktext_html(combineText(StringUtil.trimToNull(keepItem.getFeedbacktext_html()), StringUtil.trimToNull(removeItem.getFeedbacktext_html())));
-
-		// grade
-		String grade = StringUtil.trimToNull(keepItem.getGrade());
-		String rGrade = StringUtil.trimToNull(removeItem.getGrade());
-		if(grade == null && rGrade != null)
-		{
-			// set the grade attributes to be the same as remove item's
-			keepItem.setGrade(removeItem.getGrade());
-			keepItem.setGraded(removeItem.getGraded());
-			keepItem.setGradereleased(removeItem.getGradereleased());
-		}
-		if(keepItem.getReturned() == null && removeItem.getReturned() != null)
-		{
-			keepItem.setReturned(removeItem.getReturned());
-		}
+		keepItem.setFeedbacktext_html(combineText(keepItem.getFeedbacktext_html(), removeItem.getFeedbacktext_html(), "commented on " + removeItem.getDatereturned()));
 		
 		// review
 		if(keepItem.getReviewReport() == null && removeItem.getReviewReport() != null)
@@ -276,23 +375,101 @@ public class CombineDuplicateSubmissionsConversionHandler implements SchemaConve
 	}
 
 	/**
+	 * is this grade with a non default value?
+	 * @param grade
+	 * @return
+	 */
+	private boolean nonDefaultGrade(String grade)
+	{
+		// if the grade is not of the following pattern, consider it is useful
+		boolean rv = false;
+		if (grade == null)
+		{
+		}
+		else if (grade.equals("00"))
+		{
+		}	
+		else if (grade.equals("0"))
+		{
+		}	
+		else if (grade.equals("no grade"))
+		{
+		}
+		else if (grade.equals("ungraded"))
+		{
+		}
+		else if (grade.equals("Fail"))
+		{
+		}
+		else
+		{
+			rv = true;
+		}
+		
+		return rv;
+	}
+	
+	/**
+	 * Whether both grades
+	 * @param item1
+	 * @param item2
+	 * @return
+	 */
+	private boolean bothGradesReleasedAndDifferent(AssignmentSubmissionAccess item1, AssignmentSubmissionAccess item2)
+	{
+		// if both grades have been released and are different
+		if (item1.getGradereleased().equalsIgnoreCase(Boolean.TRUE.toString()) && item2.getGradereleased().equalsIgnoreCase(Boolean.TRUE.toString()))
+		{
+			String grade1 = item1.getGrade();
+			String grade2 = item2.getGrade();
+			if (nonDefaultGrade(grade1) && nonDefaultGrade(grade2) && !grade1.equals(grade2))
+			{
+				// both grades are not of default grade, and also different
+				// need to keep the record
+				return true;
+			}
+		}
+		return false;
+	}
+	
+	/**
 	 * 
 	 * @param feedbackComment
 	 * @param rFeedbackComment
 	 * @return
 	 */
-	private String combineText(String text, String rText) {
-		if(rText != null)
+	private String combineText(String text, String rText, String date) {
+		text = StringUtil.trimToNull(text);
+		rText = StringUtil.trimToNull(rText);
+		if(rText != null && date != null)
 		{
 			if (text == null)
 			{
 				// use the rText instead
 				text = rText;
 			}
-			else if (!text.equals(rText))
+			else
 			{
-				// concatenate with the rText
-				text.concat("<p>" + rText + "</p>");
+				try
+				{
+					String decodedText = new String(Base64.decodeBase64(text.getBytes("UTF-8")));
+					String decodedRText = new String(Base64.decodeBase64(rText.getBytes("UTF-8")));
+					if (decodedText.indexOf((decodedRText)) == -1)
+					{
+						String decoded= decodedText + "<p>" + date + ":</p><p>" + decodedRText + "</p>";
+						try
+						{
+							text = new String(Base64.encodeBase64(decoded.getBytes()),"UTF-8");
+						}
+						catch (java.io.UnsupportedEncodingException e)
+						{
+							// ignore
+						}
+					}
+				}catch (java.io.UnsupportedEncodingException ee)
+				{
+					// ignore
+				}
 			}
 		}
 		return text;

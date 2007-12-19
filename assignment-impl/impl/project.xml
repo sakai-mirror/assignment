@@ -182,6 +182,11 @@
 				<deploy.target>shared</deploy.target>
 			</properties>
 		</dependency>
+		<dependency>
+      		<groupId>commons-codec</groupId>
+      		<artifactId>commons-codec</artifactId>
+      		<version>1.3</version> 
+    	</dependency>
 
 	</dependencies>
 
