@@ -70,6 +70,7 @@ import org.sakaiproject.authz.api.GroupNotDefinedException;
 import org.sakaiproject.authz.cover.AuthzGroupService;
 import org.sakaiproject.authz.cover.FunctionManager;
 import org.sakaiproject.authz.cover.SecurityService;
+import org.sakaiproject.authz.api.SecurityAdvisor;
 import org.sakaiproject.component.api.ServerConfigurationService;
 import org.sakaiproject.content.api.ContentResource;
 import org.sakaiproject.content.api.ContentResourceEdit;
@@ -223,6 +224,8 @@ public abstract class BaseAssignmentService implements AssignmentService, Entity
 	
 	/** Event for grading an assignment submission. */
 	public static final String EVENT_GRADE_ASSIGNMENT_SUBMISSION = "asn.grade.submission";
+	
+	private static final String NEW_ASSIGNMENT_DUE_DATE_SCHEDULED = "new_assignment_due_date_scheduled";
 
 	
 	// the file types for zip download
@@ -9783,26 +9786,44 @@ public abstract class BaseAssignmentService implements AssignmentService, Entity
 		{
 			if(cleanup == true)
 			{
+				SecurityService.pushAdvisor(new SecurityAdvisor() 
+				{
+					public SecurityAdvice isAllowed(String userId, String function, String reference)       
+					{    
+						return SecurityAdvice.ALLOWED;       
+					} 
+				});
+
 				String toSiteId = toContext;
-				
 				Iterator assignmentsIter = getAssignmentsForContext(toSiteId);
-	 
 				while (assignmentsIter.hasNext())
 				{
-					Assignment assignment = (Assignment) assignmentsIter.next();
-					
-					String assignmentId = assignment.getId();
-					
-					AssignmentEdit aEdit = editAssignment(assignmentId);
-					
-					try
+					try 
 					{
-						removeAssignment(aEdit);
+						Assignment assignment = (Assignment) assignmentsIter.next();
+						String assignmentId = assignment.getId();
+						AssignmentEdit aEdit = editAssignment(assignmentId);
+						try
+						{
+							removeAssignmentContent(editAssignmentContent(aEdit.getContent().getReference()));
+						}
+						catch (Exception eee)
+						{
+							M_log.debug("removeAssignmentContent error:" + eee);
+						}
+						try
+						{
+							removeAssignment(aEdit);
+						}
+						catch (Exception eeee)
+						{
+							M_log.debug("removeAssignment error:" + eeee);
+						}
 					}
-					catch (Exception e)
+					catch(Exception ee)
 					{
-						M_log.debug("Remove Assignment Error" + e);
-					}				
+						M_log.debug("removeAssignment process error:" + ee);
+					}
 				}
 				   
 			}
@@ -9810,8 +9831,12 @@ public abstract class BaseAssignmentService implements AssignmentService, Entity
 		}
 		catch (Exception e)
 		{
-			M_log.debug("importSiteClean: End removing Assignmnet data" + e);
-		}			
+			M_log.info("transferCopyEntities: End removing Assignmentt data" + e);
+		}
+		finally
+		{
+			SecurityService.popAdvisor();
+		}
 	}
 
 } // BaseAssignmentService
