@@ -490,7 +490,6 @@ public class CombineDuplicateSubmissionsConversionHandler implements SchemaConve
 					
 					if (decodedText.indexOf((decodedRText)) == -1)
 					{
-						log.info(decodedText.indexOf((decodedRText)));
 						String decoded= decodedText + "<p>" + date + ":</p><p>" + decodedRText + "</p>";
 						if (textEncoded)
 						{
