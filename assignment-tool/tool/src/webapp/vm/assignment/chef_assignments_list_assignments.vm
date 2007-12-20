@@ -471,7 +471,6 @@ function allowClick(object)
 										#end
 									#end
 								#end
-								<td  style="padding-bottom:0">
 									$!for
 							</td>
 							#end
