@@ -293,11 +293,9 @@ public class CombineDuplicateSubmissionsConversionHandler implements SchemaConve
 			/** property for previous feedback attachments **/
 			String PROP_SUBMISSION_PREVIOUS_FEEDBACK_ATTACHMENTS = "prop_submission_previous_feedback_attachments";
 			
-			propertiesMap.put(PROP_SUBMISSION_PREVIOUS_GRADES, combineText((String) propertiesMap.get(PROP_SUBMISSION_PREVIOUS_GRADES), removeItem.getGrade(), "graded on " + removeItem.getDatereturned()));
-			
-			propertiesMap.put(PROP_SUBMISSION_PREVIOUS_FEEDBACK_TEXT, combineText((String) propertiesMap.get(PROP_SUBMISSION_PREVIOUS_FEEDBACK_TEXT), removeItem.getFeedbacktext(), "graded on " + removeItem.getDatereturned()));
-			
-			propertiesMap.put(PROP_SUBMISSION_PREVIOUS_FEEDBACK_COMMENT, combineText((String) propertiesMap.get(PROP_SUBMISSION_PREVIOUS_FEEDBACK_COMMENT), removeItem.getFeedbackcomment(), "graded on " + removeItem.getDatereturned()));
+			propertiesMap.put(PROP_SUBMISSION_PREVIOUS_GRADES, combineGrades((String) propertiesMap.get(PROP_SUBMISSION_PREVIOUS_GRADES), removeItem.getGrade(), "graded on " + removeItem.getDatereturned()));
+			propertiesMap.put(PROP_SUBMISSION_PREVIOUS_FEEDBACK_TEXT, combinePropertyWithText((String) propertiesMap.get(PROP_SUBMISSION_PREVIOUS_FEEDBACK_TEXT), removeItem.getFeedbacktext(), "graded on " + removeItem.getDatereturned()));
+			propertiesMap.put(PROP_SUBMISSION_PREVIOUS_FEEDBACK_COMMENT, combinePropertyWithText((String) propertiesMap.get(PROP_SUBMISSION_PREVIOUS_FEEDBACK_COMMENT), removeItem.getFeedbackcomment(), "graded on " + removeItem.getDatereturned()));
 			
 			String previousAttachments = (String) propertiesMap.get(PROP_SUBMISSION_PREVIOUS_FEEDBACK_COMMENT);
 			List<String> attachments = removeItem.getFeedbackattachments();
@@ -433,12 +431,39 @@ public class CombineDuplicateSubmissionsConversionHandler implements SchemaConve
 	}
 	
 	/**
-	 * 
-	 * @param feedbackComment
-	 * @param rFeedbackComment
+	 * combine text, both are Base64 encoded
+	 * @param text
+	 * @param rText
+	 * @param date
 	 * @return
 	 */
 	private String combineText(String text, String rText, String date) {
+		return combine(text, true, rText, true, date);
+	}
+	
+	/**
+	 * combine plain text with Base64 encoded text
+	 * @param text
+	 * @param rText
+	 * @param date
+	 * @return
+	 */
+	private String combinePropertyWithText(String text, String rText, String date) {
+		return combine(text, false, rText, true, date);
+	}
+	
+	/**
+	 * combine grades, both are not encoded
+	 * @param text
+	 * @param rText
+	 * @param date
+	 * @return
+	 */
+	private String combineGrades(String text, String rText, String date) {
+		return combine(text, false, rText, false, date);
+	}
+
+	private String combine(String text, boolean textEncoded, String rText, boolean rTextEncoded, String date) {
 		text = StringUtil.trimToNull(text);
 		rText = StringUtil.trimToNull(rText);
 		if(rText != null && date != null)
@@ -452,18 +477,37 @@ public class CombineDuplicateSubmissionsConversionHandler implements SchemaConve
 			{
 				try
 				{
-					String decodedText = new String(Base64.decodeBase64(text.getBytes("UTF-8")));
-					String decodedRText = new String(Base64.decodeBase64(rText.getBytes("UTF-8")));
+					String decodedText = text;
+					if (textEncoded)
+					{
+						decodedText = new String(Base64.decodeBase64(text.getBytes("UTF-8")));
+					}
+					String decodedRText = rText;
+					if (rTextEncoded)
+					{
+						decodedRText = new String(Base64.decodeBase64(rText.getBytes("UTF-8")));
+					}
+					
 					if (decodedText.indexOf((decodedRText)) == -1)
 					{
+						log.info(decodedText.indexOf((decodedRText)));
 						String decoded= decodedText + "<p>" + date + ":</p><p>" + decodedRText + "</p>";
-						try
+						if (textEncoded)
 						{
-							text = new String(Base64.encodeBase64(decoded.getBytes()),"UTF-8");
+							// return encoded
+							try
+							{
+								text = new String(Base64.encodeBase64(decoded.getBytes()),"UTF-8");
+							}
+							catch (java.io.UnsupportedEncodingException e)
+							{
+								// ignore
+							}
 						}
-						catch (java.io.UnsupportedEncodingException e)
+						else
 						{
-							// ignore
+							// return plain
+							text = decoded;
 						}
 					}
 				}catch (java.io.UnsupportedEncodingException ee)
