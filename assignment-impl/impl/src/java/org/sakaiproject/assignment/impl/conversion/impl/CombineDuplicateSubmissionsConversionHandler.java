@@ -292,10 +292,23 @@ public class CombineDuplicateSubmissionsConversionHandler implements SchemaConve
 			// the properties definition from AssignmentAction.java
 			/** property for previous feedback attachments **/
 			String PROP_SUBMISSION_PREVIOUS_FEEDBACK_ATTACHMENTS = "prop_submission_previous_feedback_attachments";
+			String previousGrades = combineGrades((String) propertiesMap.get(PROP_SUBMISSION_PREVIOUS_GRADES), removeItem.getGrade(), "graded on " + removeItem.getDatereturned());
+			if (previousGrades != null)
+			{
+				propertiesMap.put(PROP_SUBMISSION_PREVIOUS_GRADES, previousGrades);
+			}
 			
-			propertiesMap.put(PROP_SUBMISSION_PREVIOUS_GRADES, combineGrades((String) propertiesMap.get(PROP_SUBMISSION_PREVIOUS_GRADES), removeItem.getGrade(), "graded on " + removeItem.getDatereturned()));
-			propertiesMap.put(PROP_SUBMISSION_PREVIOUS_FEEDBACK_TEXT, combinePropertyWithText((String) propertiesMap.get(PROP_SUBMISSION_PREVIOUS_FEEDBACK_TEXT), removeItem.getFeedbacktext(), "graded on " + removeItem.getDatereturned()));
-			propertiesMap.put(PROP_SUBMISSION_PREVIOUS_FEEDBACK_COMMENT, combinePropertyWithText((String) propertiesMap.get(PROP_SUBMISSION_PREVIOUS_FEEDBACK_COMMENT), removeItem.getFeedbackcomment(), "graded on " + removeItem.getDatereturned()));
+			String previousFeedbackText = combinePropertyWithText((String) propertiesMap.get(PROP_SUBMISSION_PREVIOUS_FEEDBACK_TEXT), removeItem.getFeedbacktext(), "graded on " + removeItem.getDatereturned());
+			if (previousFeedbackText != null)
+			{
+				propertiesMap.put(PROP_SUBMISSION_PREVIOUS_FEEDBACK_TEXT, previousFeedbackText);
+			}
+			
+			String previousFeedbackComment = combinePropertyWithText((String) propertiesMap.get(PROP_SUBMISSION_PREVIOUS_FEEDBACK_COMMENT), removeItem.getFeedbackcomment(), "graded on " + removeItem.getDatereturned());
+			if (previousFeedbackComment != null)
+			{
+				propertiesMap.put(PROP_SUBMISSION_PREVIOUS_FEEDBACK_COMMENT, previousFeedbackComment);
+			}
 			
 			String previousAttachments = (String) propertiesMap.get(PROP_SUBMISSION_PREVIOUS_FEEDBACK_COMMENT);
 			List<String> attachments = removeItem.getFeedbackattachments();
@@ -315,7 +328,10 @@ public class CombineDuplicateSubmissionsConversionHandler implements SchemaConve
 						previousAttachments = previousAttachments.concat(",").concat(nAttachment);
 					}
 				}
-				propertiesMap.put(PROP_SUBMISSION_PREVIOUS_FEEDBACK_ATTACHMENTS, previousAttachments);
+				if (StringUtil.trimToNull(previousAttachments) != null)
+				{
+					propertiesMap.put(PROP_SUBMISSION_PREVIOUS_FEEDBACK_ATTACHMENTS, StringUtil.trimToNull(previousAttachments));
+				}
 			}
 			// reset the properties
 			keepItem.saxSerializableProperties.setSerializableProperties(propertiesMap);
@@ -468,10 +484,22 @@ public class CombineDuplicateSubmissionsConversionHandler implements SchemaConve
 		rText = StringUtil.trimToNull(rText);
 		if(rText != null && date != null)
 		{
+			String decodedRText = rText;
+			if (rTextEncoded)
+			{
+				try
+				{
+					decodedRText = new String(Base64.decodeBase64(rText.getBytes("UTF-8")));
+				}catch (java.io.UnsupportedEncodingException ignore)
+				{
+					// ignore
+				}
+			}
+			
 			if (text == null)
 			{
 				// use the rText instead
-				text = rText;
+				text = decodedRText;
 			}
 			else
 			{
@@ -481,11 +509,6 @@ public class CombineDuplicateSubmissionsConversionHandler implements SchemaConve
 					if (textEncoded)
 					{
 						decodedText = new String(Base64.decodeBase64(text.getBytes("UTF-8")));
-					}
-					String decodedRText = rText;
-					if (rTextEncoded)
-					{
-						decodedRText = new String(Base64.decodeBase64(rText.getBytes("UTF-8")));
 					}
 					
 					if (decodedText.indexOf((decodedRText)) == -1)
