@@ -79,5 +79,18 @@ public interface SchemaConversionHandler
 	 * @throws SQLException 
 	 */
 	Object getValidateSource(String id, ResultSet rs) throws SQLException;
+	
+	/**
+	 * Get the db driver
+	 * @return
+	 */
+	String getDbDriver();
+	
+	/**
+	 * Set the db driver string
+	 * @param dbDriver
+	 * @return
+	 */
+	void setDbDriver(String dbDriver);
 
 }

@@ -138,13 +138,13 @@ public class UpgradeSchema
 
 		}
 
-		doMigrate(sequence);
+		doMigrate(sequence, p.getProperty("dbDriver"));
 
 		tds.close();
 
 	}
 
-	public void doMigrate(List<SchemaConversionDriver> sequence)
+	public void doMigrate(List<SchemaConversionDriver> sequence, String dbDriver)
 	{
 		try
 		{
@@ -154,6 +154,7 @@ public class UpgradeSchema
 				Class handlerClass = Class.forName(spec.getHandlerClass());
 				SchemaConversionHandler sch = (SchemaConversionHandler) handlerClass
 						.newInstance();
+				sch.setDbDriver(dbDriver);
 				log.info("Migrating using Handler " + spec.getHandler());
 				int k = 0;
 				scc.init(tds, sch, spec);
