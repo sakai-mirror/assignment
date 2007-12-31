@@ -14,7 +14,7 @@
 		$tlang.getString('confirm.savesubmission.success')
 	#end
 </p>
-		#if ($!email_confirmation)	 
+		#if ($!email_confirmation && $!submitted)	 
   	#if ($!user_email)	 
     <p class="success">$tlang.getString('confirm.submission.email')</p>
    #else	 
