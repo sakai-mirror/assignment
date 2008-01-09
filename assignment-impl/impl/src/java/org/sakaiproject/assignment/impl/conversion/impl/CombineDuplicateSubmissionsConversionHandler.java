@@ -493,6 +493,7 @@ public class CombineDuplicateSubmissionsConversionHandler implements SchemaConve
 				}catch (java.io.UnsupportedEncodingException ignore)
 				{
 					// ignore
+					decodedRText = rText;
 				}
 			}
 			
@@ -508,7 +509,14 @@ public class CombineDuplicateSubmissionsConversionHandler implements SchemaConve
 					String decodedText = text;
 					if (textEncoded)
 					{
-						decodedText = new String(Base64.decodeBase64(text.getBytes("UTF-8")));
+						try
+						{
+							decodedText = new String(Base64.decodeBase64(text.getBytes("UTF-8")));
+						}
+						catch (UnsupportedEncodingException e)
+						{
+							decodedText = text;
+						}
 					}
 					
 					if (decodedText.indexOf((decodedRText)) == -1)
@@ -532,9 +540,10 @@ public class CombineDuplicateSubmissionsConversionHandler implements SchemaConve
 							text = decoded;
 						}
 					}
-				}catch (java.io.UnsupportedEncodingException ee)
+				}catch (Exception ee)
 				{
 					// ignore
+					log.warn(" Combine: " + ee.getMessage());
 				}
 			}
 		}
