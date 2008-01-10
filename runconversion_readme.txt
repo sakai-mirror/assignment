@@ -39,7 +39,9 @@ Detail steps to run the scripts are shown as follows:
 
 3) Shutdown your tomcat instance;
 
-4) Run the conversion by running the shellscript and supplying the name of the config file as a parameter. Redirect the output into a file for record keeping and potential debugging. 
+4) Compile and deploy the relevant post-2-4 code;
+
+5) Run the conversion by running the shellscript and supplying the name of the config file as a parameter. Redirect the output into a file for record keeping and potential debugging. 
 
 	For example, to convert the database  schema for MySQL, the script would be invoked as follows:
    
@@ -49,7 +51,7 @@ Detail steps to run the scripts are shown as follows:
    
 		> time ./runconversion.sh upgradeschema_oracle.config > upgrade-output.txt
    
-5) If the conversion finishes successfully, deploy the current post-2-4 code, and start up the tomcat instance again.  
+6) If the conversion finishes successfully, start up the tomcat instance again.  
   
 
 FAQ
