@@ -22,8 +22,8 @@
 package org.sakaiproject.assignment.taggable.impl;
 
 import org.sakaiproject.assignment.api.Assignment;
-import org.sakaiproject.assignment.taggable.api.TaggableActivity;
-import org.sakaiproject.assignment.taggable.api.TaggableActivityProducer;
+import org.sakaiproject.taggable.api.TaggableActivity;
+import org.sakaiproject.taggable.api.TaggableActivityProducer;
 
 public class AssignmentActivityImpl implements TaggableActivity {
 
