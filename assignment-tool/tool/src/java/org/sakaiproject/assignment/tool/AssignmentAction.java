@@ -3531,7 +3531,7 @@ public class AssignmentAction extends PagedResourceActionII
 										previousGrades = "";
 									}
 								}
-								previousGrades = rb.getString("gen.subm6") + now.toStringLocalFull() + "<p />" + sEdit.getGradeDisplay() + "<p />" +previousGrades;
+								previousGrades =  "<tr><td style=\"padding:0 1em 0 0\">" + now.toStringLocalFull() +  "</td><td><span class=\"highlight\"><strong>" + sEdit.getGradeDisplay() + "</strong></span></td></tr>" +previousGrades;
 
 								sPropertiesEdit.addProperty(ResourceProperties.PROP_SUBMISSION_SCALED_PREVIOUS_GRADES,
 										previousGrades);
@@ -3546,7 +3546,7 @@ public class AssignmentAction extends PagedResourceActionII
 										.getProperty(ResourceProperties.PROP_SUBMISSION_PREVIOUS_FEEDBACK_TEXT) != null ? sPropertiesEdit
 										.getProperty(ResourceProperties.PROP_SUBMISSION_PREVIOUS_FEEDBACK_TEXT)
 										: "";
-								feedbackTextHistory = rb.getString("gen.subm6") + now.toStringLocalFull() + "<p />" + sEdit.getFeedbackText() + "<p />" + feedbackTextHistory;
+								feedbackTextHistory =  "<h4>" + now.toStringLocalFull() + "</h4>" + "<div style=\"margin:0;padding:0\">" + sEdit.getFeedbackText() + "</div>" + feedbackTextHistory;
 								sPropertiesEdit.addProperty(ResourceProperties.PROP_SUBMISSION_PREVIOUS_FEEDBACK_TEXT,
 										feedbackTextHistory);
 	
@@ -3555,7 +3555,7 @@ public class AssignmentAction extends PagedResourceActionII
 										.getProperty(ResourceProperties.PROP_SUBMISSION_PREVIOUS_FEEDBACK_COMMENT) != null ? sPropertiesEdit
 										.getProperty(ResourceProperties.PROP_SUBMISSION_PREVIOUS_FEEDBACK_COMMENT)
 										: "";
-								feedbackCommentHistory = rb.getString("gen.subm6") + now.toStringLocalFull() + "<p />" + sEdit.getFeedbackComment() + "<p />" + feedbackCommentHistory;
+								feedbackCommentHistory = "<h4>" + now.toStringLocalFull() + "</h4>" + "<div style=\"margin:0;padding:0\">" + sEdit.getFeedbackComment() + "</div>" + feedbackCommentHistory;
 								sPropertiesEdit.addProperty(ResourceProperties.PROP_SUBMISSION_PREVIOUS_FEEDBACK_COMMENT,
 										feedbackCommentHistory);
 								
@@ -3565,13 +3565,13 @@ public class AssignmentAction extends PagedResourceActionII
 										.getProperty(PROP_SUBMISSION_PREVIOUS_FEEDBACK_ATTACHMENTS)
 										: "";
 								List feedbackAttachments = sEdit.getFeedbackAttachments();
-								String att = rb.getString("gen.subm6") + now.toStringLocalFull() + "<p />";
+								String att = "<h5>" +  now.toStringLocalFull() + "</h5>";
 								for (int k = 0; k<feedbackAttachments.size();k++)
 								{
-									att = att + ((Reference) feedbackAttachments.get(k)).getReference() + "<p />";
+									att = att + ((Reference) feedbackAttachments.get(k)).getReference() + "<br />";
 								}
 								feedbackAttachmentHistory = att + feedbackAttachmentHistory;
-								
+									
 								sPropertiesEdit.addProperty(PROP_SUBMISSION_PREVIOUS_FEEDBACK_ATTACHMENTS,
 										feedbackAttachmentHistory);
 	
@@ -4877,9 +4877,9 @@ public class AssignmentAction extends PagedResourceActionII
 
 	private void integrateWithCalendar(SessionState state, AssignmentEdit a, String title, Time dueTime, String checkAddDueTime, Time oldDueTime, ResourcePropertiesEdit aPropertiesEdit) 
 	{
-		if (state.getAttribute(CALENDAR) != null)
+		Calendar c = (Calendar) state.getAttribute(CALENDAR);
+		if (c != null)
 		{
-			Calendar c = (Calendar) state.getAttribute(CALENDAR);
 			String dueDateScheduled = a.getProperties().getProperty(NEW_ASSIGNMENT_DUE_DATE_SCHEDULED);
 			String oldEventId = aPropertiesEdit.getProperty(ResourceProperties.PROP_ASSIGNMENT_DUEDATE_CALENDAR_EVENT_ID);
 			CalendarEvent e = null;
@@ -4888,7 +4888,7 @@ public class AssignmentAction extends PagedResourceActionII
 			{
 				// find the old event
 				boolean found = false;
-				if (oldEventId != null && c != null)
+				if (oldEventId != null)
 				{
 					try
 					{
@@ -4955,81 +4955,78 @@ public class AssignmentAction extends PagedResourceActionII
 
 			if (checkAddDueTime.equalsIgnoreCase(Boolean.TRUE.toString()))
 			{
-				if (c != null)
+				// commit related properties into Assignment object
+				String ref = "";
+				try
 				{
-					// commit related properties into Assignment object
-					String ref = "";
+					ref = a.getReference();
+					AssignmentEdit aEdit = AssignmentService.editAssignment(ref);
+
 					try
 					{
-						ref = a.getReference();
-						AssignmentEdit aEdit = AssignmentService.editAssignment(ref);
+						e = null;
+						CalendarEvent.EventAccess eAccess = CalendarEvent.EventAccess.SITE;
+						Collection eGroups = new Vector();
 
-						try
+						if (aEdit.getAccess().equals(Assignment.AssignmentAccess.GROUPED))
 						{
-							e = null;
-							CalendarEvent.EventAccess eAccess = CalendarEvent.EventAccess.SITE;
-							Collection eGroups = new Vector();
+							eAccess = CalendarEvent.EventAccess.GROUPED;
+							Collection groupRefs = aEdit.getGroups();
 
-							if (aEdit.getAccess().equals(Assignment.AssignmentAccess.GROUPED))
+							// make a collection of Group objects from the collection of group ref strings
+							Site site = SiteService.getSite((String) state.getAttribute(STATE_CONTEXT_STRING));
+							for (Iterator iGroupRefs = groupRefs.iterator(); iGroupRefs.hasNext();)
 							{
-								eAccess = CalendarEvent.EventAccess.GROUPED;
-								Collection groupRefs = aEdit.getGroups();
-
-								// make a collection of Group objects from the collection of group ref strings
-								Site site = SiteService.getSite((String) state.getAttribute(STATE_CONTEXT_STRING));
-								for (Iterator iGroupRefs = groupRefs.iterator(); iGroupRefs.hasNext();)
-								{
-									String groupRef = (String) iGroupRefs.next();
-									eGroups.add(site.getGroup(groupRef));
-								}
+								String groupRef = (String) iGroupRefs.next();
+								eGroups.add(site.getGroup(groupRef));
 							}
-							e = c.addEvent(/* TimeRange */TimeService.newTimeRange(dueTime.getTime(), /* 0 duration */0 * 60 * 1000),
-									/* title */rb.getString("due") + " " + title,
-									/* description */rb.getString("assig1") + " " + title + " " + "is due on "
-											+ dueTime.toStringLocalFull() + ". ",
-									/* type */rb.getString("deadl"),
-									/* location */"",
-									/* access */ eAccess,
-									/* groups */ eGroups,
-									/* attachments */EntityManager.newReferenceList());
+						}
+						e = c.addEvent(/* TimeRange */TimeService.newTimeRange(dueTime.getTime(), /* 0 duration */0 * 60 * 1000),
+								/* title */rb.getString("due") + " " + title,
+								/* description */rb.getString("assig1") + " " + title + " " + "is due on "
+										+ dueTime.toStringLocalFull() + ". ",
+								/* type */rb.getString("deadl"),
+								/* location */"",
+								/* access */ eAccess,
+								/* groups */ eGroups,
+								/* attachments */EntityManager.newReferenceList());
 
-							aEdit.getProperties().addProperty(NEW_ASSIGNMENT_DUE_DATE_SCHEDULED, Boolean.TRUE.toString());
-							if (e != null)
-							{
-								aEdit.getProperties().addProperty(ResourceProperties.PROP_ASSIGNMENT_DUEDATE_CALENDAR_EVENT_ID, e.getId());
-							}
-							
-							// edit the calendar ojbject and add an assignment id field
-							CalendarEventEdit edit = c.getEditEvent(e.getId(), org.sakaiproject.calendar.api.CalendarService.EVENT_ADD_CALENDAR);
-									
-							edit.setField(NEW_ASSIGNMENT_DUEDATE_CALENDAR_ASSIGNMENT_ID, a.getId());
-							
-							c.commitEvent(edit);
-							
-						}
-						catch (IdUnusedException ee)
+						aEdit.getProperties().addProperty(NEW_ASSIGNMENT_DUE_DATE_SCHEDULED, Boolean.TRUE.toString());
+						if (e != null)
 						{
-							Log.warn("chef", ee.getMessage());
+							aEdit.getProperties().addProperty(ResourceProperties.PROP_ASSIGNMENT_DUEDATE_CALENDAR_EVENT_ID, e.getId());
 						}
-						catch (PermissionException ee)
-						{
-							Log.warn("chef", rb.getString("cannotfin1"));
-						}
-						catch (Exception ee)
-						{
-							Log.warn("chef", ee.getMessage());
-						}
-						// try-catch
-
-
-						AssignmentService.commitEdit(aEdit);
+						
+						// edit the calendar ojbject and add an assignment id field
+						CalendarEventEdit edit = c.getEditEvent(e.getId(), org.sakaiproject.calendar.api.CalendarService.EVENT_ADD_CALENDAR);
+								
+						edit.setField(NEW_ASSIGNMENT_DUEDATE_CALENDAR_ASSIGNMENT_ID, a.getId());
+						
+						c.commitEvent(edit);
+						
 					}
-					catch (Exception ignore)
+					catch (IdUnusedException ee)
 					{
-						// ignore the exception
-						Log.warn("chef", rb.getString("cannotfin2") + ref);
+						Log.warn("chef", ee.getMessage());
 					}
-				} // if
+					catch (PermissionException ee)
+					{
+						Log.warn("chef", rb.getString("cannotfin1"));
+					}
+					catch (Exception ee)
+					{
+						Log.warn("chef", ee.getMessage());
+					}
+					// try-catch
+
+
+					AssignmentService.commitEdit(aEdit);
+				}
+				catch (Exception ignore)
+				{
+					// ignore the exception
+					Log.warn("chef", rb.getString("cannotfin2") + ref);
+				}
 			} // if
 		}
 	}
@@ -7600,9 +7597,7 @@ public class AssignmentAction extends PagedResourceActionII
 			}
 			else if (m_criteria.equals(SORTED_BY_ASSIGNMENT_STATUS))
 			{
-				String s1 = getAssignmentStatus((Assignment) o1);
-				String s2 = getAssignmentStatus((Assignment) o2);
-				result = compareString(s1, s2);
+				result = compareString(((Assignment) o1).getStatus(), ((Assignment) o2).getStatus());
 			}
 			else if (m_criteria.equals(SORTED_BY_NUM_SUBMISSIONS))
 			{
@@ -7659,12 +7654,8 @@ public class AssignmentAction extends PagedResourceActionII
 				try
 				{
 					AssignmentSubmission submission1 = AssignmentService.getSubmission(((Assignment) o1).getId(), m_user);
-					String status1 = getSubmissionStatus(submission1, (Assignment) o1);
-
 					AssignmentSubmission submission2 = AssignmentService.getSubmission(((Assignment) o2).getId(), m_user);
-					String status2 = getSubmissionStatus(submission2, (Assignment) o2);
-
-					result = compareString(status1, status2);
+					result = compareString(submission1.getStatus(), submission2.getStatus());
 				}
 				catch (IdUnusedException e)
 				{
@@ -7857,7 +7848,7 @@ public class AssignmentAction extends PagedResourceActionII
 					}
 					else
 					{
-						status1 = getSubmissionStatus(m_state, (AssignmentSubmission) s1);
+						status1 = s1.getStatus();
 					}
 				}
 				
@@ -7874,7 +7865,7 @@ public class AssignmentAction extends PagedResourceActionII
 					}
 					else
 					{
-						status2 = getSubmissionStatus(m_state, (AssignmentSubmission) s2);
+						status2 = s2.getStatus();
 					}
 				}
 				
@@ -7931,8 +7922,7 @@ public class AssignmentAction extends PagedResourceActionII
 							}
 							else
 							{
-								result = (new Double(grade1)).doubleValue() > (new Double(grade2)).doubleValue() ? 1 : -1;
-
+								result = compareDouble(grade1, grade2);
 							}
 						}
 						else
@@ -8043,10 +8033,7 @@ public class AssignmentAction extends PagedResourceActionII
 			else if (m_criteria.equals(SORTED_SUBMISSION_BY_STATUS))
 			{
 				// sort by submission status
-				String status1 = getSubmissionStatus(m_state, (AssignmentSubmission) o1);
-				String status2 = getSubmissionStatus(m_state, (AssignmentSubmission) o2);
-
-				result = compareString(status1, status2);
+				result = compareString(((AssignmentSubmission) o1).getStatus(), ((AssignmentSubmission) o2).getStatus());
 			}
 			else if (m_criteria.equals(SORTED_SUBMISSION_BY_GRADE))
 			{
@@ -8076,8 +8063,7 @@ public class AssignmentAction extends PagedResourceActionII
 					}
 					else
 					{
-						result = (new Double(grade1)).doubleValue() > (new Double(grade2)).doubleValue() ? 1 : -1;
-
+						result = compareDouble(grade1, grade2);
 					}
 				}
 				else
@@ -8113,8 +8099,7 @@ public class AssignmentAction extends PagedResourceActionII
 					}
 					else
 					{
-						result = (new Double(grade1)).doubleValue() > (new Double(grade2)).doubleValue() ? 1 : -1;
-
+						result = compareDouble(grade1, grade2);
 					}
 				}
 				else
@@ -8174,7 +8159,27 @@ public class AssignmentAction extends PagedResourceActionII
 				result = -result;
 			}
 			return result;
-		} // compare
+		}
+
+		/**
+		 * Compare two strings as double values. Deal with the case when either of the strings cannot be parsed as double value.
+		 * @param grade1
+		 * @param grade2
+		 * @return
+		 */
+		private int compareDouble(String grade1, String grade2) {
+			int result;
+			try
+			{
+				result = (new Double(grade1)).doubleValue() > (new Double(grade2)).doubleValue() ? 1 : -1;
+			}
+			catch (Exception formatException)
+			{
+				// in case either grade1 or grade2 cannot be parsed as Double
+				result = compareString(grade1, grade2);
+			}
+			return result;
+		} // compareDouble
 
 		private int compareString(String s1, String s2) 
 		{
@@ -8190,64 +8195,6 @@ public class AssignmentAction extends PagedResourceActionII
 			}
 			return result;
 		}
-		
-		/**
-		 * get the submissin status
-		 */
-		private String getSubmissionStatus(SessionState state, AssignmentSubmission s)
-		{
-			String status = "";
-			if (s.getReturned())
-			{
-				if (s.getTimeReturned() != null && s.getTimeSubmitted() != null && s.getTimeReturned().before(s.getTimeSubmitted()))
-				{
-					status = rb.getString("listsub.resubmi");
-				}
-				else
-				{
-					status = rb.getString("gen.returned");
-				}
-			}
-			else if (s.getGraded())
-			{
-				if (state.getAttribute(WITH_GRADES) != null && ((Boolean) state.getAttribute(WITH_GRADES)).booleanValue())
-				{
-					status = rb.getString("grad3");
-				}
-				else
-				{
-					status = rb.getString("gen.commented");
-				}
-			}
-			else
-			{
-				status = rb.getString("gen.ung1");
-			}
-			
-			return status;
-
-		} // getSubmissionStatus
-
-		/**
-		 * get the status string of assignment
-		 */
-		private String getAssignmentStatus(Assignment a)
-		{
-			String status = "";
-			Time currentTime = TimeService.newTime();
-
-			if (a.getDraft())
-				status = rb.getString("draft2");
-			else if (a.getOpenTime().after(currentTime))
-				status = rb.getString("notope");
-			else if (a.getDueTime().after(currentTime))
-				status = rb.getString("ope");
-			else if ((a.getCloseTime() != null) && (a.getCloseTime().before(currentTime)))
-				status = rb.getString("clos");
-			else
-				status = rb.getString("due2");
-			return status;
-		} // getAssignmentStatus
 
 		/**
 		 * get submission status
@@ -10320,4 +10267,4 @@ public class AssignmentAction extends PagedResourceActionII
 			contentReviewService = (ContentReviewService) ComponentManager.get(ContentReviewService.class.getName());
 		}
 	}
-}
+}	
