@@ -68,4 +68,10 @@ public class AssignmentActivityImpl implements TaggableActivity {
 	public String getTitle() {
 		return assignment.getTitle();
 	}
+
+	public String getActivityDetailUrl()
+	{
+		// TODO Auto-generated method stub
+		return null;
+	}
 }
