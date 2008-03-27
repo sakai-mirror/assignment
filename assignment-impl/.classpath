@@ -29,5 +29,6 @@
 	<classpathentry kind="var" path="M2_REPO/commons-collections/commons-collections/3.2/commons-collections-3.2.jar"/>
 	<classpathentry kind="var" path="M2_REPO/commons-codec/commons-codec/1.3/commons-codec-1.3.jar"/>
 	<classpathentry combineaccessrules="false" kind="src" path="/taggable-api"/>
+	<classpathentry combineaccessrules="false" kind="src" path="/entity-broker"/>
 	<classpathentry kind="output" path="bin"/>
 </classpath>

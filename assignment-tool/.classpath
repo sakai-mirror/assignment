@@ -24,5 +24,6 @@
 	<classpathentry combineaccessrules="false" kind="src" path="/import-api"/>
 	<classpathentry combineaccessrules="false" kind="src" path="/content-review-api"/>
 	<classpathentry combineaccessrules="false" kind="src" path="/taggable-api"/>
+	<classpathentry combineaccessrules="false" kind="src" path="/entity-broker"/>
 	<classpathentry kind="output" path="bin"/>
 </classpath>
