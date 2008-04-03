@@ -74,7 +74,7 @@ public class AssignmentActivityImpl implements TaggableActivity {
 	{
 		//String url = assignment.getUrl();
 		String url = ServerConfigurationService.getServerUrl() + 
-			"/direct/assignment/" + assignment.getId() + "/doView_assignment";
+			"/direct/assignment/" + assignment.getId() + "/doView_assignment?TB_iframe=true";
 		return url;
 	}
 }
