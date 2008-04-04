@@ -29,6 +29,7 @@ import java.util.Collection;
 import java.util.Comparator;
 import java.util.HashSet;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Hashtable;
 import java.util.Iterator;
 import java.util.List;
@@ -2008,7 +2009,7 @@ public abstract class BaseAssignmentService implements AssignmentService, Entity
 					}
 					catch (Exception e)
 					{
-						M_log.warn("notificationToInstructors, group id =" + g);
+						M_log.warn(this + " notificationToInstructors, group id =" + g + " " + e.getMessage());
 					}
 				}
 			}
@@ -2931,9 +2932,16 @@ public abstract class BaseAssignmentService implements AssignmentService, Entity
 				}
 				else
 				{
+					Collection aGroups = a.getGroups();
 					// for grouped assignment, return only those also allowed for grading
-					allAllowedGroups.retainAll(a.getGroups());
-					rv = allAllowedGroups;
+					for (Iterator i = allAllowedGroups.iterator(); i.hasNext();)
+					{
+						Group g = (Group) i.next();
+						if (aGroups.contains(g.getReference()))
+						{
+							rv.add(g);
+						}
+					}
 				}
 			}
 			catch (Exception e)
