@@ -1900,9 +1900,6 @@ public abstract class BaseAssignmentService implements AssignmentService, Entity
 		try
 		{
 			AssignmentSubmission s = getSubmission(submissionRef);
-			
-			Assignment a = s.getAssignment();
-			
 			Time returnedTime = s.getTimeReturned();
 			Time submittedTime = s.getTimeSubmitted();
 			
@@ -1929,16 +1926,6 @@ public abstract class BaseAssignmentService implements AssignmentService, Entity
 			{
 				// submitting a submission
 				EventTrackingService.post(EventTrackingService.newEvent(EVENT_SUBMIT_ASSIGNMENT_SUBMISSION, submissionRef, true));
-			
-				// only doing the notification for real online submissions
-				if (a.getContent().getTypeOfSubmission() != Assignment.NON_ELECTRONIC_ASSIGNMENT_SUBMISSION)
-				{
-					// instructor notification
-					notificationToInstructors(s, a);
-					
-					// student notification, whether the student gets email notification once he submits an assignment
-					notificationToStudent(s);
-				}
 			}
 				
 			
