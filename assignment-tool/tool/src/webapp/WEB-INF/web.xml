@@ -70,6 +70,16 @@
         <load-on-startup>1</load-on-startup>
      </servlet>
 
+     <servlet>
+        <servlet-name>
+            sakai.assignment.entityaccess
+        </servlet-name>
+        <servlet-class>
+            org.sakaiproject.assignment.tool.RedirectingAssignmentEntityServlet
+        </servlet-class>
+        <load-on-startup>1</load-on-startup>
+    </servlet>
+
     <listener>
         <listener-class>org.sakaiproject.util.ToolListener</listener-class>
     </listener>

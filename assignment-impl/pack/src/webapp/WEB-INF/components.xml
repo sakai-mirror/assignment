@@ -57,5 +57,12 @@
 			<ref bean="org.sakaiproject.user.api.UserDirectoryService" />
 		</property>
 	</bean>
+
+	<bean id="org.sakaiproject.assignment.api.AssignmentEntityProvider"
+		class="org.sakaiproject.assignment.impl.AssignmentEntityProviderImpl">
+		<property name="assignmentService" ref="org.sakaiproject.assignment.api.AssignmentService" />
+		<property name="siteService" ref="org.sakaiproject.site.api.SiteService" />
+	</bean>
+
   
 </beans>
