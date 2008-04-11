@@ -2595,11 +2595,13 @@ public abstract class BaseAssignmentService implements AssignmentService, Entity
 	 * @throws PermissionException
 	 *         if the current user is not allowed to access this.
 	 */
-	public AssignmentSubmission getSubmission(String assignmentReference, User person)
+	public AssignmentSubmission getSubmission(String assignmentReference, User person)  throws IdUnusedException, PermissionException
 	{
 		AssignmentSubmission submission = null;
 
 		String assignmentId = assignmentId(assignmentReference);
+		
+		if (!m_assignmentStorage.check(assignmentId)) throw new IdUnusedException(assignmentId);
 		
 		if ((assignmentReference != null) && (person != null))
 		{
@@ -5093,7 +5095,7 @@ public abstract class BaseAssignmentService implements AssignmentService, Entity
 				}
 			}
 		}
-		catch (UserNotDefinedException e)
+		catch (Exception e)
 		{
 			// cannot find user
 			M_log.warn(e.getMessage(), e);

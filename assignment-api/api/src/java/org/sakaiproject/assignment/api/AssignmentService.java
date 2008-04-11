@@ -671,7 +671,7 @@ public interface AssignmentService extends EntityProducer
 	 * @throws PermissionException
 	 *         if the current user is not allowed to read this.
 	 */
-	public AssignmentSubmission getSubmission(String assignmentId, User person);
+	public AssignmentSubmission getSubmission(String assignmentId, User person) throws IdUnusedException, PermissionException;
 	
 	/**
 	 * Access a User's AssignmentSubmission inside a list of AssignmentSubmission object.

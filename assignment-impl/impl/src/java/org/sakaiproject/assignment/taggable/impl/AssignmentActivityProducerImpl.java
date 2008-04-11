@@ -175,6 +175,10 @@ public class AssignmentActivityProducerImpl implements
 			}
 		} catch (UserNotDefinedException unde) {
 			logger.error(unde.getMessage(), unde);
+		} catch (IdUnusedException iue) {
+			logger.error(iue.getMessage(), iue);
+		} catch (PermissionException pe) {
+			logger.error(pe.getMessage(), pe);
 		}
 		return returned;
 	}
