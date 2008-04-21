@@ -95,6 +95,9 @@ public interface AssignmentService extends EntityProducer
 
 	/** Security function giving the user permission to all groups, if granted to at the site level. */
 	public static final String SECURE_ALL_GROUPS = "asn.all.groups";
+	
+	/** Security function giving the user permission to share drafts within his/her role for a given site */
+	public static final String SECURE_SHARE_DRAFTS = "asn.share.drafts";
 
 	/** The Reference type for a site where site groups are to be considered in security computation. */
 	public static final String REF_TYPE_SITE_GROUPS = "site-groups";
@@ -188,6 +191,15 @@ public interface AssignmentService extends EntityProducer
 	 * @return The Collection (Group) of groups defined for the context of this site that the end user has add assignment permissions in, empty if none.
 	 */
 	Collection getGroupsAllowAddAssignment(String context);
+	
+	/**
+	 * Get the collection of Groups defined for the context of this site that the end user has grade assignment permissions in.
+	 * 
+	 * @param context -
+	 *        Describes the portlet context - generated with DefaultId.getChannel().
+	 * @return The Collection (Group) of groups defined for the context of this site that the end user has grade assignment permissions in, empty if none.
+	 */
+	Collection getGroupsAllowGradeAssignment(String context, String assignmentReference);
 
 	/**
 	 * Check permissions for updating an Assignment.
@@ -260,6 +272,14 @@ public interface AssignmentService extends EntityProducer
 	 * @return the List (User) of users who can addSubmission() for this assignment.
 	 */
 	public List allowAddSubmissionUsers(String assignmentReference);
+	
+	 /* Get the List of Users who can grade submission for this assignment.
+	 * 
+	 * @param assignmentReference -
+	 *        a reference to an assignment
+	 * @return the List (User) of users who can grade submission for this assignment.
+	 */
+	public List allowGradeAssignmentUsers(String assignmentReference);
 	
 	/**
 	 * Get the list of users who can add submission for at lease one assignment within the context
@@ -483,10 +503,12 @@ public interface AssignmentService extends EntityProducer
 	public void cancelEdit(AssignmentContentEdit content);
 
 	/**
-	 * Adds an AssignmentSubmission to the service.
+	 * Adds an AssignmentSubmission
 	 * 
 	 * @param context -
 	 *        Describes the portlet context - generated with DefaultId.getChannel().
+	 * @param assignmentId The assignment id
+	 * @param submitterId The submitter id
 	 * @return The new AssignmentSubmissionEdit.
 	 * @exception IdInvalidException
 	 *            if the submission id is invalid.
@@ -495,7 +517,7 @@ public interface AssignmentService extends EntityProducer
 	 * @throws PermissionException
 	 *         if the current User does not have permission to do this.
 	 */
-	public AssignmentSubmissionEdit addSubmission(String context, String assignmentId) throws PermissionException;
+	public AssignmentSubmissionEdit addSubmission(String context, String assignmentId, String submitter) throws PermissionException;
 
 	/**
 	 * Add a new AssignmentSubmission to the directory, from a definition in XML. Must commitEdit() to make official, or cancelEdit() when done!
@@ -652,7 +674,18 @@ public interface AssignmentService extends EntityProducer
 	 * @throws PermissionException
 	 *         if the current user is not allowed to read this.
 	 */
-	public AssignmentSubmission getSubmission(String assignmentId, User person) throws IdUnusedException, PermissionException;
+	public AssignmentSubmission getSubmission(String assignmentId, User person);
+	
+	/**
+	 * Access a User's AssignmentSubmission inside a list of AssignmentSubmission object.
+	 * 
+	 * @param  - submissions
+	 *        The list of submissions
+	 * @param person -
+	 *        The User who's Submission you would like.
+	 * @return AssignmentSubmission The user's submission for that Assignment, or null if one does not exist.
+	 */
+	public AssignmentSubmission getSubmission(List submissions, User person);
 
 	/**
 	 * Get the submissions for an assignment.
@@ -662,6 +695,24 @@ public interface AssignmentService extends EntityProducer
 	 * @return List over all the submissions for an Assignment.
 	 */
 	public List getSubmissions(Assignment assignment);
+	
+	/**
+	 * Get the number of submissions which has been submitted.
+	 * 
+	 * @param assignmentId -
+	 *        the id of Assignment who's submissions you would like.
+	 * @return List over all the submissions for an Assignment.
+	 */
+	public int getSubmittedSubmissionsCount(String assignmentId);
+	
+	/**
+	 * Get the number of submissions which has not been submitted and graded.
+	 * 
+	 * @param assignmentId -
+	 *        the id of Assignment who's submissions you would like.
+	 * @return List over all the submissions for an Assignment.
+	 */
+	public int getUngradedSubmissionsCount(String assignmentId);
 
 	/**
 	 * Access the grades spreadsheet for the reference, either for an assignment or all assignments in a context.

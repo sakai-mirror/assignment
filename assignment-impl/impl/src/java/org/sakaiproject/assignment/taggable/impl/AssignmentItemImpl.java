@@ -24,8 +24,8 @@ package org.sakaiproject.assignment.taggable.impl;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.sakaiproject.assignment.api.AssignmentSubmission;
-import org.sakaiproject.assignment.taggable.api.TaggableActivity;
-import org.sakaiproject.assignment.taggable.api.TaggableItem;
+import org.sakaiproject.taggable.api.TaggableActivity;
+import org.sakaiproject.taggable.api.TaggableItem;
 import org.sakaiproject.user.api.User;
 import org.sakaiproject.user.api.UserNotDefinedException;
 import org.sakaiproject.user.cover.UserDirectoryService;
@@ -66,7 +66,7 @@ public class AssignmentItemImpl implements TaggableItem {
 	}
 
 	public String getReference() {
-		StringBuffer sb = new StringBuffer();
+		StringBuilder sb = new StringBuilder();
 		sb.append(submission.getReference());
 		sb.append(ITEM_REF_SEPARATOR);
 		sb.append(userId);
@@ -74,14 +74,14 @@ public class AssignmentItemImpl implements TaggableItem {
 	}
 
 	public String getTitle() {
-		StringBuffer sb = new StringBuffer();
+		StringBuilder sb = new StringBuilder();
 		try {
 			User user = UserDirectoryService.getUser(userId);
 			sb.append(user.getFirstName());
 			sb.append(' ');
 			sb.append(user.getLastName());
 			sb.append(' ');
-			sb.append(rb.getString("submission"));
+			sb.append(rb.getString("gen.submission"));
 		} catch (UserNotDefinedException unde) {
 			logger.error(unde.getMessage(), unde);
 		}

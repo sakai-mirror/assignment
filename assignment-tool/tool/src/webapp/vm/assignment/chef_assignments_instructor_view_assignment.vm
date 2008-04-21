@@ -1,17 +1,21 @@
-<div class="portletBody">
-	#if ($taggable)
+<div class="portletBody" xmlns:wairole="http://www.w3.org/2005/01/wai-rdf/GUIRoleTaxonomy#"  xmlns:aaa="http://www.w3.org/2005/07/aaa">
+#if ($taggable)
 		#if (!$activityHelpers.isEmpty())
-			<div class="navIntraTool">
+		<ul class="navIntraTool actionToolBar" role="menu">
 				#set ($first = true)
 				#foreach ($helperInfo in $activityHelpers)
 					#if (!$first)
-						| <a href="#toolLinkParam("$action" "doHelp_activity" "activityRef=$validator.escapeUrl($activity.reference)&providerId=$validator.escapeUrl($helperInfo.provider.id)")" title="$!helperInfo.description">$!helperInfo.name</a>
+					<li  class="firstToolBarItem" role="menuitem">
+						<span><a href="#toolLinkParam("$action" "doHelp_activity" "activityRef=$validator.escapeUrl($activity.reference)&providerId=$validator.escapeUrl($helperInfo.provider.id)")" title="$!helperInfo.description">$!helperInfo.name</a></span>
+					</li>	
 					#else
 						#set ($first = false)
-						<a href="#toolLinkParam("$action" "doHelp_activity" "activityRef=$validator.escapeUrl($activity.reference)&providerId=$validator.escapeUrl($helperInfo.provider.id)")" title="$!helperInfo.description">$!helperInfo.name</a>
+						<li role="menuitem">						
+							<span><a href="#toolLinkParam("$action" "doHelp_activity" "activityRef=$validator.escapeUrl($activity.reference)&providerId=$validator.escapeUrl($helperInfo.provider.id)")" title="$!helperInfo.description">$!helperInfo.name</a></span>
+						</li>	
 					#end
 				#end
-			</div>
+			</ul
 		#end
 	#end
 	<h3>
@@ -32,7 +36,7 @@
 					$tlang.getString("gen.creby")
 				</th>	
 				<td>
-					$userDirectoryService.getUser($assignment.getCreator()).DisplayName
+					$!creator
 				</td>
 			</tr>
 			<tr>

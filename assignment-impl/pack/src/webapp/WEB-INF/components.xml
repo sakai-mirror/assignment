@@ -8,19 +8,19 @@
 			init-method="init"
 			destroy-method="destroy"
 			singleton="true">
+		<property name="contentHostingService"><ref bean="org.sakaiproject.content.api.ContentHostingService"/></property>
 		<property name="memoryService"><ref bean="org.sakaiproject.memory.api.MemoryService"/></property>
 		<property name="sqlService"><ref bean="org.sakaiproject.db.api.SqlService"/></property>
 		<property name="serverConfigurationService"><ref bean="org.sakaiproject.component.api.ServerConfigurationService"/></property>
 		<property name="entityManager"><ref bean="org.sakaiproject.entity.api.EntityManager"/></property>
-		<property name="taggingManager"><ref bean="org.sakaiproject.assignment.taggable.api.TaggingManager"/></property>
+		<property name="taggingManager"><ref bean="org.sakaiproject.taggable.api.TaggingManager"/></property>
 		<property name="assignmentActivityProducer"><ref bean="org.sakaiproject.assignment.taggable.api.AssignmentActivityProducer"/></property>
  		<property name="assignmentTableName"><value>ASSIGNMENT_ASSIGNMENT</value></property>
  		<property name="contentTableName"><value>ASSIGNMENT_CONTENT</value></property>
  		<property name="submissionTableName"><value>ASSIGNMENT_SUBMISSION</value></property>
  		<property name="locksInDb"><value>false</value></property>
  		<property name="autoDdl"><value>${auto.ddl}</value></property>
- 		<!--  When converting from Sakai 2.4.0 to Sakai 2.5.0, enable the below property -->
- 		<property name="convertOldSchema"><value>true</value></property>
+ 		
  		
  		
  		<!--<property name="contentReviewService"><ref bean="org.sakaiproject.contentreview.service.ContentReviewService"/></property>-->
@@ -34,11 +34,6 @@
  		<property name="allowGroupAssignmentsInGradebook"><value>true</value></property>
 	</bean>
 
-	<bean id="org.sakaiproject.assignment.taggable.api.TaggingManager"
-	      class="org.sakaiproject.assignment.taggable.impl.TaggingManagerImpl"
-	      init-method="init"
-	      singleton="true"/>
-
 	<bean id="org.sakaiproject.assignment.taggable.api.AssignmentActivityProducer"
     	  class="org.sakaiproject.assignment.taggable.impl.AssignmentActivityProducerImpl"
     	  init-method="init"
@@ -50,7 +45,7 @@
 			<ref bean="org.sakaiproject.entity.api.EntityManager"/>
 		</property>
 		<property name="taggingManager">
-			<ref bean="org.sakaiproject.assignment.taggable.api.TaggingManager" />
+			<ref bean="org.sakaiproject.taggable.api.TaggingManager" />
 		</property>
 		<property name="siteService">
 			<ref bean="org.sakaiproject.site.api.SiteService" />

@@ -3,60 +3,67 @@
 <script type="text/javascript" language="JavaScript">
   focus_path = ["search"];
 </script>
+<script type='text/javascript'>
+var linkFlag = true;
+
+function allowClick(object)
+{
+		object.onclick='';
+	 object.style.color='#000';
+	 var rv = linkFlag;
+	 ## set the flag to be false
+	 linkFlag = false;
+	 ##return the current flag status
+	 return rv;
+}
+</script>
 <div class="portletBody">
 	#if ($allowAddAssignment || ($withGrade && $!allowGradeSubmission))
 	## for user who cannot create assignment nor grade submission, no need to show "Assignment List" link at all since there is really no other toolbar choices
-	<div class="navIntraTool">
+	<ul class="navIntraTool actionToolBar" role="menu">
 		#set($prevAction=false)
 		#if ($allowAddAssignment)
 			#set($prevAction=true)
-			<a href="#toolLink("$action" "doNew_assignment")" title="$!tlang.getString("new")">$!tlang.getString("new")</a>
+			<li  class="firstToolBarItem" role="menuitem"><span><a href="#toolLink("$action" "doNew_assignment")" title="$!tlang.getString("new")">$!tlang.getString("new")</a></span></li>
 		#end
-		#if ($prevAction)
-			 | 
-		#else
-			#set($prevAction=true)
-		#end
-		#if (!$!view.equals('lisofass1'))
-			<a href="#toolLinkParam("$action" "doView" "view=lisofass1")" title="$!tlang.getString('lisofass1')">$!tlang.getString('lisofass1')</a>
-		#else
-			<span style="margin:.5em">$!tlang.getString("lisofass1")</span>
-		#end
+		<li #if ($prevAction==false) class="firstToolBarItem" #set($prevAction=true)  #end role="menuitem"
+			#if (!$!view.equals('lisofass1'))
+				>
+				<span><a href="#toolLinkParam("$action" "doView" "view=lisofass1")" title="$!tlang.getString('lisofass1')">$!tlang.getString('lisofass1')</a></span>
+			#else
+				 aria-disabled="true">
+				<span class="current">$!tlang.getString("lisofass1")</span>
+			#end
+		</li>	
+		
 		#if ($withGrade && $!allowGradeSubmission)
-			#if ($prevAction)
-			 | 
-			#else
-				#set($prevAction=true)
-			#end
-			<a href="#toolLinkParam("$action" "doView" "view=grarep")" title="$!tlang.getString("gen.grarep")">$!tlang.getString("gen.grarep")</a>
+			<li#if ($prevAction==false) class="firstToolBarItem" #set($prevAction=true)  #end  role="menuitem">
+				<span><a href="#toolLinkParam("$action" "doView" "view=grarep")" title="$!tlang.getString("gen.grarep")">$!tlang.getString("gen.grarep")</a></span>
+			</li>
 		#end
+	
 		#if ($allowAddAssignment)
-			#if ($prevAction)
-			 | 
-			#else
-				#set($prevAction=true)
-			#end
-			#if (!$!view.equals('stuvie'))
-				<a href="#toolLinkParam("$action" "doView" "view=stuvie")" title="$!tlang.getString("gen.stuvie")">$!tlang.getString("gen.stuvie")</a>
-			#else
-				$!tlang.getString("gen.stuvie")
-			#end
+			<li  #if ($prevAction==false) class="firstToolBarItem" #set($prevAction=true)  #end role="menuitem"
+				#if (!$!view.equals('stuvie'))
+					>
+					<span><a href="#toolLinkParam("$action" "doView" "view=stuvie")" title="$!tlang.getString("gen.stuvie")">$!tlang.getString("gen.stuvie")</a></span>
+				#else
+					aria-disabled="true">
+					<span class="current">$!tlang.getString("gen.stuvie")</span>
+				#end
+			</li>	
 		#end
 		#if (($allowAllGroups) && ($assignmentscheck))
-			#if ($prevAction)
-			 |
-			#else
-				#set($prevAction=true)
-			#end
-			<a href="#toolLink("$action" "doReorder")" title="$tlang.getString('gen.reorder')">$tlang.getString('gen.reorder')</a>
+			<li #if ($prevAction==false) class="firstToolBarItem" #set($prevAction=true)  #end  role="menuitem">
+				<span><a href="#toolLink("$action" "doReorder")" title="$tlang.getString('gen.reorder')">$tlang.getString('gen.reorder')</a></span>
+			</li>
 		#end
 		#if ($allowUpdateSite)
-			#if ($prevAction)
-			 | 
-			#end
-			<a href="#toolLink("$action" "doPermissions")" title="$tlang.getString('permis')">$tlang.getString('permis')</a>
+			<li #if ($prevAction==false) class="firstToolBarItem" #set($prevAction=true)  #end  role="menuitem">
+				<span><a href="#toolLink("$action" "doPermissions")" title="$tlang.getString('permis')">$tlang.getString('permis')</a></span>
+			</li>	
 		#end
-	</div>
+	</ul>
 	#end
 	#if ($alertMessage)<div class="alertMessage">$tlang.getString("gen.alert") $validator.escapeHtml($alertMessage)</div><div class="clear"></div>#end
 	<h3>
@@ -108,11 +115,11 @@
 					</form>
 				#end
 				#if ($goPPButton == "true")
-					<form name="nextpageForm" class="inlineForm" method="post" action="#toolForm("$action")">
+					<form name="prevpageForm" class="inlineForm" method="post" action="#toolForm("$action")">
 						<input type="submit" name="eventSubmit_doList_prev" value="&lt;" title="$tlang.getString('gen.previous') $pagesize" accesskey="p" />
 					</form>
 				#else
-					<form name="nextpageForm" class="inlineForm" method="post" action="#toolForm("$action")">
+					<form name="prevpageForm" class="inlineForm" method="post" action="#toolForm("$action")">
 						<input type="submit" name="eventSubmit_doList_prev" value="&lt;" disabled="disabled" />
 					</form>
 				#end
@@ -305,7 +312,7 @@
 								#end
 							</td>
 							<td headers="title">
-									#if ($!allowAddAssignment && $!view.equals('lisofass1'))
+									#if (($!allowAddAssignment || $!service.allowGradeSubmission($assignment.getReference())) && $!view.equals('lisofass1'))
 										<h4>
 											## normal instructor view
 											#if ($assignment.draft && $!allowUpdateAssignment )
@@ -322,7 +329,7 @@
 										<div class="itemAction">
 											#set($prevAction=false)
 											#if ($!allowUpdateAssignment)#set($prevAction=true)<a href="#toolLinkParam("$action" "doEdit_assignment" "assignmentId=$validator.escapeUrl($assignmentReference)")">$!tlang.getString("revise")</a>#end
-											#if ($allowAddAssignment)#if($prevAction) | #else#set($prevAction=true)#end<a href="#toolLinkParam("$action" "doDuplicate_assignment" "assignmentId=$validator.escapeUrl($assignmentReference)")">$!tlang.getString("dupli")</a>#end
+											#if ($allowAddAssignment&&$!allowUpdateAssignment)#if($prevAction) | #else#set($prevAction=true)#end<a href="#toolLinkParam("$action" "doDuplicate_assignment" "assignmentId=$validator.escapeUrl($assignmentReference)")">$!tlang.getString("dupli")</a>#end
 											#if ($taggable)
 												#foreach ($provider in $providers)
 													#set ($helperInfo = false)
@@ -338,7 +345,8 @@
 													#end
 												#end
 											#end
-											#if (!$assignment.draft && $allowGradeSubmission)#if($prevAction) | #end<a href="#toolLinkParam("$action" "doGrade_assignment" "assignmentId=$validator.escapeUrl($assignmentReference)")">#if ($withGrade)$!tlang.getString("grad1")#else$!tlang.getString("viewsubmissions")#end</a>#end
+											#if (!$assignment.draft && $!service.allowGradeSubmission($assignment.getReference()))#if($prevAction) | #end
+											<a href="#" onclick="if(allowClick(this)){window.location='#toolLinkParam("$action" "doGrade_assignment" "assignmentId=$validator.escapeUrl($assignmentReference)")';}" >#if ($withGrade)$!tlang.getString("grad1")#else$!tlang.getString("viewsubmissions")#end</a>#end										
 										</div>
 									#else
 										#if ($!allowAddAssignment)
@@ -434,6 +442,7 @@
 									#end
 							</td>
 							#if ($!groups)
+							<td  style="padding-bottom:0">
 								## only show it when there is at least one group
 								## assignment range
 								#set($for="")
@@ -448,32 +457,19 @@
 										#set($groupFound=$!site.getGroup($group))
 										#if($!groupFound)
 											#if ($count>1)
-												#set($for=$for.concat(","))
+												#set($for=$for.concat(", "))
 											#end
-											#set($for= $for.concat($groupFound.Title))
+											#set($for= $for.concat($validator.escapeHtml($groupFound.Title)))
 											#set($count=$count+1)
 										#end
 									#end
 								#end
-								<td  style="padding-bottom:0">
 									$!for
-								</td>
+							</td>
 							#end
 							<td headers="status">
 								#if ($allowAddAssignment && $!view.equals('lisofass1'))
-									#if ($!assignment.Draft)
-										<span class="highlight">$tlang.getString("gen.dra1")</span>
-									#else
-										#if ($!assignment.getOpenTime().after($currentTime))
-											$tlang.getString("gen.notope")
-										#elseif ($!assignment.getDueTime().after($currentTime))
-											$tlang.getString("gen.open")
-										#elseif (($!assignment.getCloseTime())&&($assignment.getCloseTime().before($currentTime)))
-											$tlang.getString("gen.closed")
-										#else
-											$tlang.getString("gen.due1")
-										#end
-									#end
+								   $!assignment.getStatus()
 								#else
 									#if ($!submission)
 										$submission.getStatus()
@@ -491,60 +487,32 @@
 							#if ($!allowGradeSubmission)
 								#if ($!view.equals('lisofass1'))
 								<td headers="num_submissions" class="specialLink">
-							#set ($totalSubmission = $service.getSubmissions($assignment))
-									#set ($totalNumber = 0)
-									#set ($ungradedNumber = 0)
-									#foreach ($s in $totalSubmission)
-										#set($grade=$s.Grade)
-										#set($returnedTime=false)
-										#set ($returnedTime = $s.getTimeReturned())
-										## if the submitter is a current active user in the site
-										#set($submitterIdList=false)
-										#set($submitterIdList = $s.getSubmitterIds())
-										#set($existUser=false)
-										#foreach($submitterId in $submitterIdList)
-											#if ($!activeUserIds.contains($submitterId))
-												#set($existUser=true)
-											#end
-										#end
-										#if ($existUser)
-											#if ($s.Submitted)
-												#set($submitTime=false)
-												#set ($submitTime = $s.getTimeSubmitted())
-												#if($!submitTime)
-													#set ($totalNumber = $totalNumber + 1)
-													#if ($s.Returned)
-														#if ($!submitTime && $!returnedTime)
-															#if ($returnedTime.before($!submitTime))
-																#if ($s.getGraded() && $s.TimeLastModified.after($submitTime))
-																	## instructor has graded the resubmission
-																#else
-																	## has been resubmitted, and ungraded
-																	###set ($ungradedNumber = $ungradedNumber + 1)
-																#end
-															#else
-																## returned have not resubmitted
-															#end
-														#end
-													#end
-													#if (!$s.Graded)
-														#set ($ungradedNumber = $ungradedNumber + 1)
-													#end
-												#end
-											#end
+								#if ($!service.allowGradeSubmission($assignment.getReference()))
+									## 1- text only; 2-attachment only; 3-text and attachment; 4-Non-electronic
+									#set($ungradedNumber = $!service.getUngradedSubmissionsCount($assignment.getId()))
+									#set($totalNumber = $!service.getSubmittedSubmissionsCount($assignment.getId()))
+									#set ( $submissionType = $assignment.Content.TypeOfSubmission)
+									#if ($!submissionType == 4)
+										## non-electronic assignment
+										#set ($allowSubmitUsers = $!service.allowAddSubmissionUsers($!assignment.getReference()))
+										#if($totalNumber == 0)
+											## in case there is no submission object for any reason
+											#set($ungradedNumber = $allowSubmitUsers.size())
+											#set($totalNumber = $ungradedNumber)
 										#end
 									#end
-									<a href="#" onclick="location='#toolLinkParam("$action" "doGrade_assignment" "assignmentId=$validator.escapeUrl($assignmentReference)")'; return false;" >
-									$totalNumber/$ungradedNumber</a>
+									<a href="#" onclick="if(allowClick(this)){window.location='#toolLinkParam("$action" "doGrade_assignment" "assignmentId=$validator.escapeUrl($assignmentReference)")';}" >
+									$!totalNumber/$!ungradedNumber</a>
+								#end
 								</td>
 								#end
 							#end
 							#if ($withGrade && $!allowGradeSubmission)
-								<td headers="maxgrade">
+							<td headers="maxgrade">
 									#set ($gradeScale = $assignment.getContent().getTypeOfGrade())
 									#if ($gradeScale == -1)
 										## Grade type not set 
-										$tlang.getString("gen.noset")
+										$tlang.getString("gen.notset")
 									#elseif ($gradeScale == 1)
 										## Ungraded grade type
 										$tlang.getString("gen.nograd")
@@ -561,12 +529,14 @@
 										## Grade type that only requires a check
 										<img src="#imageLink("sakai/checkon.gif")" border="0" alt="Checkmark" />
 									#end
-								</td>
+							</td>
 							#end
 							#if ($!allowRemoveAssignment && $!view.equals('lisofass1'))
 								<td headers="remove" class="screenOnly">
-									<input type="checkbox" name="selectedAssignments" value="$assignmentReference" id="check_$assignmentCount" />
-									<label for="check_$assignmentCount" class="skip">$tlang.getString("gen.remove")</label> 
+									#if ($!allowUpdateAssignment)
+										<input type="checkbox" name="selectedAssignments" value="$assignmentReference" id="check_$assignmentCount" />
+										<label for="check_$assignmentCount" class="skip">$tlang.getString("gen.remove")</label>
+									#end 
 								</td>
 							#end
 						</tr>

@@ -25,6 +25,7 @@ import java.io.OutputStream;
 import java.util.Set;
 import java.util.Vector;
 
+import org.sakaiproject.assignment.api.Assignment;
 import org.sakaiproject.component.cover.ComponentManager;
 
 /**
@@ -166,6 +167,15 @@ public class AssignmentService {
 
 		return service.getGroupsAllowAddAssignment(param0);
 	}
+	
+	public static java.util.Collection getGroupsAllowGradeAssignment(
+			java.lang.String param0, java.lang.String param1) {
+		org.sakaiproject.assignment.api.AssignmentService service = getInstance();
+		if (service == null)
+			return new Vector();
+
+		return service.getGroupsAllowGradeAssignment(param0, param1);
+	}
 
 	public static boolean allowGetAssignment(java.lang.String param0) {
 		org.sakaiproject.assignment.api.AssignmentService service = getInstance();
@@ -237,6 +247,14 @@ public class AssignmentService {
 			return null;
 
 		return service.allowAddSubmissionUsers(param0);
+	}
+	
+	public static java.util.List allowGradeAssignmentUsers(java.lang.String param0) {
+		org.sakaiproject.assignment.api.AssignmentService service = getInstance();
+		if (service == null)
+			return null;
+
+		return service.allowGradeAssignmentUsers(param0);
 	}
 	
 	public static java.util.List allowAddAnySubmissionUsers(java.lang.String param0) {
@@ -456,13 +474,13 @@ public class AssignmentService {
 	}
 
 	public static org.sakaiproject.assignment.api.AssignmentSubmissionEdit addSubmission(
-			java.lang.String param0, java.lang.String param1)
+			java.lang.String param0, java.lang.String param1, java.lang.String param2)
 			throws org.sakaiproject.exception.PermissionException {
 		org.sakaiproject.assignment.api.AssignmentService service = getInstance();
 		if (service == null)
 			return null;
 
-		return service.addSubmission(param0, param1);
+		return service.addSubmission(param0, param1, param2);
 	}
 
 	public static org.sakaiproject.assignment.api.AssignmentSubmissionEdit mergeSubmission(
@@ -551,6 +569,15 @@ public class AssignmentService {
 
 		return service.getSubmission(param0, param1);
 	}
+	
+	public static org.sakaiproject.assignment.api.AssignmentSubmission getSubmission(
+			java.util.List param0, org.sakaiproject.user.api.User param1) {
+		org.sakaiproject.assignment.api.AssignmentService service = getInstance();
+		if (service == null)
+			return null;
+
+		return service.getSubmission(param0, param1);
+	}
 
 	public static java.util.Iterator getAssignments(
 			org.sakaiproject.assignment.api.AssignmentContent param0) {
@@ -595,6 +622,24 @@ public class AssignmentService {
 			return null;
 
 		return service.getSubmissions(param0);
+	}
+	
+	public static int getSubmittedSubmissionsCount(
+			java.lang.String param0) {
+		org.sakaiproject.assignment.api.AssignmentService service = getInstance();
+		if (service == null)
+			return 0;
+
+		return service.getSubmittedSubmissionsCount(param0);
+	}
+	
+	public static int getUngradedSubmissionsCount(
+			java.lang.String param0) {
+		org.sakaiproject.assignment.api.AssignmentService service = getInstance();
+		if (service == null)
+			return 0;
+
+		return service.getUngradedSubmissionsCount(param0);
 	}
 
 	public static byte[] getGradesSpreadsheet(java.lang.String param0)

@@ -74,6 +74,13 @@ public interface AssignmentSubmission extends Entity
 	 * @return List of user ids
 	 */
 	public List getSubmitterIds();
+	
+	/**
+	 * Access the concat the submitter id together and form a String
+	 * 
+	 * @return List of user ids
+	 */
+	public String getSubmitterIdString();
 
 	/**
 	 * Get whether this is a final submission.
@@ -88,6 +95,13 @@ public interface AssignmentSubmission extends Entity
 	 * @return Time of submission.
 	 */
 	public Time getTimeSubmitted();
+
+	/**
+	 * Set the time at which this response was submitted; "" signifies the response is unsubmitted.
+	 * 
+	 * @return Time of submission (String)
+	 */
+	public String getTimeSubmittedString();
 
 	/**
 	 * Text submitted in response to the Assignment.
@@ -116,6 +130,13 @@ public interface AssignmentSubmission extends Entity
 	 * @return The text of the grader's feedback.
 	 */
 	public String getFeedbackText();
+
+	/**
+	 * Access the formatted text part of the instructors feedback; usually an annotated copy of the submittedText
+	 * 
+	 * @return The formatted text of the grader's feedback.
+	 */
+	public String getFeedbackFormattedText();
 
 	/**
 	 * Access the list of attachments returned to the students in the process of grading this assignment; usually a modified or annotated version of the attachment submitted.

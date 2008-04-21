@@ -4,7 +4,7 @@
   <parent>
     <artifactId>assignment-base</artifactId>
     <groupId>org.sakaiproject</groupId>
-    <version>M2</version>
+    <version>SNAPSHOT</version>
     <relativePath>../../pom.xml</relativePath>
   </parent>
   <name>sakai-assignment-api</name>
@@ -48,6 +48,11 @@
     <dependency>
       <groupId>org.sakaiproject</groupId>
       <artifactId>sakai-util-api</artifactId>
+      <version>${sakai.version}</version>
+    </dependency>
+    <dependency>
+      <groupId>org.sakaiproject</groupId>
+      <artifactId>sakai-taggable-api</artifactId>
       <version>${sakai.version}</version>
     </dependency>
   </dependencies>
