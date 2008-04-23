@@ -20,9 +20,6 @@
  **********************************************************************************/
 package org.sakaiproject.assignment.model;
 
-import org.sakaiproject.assignment2.model.AssignmentSubmissionVersion;
-import org.sakaiproject.assignment2.model.SubmissionAttachmentBase;
-
 /**
  * the student submitted attachment
  * @author zqian

@@ -35,12 +35,11 @@ import org.sakaiproject.exception.PermissionException;
 import org.sakaiproject.user.api.User;
 import org.w3c.dom.Element;
 
+import org.sakaiproject.assignment.model.*;
+
 /**
  * <p>
  * AssignmentService is the service that handles assignments.
- * </p>
- * <p>
- * Each Assignment has an associated AssignmentContent (an AssignmentContent can belong to more the one Assignment) and a list of AssignmentSubmission (the student responses to the Assignment).
  * </p>
  */
 public interface AssignmentService extends EntityProducer
@@ -220,42 +219,6 @@ public interface AssignmentService extends EntityProducer
 	public boolean allowRemoveAssignment(String assignmentReference);
 
 	/**
-	 * Check permissions for adding an AssignmentContent.
-	 * 
-	 * @param context -
-	 *        Describes the portlet context - generated with DefaultId.getChannel().
-	 * @return True if the current User is allowed to add an AssignmentContent, false if not.
-	 */
-	public boolean allowAddAssignmentContent(String context);
-
-	/**
-	 * Check permissions for get AssignmentContent
-	 * 
-	 * @param contentReference -
-	 *        The AssignmentContent reference.
-	 * @return True if the current User is allowed to get the AssignmentContent, false if not.
-	 */
-	public boolean allowGetAssignmentContent(String contentReference);
-
-	/**
-	 * Check permissions for updating AssignmentContent
-	 * 
-	 * @param contentReference -
-	 *        The AssignmentContent reference.
-	 * @return True if the current User is allowed to update the AssignmentContent, false if not.
-	 */
-	public boolean allowUpdateAssignmentContent(String contentReference);
-
-	/**
-	 * Check permissions for remove Assignment content
-	 * 
-	 * @param contentReference -
-	 *        The AssignmentContent reference.
-	 * @return True if the current User is allowed to remove the AssignmentContent, false if not.
-	 */
-	public boolean allowRemoveAssignmentContent(String contentReference);
-
-	/**
 	 * Check permissions for add AssignmentSubmission
 	 * 
 	 * @param context -
@@ -346,14 +309,14 @@ public interface AssignmentService extends EntityProducer
 	 * @throws PermissionException
 	 *         if current User does not have permission to do this.
 	 */
-	public AssignmentEdit addAssignment(String context) throws PermissionException;
+	public Assignment addAssignment(String context) throws PermissionException;
 
 	/**
 	 * Add a new assignment to the directory, from a definition in XML. Must commitEdit() to make official, or cancelEdit() when done!
 	 * 
 	 * @param el
 	 *        The XML DOM Element defining the assignment.
-	 * @return A locked AssignmentEdit object (reserving the id).
+	 * @return A locked Assignment object (reserving the id).
 	 * @exception IdInvalidException
 	 *            if the assignment id is invalid.
 	 * @exception IdUsedException
@@ -361,7 +324,7 @@ public interface AssignmentService extends EntityProducer
 	 * @exception PermissionException
 	 *            if the current user does not have permission to add an assignnment.
 	 */
-	public AssignmentEdit mergeAssignment(Element el) throws IdInvalidException, IdUsedException, PermissionException;
+	public Assignment mergeAssignment(Element el) throws IdInvalidException, IdUsedException, PermissionException;
 
 	/**
 	 * Creates and adds a new Assignment to the service which is a copy of an existing Assignment.
@@ -370,11 +333,11 @@ public interface AssignmentService extends EntityProducer
 	 *        From DefaultId.getChannel(RunData)
 	 * @param assignmentReference -
 	 *        The reference of the Assignment to be duplicated.
-	 * @return The new AssignmentEdit object, or null if the original Assignment does not exist.
+	 * @return The new Assignment object, or null if the original Assignment does not exist.
 	 * @throws PermissionException
 	 *         if current User does not have permission to do this.
 	 */
-	public AssignmentEdit addDuplicateAssignment(String context, String assignmentReference) throws IdInvalidException,
+	public Assignment addDuplicateAssignment(String context, String assignmentReference) throws IdInvalidException,
 			PermissionException, IdUsedException, IdUnusedException;
 
 	/**
@@ -385,122 +348,38 @@ public interface AssignmentService extends EntityProducer
 	 * @throws PermissionException
 	 *         if current User does not have permission to do this.
 	 */
-	public void removeAssignment(AssignmentEdit assignment) throws PermissionException;
+	public void removeAssignment(Assignment assignment) throws PermissionException;
 
 	/**
 	 * Get a locked assignment object for editing. Must commitEdit() to make official, or cancelEdit() when done!
 	 * 
 	 * @param id
 	 *        The assignment id string.
-	 * @return A AssignmentEdit object for editing.
+	 * @return A Assignment object for editing.
 	 * @exception IdUnusedException
-	 *            if not found, or if not an AssignmentEdit object
+	 *            if not found, or if not an Assignment object
 	 * @exception PermissionException
 	 *            if the current user does not have permission to edit this assignment.
 	 * @exception InUseException
 	 *            if the Assignment object is locked by someone else.
 	 */
-	public AssignmentEdit editAssignment(String id) throws IdUnusedException, PermissionException, InUseException;
+	public Assignment editAssignment(String id) throws IdUnusedException, PermissionException, InUseException;
 
 	/**
-	 * Commit the changes made to a AssignmentEdit object, and release the lock. The AssignmentEdit is disabled, and not to be used after this call.
+	 * Commit the changes made to a Assignment object, and release the lock. The Assignment is disabled, and not to be used after this call.
 	 * 
 	 * @param assignment
-	 *        The AssignmentEdit object to commit.
+	 *        The Assignment object to commit.
 	 */
-	public void commitEdit(AssignmentEdit assignment);
+	public void commitEdit(Assignment assignment);
 
 	/**
-	 * Cancel the changes made to a AssignmentEdit object, and release the lock. The AssignmentEdit is disabled, and not to be used after this call.
+	 * Cancel the changes made to a Assignment object, and release the lock. The Assignment is disabled, and not to be used after this call.
 	 * 
 	 * @param assignment
-	 *        The AssignmentEdit object to commit.
+	 *        The Assignment object to commit.
 	 */
-	public void cancelEdit(AssignmentEdit assignment);
-
-	/**
-	 * Creates and adds a new AssignmentContent to the service.
-	 * 
-	 * @param context -
-	 *        Describes the portlet context - generated with DefaultId.getChannel().
-	 * @return AssignmentContentEdit The new AssignmentContent object.
-	 * @throws PermissionException
-	 *         if current User does not have permission to do this.
-	 */
-	public AssignmentContentEdit addAssignmentContent(String context) throws PermissionException;
-
-	/**
-	 * Add a new AssignmentContent to the directory, from a definition in XML. Must commitEdit() to make official, or cancelEdit() when done!
-	 * 
-	 * @param el
-	 *        The XML DOM Element defining the AssignmentContent.
-	 * @return A locked AssignmentContentEdit object (reserving the id).
-	 * @exception IdInvalidException
-	 *            if the AssignmentContent id is invalid.
-	 * @exception IdUsedException
-	 *            if the AssignmentContent id is already used.
-	 * @exception PermissionException
-	 *            if the current user does not have permission to add an AssignnmentContent.
-	 */
-	public AssignmentContentEdit mergeAssignmentContent(Element el) throws IdInvalidException, IdUsedException, PermissionException;
-
-	/**
-	 * Creates and adds a new AssignmentContent to the service which is a copy of an existing AssignmentContent.
-	 * 
-	 * @param context -
-	 *        From DefaultId.getChannel(RunData)
-	 * @param contentId -
-	 *        The id of the AssignmentContent to be duplicated.
-	 * @return AssignmentContentEdit The new AssignmentContentEdit object, or null if the original does not exist.
-	 * @throws PermissionException
-	 *         if current User does not have permission to do this.
-	 */
-	public AssignmentContentEdit addDuplicateAssignmentContent(String context, String contentReference) throws IdInvalidException,
-			PermissionException, IdUnusedException;
-
-	/**
-	 * Removes an AssignmentContent
-	 * 
-	 * @param content -
-	 *        the AssignmentContent to remove.
-	 * @throws an
-	 *         AssignmentContentNotEmptyException if this content still has related Assignments.
-	 * @throws PermissionException
-	 *         if current User does not have permission to do this.
-	 */
-	public void removeAssignmentContent(AssignmentContentEdit content) throws AssignmentContentNotEmptyException,
-			PermissionException;
-
-	/**
-	 * Get a locked AssignmentContent object for editing. Must commitEdit() to make official, or cancelEdit() when done!
-	 * 
-	 * @param id
-	 *        The content id string.
-	 * @return An AssignmentContentEdit object for editing.
-	 * @exception IdUnusedException
-	 *            if not found, or if not an AssignmentContentEdit object
-	 * @exception PermissionException
-	 *            if the current user does not have permission to edit this content.
-	 * @exception InUseException
-	 *            if the AssignmentContent object is locked by someone else.
-	 */
-	public AssignmentContentEdit editAssignmentContent(String id) throws IdUnusedException, PermissionException, InUseException;
-
-	/**
-	 * Commit the changes made to a AssignmentContentEdit object, and release the lock. The AssignmentContentEdit is disabled, and not to be used after this call.
-	 * 
-	 * @param content
-	 *        The AssignmentContentEdit object to commit.
-	 */
-	public void commitEdit(AssignmentContentEdit content);
-
-	/**
-	 * Cancel the changes made to a AssignmentContentEdit object, and release the lock. The AssignmentContentEdit is disabled, and not to be used after this call.
-	 * 
-	 * @param content
-	 *        The AssignmentContentEdit object to commit.
-	 */
-	public void cancelEdit(AssignmentContentEdit content);
+	public void cancelEdit(Assignment assignment);
 
 	/**
 	 * Adds an AssignmentSubmission
@@ -509,7 +388,7 @@ public interface AssignmentService extends EntityProducer
 	 *        Describes the portlet context - generated with DefaultId.getChannel().
 	 * @param assignmentId The assignment id
 	 * @param submitterId The submitter id
-	 * @return The new AssignmentSubmissionEdit.
+	 * @return The new AssignmentSubmission.
 	 * @exception IdInvalidException
 	 *            if the submission id is invalid.
 	 * @exception IdUsedException
@@ -517,14 +396,14 @@ public interface AssignmentService extends EntityProducer
 	 * @throws PermissionException
 	 *         if the current User does not have permission to do this.
 	 */
-	public AssignmentSubmissionEdit addSubmission(String context, String assignmentId, String submitter) throws PermissionException;
+	public AssignmentSubmission addSubmission(String context, String assignmentId, String submitter) throws PermissionException;
 
 	/**
 	 * Add a new AssignmentSubmission to the directory, from a definition in XML. Must commitEdit() to make official, or cancelEdit() when done!
 	 * 
 	 * @param el
 	 *        The XML DOM Element defining the submission.
-	 * @return A locked AssignmentSubmissionEdit object (reserving the id).
+	 * @return A locked AssignmentSubmission object (reserving the id).
 	 * @exception IdInvalidException
 	 *            if the submission id is invalid.
 	 * @exception IdUsedException
@@ -532,7 +411,7 @@ public interface AssignmentService extends EntityProducer
 	 * @exception PermissionException
 	 *            if the current user does not have permission to add a submission.
 	 */
-	public AssignmentSubmissionEdit mergeSubmission(Element el) throws IdInvalidException, IdUsedException, PermissionException;
+	public AssignmentSubmission mergeSubmission(Element el) throws IdInvalidException, IdUsedException, PermissionException;
 
 	/**
 	 * Removes an AssignmentSubmission and all references to it
@@ -542,47 +421,38 @@ public interface AssignmentService extends EntityProducer
 	 * @throws PermissionException
 	 *         if current User does not have permission to do this.
 	 */
-	public void removeSubmission(AssignmentSubmissionEdit submission) throws PermissionException;
+	public void removeSubmission(AssignmentSubmission submission) throws PermissionException;
 
 	/**
 	 * Get a locked AssignmentSubmission object for editing. Must commitEdit() to make official, or cancelEdit() when done!
 	 * 
 	 * @param id
 	 *        The submission id string.
-	 * @return An AssignmentSubmissionEdit object for editing.
+	 * @return An AssignmentSubmission object for editing.
 	 * @exception IdUnusedException
-	 *            if not found, or if not an AssignmentSubmissionEdit object
+	 *            if not found, or if not an AssignmentSubmission object
 	 * @exception PermissionException
 	 *            if the current user does not have permission to edit this submission.
 	 * @exception InUseException
 	 *            if the AssignmentSubmission object is locked by someone else.
 	 */
-	public AssignmentSubmissionEdit editSubmission(String id) throws IdUnusedException, PermissionException, InUseException;
+	public AssignmentSubmission editSubmission(String id) throws IdUnusedException, PermissionException, InUseException;
 
 	/**
-	 * Commit the changes made to a AssignmentSubmissionEdit object, and release the lock. The AssignmentSubmissionEdit is disabled, and not to be used after this call.
+	 * Commit the changes made to a AssignmentSubmission object, and release the lock. The AssignmentSubmission is disabled, and not to be used after this call.
 	 * 
 	 * @param submission
-	 *        The AssignmentSubmissionEdit object to commit.
+	 *        The AssignmentSubmission object to commit.
 	 */
-	public void commitEdit(AssignmentSubmissionEdit submission);
+	public void commitEdit(AssignmentSubmission submission);
 
 	/**
-	 * Cancel the changes made to a AssignmentSubmissionEdit object, and release the lock. The AssignmentSubmissionEdit is disabled, and not to be used after this call.
+	 * Cancel the changes made to a AssignmentSubmission object, and release the lock. The AssignmentSubmission is disabled, and not to be used after this call.
 	 * 
 	 * @param submission
-	 *        The AssignmentSubmissionEdit object to commit.
+	 *        The AssignmentSubmission object to commit.
 	 */
-	public void cancelEdit(AssignmentSubmissionEdit submission);
-
-	/**
-	 * Access list of all AssignmentContents created by the User.
-	 * 
-	 * @param owner -
-	 *        The User who's AssignmentContents are requested.
-	 * @return Iterator over all AssignmentContents owned by this User.
-	 */
-	public Iterator getAssignmentContents(User owner);
+	public void cancelEdit(AssignmentSubmission submission);
 
 	/**
 	 * Access the Assignment with the specified id.
@@ -596,20 +466,7 @@ public interface AssignmentService extends EntityProducer
 	 *         if the current user is not allowed to read this.
 	 */
 	public Assignment getAssignment(String assignmentId) throws IdUnusedException, PermissionException;
-
-	/**
-	 * Access the AssignmentContent with the specified id.
-	 * 
-	 * @param contentId -
-	 *        The id of the AssignmentContent.
-	 * @return The AssignmentContent corresponding to the id, or null if it does not exist.
-	 * @throws IdUnusedException
-	 *         if there is no object with this id.
-	 * @throws PermissionException
-	 *         if the current user does not have permission to see this.
-	 */
-	public AssignmentContent getAssignmentContent(String contentId) throws IdUnusedException, PermissionException;
-
+	
 	/**
 	 * Access the AssignmentSubmission with the specified id.
 	 * 
@@ -622,15 +479,6 @@ public interface AssignmentService extends EntityProducer
 	 *         if the current user is not allowed to read this.
 	 */
 	public AssignmentSubmission getSubmission(String submissionId) throws IdUnusedException, PermissionException;
-
-	/**
-	 * Access all the Assignments which have the specified AssignmentContent.
-	 * 
-	 * @param content -
-	 *        The particular AssignmentContent.
-	 * @return Iterator over all the Assignments with the specified AssignmentContent.
-	 */
-	public Iterator getAssignments(AssignmentContent content);
 
 	/**
 	 * Access all the Assignemnts associated with the context.

@@ -21,15 +21,15 @@
 
 package org.sakaiproject.assignment.model;
 
-import org.sakaiproject.assignment2.model.AssignmentSubmissionVersion;
-import org.sakaiproject.assignment2.model.SubmissionAttachmentBase;
+import org.sakaiproject.assignment.model.AssignmentSubmissionVersion;
+import org.sakaiproject.assignment.model.SubmissionAttachmentBase;
 
 /**
  * the attachment used for feedback purpose
  * @author zqian
  *
  */
-public class FeedbackAttachment extends SubmissionAttachment extends SubmissionAttachmentBase {
+public class FeedbackAttachment extends SubmissionAttachmentBase {
 	
 	public FeedbackAttachment() {
 		

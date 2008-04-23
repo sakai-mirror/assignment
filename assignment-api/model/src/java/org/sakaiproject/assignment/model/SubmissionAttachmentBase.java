@@ -27,6 +27,7 @@ package org.sakaiproject.assignment.model;
  */
 public class SubmissionAttachmentBase {
 	
+	
 	public SubmissionAttachmentBase ()
 	{
 		
@@ -39,7 +40,7 @@ public class SubmissionAttachmentBase {
 	}
 	
 	/** the associated AssignmentSubmissionVersion object */
-	private AssignmentSubmissionVersion submissionVersion;
+	protected AssignmentSubmissionVersion submissionVersion;
 
 	public AssignmentSubmissionVersion getSubmissionVersion() {
 		return submissionVersion;
@@ -50,7 +51,7 @@ public class SubmissionAttachmentBase {
 	}
 	
 	/** the reference string for attachment object */
-	private String attachmentReference;
+	protected String attachmentReference;
 
 	public String getAttachmentReference() {
 		return attachmentReference;
