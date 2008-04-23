@@ -1,6 +1,6 @@
 /**********************************************************************************
- * $URL$
- * $Id$
+ * $URL: https://source.sakaiproject.org/svn/assignment/branches/SAK-11103/assignment-api/api/src/java/org/sakaiproject/assignment/api/AssignmentNotEmptyException.java $
+ * $Id: AssignmentNotEmptyException.java 8331 2006-04-26 14:32:54Z ggolden@umich.edu $
  ***********************************************************************************
  *
  * Copyright (c) 2003, 2004, 2005, 2006 The Sakai Foundation.

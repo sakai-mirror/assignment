@@ -1,6 +1,6 @@
 /**********************************************************************************
- * $URL$
- * $Id$
+ * $URL:  $
+ * $Id:  $
  ***********************************************************************************
  *
  * Copyright (c) 2003, 2004, 2005, 2006 The Sakai Foundation.
@@ -19,13 +19,25 @@
  *
  **********************************************************************************/
 
-package org.sakaiproject.assignment.api;
+package org.sakaiproject.assignment.model;
+
+import org.sakaiproject.assignment2.model.AssignmentSubmissionVersion;
+import org.sakaiproject.assignment2.model.SubmissionAttachmentBase;
 
 /**
- * <p>
- * AssignmentContentNotEmptyException is thrown whenever an assignment content is not empty.
- * </p>
+ * the attachment used for feedback purpose
+ * @author zqian
+ *
  */
-public class AssignmentContentNotEmptyException extends Exception
-{
+public class FeedbackAttachment extends SubmissionAttachment extends SubmissionAttachmentBase {
+	
+	public FeedbackAttachment() {
+		
+	}
+	
+	public FeedbackAttachment(AssignmentSubmissionVersion submissionVersion, String attachmentReference) {
+		this.submissionVersion = submissionVersion;
+		this.attachmentReference = attachmentReference;
+	}
+
 }

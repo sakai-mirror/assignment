@@ -1,6 +1,6 @@
 /**********************************************************************************
- * $URL$
- * $Id$
+ * $URL: https://source.sakaiproject.org/svn/assignment/branches/SAK-11103/assignment-api/api/src/java/org/sakaiproject/assignment/taggable/api/AssignmentActivityProducer.java $
+ * $Id: AssignmentActivityProducer.java 42494 2008-03-19 16:48:08Z chmaurer@iupui.edu $
  ***********************************************************************************
  *
  * Copyright (c) 2007 The Sakai Foundation.
@@ -21,8 +21,8 @@
 
 package org.sakaiproject.assignment.taggable.api;
 
-import org.sakaiproject.assignment.api.Assignment;
-import org.sakaiproject.assignment.api.AssignmentSubmission;
+import org.sakaiproject.assignment.model.Assignment;
+import org.sakaiproject.assignment.model.AssignmentSubmission;
 import org.sakaiproject.taggable.api.TaggableActivity;
 import org.sakaiproject.taggable.api.TaggableActivityProducer;
 import org.sakaiproject.taggable.api.TaggableItem;
