@@ -20,14 +20,11 @@
  **********************************************************************************/
 package org.sakaiproject.assignment.model;
 
-import java.util.Collection;
 import java.util.Date;
 import java.util.List;
-import java.util.Set;
-import java.util.Vector;
 
-import org.sakaiproject.entity.api.ResourcePropertiesEdit;
-import org.sakaiproject.time.api.Time;
+import org.sakaiproject.assignment.model.constants.AssignmentConstants;
+import org.sakaiproject.entity.api.Entity;
 
 /**
  * Assignment object
@@ -38,12 +35,18 @@ public class Assignment {
 
 	/** the assignment id */
 	private Long id;
+	
+	/** the Hibernate version number */
+    private int hibernateVersion;
 
 	/** the assignment title */
 	private String title;
 
 	/** the context, usually the site id */
 	private String context;
+	
+	/** the instruction */
+	private String instruction; 
 
 	/** the start date for submit to assignment*/
 	private Date openTime;
@@ -63,7 +66,7 @@ public class Assignment {
 	private boolean deleted;
 	
 	/** the ordering of assignment object*/
-	private int position_order;
+	private int positionOrder;
 
 	/** The Collection of groups (authorization group id strings). */
 	private List<AssignmentGroup> groups;
@@ -91,11 +94,11 @@ public class Assignment {
 
 	private String creator;
 	
-	private Date timeCreated;
+	private Date createdTime;
 
 	private String lastModifiedBy;
 	
-	private Date timeLastModified;
+	private Date lastModifiedTime;
 
     private int notificationType;
     
@@ -179,12 +182,12 @@ public class Assignment {
 		this.deleted = deleted;
 	}
 
-	public int getPosition_order() {
-		return position_order;
+	public int getPositionOrder() {
+		return positionOrder;
 	}
 
-	public void setPosition_order(int position_order) {
-		this.position_order = position_order;
+	public void setPositionOrder(int positionOrder) {
+		this.positionOrder = positionOrder;
 	}
 
 	public List<AssignmentGroup> getGroups() {
@@ -275,12 +278,12 @@ public class Assignment {
 		this.creator = creator;
 	}
 
-	public Date getTimeCreated() {
-		return timeCreated;
+	public Date getCreatedTime() {
+		return createdTime;
 	}
 
-	public void setTimeCreated(Date timeCreated) {
-		this.timeCreated = timeCreated;
+	public void setTimeCreated(Date createdTime) {
+		this.createdTime = createdTime;
 	}
 
 	public String getLastModifiedBy() {
@@ -291,12 +294,12 @@ public class Assignment {
 		this.lastModifiedBy = lastModifiedBy;
 	}
 
-	public Date getTimeLastModified() {
-		return timeLastModified;
+	public Date getLastModifiedTime() {
+		return lastModifiedTime;
 	}
 
-	public void setTimeLastModified(Date timeLastModified) {
-		this.timeLastModified = timeLastModified;
+	public void setlastModifiedTime(Date lastModifiedTime) {
+		this.lastModifiedTime = lastModifiedTime;
 	}
 
 	public int getNotificationType() {
@@ -338,4 +341,88 @@ public class Assignment {
 	public void setScheduleEventId(String scheduleEventId) {
 		this.scheduleEventId = scheduleEventId;
 	}
+
+	public int getHibernateVersion() {
+		return hibernateVersion;
+	}
+
+	public void setHibernateVersion(int hibernateVersion) {
+		this.hibernateVersion = hibernateVersion;
+	}
+
+	public Assignment(Long id, int hibernateVersion, String title,
+			String context, Date openTime, Date dueTime, Date closeTime,
+			Date resubmission_closeTime, boolean draft, boolean deleted,
+			int positionOrder, List<AssignmentGroup> groups,
+			List<AssignmentAttachment> attachments, Boolean honorPledge,
+			Integer typeOfSubmission, Integer numSubmissionsAllowed,
+			Integer typeOfGrade, int maxGradePoint, Long gradableObjectId,
+			boolean allowReviewService, boolean allowStudentViewReport,
+			String creator, Date createdTime, String lastModifiedBy,
+			Date lastModifiedTime, int notificationType,
+			Boolean hasAnnouncement, String announcementId,
+			Boolean addedToSchedule, String scheduleEventId) {
+		super();
+		this.id = id;
+		this.hibernateVersion = hibernateVersion;
+		this.title = title;
+		this.context = context;
+		this.openTime = openTime;
+		this.dueTime = dueTime;
+		this.closeTime = closeTime;
+		this.resubmission_closeTime = resubmission_closeTime;
+		this.draft = draft;
+		this.deleted = deleted;
+		this.positionOrder = positionOrder;
+		this.groups = groups;
+		this.attachments = attachments;
+		this.honorPledge = honorPledge;
+		this.typeOfSubmission = typeOfSubmission;
+		this.numSubmissionsAllowed = numSubmissionsAllowed;
+		this.typeOfGrade = typeOfGrade;
+		this.maxGradePoint = maxGradePoint;
+		this.gradableObjectId = gradableObjectId;
+		this.allowReviewService = allowReviewService;
+		this.allowStudentViewReport = allowStudentViewReport;
+		this.creator = creator;
+		this.createdTime = createdTime;
+		this.lastModifiedBy = lastModifiedBy;
+		this.lastModifiedTime = lastModifiedTime;
+		this.notificationType = notificationType;
+		this.hasAnnouncement = hasAnnouncement;
+		this.announcementId = announcementId;
+		this.addedToSchedule = addedToSchedule;
+		this.scheduleEventId = scheduleEventId;
+	}
+	
+	/**
+	 * the default constructor
+	 */
+	public Assignment ()
+	{
+		
+	}
+
+	public String getInstruction() {
+		return instruction;
+	}
+
+	public void setInstruction(String instruction) {
+		this.instruction = instruction;
+	}
+	
+
+	public String getReference()
+	{
+		StringBuilder sb = new StringBuilder();
+		sb.append(AssignmentConstants.REFERENCE_ROOT);
+		sb.append(Entity.SEPARATOR);
+		sb.append(AssignmentConstants.ASSIGNMENT_TYPE);
+		sb.append(Entity.SEPARATOR);
+		sb.append(context);
+		sb.append(Entity.SEPARATOR);
+		sb.append(Long.toString(id));
+		return sb.toString();
+	}
+
 }

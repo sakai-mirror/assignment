@@ -75,5 +75,15 @@ public class AssignmentGroup {
 		this.groupId = groupId;
 	}
 	
+	/** the Hibernate version number */
+    private int hibernateVersion;
+
+	public int getHibernateVersion() {
+		return hibernateVersion;
+	}
+
+	public void setHibernateVersion(int hibernateVersion) {
+		this.hibernateVersion = hibernateVersion;
+	}
 
 }

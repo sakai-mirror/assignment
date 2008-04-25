@@ -26,6 +26,7 @@ import java.io.InputStream;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.util.Collection;
+import java.util.Date;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Hashtable;
@@ -45,6 +46,15 @@ import javax.servlet.http.HttpServletResponse;
 import org.sakaiproject.contentreview.exception.QueueException;
 import org.sakaiproject.contentreview.service.ContentReviewService;
 
+import org.sakaiproject.assignment.model.Assignment;
+import org.sakaiproject.assignment.model.AssignmentSubmissionVersion;
+import org.sakaiproject.assignment.model.constants.AssignmentConstants;
+import org.sakaiproject.assignment.api.AssignmentService;
+import org.sakaiproject.assignment.model.AssignmentSubmission;
+import org.sakaiproject.assignment.taggable.api.AssignmentActivityProducer;
+import org.sakaiproject.assignment.util.AssignmentComparator;
+import org.sakaiproject.taggable.api.TaggingManager;
+import org.sakaiproject.taggable.api.TaggingProvider;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
@@ -54,13 +64,6 @@ import org.apache.poi.hssf.usermodel.HSSFFont;
 import org.apache.poi.hssf.usermodel.HSSFRow;
 import org.apache.poi.hssf.usermodel.HSSFSheet;
 import org.apache.poi.hssf.usermodel.HSSFWorkbook;
-import org.sakaiproject.assignment.model.Assignment;
-import org.sakaiproject.assignment.api.AssignmentService;
-import org.sakaiproject.assignment.model.AssignmentSubmission;
-import org.sakaiproject.assignment.taggable.api.AssignmentActivityProducer;
-import org.sakaiproject.assignment.util.AssignmentComparator;
-import org.sakaiproject.taggable.api.TaggingManager;
-import org.sakaiproject.taggable.api.TaggingProvider;
 import org.sakaiproject.authz.api.AuthzGroup;
 import org.sakaiproject.authz.api.AuthzPermissionException;
 import org.sakaiproject.authz.api.GroupNotDefinedException;
@@ -140,6 +143,13 @@ import org.xml.sax.Attributes;
 import org.xml.sax.ContentHandler;
 import org.xml.sax.SAXException;
 
+import org.hibernate.Hibernate;
+import org.hibernate.HibernateException;
+import org.hibernate.Query;
+import org.hibernate.Session;
+import org.sakaiproject.genericdao.hibernate.HibernateCompleteGenericDao;
+import org.springframework.dao.DataAccessException;
+import org.springframework.orm.hibernate3.HibernateCallback;
 
 
 /**
@@ -147,53 +157,16 @@ import org.xml.sax.SAXException;
  * AssignmentServiceImpl is the implementation service class for AssignmentService.
  * </p>
  */
-public class AssignmentServiceImpl implements AssignmentService, EntityTransferrer
+public class AssignmentServiceImpl extends HibernateCompleteGenericDao implements AssignmentService, EntityTransferrer
 {
 	/** Our logger. */
-	private static Log M_log = LogFactory.getLog(AssignmentServiceImpl.class);
+	private static Log log = LogFactory.getLog(AssignmentServiceImpl.class);
 
 	/** the resource bundle */
 	private static ResourceLoader rb = new ResourceLoader("assignment");
 
 	/** The access point URL. */
 	protected String m_relativeAccessPoint = null;
-
-	/**********************************************************************************************************************************************************************************************************************************************************
-	 * EVENT STRINGS
-	 *********************************************************************************************************************************************************************************************************************************************************/
-
-	/** Event for adding an assignment. */
-	public static final String EVENT_ADD_ASSIGNMENT = "asn.new.assignment";
-
-	/** Event for adding an assignment submission. */
-	public static final String EVENT_ADD_ASSIGNMENT_SUBMISSION = "asn.new.submission";
-
-	/** Event for removing an assignment. */
-	public static final String EVENT_REMOVE_ASSIGNMENT = "asn.delete.assignment";
-
-	/** Event for removing an assignment submission. */
-	public static final String EVENT_REMOVE_ASSIGNMENT_SUBMISSION = "asn.delete.submission";
-
-	/** Event for accessing an assignment. */
-	public static final String EVENT_ACCESS_ASSIGNMENT = "asn.read.assignment";
-
-	/** Event for accessing an assignment submission. */
-	public static final String EVENT_ACCESS_ASSIGNMENT_SUBMISSION = "asn.read.submission";
-
-	/** Event for updating an assignment. */
-	public static final String EVENT_UPDATE_ASSIGNMENT = "asn.revise.assignment";
-
-	/** Event for updating an assignment submission. */
-	public static final String EVENT_UPDATE_ASSIGNMENT_SUBMISSION = "asn.revise.submission";
-
-	/** Event for saving an assignment submission. */
-	public static final String EVENT_SAVE_ASSIGNMENT_SUBMISSION = "asn.save.submission";
-
-	/** Event for submitting an assignment submission. */
-	public static final String EVENT_SUBMIT_ASSIGNMENT_SUBMISSION = "asn.submit.submission";
-	
-	/** Event for grading an assignment submission. */
-	public static final String EVENT_GRADE_ASSIGNMENT_SUBMISSION = "asn.grade.submission";
 	
 	private static final String NEW_ASSIGNMENT_DUE_DATE_SCHEDULED = "new_assignment_due_date_scheduled";
 
@@ -205,9 +178,15 @@ public class AssignmentServiceImpl implements AssignmentService, EntityTransferr
 	protected static final String ZIP_COMMENT_FILE_TYPE = ".txt";
 	protected static final String ZIP_SUBMITTED_TEXT_FILE_TYPE = ".html";
 
-//	spring service injection
+	// the names of queries
+	protected static final String GET_ASSIGNMENT_BY_ID = "getAssignmentById";
+	protected static final String GET_ASSIGNMENTS_BY_CONTEXT = "getAssignmentsByContext";
+	protected static final String GET_ALL_SUBMISSIONS_FOR_CONTEXT= "getAllSubmissionsForContext";
+	protected static final String GET_SUBMISSION_BY_ASSIGNMENT_USER = "getSubmissionByAssignmentUser";
+		
 	
-	
+
+	//	spring service injection
 	protected ContentReviewService contentReviewService;
 	public void setContentReviewService(ContentReviewService contentReviewService) {
 		this.contentReviewService = contentReviewService;
@@ -243,6 +222,19 @@ public class AssignmentServiceImpl implements AssignmentService, EntityTransferr
 		return retVal;
 
 	} // assignmentReference
+	
+	/**
+	 * Access the internal reference which can be used to assess security clearance.
+	 * 
+	 * @param id
+	 *        The assignment id string.
+	 * @return The the internal reference which can be used to access the resource from within the system.
+	 */
+	public String assignmentReference(Assignment a)
+	{
+		return assignmentReference(a.getContext(), String.valueOf(a.getId()));
+
+	} // assignmentReference
 
 	/**
 	 * Access the internal reference which can be used to access the resource from within the system.
@@ -260,6 +252,19 @@ public class AssignmentServiceImpl implements AssignmentService, EntityTransferr
 			retVal = getAccessPoint(true) + Entity.SEPARATOR + "s" + Entity.SEPARATOR + context + Entity.SEPARATOR + assignmentId
 					+ Entity.SEPARATOR + id;
 		return retVal;
+
+	} // submissionReference
+	
+	/**
+	 * Access the internal reference which can be used to access the resource from within the system.
+	 * 
+	 * @param id
+	 *        The submission id string.
+	 * @return The the internal reference which can be used to access the resource from within the system.
+	 */
+	public String submissionReference(AssignmentSubmission submission)
+	{
+		return submissionReference(submission.getAssignment().getContext(), String.valueOf(submission.getId()), String.valueOf(submission.getAssignment().getId()));
 
 	} // submissionReference
 
@@ -505,11 +510,11 @@ public class AssignmentServiceImpl implements AssignmentService, EntityTransferr
 	 */
 	public void init()
 	{
-		m_relativeAccessPoint = REFERENCE_ROOT;
-		M_log.info(this + " init()");
+		m_relativeAccessPoint = AssignmentConstants.REFERENCE_ROOT;
+		log.info(this + " init()");
 
 		// register as an entity producer
-		m_entityManager.registerEntityProducer(this, REFERENCE_ROOT);
+		m_entityManager.registerEntityProducer(this, AssignmentConstants.REFERENCE_ROOT);
 
 		// register functions
 		FunctionManager.registerFunction(SECURE_ALL_GROUPS);
@@ -534,7 +539,7 @@ public class AssignmentServiceImpl implements AssignmentService, EntityTransferr
 	 */
 	public void destroy()
 	{
-		M_log.info(this + " destroy()");
+		log.info(this + " destroy()");
 	}
 
 	/**********************************************************************************************************************************************************************************************************************************************************
@@ -542,52 +547,13 @@ public class AssignmentServiceImpl implements AssignmentService, EntityTransferr
 	 *********************************************************************************************************************************************************************************************************************************************************/
 
 	/**
-	 * Creates and adds a new Assignment to the service.
-	 * 
-	 * @param context -
-	 *        Describes the portlet context - generated with DefaultId.getChannel().
-	 * @return The new Assignment object.
-	 * @throws IdInvalidException
-	 *         if the id contains prohibited characers.
-	 * @throws IdUsedException
-	 *         if the id is already used in the service.
-	 * @throws PermissionException
-	 *         if current User does not have permission to do this.
+	 * new assignment
 	 */
-	public Assignment addAssignment(String context) throws PermissionException
+	public Assignment newAssignment(String context) throws PermissionException
 	{
-		if (M_log.isDebugEnabled()) M_log.debug(this + " ENTERING ADD ASSIGNMENT : CONTEXT : " + context);
-
-		String assignmentId = null;
-		boolean badId = false;
-
-		do
-		{
-			badId = !Validator.checkResourceId(assignmentId);
-			assignmentId = IdManager.createUuid();
-
-			if (m_assignmentStorage.check(assignmentId)) badId = true;
-		}
-		while (badId);
-
-		String key = assignmentReference(context, assignmentId);
-		
-		// security check
-		if (!allowAddAssignment(context))
-		{
-			throw new PermissionException(SessionManager.getCurrentSessionUserId(), SECURE_ADD_ASSIGNMENT, key);
-		}
-
-		// storage
-		Assignment assignment = m_assignmentStorage.put(assignmentId, context);
-
-		// event for tracking
-		((BaseAssignment) assignment).setEvent(EVENT_ADD_ASSIGNMENT);
-
-		if (M_log.isDebugEnabled())
-			M_log.debug(this + " LEAVING ADD ASSIGNMENT WITH : ID : " + assignment.getId());
-
-		return assignment;
+		Assignment a = new Assignment();
+		a.setContext(context);
+		return a;
 
 	} // addAssignment
 
@@ -605,44 +571,9 @@ public class AssignmentServiceImpl implements AssignmentService, EntityTransferr
 	 *            if the current user does not have permission to add an assignnment.
 	 */
 	public Assignment mergeAssignment(Element el) throws IdInvalidException, IdUsedException, PermissionException
-	{
-		// construct from the XML
-		Assignment assignmentFromXml = new BaseAssignment(el);
-
-		// check for a valid assignment name
-		if (!Validator.checkResourceId(assignmentFromXml.getId())) throw new IdInvalidException(assignmentFromXml.getId());
-
-		// check security (throws if not permitted)
-		unlock(SECURE_ADD_ASSIGNMENT, assignmentFromXml.getReference());
-
-		// reserve a assignment with this id from the info store - if it's in use, this will return null
-		Assignment assignment = m_assignmentStorage.put(assignmentFromXml.getId(), assignmentFromXml.getContext());
-		if (assignment == null)
-		{
-			throw new IdUsedException(assignmentFromXml.getId());
-		}
-
-		// transfer from the XML read assignment object to the Assignment
-		((BaseAssignment) assignment).set(assignmentFromXml);
-
-		((BaseAssignment) assignment).setEvent(EVENT_ADD_ASSIGNMENT);
-
-		ResourcePropertiesEdit propertyEdit = (BaseResourcePropertiesEdit)assignment.getProperties();
-		try
-		{
-			Time createTime = propertyEdit.getTimeProperty(ResourceProperties.PROP_CREATION_DATE);
-		}
-		catch(EntityPropertyNotDefinedException epnde)
-		{
-			String now = TimeService.newTime().toString();
-			propertyEdit.addProperty(ResourceProperties.PROP_CREATION_DATE, now);
-		}
-		catch(EntityPropertyTypeException epte)
-		{
-			M_log.error(this + " mergeAssignment error when trying to get creation time property " + epte);
-		}
-
-		return assignment;
+	{		
+		// TODO:zqian
+		return null;
 	}
 
 	/**
@@ -657,10 +588,10 @@ public class AssignmentServiceImpl implements AssignmentService, EntityTransferr
 	public Assignment addDuplicateAssignment(String context, String assignmentReference) throws PermissionException,
 			IdInvalidException, IdUsedException, IdUnusedException
 	{
-		if (M_log.isDebugEnabled())
-			M_log.debug(this + " ENTERING ADD DUPLICATE ASSIGNMENT WITH ID : " + assignmentReference);
+		if (log.isDebugEnabled())
+			log.debug(this + " ENTERING ADD DUPLICATE ASSIGNMENT WITH ID : " + assignmentReference);
 
-		Assignment retVal = null;
+		/*Assignment retVal = null;
 
 		if (assignmentReference != null)
 		{
@@ -669,14 +600,13 @@ public class AssignmentServiceImpl implements AssignmentService, EntityTransferr
 				throw new IdUnusedException(assignmentId);
 			else
 			{
-				if (M_log.isDebugEnabled())
-					M_log.debug(this + " addDuplicateAssignment : assignment exists - will copy");
+				if (log.isDebugEnabled())
+					log.debug(this + " addDuplicateAssignment : assignment exists - will copy");
 
 				Assignment existingAssignment = getAssignment(assignmentReference);
 
 				retVal = addAssignment(context);
 				retVal.setTitle(existingAssignment.getTitle() + " - Copy");
-				retVal.setSection(existingAssignment.getSection());
 				retVal.setOpenTime(existingAssignment.getOpenTime());
 				retVal.setDueTime(existingAssignment.getDueTime());
 				retVal.setDropDeadTime(existingAssignment.getDropDeadTime());
@@ -688,11 +618,13 @@ public class AssignmentServiceImpl implements AssignmentService, EntityTransferr
 			}
 		}
 
-		if (M_log.isDebugEnabled())
-			M_log.debug(this + " ADD DUPLICATE ASSIGNMENT : LEAVING ADD DUPLICATE ASSIGNMENT WITH ID : "
+		if (log.isDebugEnabled())
+			log.debug(this + " ADD DUPLICATE ASSIGNMENT : LEAVING ADD DUPLICATE ASSIGNMENT WITH ID : "
 					+ retVal.getId());
 
-		return retVal;
+		return retVal;*/
+		//TODO:zqian
+		return null;
 	}
 
 	/**
@@ -708,7 +640,7 @@ public class AssignmentServiceImpl implements AssignmentService, EntityTransferr
 	 */
 	public Assignment getAssignment(String assignmentReference) throws IdUnusedException, PermissionException
 	{
-		if (M_log.isDebugEnabled()) M_log.debug(this + " GET ASSIGNMENT : REF : " + assignmentReference);
+		if (log.isDebugEnabled()) log.debug(this + " GET ASSIGNMENT : REF : " + assignmentReference);
 
 		// check security on the assignment
 		unlockCheck(SECURE_ACCESS_ASSIGNMENT, assignmentReference);
@@ -716,9 +648,6 @@ public class AssignmentServiceImpl implements AssignmentService, EntityTransferr
 		Assignment assignment = findAssignment(assignmentReference);
 		
 		if (assignment == null) throw new IdUnusedException(assignmentReference);
-
-		// track event
-		//EventTrackingService.post(EventTrackingService.newEvent(EVENT_ACCESS_ASSIGNMENT, assignment.getReference(), false));
 
 		return assignment;
 
@@ -730,9 +659,12 @@ public class AssignmentServiceImpl implements AssignmentService, EntityTransferr
 
 		String assignmentId = assignmentId(assignmentReference);
 
-		assignment = m_assignmentStorage.get(assignmentId);
-		
-		return assignment;
+		List<Assignment> rvList = (getHibernateTemplate().findByNamedQueryAndNamedParam(GET_ASSIGNMENT_BY_ID, "id", assignmentId));
+		if (rvList != null && rvList.size() == 1)
+		{
+			return rvList.get(0);
+		}
+		return null;
 	}
 
 	/**
@@ -764,9 +696,12 @@ public class AssignmentServiceImpl implements AssignmentService, EntityTransferr
 		{
 			userId = SessionManager.getCurrentSessionUserId();
 		}
-		List assignments = new Vector();
 
-		assignments = m_assignmentStorage.getAll(context);
+		List<Assignment> assignments = (getHibernateTemplate().findByNamedQueryAndNamedParam(GET_ASSIGNMENTS_BY_CONTEXT, "context", context));
+		if (assignments == null)
+		{
+			return new Vector<Assignment>();
+		}
 
 		List rv = new Vector();
 		
@@ -779,22 +714,22 @@ public class AssignmentServiceImpl implements AssignmentService, EntityTransferr
 		}
 		catch (IdUnusedException e)
 		{
-			M_log.warn(this + " assignments(String, String) " + e.getMessage() + " context=" + context);
+			log.warn(this + " assignments(String, String) " + e.getMessage() + " context=" + context);
 		}
 		
 		for (int x = 0; x < assignments.size(); x++)
 		{
 			Assignment tempAssignment = (Assignment) assignments.get(x);
-			if (tempAssignment.getAccess() == Assignment.AssignmentAccess.GROUPED)
+			// check the assignment's groups to the allowed (get) groups for the current user
+			Collection asgGroups = tempAssignment.getGroups();
+			
+			if (asgGroups != null && asgGroups.size() > 0)
 			{
 				
 				// Can at least one of the designated groups been found
 				boolean groupFound = false;
 				
 				// if grouped, check that the end user has get access to any of this assignment's groups; reject if not
-
-				// check the assignment's groups to the allowed (get) groups for the current user
-				Collection asgGroups = tempAssignment.getGroups();
 
 				for (Iterator iAsgGroups=asgGroups.iterator(); site!=null && !groupFound && iAsgGroups.hasNext();)
 				{
@@ -808,7 +743,7 @@ public class AssignmentServiceImpl implements AssignmentService, EntityTransferr
 					}
 					catch (Exception ee)
 					{
-						M_log.warn(this + " assignments(String, String) " + ee.getMessage() + " groupId = " + groupId);
+						log.warn(this + " assignments(String, String) " + ee.getMessage() + " groupId = " + groupId);
 					}
 					
 				}
@@ -816,17 +751,17 @@ public class AssignmentServiceImpl implements AssignmentService, EntityTransferr
 				if (!groupFound)
 				{
 					// if none of the group exists, mark the assignment as draft and list it
-					String assignmentId = tempAssignment.getId();
+					String assignmentId = String.valueOf(tempAssignment.getId());
 					try
 					{
-						Assignment aEdit = editAssignment(assignmentReference(context, assignmentId));
-						aEdit.setDraft(true);
-						commitEdit(aEdit);
+						Assignment a = getAssignment(assignmentId);
+						a.setDraft(true);
+						saveAssignment(a);
 						rv.add(getAssignment(assignmentId));
 					}
 					catch (Exception e)
 					{
-						M_log.warn(this + " assignments(String, String) " + e.getMessage() + " assignment id =" + assignmentId);
+						log.warn(this + " assignments(String, String) " + e.getMessage() + " assignment id =" + assignmentId);
 						continue;
 					}
 				}
@@ -882,107 +817,21 @@ public class AssignmentServiceImpl implements AssignmentService, EntityTransferr
 	}
 
 	/**
-	 * Get a locked assignment object for editing. Must commitEdit() to make official, or cancelEdit() when done!
-	 * 
-	 * @param id
-	 *        The assignment id string.
-	 * @return An Assignment object for editing.
-	 * @exception IdUnusedException
-	 *            if not found, or if not an Assignment object
-	 * @exception PermissionException
-	 *            if the current user does not have permission to edit this assignment.
-	 * @exception InUseException
-	 *            if the assignment is being edited by another user.
+	 * Save the assignment
 	 */
-	public Assignment editAssignment(String assignmentReference) throws IdUnusedException, PermissionException, InUseException
+	public void saveAssignment(Assignment assignment)
 	{
-		// check security (throws if not permitted)
-		unlock(SECURE_UPDATE_ASSIGNMENT, assignmentReference);
-
-		String assignmentId = assignmentId(assignmentReference);
-
-		// check for existence 
-		if (!m_assignmentStorage.check(assignmentId))
+		try 
 		{
-			throw new IdUnusedException(assignmentId);
+			getHibernateTemplate().saveOrUpdate(assignment);
+		}
+		catch (DataAccessException e)
+		{
+			e.printStackTrace();
+			log.warn(this + ".saveAssignment() Hibernate could not save assignment=" + assignment.getId());
 		}
 
-		// ignore the cache - get the assignment with a lock from the info store
-		Assignment Assignment = m_assignmentStorage.edit(assignmentId);
-		if (Assignment == null) throw new InUseException(assignmentId);
-
-		((BaseAssignment) Assignment).setEvent(EVENT_UPDATE_ASSIGNMENT);
-
-		return Assignment;
-
-	} // editAssignment
-
-	/**
-	 * Commit the changes made to an Assignment object, and release the lock.
-	 * 
-	 * @param assignment
-	 *        The Assignment object to commit.
-	 */
-	public void commitEdit(Assignment assignment)
-	{
-		// check for closed edit
-		if (!assignment.isActiveEdit())
-		{
-			try
-			{
-				throw new Exception();
-			}
-			catch (Exception e)
-			{
-				M_log.warn(this + " commitEdit(): closed Assignment " + e.getMessage() + " assignment id=" + assignment.getId());
-			}
-			return;
-		}
-
-		// update the properties
-		addLiveUpdateProperties(assignment.getPropertiesEdit());
-
-		// complete the edit
-		m_assignmentStorage.commit(assignment);
-
-		// track it
-		EventTrackingService.post(EventTrackingService.newEvent(((BaseAssignment) assignment).getEvent(), assignment
-				.getReference(), true));
-
-		// close the edit object
-		((BaseAssignment) assignment).closeEdit();
-
-	} // commitEdit
-
-	/**
-	 * Cancel the changes made to a Assignment object, and release the lock.
-	 * 
-	 * @param assignment
-	 *        The Assignment object to commit.
-	 */
-	public void cancelEdit(Assignment assignment)
-	{
-		// check for closed edit
-		if (!assignment.isActiveEdit())
-		{
-			try
-			{
-				throw new Exception();
-			}
-			catch (Exception e)
-			{
-				M_log.warn(this + " cancelEdit(): closed Assignment " + e.getMessage() + " assignment id=" + assignment.getId());
-			}
-			return;
-		}
-
-		// release the edit lock
-		m_assignmentStorage.cancel(assignment);
-
-		// close the edit object
-		((BaseAssignment) assignment).closeEdit();
-
-	} // cancelEdit(Assignment)
+	} // saveAssignment
 
 	/**
 	 * Removes this Assignment and all references to it.
@@ -996,42 +845,18 @@ public class AssignmentServiceImpl implements AssignmentService, EntityTransferr
 	{
 		if (assignment != null)
 		{
-			if (M_log.isDebugEnabled()) M_log.debug(this + " removeAssignment with id : " + assignment.getId());
-
-			if (!assignment.isActiveEdit())
-			{
-				try
-				{
-					throw new Exception();
-				}
-				catch (Exception e)
-				{
-					M_log.warn(this + " removeAssignment(): closed Assignment" + e.getMessage() + " assignment id=" + assignment.getId());
-				}
-				return;
-			}
+			if (log.isDebugEnabled()) log.debug(this + " removeAssignment with id : " + assignment.getId());
 
 			// CHECK PERMISSION
-			unlock(SECURE_REMOVE_ASSIGNMENT, assignment.getReference());
+			unlock(SECURE_REMOVE_ASSIGNMENT, assignmentReference(assignment));
 
-			// complete the edit
-			m_assignmentStorage.remove(assignment);
-
-			// track event
-			EventTrackingService.post(EventTrackingService.newEvent(EVENT_REMOVE_ASSIGNMENT, assignment.getReference(), true));
-
-			// close the edit object
-			((BaseAssignment) assignment).closeEdit();
-
-			// remove any realm defined for this resource
-			try
-			{
-				AuthzGroupService.removeAuthzGroup(assignment.getReference());
+			try {
+				getHibernateTemplate().delete(assignment);
+			} catch (DataAccessException e) {
+				log.warn(this + ".removeAssignment(): Hibernate could not delete: " + e.toString());
+				e.printStackTrace();
 			}
-			catch (AuthzPermissionException e)
-			{
-				M_log.warn(this + " removeAssignment: removing realm for assignment reference=" + assignment.getReference() + " : " + e.getMessage());
-			}
+			log.info(this + ".removeAssignment(): Assignment id " + assignment.getId() + " deleted");
 		}
 
 	}// removeAssignment
@@ -1039,42 +864,27 @@ public class AssignmentServiceImpl implements AssignmentService, EntityTransferr
 	/**
 	 * {@inheritDoc}
 	 */
-	public AssignmentSubmission addSubmission(String context, String assignmentId, String submitterId) throws PermissionException
+	public AssignmentSubmission newSubmission(String assignmentId, String submitterId) throws PermissionException
 	{
-		if (M_log.isDebugEnabled()) M_log.debug(this + " ENTERING ADD SUBMISSION");
-
-		String submissionId = null;
-		boolean badId = false;
-
-		do
-		{
-			badId = !Validator.checkResourceId(submissionId);
-			submissionId = IdManager.createUuid();
-
-			if (m_submissionStorage.check(submissionId)) badId = true;
-		}
-		while (badId);
-
-		String key = submissionReference(context, submissionId, assignmentId);
-
-		if (M_log.isDebugEnabled()) M_log.debug(this + " ADD SUBMISSION : SUB REF : " + key);
-
-		unlock(SECURE_ADD_ASSIGNMENT_SUBMISSION, key);
-
-		if (M_log.isDebugEnabled()) M_log.debug(this + " ADD SUBMISSION : UNLOCKED");
-
-		// storage
-		AssignmentSubmission submission = m_submissionStorage.put(submissionId, assignmentId, submitterId, null, null, null);
-
-		submission.setContext(context);
+		AssignmentSubmission submission = new AssignmentSubmission();
 		
-		if (M_log.isDebugEnabled())
-			M_log.debug(this + " LEAVING ADD SUBMISSION : REF : " + submission.getReference());
+		try
+		{
+			Assignment a = getAssignment(assignmentId);
+			
+			String key = submissionReference(submission);
+			if (log.isDebugEnabled()) log.debug(this + ".newSubmission() : SUB REF : " + key);
 
-		// event for tracking
-		((BaseAssignmentSubmission) submission).setEvent(EVENT_ADD_ASSIGNMENT_SUBMISSION);
-
-		return submission;
+			unlock(SECURE_ADD_ASSIGNMENT_SUBMISSION, key);
+			submission.setAssignment(a);
+			return submission;
+		}
+		catch (Exception e)
+		{
+			if (log.isDebugEnabled()) log.debug(this + ".newSubmission() : exception : assignment id=" + assignmentId);
+		}
+		
+		return null;
 	}
 
 	/**
@@ -1092,8 +902,9 @@ public class AssignmentServiceImpl implements AssignmentService, EntityTransferr
 	 */
 	public AssignmentSubmission mergeSubmission(Element el) throws IdInvalidException, IdUsedException, PermissionException
 	{
+		//TODO: zqian
 		// construct from the XML
-		BaseAssignmentSubmission submissionFromXml = new BaseAssignmentSubmission(el);
+		/*AssignmentSubmission submissionFromXml = new AssignmentSubmission(el);
 
 		// check for a valid submission name
 		if (!Validator.checkResourceId(submissionFromXml.getId())) throw new IdInvalidException(submissionFromXml.getId());
@@ -1115,176 +926,124 @@ public class AssignmentServiceImpl implements AssignmentService, EntityTransferr
 
 		// transfer from the XML read submission object to the SubmissionEdit
 		((BaseAssignmentSubmission) submission).set(submissionFromXml);
-
-		((BaseAssignmentSubmission) submission).setEvent(EVENT_ADD_ASSIGNMENT_SUBMISSION);
-
-		return submission;
+		*/
+		return null;
 	}
 
 	/**
-	 * Get a locked AssignmentSubmission object for editing. Must commitEdit() to make official, or cancelEdit() when done!
-	 * 
-	 * @param submissionrReference -
-	 *        the reference for the submission.
-	 * @return An AssignmentSubmission object for editing.
-	 * @exception IdUnusedException
-	 *            if not found, or if not an AssignmentSubmission object
-	 * @exception PermissionException
-	 *            if the current user does not have permission to edit this submission.
-	 * @exception InUseException
-	 *            if the assignment is being edited by another user.
+	 * {@inheritDoc}
 	 */
-	public AssignmentSubmission editSubmission(String submissionReference) throws IdUnusedException, PermissionException,
-			InUseException
+	public void saveSubmission(AssignmentSubmission submission)
 	{
-		if (!unlockCheck(SECURE_GRADE_ASSIGNMENT_SUBMISSION, submissionReference))
+		try 
 		{
-			// check security (throws if not permitted)
-			unlock2(SECURE_UPDATE_ASSIGNMENT_SUBMISSION, SECURE_UPDATE_ASSIGNMENT, submissionReference);
+			getHibernateTemplate().saveOrUpdate(submission);
 		}
-
-		String submissionId = submissionId(submissionReference);
-
-		// check for existance
-		if (!m_submissionStorage.check(submissionId))
+		catch (DataAccessException e)
 		{
-			throw new IdUnusedException(submissionId);
+			e.printStackTrace();
+			log.warn(this + ".saveAssignment() Hibernate could not save submission=" + submission.getId());
 		}
-
-		// ignore the cache - get the AssignmentSubmission with a lock from the info store
-		AssignmentSubmission submission = m_submissionStorage.edit(submissionId);
-		if (submission == null) throw new InUseException(submissionId);
-
-		((BaseAssignmentSubmission) submission).setEvent(EVENT_UPDATE_ASSIGNMENT_SUBMISSION);
-
-		return submission;
-
-	} // editSubmission
+	}	// saveSubmission
+	
 
 	/**
-	 * Commit the changes made to an AssignmentSubmission object, and release the lock.
-	 * 
-	 * @param submission
-	 *        The AssignmentSubmission object to commit.
+	 * {@inheritDoc}
 	 */
-	public void commitEdit(AssignmentSubmission submission)
+	public void saveSubmissionVersion(AssignmentSubmissionVersion submissionVersion)
 	{
-		String submissionRef = submission.getReference();
-		
-		// check for closed edit
-		if (!submission.isActiveEdit())
+		try 
 		{
-			try
-			{
-				throw new Exception();
-			}
-			catch (Exception e)
-			{
-				M_log.warn(this + " commitEdit(): closed AssignmentSubmission assignment submission id=" + submission.getId() + e.getMessage());
-			}
-			return;
+			getHibernateTemplate().saveOrUpdate(submissionVersion);
 		}
-
-		// update the properties
-		addLiveUpdateProperties(submission.getPropertiesEdit());
-
-		submission.setTimeLastModified(TimeService.newTime());
-
-		// complete the edit
-		m_submissionStorage.commit(submission);
-		
-		// close the edit object
-		((BaseAssignmentSubmission) submission).closeEdit();
-
+		catch (DataAccessException e)
+		{
+			e.printStackTrace();
+			log.warn(this + ".saveAssignment() Hibernate could not save submission=" + submissionVersion.getId());
+		}
 		try
 		{
-			AssignmentSubmission s = getSubmission(submissionRef);
+			Assignment a = submissionVersion.getAssignmentSubmission().getAssignment();
 			
-			Assignment a = s.getAssignment();
-			
-			Time returnedTime = s.getTimeReturned();
-			Time submittedTime = s.getTimeSubmitted();
+			Date returnedTime = submissionVersion.getTimeReleased();
+			Date submittedTime = submissionVersion.getTimeSubmitted();
 			
 			// track it
-			if (!s.getSubmitted())
+			if (submissionVersion.isDraft())
 			{
 				// saving a submission
-				EventTrackingService.post(EventTrackingService.newEvent(EVENT_SAVE_ASSIGNMENT_SUBMISSION, submissionRef, true));
+				//EventTrackingService.post(EventTrackingService.newEvent(EVENT_SAVE_ASSIGNMENT_SUBMISSION, submissionRef, true));
 			}
-			else if (returnedTime == null && !s.getReturned() && (submittedTime == null /*grading non-submissions*/
-																|| (submittedTime != null && (s.getTimeLastModified().getTime() - submittedTime.getTime()) > 1000*60 /*make sure the last modified time is at least one minute after the submit time*/)))
+			else if (returnedTime == null && !submissionVersion.isReturned() && (submittedTime == null /*grading non-submissions*/
+																|| (submittedTime != null && (submissionVersion.getLastModifiedTime().getTime() - submittedTime.getTime()) > 1000*60 /*make sure the last modified time is at least one minute after the submit time*/)))
 			{
 				// graded and saved before releasing it
-				EventTrackingService.post(EventTrackingService.newEvent(EVENT_GRADE_ASSIGNMENT_SUBMISSION, submissionRef, true));
+				//EventTrackingService.post(EventTrackingService.newEvent(EVENT_GRADE_ASSIGNMENT_SUBMISSION, submissionRef, true));
 			}
-			else if (returnedTime != null && s.getGraded() && (submittedTime == null/*returning non-submissions*/ 
+			else if (returnedTime != null && submissionVersion.getGrade() != null && (submittedTime == null/*returning non-submissions*/ 
 											|| (submittedTime != null && returnedTime.after(submittedTime))/*returning normal submissions*/ 
-											|| (submittedTime != null && submittedTime.after(returnedTime) && s.getTimeLastModified().after(submittedTime))/*grading the resubmitted assignment*/))
+											|| (submittedTime != null && submittedTime.after(returnedTime) && submissionVersion.getLastModifiedTime().after(submittedTime))/*grading the resubmitted assignment*/))
 			{
 				// releasing a submitted assignment or releasing grade to an unsubmitted assignment
-				EventTrackingService.post(EventTrackingService.newEvent(EVENT_GRADE_ASSIGNMENT_SUBMISSION, submissionRef, true));
+				//EventTrackingService.post(EventTrackingService.newEvent(EVENT_GRADE_ASSIGNMENT_SUBMISSION, submissionRef, true));
 			}
 			else if (submittedTime == null) /*grading non-submission*/
 			{
 				// releasing a submitted assignment or releasing grade to an unsubmitted assignment
-				EventTrackingService.post(EventTrackingService.newEvent(EVENT_GRADE_ASSIGNMENT_SUBMISSION, submissionRef, true));
+				//EventTrackingService.post(EventTrackingService.newEvent(EVENT_GRADE_ASSIGNMENT_SUBMISSION, submissionRef, true));
 			}
 			else
 			{
 				// submitting a submission
-				EventTrackingService.post(EventTrackingService.newEvent(EVENT_SUBMIT_ASSIGNMENT_SUBMISSION, submissionRef, true));
+				//EventTrackingService.post(EventTrackingService.newEvent(EVENT_SUBMIT_ASSIGNMENT_SUBMISSION, submissionRef, true));
 			
 				// only doing the notification for real online submissions
-				if (a.getTypeOfSubmission() != Assignment.NON_ELECTRONIC_ASSIGNMENT_SUBMISSION)
+				if (a.getTypeOfSubmission() != AssignmentConstants.NON_ELECTRONIC_ASSIGNMENT_SUBMISSION)
 				{
 					// instructor notification
-					notificationToInstructors(s, a);
+					notificationToInstructors(submissionVersion, a);
 					
 					// student notification, whether the student gets email notification once he submits an assignment
-					notificationToStudent(s);
+					notificationToStudent(submissionVersion);
 				}
 			}
 				
 			
 		}
-		catch (IdUnusedException e)
+		catch (Exception e)
 		{
-			M_log.warn(this + " commitEdit(), submissionId=" + submissionRef, e);
-		}
-		catch (PermissionException e)
-		{
-			M_log.warn(this + " commitEdit(), submissionId=" + submissionRef, e);
+			log.warn(this + " commitEdit(), submissionId=" + submissionVersion.getId(), e);
 		}
 
-	} // commitEdit(Submission)
+	} // saveSubmissionVersion
 
 	/**
 	 * send notification to instructor type of users if necessary
 	 * @param s
 	 * @param a
 	 */
-	private void notificationToInstructors(AssignmentSubmission s, Assignment a) 
+	private void notificationToInstructors(AssignmentSubmissionVersion s, Assignment a) 
 	{
-		String notiOption = a.getProperties().getProperty(Assignment.ASSIGNMENT_INSTRUCTOR_NOTIFICATIONS_VALUE);
-		if (notiOption != null && !notiOption.equals(Assignment.ASSIGNMENT_INSTRUCTOR_NOTIFICATIONS_NONE))
+		String notiOption = String.valueOf(a.getNotificationType());
+		if (notiOption != null && !notiOption.equals(AssignmentConstants.ASSIGNMENT_INSTRUCTOR_NOTIFICATIONS_NONE))
 		{
 			// need to send notification email
-			String context = s.getContext();
+			String context = a.getContext();
 			
 			// compare the list of users with the receive.notifications and list of users who can actually grade this assignment
 			List receivers = allowReceiveSubmissionNotificationUsers(context);
-			List allowGradeAssignmentUsers = allowGradeAssignmentUsers(a.getReference());
+			List allowGradeAssignmentUsers = allowGradeAssignmentUsers(assignmentReference(a));
 			receivers.retainAll(allowGradeAssignmentUsers);
 			
-			String submitterId = s.getSubmitterIdString();
+			String submitterId = s.getCreatedBy();
 			
 			// filter out users who's not able to grade this submission
 			List finalReceivers = new Vector();
 			
 			HashSet receiverSet = new HashSet();
-			if (a.getAccess().equals(Assignment.AssignmentAccess.GROUPED))
+			Collection groups = a.getGroups();
+			if (groups != null && groups.size() > 0)
 			{
-				Collection groups = a.getGroups();
 				for (Iterator gIterator = groups.iterator(); gIterator.hasNext();)
 				{
 					String g = (String) gIterator.next();
@@ -1307,7 +1066,7 @@ public class AssignmentServiceImpl implements AssignmentService, EntityTransferr
 					}
 					catch (Exception e)
 					{
-						M_log.warn(this + " notificationToInstructors, group id =" + g + " " + e.getMessage());
+						log.warn(this + " notificationToInstructors, group id =" + g + " " + e.getMessage());
 					}
 				}
 			}
@@ -1318,12 +1077,12 @@ public class AssignmentServiceImpl implements AssignmentService, EntityTransferr
 			
 			String messageBody = getNotificationMessage(s);
 			
-			if (notiOption.equals(Assignment.ASSIGNMENT_INSTRUCTOR_NOTIFICATIONS_EACH))
+			if (notiOption.equals(AssignmentConstants.ASSIGNMENT_INSTRUCTOR_NOTIFICATIONS_EACH))
 			{
-				// send the message immidiately
+				// send the message immediately
 				EmailService.sendToUsers(finalReceivers, getHeaders(null), messageBody);
 			}
-			else if (notiOption.equals(Assignment.ASSIGNMENT_INSTRUCTOR_NOTIFICATIONS_DIGEST))
+			else if (notiOption.equals(AssignmentConstants.ASSIGNMENT_INSTRUCTOR_NOTIFICATIONS_DIGEST))
 			{
 				// digest the message to each user
 				for (Iterator iReceivers = finalReceivers.iterator(); iReceivers.hasNext();)
@@ -1339,7 +1098,7 @@ public class AssignmentServiceImpl implements AssignmentService, EntityTransferr
 	 * send notification to student if necessary
 	 * @param s
 	 */
-	private void notificationToStudent(AssignmentSubmission s) 
+	private void notificationToStudent(AssignmentSubmissionVersion s) 
 	{
 		if (m_serverConfigurationService.getBoolean("assignment.submission.confirmation.email", true))
 		{
@@ -1399,7 +1158,7 @@ public class AssignmentServiceImpl implements AssignmentService, EntityTransferr
 	 *        The event that matched criteria to cause the notification.
 	 * @return the message for the email.
 	 */
-	protected String getNotificationMessage(AssignmentSubmission s)
+	protected String getNotificationMessage(AssignmentSubmissionVersion s)
 	{	
 		StringBuilder message = new StringBuilder();
 		message.append(MIME_ADVISORY);
@@ -1419,7 +1178,7 @@ public class AssignmentServiceImpl implements AssignmentService, EntityTransferr
 		return "Content-Type: text/plain\n\n";
 	}
 	
-	protected String plainTextContent(AssignmentSubmission s) {
+	protected String plainTextContent(AssignmentSubmissionVersion s) {
 		return htmlContent(s);
 	}
 	
@@ -1443,13 +1202,13 @@ public class AssignmentServiceImpl implements AssignmentService, EntityTransferr
 		return "\n  </body>\n</html>\n";
 	}
 
-	private String htmlContent(AssignmentSubmission s) 
+	private String htmlContent(AssignmentSubmissionVersion s) 
 	{
 		String newline = "<br />\n";
 		
-		Assignment a = s.getAssignment();
+		Assignment a = s.getAssignmentSubmission().getAssignment();
 		
-		String context = s.getContext();
+		String context = a.getContext();
 		
 		String siteTitle = "";
 		String siteId = "";
@@ -1461,7 +1220,7 @@ public class AssignmentServiceImpl implements AssignmentService, EntityTransferr
 		}
 		catch (Exception ee)
 		{
-			M_log.warn(this + " htmlContent(), site id =" + context + " " + ee.getMessage());
+			log.warn(this + " htmlContent(), site id =" + context + " " + ee.getMessage());
 		}
 		
 		StringBuilder buffer = new StringBuilder();
@@ -1470,34 +1229,28 @@ public class AssignmentServiceImpl implements AssignmentService, EntityTransferr
 		buffer.append(rb.getString("noti.site.id") + " " + siteId +newline + newline);
 		// assignment title and due date
 		buffer.append(rb.getString("noti.assignment") + " " + a.getTitle()+newline);
-		buffer.append(rb.getString("noti.assignment.duedate") + " " + a.getDueTime().toStringLocalFull()+newline + newline);
+		buffer.append(rb.getString("noti.assignment.duedate") + " " + a.getDueTime().toString()+newline + newline);
 		// submitter name and id
-		User[] submitters = s.getSubmitters();
-		String submitterNames = "";
-		String submitterIds = "";
-		for (int i = 0; i<submitters.length; i++)
+		String submitterId = s.getCreatedBy();
+		buffer.append(rb.getString("noti.student"));
+		try
 		{
-			User u = (User) submitters[i];
-			if (i>0)
-			{
-				submitterNames = submitterNames.concat("; ");
-				submitterIds = submitterIds.concat("; ");
-			}
-			submitterNames = submitterNames.concat(u.getDisplayName());
-			submitterIds = submitterIds.concat(u.getDisplayId());
+			User u = UserDirectoryService.getUser(submitterId);
+			buffer.append(" " + u.getDisplayName());
 		}
-		buffer.append(rb.getString("noti.student") + " " + submitterNames);
-		if (submitterIds.length() != 0)
+		catch (Exception e)
 		{
-			buffer.append("( " + submitterIds + " )");
+
 		}
+		buffer.append("( " + submitterId + " )");
+		
 		buffer.append(newline + newline);
 		
 		// submit time
 		buffer.append(rb.getString("noti.submit.id") + " " + s.getId() + newline);
 		
 		// submit time 
-		buffer.append(rb.getString("noti.submit.time") + " " + s.getTimeSubmitted().toStringLocalFull() + newline + newline);
+		buffer.append(rb.getString("noti.submit.time") + " " + s.getTimeSubmitted().toString() + newline + newline);
 		
 		// submit text
 		String text = StringUtil.trimToNull(s.getSubmittedText());
@@ -1522,36 +1275,6 @@ public class AssignmentServiceImpl implements AssignmentService, EntityTransferr
 	}
 
 	/**
-	 * Cancel the changes made to a AssignmentSubmission object, and release the lock.
-	 * 
-	 * @param submission
-	 *        The AssignmentSubmission object to commit.
-	 */
-	public void cancelEdit(AssignmentSubmission submission)
-	{
-		// check for closed edit
-		if (!submission.isActiveEdit())
-		{
-			try
-			{
-				throw new Exception();
-			}
-			catch (Exception e)
-			{
-				M_log.warn(this + " cancelEdit(): closed AssignmentSubmission assignment submission id=" + submission.getId() + " " + e.getMessage());
-			}
-			return;
-		}
-
-		// release the edit lock
-		m_submissionStorage.cancel(submission);
-
-		// close the edit object
-		((BaseAssignmentSubmission) submission).closeEdit();
-
-	} // cancelEdit(Submission)
-
-	/**
 	 * Removes an AssignmentSubmission and all references to it
 	 * 
 	 * @param submission -
@@ -1563,40 +1286,29 @@ public class AssignmentServiceImpl implements AssignmentService, EntityTransferr
 	{
 		if (submission != null)
 		{
-			if (!submission.isActiveEdit())
-			{
-				try
-				{
-					throw new Exception();
-				}
-				catch (Exception e)
-				{
-					M_log.warn(this + " removeSubmission(): closed AssignmentSubmission id=" + submission.getId()  + " "  + e.getMessage());
-				}
-				return;
-			}
-
+			String submissionReference = submissionReference(submission);
 			// check security
-			unlock(SECURE_REMOVE_ASSIGNMENT_SUBMISSION, submission.getReference());
+			unlock(SECURE_REMOVE_ASSIGNMENT_SUBMISSION, submissionReference);
 
-			// complete the edit
-			m_submissionStorage.remove(submission);
+			try {
+				getHibernateTemplate().delete(submission);
+			} catch (DataAccessException e) {
+				log.warn(this + ".removeSubmission(): Hibernate could not delete: " + e.toString());
+				e.printStackTrace();
+			}
+			log.info(this + ".removeSubmission(): submission id " + submission.getId() + " deleted");
 
 			// track event
-			EventTrackingService.post(EventTrackingService.newEvent(EVENT_REMOVE_ASSIGNMENT_SUBMISSION, submission.getReference(),
-					true));
-
-			// close the edit object
-			((BaseAssignmentSubmission) submission).closeEdit();
+			//EventTrackingService.post(EventTrackingService.newEvent(EVENT_REMOVE_ASSIGNMENT_SUBMISSION, submission.getReference(), true));
 
 			// remove any realm defined for this resource
 			try
 			{
-				AuthzGroupService.removeAuthzGroup(AuthzGroupService.getAuthzGroup(submission.getReference()));
+				AuthzGroupService.removeAuthzGroup(AuthzGroupService.getAuthzGroup(submissionReference));
 			}
 			catch (AuthzPermissionException e)
 			{
-				M_log.warn(this + " removeSubmission: removing realm for : " + submission.getReference() + " : " + e.getMessage());
+				log.warn(this + " removeSubmission: removing realm for : " + submissionReference + " : " + e.getMessage());
 			}
 			catch (GroupNotDefinedException ignore)
 			{
@@ -1626,9 +1338,7 @@ public class AssignmentServiceImpl implements AssignmentService, EntityTransferr
 	 */
 	protected List getSubmissions(String context)
 	{
-		List submissions = new Vector();
-
-		submissions = m_submissionStorage.getAll(context);
+		List<AssignmentSubmission> submissions = (getHibernateTemplate().findByNamedQueryAndNamedParam(GET_ALL_SUBMISSIONS_FOR_CONTEXT, "context", context));
 
 		return submissions;
 
@@ -1643,7 +1353,7 @@ public class AssignmentServiceImpl implements AssignmentService, EntityTransferr
 	 */
 	public Iterator getAssignmentsForContext(String context)
 	{
-		if (M_log.isDebugEnabled()) M_log.debug(this + " GET ASSIGNMENTS FOR CONTEXT : CONTEXT : " + context);
+		if (log.isDebugEnabled()) log.debug(this + " GET ASSIGNMENTS FOR CONTEXT : CONTEXT : " + context);
 		
 		return assignmentsForContextAndUser(context, null);
 
@@ -1658,7 +1368,7 @@ public class AssignmentServiceImpl implements AssignmentService, EntityTransferr
 	 */
 	public Iterator getAssignmentsForContext(String context, String userId)
 	{
-		if (M_log.isDebugEnabled()) M_log.debug(this + " GET ASSIGNMENTS FOR CONTEXT : CONTEXT : " + context);
+		if (log.isDebugEnabled()) log.debug(this + " GET ASSIGNMENTS FOR CONTEXT : CONTEXT : " + context);
 		
 		return assignmentsForContextAndUser(context, userId);
 
@@ -1703,7 +1413,7 @@ public class AssignmentServiceImpl implements AssignmentService, EntityTransferr
 	 */
 	public List getListAssignmentsForContext(String context)
 	{
-		if (M_log.isDebugEnabled()) M_log.debug(this + " getListAssignmetsForContext : CONTEXT : " + context);
+		if (log.isDebugEnabled()) log.debug(this + " getListAssignmetsForContext : CONTEXT : " + context);
 		Assignment tempAssignment = null;
 		Vector retVal = new Vector();
 		List allAssignments = new Vector();
@@ -1718,13 +1428,12 @@ public class AssignmentServiceImpl implements AssignmentService, EntityTransferr
 				if ((context.equals(tempAssignment.getContext()))
 						|| (context.equals(getGroupNameFromContext(tempAssignment.getContext()))))
 				{
-					String deleted = tempAssignment.getProperties().getProperty(ResourceProperties.PROP_ASSIGNMENT_DELETED);
-					if (deleted == null || deleted.equals(""))
+					if (!tempAssignment.isDeleted())
 					{
 						// not deleted, show it
-						if (tempAssignment.getDraft())
+						if (tempAssignment.isDraft())
 						{
-							// who can see the draft assigment
+							// who can see the draft assignment
 							if (isDraftAssignmentVisible(tempAssignment, context))
 							{
 								retVal.add(tempAssignment);
@@ -1776,7 +1485,7 @@ public class AssignmentServiceImpl implements AssignmentService, EntityTransferr
 			return role != null && role.getId().equals(creatorMember.getRole().getId());
 		
 		} catch (GroupNotDefinedException gnde) {
-			M_log.warn("No group defined for this site " + context);
+			log.warn("No group defined for this site " + context);
 		}
 		
 		return false;
@@ -1795,24 +1504,31 @@ public class AssignmentServiceImpl implements AssignmentService, EntityTransferr
 	 * @throws PermissionException
 	 *         if the current user is not allowed to access this.
 	 */
-	public AssignmentSubmission getSubmission(String assignmentReference, User person)
+	public AssignmentSubmission getSubmission(Assignment assignment, User person)
 	{
 		AssignmentSubmission submission = null;
 
-		String assignmentId = assignmentId(assignmentReference);
+		String assignmentId = String.valueOf(assignment.getId());
 		
-		if ((assignmentReference != null) && (person != null))
+		if ((assignmentReference(assignment) != null) && (person != null))
 		{
-			submission = m_submissionStorage.get(assignmentId, person.getId());
+			/*List<AssignmentSubmission> rvList = (getHibernateTemplate().findByNamedQueryAndNamedParam(GET_SUBMISSION_BY_ASSIGNMENT_USER, "assignmentId", assignmentId, "userId", person.getId()));
+			if (rvList != null && rvList.size() == 1)
+			{
+				submission = rvList.get(0);
+			}*/
 		}
 
 		if (submission != null)
 		{
 			try
 			{
-				unlock2(SECURE_ACCESS_ASSIGNMENT_SUBMISSION, SECURE_ACCESS_ASSIGNMENT, submission.getReference());
+				Assignment a = getAssignment(assignmentId);
+					
+				String key = submissionReference(submission);
+				unlock2(SECURE_ACCESS_ASSIGNMENT_SUBMISSION, SECURE_ACCESS_ASSIGNMENT, key);
 			}
-			catch (PermissionException e)
+			catch (Exception e)
 			{
 				return null;
 			}
@@ -1833,19 +1549,15 @@ public class AssignmentServiceImpl implements AssignmentService, EntityTransferr
 			AssignmentSubmission sub = (AssignmentSubmission) submissions.get(z);
 			if (sub != null)
 			{
-				List submitters = sub.getSubmitterIds();
-				for (int a = 0; a < submitters.size(); a++)
+				String aUserId = sub.getSubmitterId();
+				if (log.isDebugEnabled())
+					log.debug(this + " getSubmission(List, User) comparing aUser id : " + aUserId + " and chosen user id : "
+							+ person.getId());
+				if (aUserId.equals(person.getId()))
 				{
-					String aUserId = (String) submitters.get(a);
-					if (M_log.isDebugEnabled())
-						M_log.debug(this + " getSubmission(List, User) comparing aUser id : " + aUserId + " and chosen user id : "
-								+ person.getId());
-					if (aUserId.equals(person.getId()))
-					{
-						if (M_log.isDebugEnabled())
-							M_log.debug(this + " getSubmission(List, User) found a match : return value is " + sub.getId());
-						retVal = sub;
-					}
+					if (log.isDebugEnabled())
+						log.debug(this + " getSubmission(List, User) found a match : return value is " + sub.getId());
+					retVal = sub;
 				}
 			}
 		}
@@ -1866,7 +1578,7 @@ public class AssignmentServiceImpl implements AssignmentService, EntityTransferr
 
 		if (assignment != null)
 		{
-			retVal = getSubmissions(assignment.getId());
+			retVal = getSubmissions(String.valueOf(assignment.getId()));
 		}
 		
 		return retVal;
@@ -1877,7 +1589,8 @@ public class AssignmentServiceImpl implements AssignmentService, EntityTransferr
 	 */
 	public int getSubmittedSubmissionsCount(String assignmentId)
 	{
-		return m_submissionStorage.getSubmittedSubmissionsCount(assignmentId);
+		//TODO:zqian return m_submissionStorage.getSubmittedSubmissionsCount(assignmentId);
+		return -1;
 		
 	}
 	
@@ -1886,7 +1599,8 @@ public class AssignmentServiceImpl implements AssignmentService, EntityTransferr
 	 */
 	public int getUngradedSubmissionsCount(String assignmentId)
 	{
-		return m_submissionStorage.getUngradedSubmissionsCount(assignmentId);
+		return -1;
+		//TODO: zqian return m_submissionStorage.getUngradedSubmissionsCount(assignmentId);
 		
 	}
 
@@ -1903,7 +1617,7 @@ public class AssignmentServiceImpl implements AssignmentService, EntityTransferr
 	 */
 	public AssignmentSubmission getSubmission(String submissionReference) throws IdUnusedException, PermissionException
 	{
-		if (M_log.isDebugEnabled()) M_log.debug(this + " GET SUBMISSION : REF : " + submissionReference);
+		if (log.isDebugEnabled()) log.debug(this + " GET SUBMISSION : REF : " + submissionReference);
 		
 		// check permission
 		unlock2(SECURE_ACCESS_ASSIGNMENT_SUBMISSION, SECURE_ACCESS_ASSIGNMENT, submissionReference);
@@ -1912,7 +1626,7 @@ public class AssignmentServiceImpl implements AssignmentService, EntityTransferr
 
 		String submissionId = submissionId(submissionReference);
 
-		submission = m_submissionStorage.get(submissionId);
+		submission = (AssignmentSubmission) getHibernateTemplate().get(AssignmentSubmission.class, submissionId);
 		
 		if (submission == null) throw new IdUnusedException(submissionId);
 
@@ -1930,7 +1644,7 @@ public class AssignmentServiceImpl implements AssignmentService, EntityTransferr
 	 */
 	protected String getReferenceRoot()
 	{
-		return REFERENCE_ROOT;
+		return AssignmentConstants.REFERENCE_ROOT;
 	}
 
 	/**
@@ -1974,10 +1688,10 @@ public class AssignmentServiceImpl implements AssignmentService, EntityTransferr
 		String resourceString = getAccessPoint(true) + Entity.SEPARATOR + REF_TYPE_ASSIGNMENT_GROUPS + Entity.SEPARATOR + "a"
 				+ Entity.SEPARATOR + context + Entity.SEPARATOR;
 
-		if (M_log.isDebugEnabled())
+		if (log.isDebugEnabled())
 		{
-			M_log.debug(this + " allowAddGroupAssignment with resource string : " + resourceString);
-			M_log.debug("                                    context string : " + context);
+			log.debug(this + " allowAddGroupAssignment with resource string : " + resourceString);
+			log.debug("                                    context string : " + context);
 		}
 
 		// check security on the channel (throws if not permitted)
@@ -1992,9 +1706,9 @@ public class AssignmentServiceImpl implements AssignmentService, EntityTransferr
 	{
 		String resourceString = getAccessPoint(true) + Entity.SEPARATOR + "a" + Entity.SEPARATOR + context + Entity.SEPARATOR;
 
-		if (M_log.isDebugEnabled())
+		if (log.isDebugEnabled())
 		{
-			M_log.debug(this + " allowReceiveSubmissionNotification with resource string : " + resourceString);
+			log.debug(this + " allowReceiveSubmissionNotification with resource string : " + resourceString);
 		}
 
 		// checking allow at the site level
@@ -2009,10 +1723,10 @@ public class AssignmentServiceImpl implements AssignmentService, EntityTransferr
 	public List allowReceiveSubmissionNotificationUsers(String context)
 	{
 		String resourceString = getAccessPoint(true) + Entity.SEPARATOR + "a" + Entity.SEPARATOR + context + Entity.SEPARATOR;
-		if (M_log.isDebugEnabled())
+		if (log.isDebugEnabled())
 		{
-			M_log.debug(this + " allowReceiveSubmissionNotificationUsers with resource string : " + resourceString);
-			M_log.debug("                                   				 	context string : " + context);
+			log.debug(this + " allowReceiveSubmissionNotificationUsers with resource string : " + resourceString);
+			log.debug("                                   				 	context string : " + context);
 		}
 		return SecurityService.unlockUsers(SECURE_ASSIGNMENT_RECEIVE_NOTIFICATIONS, resourceString);
 
@@ -2028,9 +1742,9 @@ public class AssignmentServiceImpl implements AssignmentService, EntityTransferr
 		// if the user can SECURE_ADD_ASSIGNMENT anywhere in that mix, they can add an assignment
 		// this stack is not the normal azg set for site, so use a special refernce to get this behavior
 
-		if (M_log.isDebugEnabled())
+		if (log.isDebugEnabled())
 		{
-			M_log.debug(this + " allowAddAssignment with resource string : " + resourceString);
+			log.debug(this + " allowAddAssignment with resource string : " + resourceString);
 		}
 
 		// checking allow at the site level
@@ -2048,9 +1762,9 @@ public class AssignmentServiceImpl implements AssignmentService, EntityTransferr
 		// check for assignments that will be site-wide:
 		String resourceString = getAccessPoint(true) + Entity.SEPARATOR + "a" + Entity.SEPARATOR + context  + Entity.SEPARATOR;
 
-		if (M_log.isDebugEnabled())
+		if (log.isDebugEnabled())
 		{
-			M_log.debug(this + " allowAddSiteAssignment with resource string : " + resourceString);
+			log.debug(this + " allowAddSiteAssignment with resource string : " + resourceString);
 		}
 
 		// check security on the channel (throws if not permitted)
@@ -2064,9 +1778,9 @@ public class AssignmentServiceImpl implements AssignmentService, EntityTransferr
 	{
 		String resourceString = getAccessPoint(true) + Entity.SEPARATOR + "a" + Entity.SEPARATOR + context + Entity.SEPARATOR;
 
-		if (M_log.isDebugEnabled())
+		if (log.isDebugEnabled())
 		{
-			M_log.debug(this + " allowAllGroups with resource string : " + resourceString);
+			log.debug(this + " allowAllGroups with resource string : " + resourceString);
 		}
 
 		// checking all.groups
@@ -2090,14 +1804,14 @@ public class AssignmentServiceImpl implements AssignmentService, EntityTransferr
 	public Collection getGroupsAllowGradeAssignment(String context, String assignmentReference)
 	{
 		Collection rv = new Vector();
-		if (allowGradeSubmission(assignmentReference))
+		try
 		{
-			// only if the user is allowed to group at all
-			Collection allAllowedGroups = getGroupsAllowFunction(SECURE_GRADE_ASSIGNMENT_SUBMISSION, context, null);
-			try
+			Assignment a = getAssignment(assignmentReference);
+			if (allowGradeSubmission(a))
 			{
-				Assignment a = getAssignment(assignmentReference);
-				if (a.getAccess() == Assignment.AssignmentAccess.SITE)
+				// only if the user is allowed to group at all
+				Collection allAllowedGroups = getGroupsAllowFunction(SECURE_GRADE_ASSIGNMENT_SUBMISSION, context, null);
+				if (a.getGroups() == null || a.getGroups().size() == 0)
 				{
 					// for site-scope assignment, return all groups
 					rv = allAllowedGroups;
@@ -2116,10 +1830,10 @@ public class AssignmentServiceImpl implements AssignmentService, EntityTransferr
 					}
 				}
 			}
-			catch (Exception e)
-			{
-				M_log.info(this + " getGroupsAllowGradeAssignment " + e.getMessage() + assignmentReference);
-			}
+		}
+		catch (Exception e)
+		{
+			log.info(this + " getGroupsAllowGradeAssignment " + e.getMessage() + assignmentReference);
 		}
 			
 		return rv;
@@ -2132,9 +1846,9 @@ public class AssignmentServiceImpl implements AssignmentService, EntityTransferr
 	{
 		String resourceString = getAccessPoint(true) + Entity.SEPARATOR + "a" + Entity.SEPARATOR + context + Entity.SEPARATOR;
 
-		if (M_log.isDebugEnabled())
+		if (log.isDebugEnabled())
 		{
-			M_log.debug(this + " allowGetAssignment with resource string : " + resourceString);
+			log.debug(this + " allowGetAssignment with resource string : " + resourceString);
 		}
 
 		return unlockCheck(SECURE_ACCESS_ASSIGNMENT, resourceString);
@@ -2163,7 +1877,7 @@ public class AssignmentServiceImpl implements AssignmentService, EntityTransferr
 	 */
 	public boolean allowUpdateAssignment(String assignmentReference)
 	{
-		if (M_log.isDebugEnabled()) M_log.debug(this + " allowUpdateAssignment with resource string : " + assignmentReference);
+		if (log.isDebugEnabled()) log.debug(this + " allowUpdateAssignment with resource string : " + assignmentReference);
 
 		return unlockCheck(SECURE_UPDATE_ASSIGNMENT, assignmentReference);
 	}
@@ -2175,7 +1889,7 @@ public class AssignmentServiceImpl implements AssignmentService, EntityTransferr
 	 */
 	public boolean allowRemoveAssignment(String assignmentReference)
 	{
-		if (M_log.isDebugEnabled()) M_log.debug(this + " allowRemoveAssignment " + assignmentReference);
+		if (log.isDebugEnabled()) log.debug(this + " allowRemoveAssignment " + assignmentReference);
 
 		// check security (throws if not permitted)
 		return unlockCheck(SECURE_REMOVE_ASSIGNMENT, assignmentReference);
@@ -2265,7 +1979,7 @@ public class AssignmentServiceImpl implements AssignmentService, EntityTransferr
 		// check security (throws if not permitted)
 		String resourceString = getAccessPoint(true) + Entity.SEPARATOR + "s" + Entity.SEPARATOR + context + Entity.SEPARATOR;
 
-		if (M_log.isDebugEnabled()) M_log.debug(this + " allowAddSubmission with resource string : " + resourceString);
+		if (log.isDebugEnabled()) log.debug(this + " allowAddSubmission with resource string : " + resourceString);
 
 		return unlockCheck(SECURE_ADD_ASSIGNMENT_SUBMISSION, resourceString);
 	}
@@ -2291,7 +2005,7 @@ public class AssignmentServiceImpl implements AssignmentService, EntityTransferr
 		}
 		catch (Exception e)
 		{
-			M_log.warn(this + "allowAssignmentFunctionUsers " + e.getMessage() + " assignmentReference=" + assignmentReference + " function=" + function);
+			log.warn(this + "allowAssignmentFunctionUsers " + e.getMessage() + " assignmentReference=" + assignmentReference + " function=" + function);
 		}
 		
 		// combine two lists together
@@ -2351,7 +2065,7 @@ public class AssignmentServiceImpl implements AssignmentService, EntityTransferr
 		}
 		catch (Exception e)
 		{
-			M_log.warn(this + " allowAddAnySubmissionUsers " + e.getMessage() + " context=" + context);
+			log.warn(this + " allowAddAnySubmissionUsers " + e.getMessage() + " context=" + context);
 		}
 		
 		return rv;
@@ -2368,10 +2082,10 @@ public class AssignmentServiceImpl implements AssignmentService, EntityTransferr
 	public List allowAddAssignmentUsers(String context)
 	{
 		String resourceString = getAccessPoint(true) + Entity.SEPARATOR + "a" + Entity.SEPARATOR + context + Entity.SEPARATOR;
-		if (M_log.isDebugEnabled())
+		if (log.isDebugEnabled())
 		{
-			M_log.debug(this + " allowAddAssignmentUsers with resource string : " + resourceString);
-			M_log.debug("                                    	context string : " + context);
+			log.debug(this + " allowAddAssignmentUsers with resource string : " + resourceString);
+			log.debug("                                    	context string : " + context);
 		}
 		return SecurityService.unlockUsers(SECURE_ADD_ASSIGNMENT, resourceString);
 
@@ -2386,7 +2100,7 @@ public class AssignmentServiceImpl implements AssignmentService, EntityTransferr
 	 */
 	public boolean allowGetSubmission(String submissionReference)
 	{
-		if (M_log.isDebugEnabled()) M_log.debug(this + " allowGetSubmission with resource string : " + submissionReference);
+		if (log.isDebugEnabled()) log.debug(this + " allowGetSubmission with resource string : " + submissionReference);
 
 		return unlockCheck2(SECURE_ACCESS_ASSIGNMENT_SUBMISSION, SECURE_ACCESS_ASSIGNMENT, submissionReference);
 	}
@@ -2400,7 +2114,7 @@ public class AssignmentServiceImpl implements AssignmentService, EntityTransferr
 	 */
 	public boolean allowUpdateSubmission(String submissionReference)
 	{
-		if (M_log.isDebugEnabled()) M_log.debug(this + " allowUpdateSubmission with resource string : " + submissionReference);
+		if (log.isDebugEnabled()) log.debug(this + " allowUpdateSubmission with resource string : " + submissionReference);
 
 		return unlockCheck2(SECURE_UPDATE_ASSIGNMENT_SUBMISSION, SECURE_UPDATE_ASSIGNMENT, submissionReference);
 	}
@@ -2414,17 +2128,22 @@ public class AssignmentServiceImpl implements AssignmentService, EntityTransferr
 	 */
 	public boolean allowRemoveSubmission(String submissionReference)
 	{
-		if (M_log.isDebugEnabled()) M_log.debug(this + " allowRemoveSubmission with resource string : " + submissionReference);
+		if (log.isDebugEnabled()) log.debug(this + " allowRemoveSubmission with resource string : " + submissionReference);
 
 		// check security (throws if not permitted)
 		return unlockCheck(SECURE_REMOVE_ASSIGNMENT_SUBMISSION, submissionReference);
 	}
 
+	public boolean allowGradeSubmission(Assignment assignment)
+	{
+		return allowGradeSubmission(assignmentReference(assignment));	
+	}
+	
 	public boolean allowGradeSubmission(String assignmentReference)
 	{
-		if (M_log.isDebugEnabled())
+		if (log.isDebugEnabled())
 		{
-			M_log.debug(this + " allowGradeSubmission with resource string : " + assignmentReference);
+			log.debug(this + " allowGradeSubmission with resource string : " + assignmentReference);
 		}
 		return unlockCheck(SECURE_GRADE_ASSIGNMENT_SUBMISSION, assignmentReference);
 	}
@@ -2442,7 +2161,7 @@ public class AssignmentServiceImpl implements AssignmentService, EntityTransferr
 	 */
 	public byte[] getGradesSpreadsheet(String ref) throws IdUnusedException, PermissionException
 	{
-		String typeGradesString = new String(REF_TYPE_GRADES + Entity.SEPARATOR);
+		/*String typeGradesString = new String(REF_TYPE_GRADES + Entity.SEPARATOR);
 		String context = ref.substring(ref.indexOf(typeGradesString) + typeGradesString.length());
 
 		// get site title for display purpose
@@ -2462,7 +2181,8 @@ public class AssignmentServiceImpl implements AssignmentService, EntityTransferr
 		List assignmentsList = getListAssignmentsForContext(context);
 		for (int iAssignment = 0; !allowGradeAny && iAssignment<assignmentsList.size(); iAssignment++)
 		{
-			if (allowGradeSubmission(((Assignment) assignmentsList.get(iAssignment)).getReference()))
+			Assignment assignment = (Assignment) assignmentsList.get(iAssignment);
+			if (allowGradeSubmission(assignmentReference(assignment)))
 			{
 				allowGradeAny = true;
 			}
@@ -2548,7 +2268,7 @@ public class AssignmentServiceImpl implements AssignmentService, EntityTransferr
 				}
 				catch (Exception e)
 				{
-					M_log.warn(this + " getGradesSpreadSheet " + e.getMessage() + " userId = " + userId);
+					log.warn(this + " getGradesSpreadSheet " + e.getMessage() + " userId = " + userId);
 				}
 			}
 				
@@ -2561,7 +2281,7 @@ public class AssignmentServiceImpl implements AssignmentService, EntityTransferr
 				int assignmentType = a.getTypeOfGrade();
 				
 				// for column header, check allow grade permission based on each assignment
-				if(!a.getDraft() && allowGradeSubmission(a.getReference()))
+				if(!a.isDraft() && allowGradeSubmission(assigmentReference(a)))
 				{
 					// put in assignment title as the column header
 					rowNum = headerRowNumber;
@@ -2585,7 +2305,7 @@ public class AssignmentServiceImpl implements AssignmentService, EntityTransferr
 					{
 						AssignmentSubmission submission = (AssignmentSubmission) sIterator.next();
 						
-						String userId = (String) submission.getSubmitterIds().get(0);
+						String userId = (String) submission.getSubmitterId();
 						
 						if (user_row.containsKey(userId))
 						{	
@@ -2653,11 +2373,12 @@ public class AssignmentServiceImpl implements AssignmentService, EntityTransferr
 			}
 			catch (IOException e)
 			{
-				M_log.debug(this + " getGradesSpreadsheet Can not output the grade spread sheet for reference= " + ref);
+				log.debug(this + " getGradesSpreadsheet Can not output the grade spread sheet for reference= " + ref);
 			}
 			
 			return b.getBytes();
-		}
+		}*/
+		return null;
 
 	} // getGradesSpreadsheet
 
@@ -2674,7 +2395,7 @@ public class AssignmentServiceImpl implements AssignmentService, EntityTransferr
 	 */
 	public void getSubmissionsZip(OutputStream outputStream, String ref) throws IdUnusedException, PermissionException
  	{
-		if (M_log.isDebugEnabled()) M_log.debug(this + ": getSubmissionsZip reference=" + ref);
+		if (log.isDebugEnabled()) log.debug(this + ": getSubmissionsZip reference=" + ref);
 
 		byte[] rv = null;
 
@@ -2699,7 +2420,7 @@ public class AssignmentServiceImpl implements AssignmentService, EntityTransferr
 				else
 				{
 					// iterate through all allowed-grade-group
-					Collection gCollection = getGroupsAllowGradeAssignment(contextString, a.getReference());
+					Collection gCollection = getGroupsAllowGradeAssignment(contextString, assignmentReference(a));
 					// prevent multiple entries
 					HashSet userIdSet = new HashSet();
 					for (Iterator iGCollection = gCollection.iterator(); iGCollection.hasNext();)
@@ -2714,7 +2435,7 @@ public class AssignmentServiceImpl implements AssignmentService, EntityTransferr
 							{
 								// see if the submitters is in the group
 								AssignmentSubmission s = (AssignmentSubmission) allSubmissions.get(i);
-								String submitterId = s.getSubmitterIdString();
+								String submitterId = s.getSubmitterId();
 								if (!userIdSet.contains(submitterId) && grants.contains(submitterId))
 								{
 									submissions.add(s);
@@ -2724,7 +2445,7 @@ public class AssignmentServiceImpl implements AssignmentService, EntityTransferr
 						}
 						catch (Exception ee)
 						{
-							M_log.info(this + " getSubmissionsZip " + ee.getMessage() + " group reference=" + gReference);
+							log.info(this + " getSubmissionsZip " + ee.getMessage() + " group reference=" + gReference);
 						}
 					}
 					
@@ -2741,7 +2462,7 @@ public class AssignmentServiceImpl implements AssignmentService, EntityTransferr
 					{
 						// see if the submitters is in the group
 						AssignmentSubmission s = (AssignmentSubmission) allSubmissions.get(i);
-						if (grants.contains(s.getSubmitterIdString()))
+						if (grants.contains(s.getSubmitterId()))
 						{
 							submissions.add(s);
 						}
@@ -2749,34 +2470,34 @@ public class AssignmentServiceImpl implements AssignmentService, EntityTransferr
 				}
 				catch (Exception ee)
 				{
-					M_log.info(this +  " getSubmissionsZip " + ee.getMessage() + " group reference=" + groupReference);
+					log.info(this +  " getSubmissionsZip " + ee.getMessage() + " group reference=" + groupReference);
 				}
 				
 			}
 
 			StringBuilder exceptionMessage = new StringBuilder();
 
-			if (allowGradeSubmission(a.getReference()))
+			if (allowGradeSubmission(a))
 			{
-				zipSubmissions(a.getReference(), a.getTitle(), a.getTypeOfGradeString(a.getTypeOfGrade()), a.getTypeOfSubmission(), submissions.iterator(), outputStream, exceptionMessage);
+				zipSubmissions(assignmentReference(a), a.getTitle(), String.valueOf(a.getTypeOfGrade()), a.getTypeOfSubmission(), submissions.iterator(), outputStream, exceptionMessage);
 
 				if (exceptionMessage.length() > 0)
 				{
 					// log any error messages
-					if (M_log.isDebugEnabled())
-						M_log.debug(this + " getSubmissionsZip ref=" + ref + exceptionMessage.toString());
+					if (log.isDebugEnabled())
+						log.debug(this + " getSubmissionsZip ref=" + ref + exceptionMessage.toString());
 				}
 			}
 		}
 		catch (IdUnusedException e)
 		{
-			if (M_log.isDebugEnabled())
-				M_log.debug(this + "getSubmissionsZip -IdUnusedException Unable to get assignment " + ref);
+			if (log.isDebugEnabled())
+				log.debug(this + "getSubmissionsZip -IdUnusedException Unable to get assignment " + ref);
 			throw new IdUnusedException(ref);
 		}
 		catch (PermissionException e)
 		{
-			M_log.debug(this + " getSubmissionsZip -PermissionException Not permitted to get assignment " + ref);
+			log.debug(this + " getSubmissionsZip -PermissionException Not permitted to get assignment " + ref);
 			throw new PermissionException(SessionManager.getCurrentSessionUserId(), SECURE_ACCESS_ASSIGNMENT, ref);
 		}
 
@@ -2784,7 +2505,7 @@ public class AssignmentServiceImpl implements AssignmentService, EntityTransferr
 
 	protected void zipSubmissions(String assignmentReference, String assignmentTitle, String gradeTypeString, int typeOfSubmission, Iterator submissions, OutputStream outputStream, StringBuilder exceptionMessage) 
 	{
-		try
+		/*try
 		{
 			ZipOutputStream out = new ZipOutputStream(outputStream);
 
@@ -2811,10 +2532,11 @@ public class AssignmentServiceImpl implements AssignmentService, EntityTransferr
 			{
 				AssignmentSubmission s = (AssignmentSubmission) submissions.next();
 				
-				if (s.getSubmitted())
+				//TODO:zqian
+				if (true)
 				{
 					// get the submission user id and see if the user is still in site
-					String userId = (String) s.getSubmitterIds().get(0);
+					String userId = (String) s.getSubmitterId();
 					try
 					{
 						User u = UserDirectoryService.getUser(userId);
@@ -2823,15 +2545,11 @@ public class AssignmentServiceImpl implements AssignmentService, EntityTransferr
 							count = 1;
 							submittersName = root;
 							
-							User[] submitters = s.getSubmitters();
-							String submittersString = "";
-							for (int i = 0; i < submitters.length; i++)
+							String submittersString = s.getSubmitterId();
+							try
 							{
-								if (i > 0)
-								{
-									submittersString = submittersString.concat("; ");
-								}
-								String fullName = submitters[i].getSortName();
+								User submitter = UserDirectoryService.getUser(s.getSubmitterId());
+								String fullName = submitter.getSortName();
 								// in case the user doesn't have first name or last name
 								if (fullName.indexOf(",") == -1)
 								{
@@ -2839,8 +2557,11 @@ public class AssignmentServiceImpl implements AssignmentService, EntityTransferr
 								}
 								submittersString = submittersString.concat(fullName);
 								// add the eid to the end of it to guarantee folder name uniqness
-								submittersString = submittersString + "(" + submitters[i].getEid() + ")";
-								gradesBuffer.append(submitters[i].getDisplayId() + "," + submitters[i].getEid() + "," + fullName + "," + s.getGradeDisplay() + "\n");
+								submittersString = submittersString + "(" + submitter.getEid() + ")";
+								gradesBuffer.append(submitter.getDisplayId() + "," + submitter.getEid() + "," + fullName + ","  + s.getGradeDisplay() + "\n");
+							} catch (Exception e)
+							{
+								
 							}
 							
 							if (StringUtil.trimToNull(submittersString) != null)
@@ -2914,7 +2635,7 @@ public class AssignmentServiceImpl implements AssignmentService, EntityTransferr
 									{
 										exceptionMessage.append("Can not establish the IO to create zip file for user "
 												+ submittersName);
-										M_log.debug(this + " zipSubmissions --IOException unable to create the zip file for user"
+										log.debug(this + " zipSubmissions --IOException unable to create the zip file for user"
 												+ submittersName);
 										submittersName = submittersName.substring(0, submittersName.length() - 1) + "_" + count++;
 									}
@@ -2924,7 +2645,7 @@ public class AssignmentServiceImpl implements AssignmentService, EntityTransferr
 					}
 					catch (Exception e)
 					{
-						M_log.warn(this + " zipSubmissions " + e.getMessage() + " userId = " + userId);
+						log.warn(this + " zipSubmissions " + e.getMessage() + " userId = " + userId);
 					}
 				} // if the user is still in site
 
@@ -2946,9 +2667,9 @@ public class AssignmentServiceImpl implements AssignmentService, EntityTransferr
 		catch (IOException e)
 		{
 			exceptionMessage.append("Can not establish the IO to create zip file. ");
-			M_log.debug(this + " zipSubmissions IOException unable to create the zip file for assignment "
+			log.debug(this + " zipSubmissions IOException unable to create the zip file for assignment "
 					+ assignmentTitle);
-		}
+		}*/
 	}
 
 
@@ -2991,27 +2712,27 @@ public class AssignmentServiceImpl implements AssignmentService, EntityTransferr
 			}
 			catch (PermissionException e)
 			{
-				M_log.debug(this + " zipAttachments--PermissionException submittersName="
+				log.debug(this + " zipAttachments--PermissionException submittersName="
 						+ submittersName + " attachment reference=" + r);
 			}
 			catch (IdUnusedException e)
 			{
-				M_log.debug(this + " zipAttachments--IdUnusedException submittersName="
+				log.debug(this + " zipAttachments--IdUnusedException submittersName="
 						+ submittersName + " attachment reference=" + r);
 			}
 			catch (TypeException e)
 			{
-				M_log.debug(this + " zipAttachments--TypeException: submittersName="
+				log.debug(this + " zipAttachments--TypeException: submittersName="
 						+ submittersName + " attachment reference=" + r);
 			}
 			catch (IOException e)
 			{
-				M_log.debug(this + " zipAttachments--IOException: Problem in creating the attachment file: submittersName="
+				log.debug(this + " zipAttachments--IOException: Problem in creating the attachment file: submittersName="
 								+ submittersName + " attachment reference=" + r);
 			}
 			catch (ServerOverloadException e)
 			{
-				M_log.debug(this + " zipAttachments--ServerOverloadException: submittersName="
+				log.debug(this + " zipAttachments--ServerOverloadException: submittersName="
 						+ submittersName + " attachment reference=" + r);
 			}
 		} // for
@@ -3028,7 +2749,7 @@ public class AssignmentServiceImpl implements AssignmentService, EntityTransferr
 	public String gradesSpreadsheetReference(String context, String assignmentId)
 	{
 		// based on all assignment in that context
-		String s = REFERENCE_ROOT + Entity.SEPARATOR + REF_TYPE_GRADES + Entity.SEPARATOR + context;
+		String s = AssignmentConstants.REFERENCE_ROOT + Entity.SEPARATOR + REF_TYPE_GRADES + Entity.SEPARATOR + context;
 		if (assignmentId != null)
 		{
 			// based on the specified assignment only
@@ -3050,7 +2771,7 @@ public class AssignmentServiceImpl implements AssignmentService, EntityTransferr
 	public String submissionsZipReference(String context, String assignmentReference)
 	{
 		// based on the specified assignment
-		return REFERENCE_ROOT + Entity.SEPARATOR + REF_TYPE_SUBMISSIONS + Entity.SEPARATOR + context + Entity.SEPARATOR
+		return AssignmentConstants.REFERENCE_ROOT + Entity.SEPARATOR + REF_TYPE_SUBMISSIONS + Entity.SEPARATOR + context + Entity.SEPARATOR
 				+ assignmentReference;
 
 	} // submissionsZipReference
@@ -3154,7 +2875,7 @@ public class AssignmentServiceImpl implements AssignmentService, EntityTransferr
 							}
 							catch (Throwable ignore)
 							{
-							    M_log.error(this + " getHttpAccess handleAccess " + ignore.getMessage() + " ref=" + ref.getReference());
+							    log.error(this + " getHttpAccess handleAccess " + ignore.getMessage() + " ref=" + ref.getReference());
 							}
 							finally
 							{
@@ -3226,7 +2947,7 @@ public class AssignmentServiceImpl implements AssignmentService, EntityTransferr
 	 */
 	public boolean parseEntityReference(String reference, Reference ref)
 	{
-		if (reference.startsWith(REFERENCE_ROOT))
+		if (reference.startsWith(AssignmentConstants.REFERENCE_ROOT))
 		{
 			String id = null;
 			String subType = null;
@@ -3283,35 +3004,22 @@ public class AssignmentServiceImpl implements AssignmentService, EntityTransferr
 
 		try
 		{
-			// is it an AssignmentContent object
-			if (REF_TYPE_CONTENT.equals(ref.getSubType()))
-			{
-				rv = getAssignmentContent(ref.getReference());
-			}
 			// is it an Assignment object
-			else if (REF_TYPE_ASSIGNMENT.equals(ref.getSubType()))
+			if (REF_TYPE_ASSIGNMENT.equals(ref.getSubType()))
 			{
-				rv = getAssignment(ref.getReference());
+				//rv = getAssignment(ref.getReference());
 			}
 			// is it an AssignmentSubmission object
 			else if (REF_TYPE_SUBMISSION.equals(ref.getSubType()))
 			{
-				rv = getSubmission(ref.getReference());
+				//rv = getSubmission(ref.getReference());
 			}
 			else
-				M_log.warn(this + "getEntity(): unknown message ref subtype: " + ref.getSubType() + " in ref: " + ref.getReference());
+				log.warn(this + "getEntity(): unknown message ref subtype: " + ref.getSubType() + " in ref: " + ref.getReference());
 		}
-		catch (PermissionException e)
+		catch (Exception e)
 		{
-			M_log.warn(this + "getEntity(): " + e + " ref=" + ref.getReference());
-		}
-		catch (IdUnusedException e)
-		{
-			M_log.warn(this + "getEntity(): " + e + " ref=" + ref.getReference());
-		}
-		catch (NullPointerException e)
-		{
-			M_log.warn(this + "getEntity(): " + e + " ref=" + ref.getReference());
+			log.warn(this + "getEntity(): " + e + " ref=" + ref.getReference());
 		}
 
 		return rv;
@@ -3379,7 +3087,7 @@ public class AssignmentServiceImpl implements AssignmentService, EntityTransferr
 		}
 		catch (Throwable e)
 		{
-			M_log.warn(this + " getEntityAuthzGroups(): " + e.getMessage() + " ref=" + ref.getReference());
+			log.warn(this + " getEntityAuthzGroups(): " + e.getMessage() + " ref=" + ref.getReference());
 		}
 
 		return rv;
@@ -3394,38 +3102,32 @@ public class AssignmentServiceImpl implements AssignmentService, EntityTransferr
 
 		try
 		{
-			// is it an AssignmentContent object
-			if (REF_TYPE_CONTENT.equals(ref.getSubType()))
-			{
-				AssignmentContent c = getAssignmentContent(ref.getReference());
-				rv = c.getUrl();
-			}
 			// is it an Assignment object
-			else if (REF_TYPE_ASSIGNMENT.equals(ref.getSubType()))
+			if (REF_TYPE_ASSIGNMENT.equals(ref.getSubType()))
 			{
 				Assignment a = getAssignment(ref.getReference());
-				rv = a.getUrl();
+				//rv = a.getUrl();
 			}
 			// is it an AssignmentSubmission object
 			else if (REF_TYPE_SUBMISSION.equals(ref.getSubType()))
 			{
 				AssignmentSubmission s = getSubmission(ref.getReference());
-				rv = s.getUrl();
+				//rv = s.getUrl();
 			}
 			else
-				M_log.warn(this + " getEntityUrl(): unknown message ref subtype: " + ref.getSubType() + " in ref: " + ref.getReference());
+				log.warn(this + " getEntityUrl(): unknown message ref subtype: " + ref.getSubType() + " in ref: " + ref.getReference());
 		}
 		catch (PermissionException e)
 		{
-			M_log.warn(this + "getEntityUrl(): " + e + " ref=" + ref.getReference());
+			log.warn(this + "getEntityUrl(): " + e + " ref=" + ref.getReference());
 		}
 		catch (IdUnusedException e)
 		{
-			M_log.warn(this + "getEntityUrl(): " + e + " ref=" + ref.getReference());
+			log.warn(this + "getEntityUrl(): " + e + " ref=" + ref.getReference());
 		}
 		catch (NullPointerException e)
 		{
-			M_log.warn(this + "getEntityUrl(): " + e + " ref=" + ref.getReference());
+			log.warn(this + "getEntityUrl(): " + e + " ref=" + ref.getReference());
 		}
 
 		return rv;
@@ -3437,7 +3139,7 @@ public class AssignmentServiceImpl implements AssignmentService, EntityTransferr
 	public String archive(String siteId, Document doc, Stack stack, String archivePath, List attachments)
 	{
 		// prepare the buffer for the results log
-		StringBuilder results = new StringBuilder();
+		/*StringBuilder results = new StringBuilder();
 
 		// String assignRef = assignmentReference(siteId, SiteService.MAIN_CONTAINER);
 		results.append("archiving " + getLabel() + " context " + Entity.SEPARATOR + siteId + Entity.SEPARATOR
@@ -3459,7 +3161,7 @@ public class AssignmentServiceImpl implements AssignmentService, EntityTransferr
 			element.appendChild(el);
 
 			// then archive the related content
-			/*AssignmentContent content = (AssignmentContent) assignment.getContent();
+			AssignmentContent content = (AssignmentContent) assignment.getContent();
 			if (content != null)
 			{
 				Element contentEl = content.toXml(doc, stack);
@@ -3503,11 +3205,12 @@ public class AssignmentServiceImpl implements AssignmentService, EntityTransferr
 					el.appendChild(submissionEl);
 
 				}
-			} // if*/ //TODO: zqian
+			} // if //TODO: zqian
 		} // while
 		stack.pop();
 
-		return results.toString();
+		return results.toString();*/
+		return null;
 
 	} // archive
 
@@ -3764,8 +3467,16 @@ public class AssignmentServiceImpl implements AssignmentService, EntityTransferr
 							}
 
 							// merge in this assignment
-							Assignment edit = mergeAssignment(el2clone);
-							commitEdit(edit);
+							Assignment mAssignment = mergeAssignment(el2clone);
+							try 
+							{
+								getHibernateTemplate().saveOrUpdate(mAssignment);
+							}
+							catch (DataAccessException e)
+							{
+								e.printStackTrace();
+								log.warn(this + ".saveAssignment() Hibernate could not save assignment=" + mAssignment.getId());
+							}
 
 							count++;
 						} // if goAhead
@@ -3775,7 +3486,7 @@ public class AssignmentServiceImpl implements AssignmentService, EntityTransferr
 		}
 		catch (Exception any)
 		{
-			M_log.warn(this + " merge(): exception: " + any.getMessage() + " siteId=" + siteId + " from site id=" + fromSiteId);
+			log.warn(this + " merge(): exception: " + any.getMessage() + " siteId=" + siteId + " from site id=" + fromSiteId);
 		}
 
 		results.append("merging assignment " + siteId + " (" + count + ") assignments.\n");
@@ -3915,18 +3626,18 @@ public class AssignmentServiceImpl implements AssignmentService, EntityTransferr
 											catch (Exception eeAny)
 											{
 												// if the new resource cannot be added
-												M_log.warn(this + " transferCopyEntities: cannot add new attachment with id=" + nAttachmentId + " " + eeAny.getMessage());
+												log.warn(this + " transferCopyEntities: cannot add new attachment with id=" + nAttachmentId + " " + eeAny.getMessage());
 											}
 										}
 										catch (Exception eAny)
 										{
 											// if cannot find the original attachment, do nothing.
-											M_log.warn(this + " transferCopyEntities: cannot find the original attachment with id=" + oAttachmentId + " " + eAny.getMessage());
+											log.warn(this + " transferCopyEntities: cannot find the original attachment with id=" + oAttachmentId + " " + eAny.getMessage());
 										}
 									}
 									catch (Exception any)
 									{
-										M_log.warn(this + " transferCopyEntities" + any.getMessage() + " oAttachmentId=" + oAttachmentId + " nAttachmentId=" + nAttachmentId);
+										log.warn(this + " transferCopyEntities" + any.getMessage() + " oAttachmentId=" + oAttachmentId + " nAttachmentId=" + nAttachmentId);
 									}
 								}
 								else
@@ -3942,7 +3653,7 @@ public class AssignmentServiceImpl implements AssignmentService, EntityTransferr
 					}
 					catch (Exception e)
 					{
-						if (M_log.isWarnEnabled()) M_log.warn(this + " transferCopyEntities " + e.toString()  + " oAssignmentId=" + oAssignmentId);
+						if (log.isWarnEnabled()) log.warn(this + " transferCopyEntities " + e.toString()  + " oAssignmentId=" + oAssignmentId);
 					}
 
 					if (nContent != null)
@@ -3959,7 +3670,7 @@ public class AssignmentServiceImpl implements AssignmentService, EntityTransferr
  							// when importing, refer to property to determine draft status
 							if ("false".equalsIgnoreCase(m_serverConfigurationService.getString("import.importAsDraft")))
 							{
-								nAssignment.setDraft(oAssignment.getDraft());
+								nAssignment.setDraft(oAssignment.isDraft());
 							}
 							else
 							{
@@ -4004,12 +3715,12 @@ public class AssignmentServiceImpl implements AssignmentService, EntityTransferr
 									}
 								}
 							} catch (PermissionException pe) {
-								M_log.error(this + " transferCopyEntities " + pe.toString()  + " oAssignmentId=" + oAssignment.getId() + " nAssignmentId=" + nAssignment.getId());
+								log.error(this + " transferCopyEntities " + pe.toString()  + " oAssignmentId=" + oAssignment.getId() + " nAssignmentId=" + nAssignment.getId());
 							}
 						}
 						catch (Exception ee)
 						{
-							M_log.error(this + " transferCopyEntities " + ee.toString() + " oAssignmentId=" + oAssignment.getId() + " nAssignmentId=" + nAssignment.getId());
+							log.error(this + " transferCopyEntities " + ee.toString() + " oAssignmentId=" + oAssignment.getId() + " nAssignmentId=" + nAssignment.getId());
 						}
 					}
 				} // if-else
@@ -4037,22 +3748,22 @@ public class AssignmentServiceImpl implements AssignmentService, EntityTransferr
 			else if (REF_TYPE_SUBMISSION.equals(ref.getSubType()))
 			{
 				AssignmentSubmission s = getSubmission(ref.getReference());
-				rv = "AssignmentSubmission: " + s.getId() + " (" + s.getContext() + ")";
+				rv = "AssignmentSubmission: " + s.getId() + " (" + s.getAssignment().getContext() + ")";
 			}
 			else
-				M_log.warn(this + " getEntityDescription(): unknown message ref subtype: " + ref.getSubType() + " in ref: " + ref.getReference());
+				log.warn(this + " getEntityDescription(): unknown message ref subtype: " + ref.getSubType() + " in ref: " + ref.getReference());
 		}
 		catch (PermissionException e)
 		{
-			M_log.warn(this + " getEntityDescription(): " + e.getMessage() + " ref=" + ref.getReference());
+			log.warn(this + " getEntityDescription(): " + e.getMessage() + " ref=" + ref.getReference());
 		}
 		catch (IdUnusedException e)
 		{
-			M_log.warn(this + " getEntityDescription(): " + e.getMessage() + " ref=" + ref.getReference());
+			log.warn(this + " getEntityDescription(): " + e.getMessage() + " ref=" + ref.getReference());
 		}
 		catch (NullPointerException e)
 		{
-			M_log.warn(this + " getEntityDescription(): " + e.getMessage() + " ref=" + ref.getReference());
+			log.warn(this + " getEntityDescription(): " + e.getMessage() + " ref=" + ref.getReference());
 		}
 
 		return rv;
@@ -4071,28 +3782,28 @@ public class AssignmentServiceImpl implements AssignmentService, EntityTransferr
 			if (REF_TYPE_ASSIGNMENT.equals(ref.getSubType()))
 			{
 				Assignment a = getAssignment(ref.getReference());
-				rv = a.getProperties();
+			//	rv = a.getProperties();
 			}
 			// is it an AssignmentSubmission object
 			else if (REF_TYPE_SUBMISSION.equals(ref.getSubType()))
 			{
 				AssignmentSubmission s = getSubmission(ref.getReference());
-				rv = s.getProperties();
+				//rv = s.getProperties();
 			}
 			else
-				M_log.warn(this + " getEntityResourceProperties: unknown message ref subtype: " + ref.getSubType() + " in ref: " + ref.getReference());
+				log.warn(this + " getEntityResourceProperties: unknown message ref subtype: " + ref.getSubType() + " in ref: " + ref.getReference());
 		}
 		catch (PermissionException e)
 		{
-			M_log.warn(this + " getEntityResourceProperties(): " + e.getMessage() + " ref=" + ref.getReference());
+			log.warn(this + " getEntityResourceProperties(): " + e.getMessage() + " ref=" + ref.getReference());
 		}
 		catch (IdUnusedException e)
 		{
-			M_log.warn(this + " getEntityResourceProperties(): " + e.getMessage() + " ref=" + ref.getReference());
+			log.warn(this + " getEntityResourceProperties(): " + e.getMessage() + " ref=" + ref.getReference());
 		}
 		catch (NullPointerException e)
 		{
-			M_log.warn(this + " getEntityResourceProperties(): " + e.getMessage() + " ref=" + ref.getReference());
+			log.warn(this + " getEntityResourceProperties(): " + e.getMessage() + " ref=" + ref.getReference());
 		}
 
 		return rv;
@@ -4103,6 +3814,7 @@ public class AssignmentServiceImpl implements AssignmentService, EntityTransferr
 	 */
 	public boolean canSubmit(String context, Assignment a)
 	{
+		/*TODO:zqian
 		// return false if not allowed to submit at all
 		if (!allowAddSubmission(context)) return false;
 		
@@ -4112,28 +3824,28 @@ public class AssignmentServiceImpl implements AssignmentService, EntityTransferr
 			// get user
 			User u = UserDirectoryService.getUser(userId);
 			
-			Time currentTime = TimeService.newTime();
+			Date currentTime = new Date();
 			
 			// return false if the assignment is draft or is not open yet
-			Time openTime = a.getOpenTime();
-			if (a.getDraft() || (openTime != null && openTime.after(currentTime)))
+			Date openTime = a.getOpenTime();
+			if (a.isDraft() || (openTime != null && openTime.after(currentTime)))
 			{
 				return false;
 			}
 			
 			// return false if the current time has passed the assignment close time
-			Time closeTime = a.getCloseTime();
+			Date closeTime = a.getCloseTime();
 			
 			// get user's submission
 			AssignmentSubmission submission = null;
 			
-			submission = getSubmission(a.getReference(), u);
+			submission = getSubmission(assignmentReference(a), u);
 			if (submission != null)
 			{
-				closeTime = submission.getCloseTime();
+				closeTime = submission.getResubmitCloseTime();
 			}
 			
-			if (submission == null || (submission != null && submission.getTimeSubmitted() == null))
+			if (submission == null || (submission != null && s == null))
 			{
 				// if there is no submission yet
 				if (closeTime != null && currentTime.after(closeTime))
@@ -4171,9 +3883,10 @@ public class AssignmentServiceImpl implements AssignmentService, EntityTransferr
 		catch (UserNotDefinedException e)
 		{
 			// cannot find user
-			M_log.warn(this + " canSubmit(String, Assignment) " + e.getMessage() + " assignment ref=" + a.getReference());
+			log.warn(this + " canSubmit(String, Assignment) " + e.getMessage() + " assignment ref=" + a.getReference());
 			return false;
-		}
+		}*/
+		return false;
 	}
 	
 	/**
@@ -4248,7 +3961,7 @@ public class AssignmentServiceImpl implements AssignmentService, EntityTransferr
 				}
 				catch (Exception ee)
 				{
-					M_log.warn(this + " getTimeObject Base Exception creating time object from xml file : " + ee.getMessage() + " timeString=" + timeString);
+					log.warn(this + " getTimeObject Base Exception creating time object from xml file : " + ee.getMessage() + " timeString=" + timeString);
 				}
 			}
 		}
@@ -4300,20 +4013,20 @@ public class AssignmentServiceImpl implements AssignmentService, EntityTransferr
 					try 
 					{
 						Assignment assignment = (Assignment) assignmentsIter.next();
-						String assignmentId = assignment.getId();
-						Assignment aEdit = editAssignment(assignmentId);
+						String assignmentId = String.valueOf(assignment.getId());
+						Assignment aEdit = (Assignment) getHibernateTemplate().get(Assignment.class, assignmentId);
 						try
 						{
 							removeAssignment(aEdit);
 						}
 						catch (Exception eeee)
 						{
-							M_log.debug("removeAssignment error:" + eeee);
+							log.debug("removeAssignment error:" + eeee);
 						}
 					}
 					catch(Exception ee)
 					{
-						M_log.debug("removeAssignment process error:" + ee);
+						log.debug("removeAssignment process error:" + ee);
 					}
 				}
 				   
@@ -4322,7 +4035,7 @@ public class AssignmentServiceImpl implements AssignmentService, EntityTransferr
 		}
 		catch (Exception e)
 		{
-			M_log.info("transferCopyEntities: End removing Assignmentt data" + e);
+			log.info("transferCopyEntities: End removing Assignmentt data" + e);
 		}
 		finally
 		{
@@ -4375,7 +4088,7 @@ public class AssignmentServiceImpl implements AssignmentService, EntityTransferr
 			}
 			catch (Exception e)
 			{
-				M_log.warn(this + " XmlDecodeAttribute: " + e.getMessage() + " tag=" + tag);
+				log.warn(this + " XmlDecodeAttribute: " + e.getMessage() + " tag=" + tag);
 			}
 		}
 

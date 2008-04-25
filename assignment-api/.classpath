@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <classpath>
 	<classpathentry excluding="**/.DS_Store" kind="src" path="model/src/java"/>
-	<classpathentry excluding="**/.DS_Store" kind="src" path="public/src/java"/>
+	<classpathentry excluding="**/.DS_Store" kind="src" path="api/src/java"/>
 	<classpathentry excluding="**/.DS_Store" kind="src" path="exception/src/java"/>
 	<classpathentry excluding="**/.DS_Store" kind="src" path="taggable/src/java"/>
 	<classpathentry kind="var" path="JRE_LIB" sourcepath="JRE_SRC"/>

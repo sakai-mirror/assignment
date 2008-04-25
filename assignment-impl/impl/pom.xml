@@ -22,6 +22,17 @@
   <dependencies>
     <dependency>
       <groupId>org.sakaiproject</groupId>
+      <artifactId>generic-dao</artifactId>
+      <version>${sakai.generic-dao.version}</version>
+      <scope>provided</scope>
+    </dependency>
+    <dependency>
+      <groupId>${sakai.hibernate.groupId}</groupId>
+      <artifactId>${sakai.hibernate.artifactId}</artifactId>
+      <version>${sakai.hibernate.version}</version>
+    </dependency>
+    <dependency>
+      <groupId>org.sakaiproject</groupId>
       <artifactId>sakai-email-api</artifactId>
       <version>${sakai.version}</version>
     </dependency>
@@ -52,7 +63,7 @@
     </dependency>
     <dependency>
       <groupId>org.sakaiproject</groupId>
-      <artifactId>sakai-assignment-public</artifactId>
+      <artifactId>sakai-assignment-api</artifactId>
       <version>${sakai.version}</version>
     </dependency>
     <dependency>

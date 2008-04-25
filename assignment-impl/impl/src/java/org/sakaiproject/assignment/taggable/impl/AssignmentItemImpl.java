@@ -58,7 +58,7 @@ public class AssignmentItemImpl implements TaggableItem {
 	}
 
 	public String getContent() {
-		return submission.getSubmittedText();
+		return submission.getCurrentSubmissionVersion().getSubmittedText();
 	}
 
 	public Object getObject() {

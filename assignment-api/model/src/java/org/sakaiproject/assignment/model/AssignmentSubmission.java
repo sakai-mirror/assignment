@@ -27,6 +27,8 @@ import java.util.Set;
 
 import org.sakaiproject.assignment.model.Assignment;
 import org.sakaiproject.assignment.model.AssignmentSubmissionVersion;
+import org.sakaiproject.assignment.model.constants.AssignmentConstants;
+import org.sakaiproject.entity.api.Entity;
 import org.sakaiproject.time.api.Time;
 
 /**
@@ -37,11 +39,17 @@ import org.sakaiproject.time.api.Time;
 public class AssignmentSubmission {
 
 	private Long id;
+	/** the Hibernate version number */
+    private int hibernateVersion;
 	private Assignment assignment;
 	private String submitterId;
 	private Date resubmitCloseTime;
 	private Integer numSubmissionsAllowed;
 	private List<AssignmentSubmissionVersion> submissionVersions;
+	// the current submission version must be populated manually b/c we want
+	// to retrieve the version rec with the highest id
+	private AssignmentSubmissionVersion currentSubmissionVersion;
+	
 	public Long getId() {
 		return id;
 	}
@@ -79,5 +87,31 @@ public class AssignmentSubmission {
 			List<AssignmentSubmissionVersion> submissionVersions) {
 		this.submissionVersions = submissionVersions;
 	}
+	public int getHibernateVersion() {
+		return hibernateVersion;
+	}
+	public void setHibernateVersion(int hibernateVersion) {
+		this.hibernateVersion = hibernateVersion;
+	}
+	public AssignmentSubmissionVersion getCurrentSubmissionVersion() {
+		return currentSubmissionVersion;
+	}
+	public void setCurrentSubmissionVersion(
+			AssignmentSubmissionVersion currentSubmissionVersion) {
+		this.currentSubmissionVersion = currentSubmissionVersion;
+	}
 	
+
+	public String getReference()
+	{
+		StringBuilder sb = new StringBuilder();
+		sb.append(AssignmentConstants.REFERENCE_ROOT);
+		sb.append(Entity.SEPARATOR);
+		sb.append(AssignmentConstants.SUBMISSION_TYPE);
+		sb.append(Entity.SEPARATOR);
+		sb.append(getAssignment().getContext());
+		sb.append(Entity.SEPARATOR);
+		sb.append(Long.toString(id));
+		return sb.toString();
+	}
 }

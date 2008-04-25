@@ -60,4 +60,15 @@ public class AssignmentAttachment {
 	public void setAttachmentReference(String attachmentReference) {
 		this.attachmentReference = attachmentReference;
 	}
+
+	/** the Hibernate version number */
+    private int hibernateVersion;
+    
+	public int getHibernateVersion() {
+		return hibernateVersion;
+	}
+
+	public void setHibernateVersion(int hibernateVersion) {
+		this.hibernateVersion = hibernateVersion;
+	}
 }

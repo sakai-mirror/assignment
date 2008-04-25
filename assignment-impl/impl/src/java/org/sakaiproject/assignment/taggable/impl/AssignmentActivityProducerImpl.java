@@ -30,6 +30,7 @@ import org.apache.commons.logging.LogFactory;
 import org.sakaiproject.assignment.model.Assignment;
 import org.sakaiproject.assignment.api.AssignmentService;
 import org.sakaiproject.assignment.model.AssignmentSubmission;
+import org.sakaiproject.assignment.model.constants.AssignmentConstants;
 import org.sakaiproject.assignment.taggable.api.AssignmentActivityProducer;
 import org.sakaiproject.taggable.api.TaggableActivity;
 import org.sakaiproject.taggable.api.TaggableItem;
@@ -89,7 +90,7 @@ public class AssignmentActivityProducerImpl implements
 	}
 
 	public boolean checkReference(String ref) {
-		return ref.startsWith(AssignmentService.REFERENCE_ROOT);
+		return ref.startsWith(AssignmentConstants.REFERENCE_ROOT);
 	}
 
 	public List<TaggableActivity> getActivities(String context,
@@ -166,7 +167,7 @@ public class AssignmentActivityProducerImpl implements
 		try {
 			Assignment assignment = (Assignment) activity.getObject();
 			AssignmentSubmission submission = assignmentService.getSubmission(
-					assignment.getReference(), userDirectoryService
+					assignment, userDirectoryService
 							.getUser(userId));
 			if (submission != null) {
 				TaggableItem item = new AssignmentItemImpl(submission, userId,
@@ -189,14 +190,12 @@ public class AssignmentActivityProducerImpl implements
 		 * look at submission items. It seems that anybody is allowed to get any
 		 * submissions.
 		 */
-		if (assignmentService.allowGradeSubmission(assignment.getReference())) {
+		if (assignmentService.allowGradeSubmission(assignment)) {
 			for (Iterator<AssignmentSubmission> i = assignmentService
 					.getSubmissions(assignment).iterator(); i.hasNext();) {
 				AssignmentSubmission submission = i.next();
-				for (Object submitterId : submission.getSubmitterIds()) {
-					items.add(new AssignmentItemImpl(submission,
-							(String) submitterId, activity));
-				}
+				items.add(new AssignmentItemImpl(submission,
+							submission.getSubmitterId(), activity));
 			}
 		}
 		return items;

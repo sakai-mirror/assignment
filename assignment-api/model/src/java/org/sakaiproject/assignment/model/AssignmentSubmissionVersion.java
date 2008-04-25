@@ -12,7 +12,8 @@ import org.sakaiproject.time.api.Time;
 public class AssignmentSubmissionVersion {	
 	
 	private Long id;
-	private int revisionNum;
+	/** the Hibernate version number */
+    private int hibernateVersion;
 	private AssignmentSubmission assignmentSubmission;
 	private String submitterId;
 	private Date timeSubmitted;
@@ -25,6 +26,7 @@ public class AssignmentSubmissionVersion {
 	private String feedbackText;
 	private String grade;
 	private boolean draft;
+	private boolean returned;
 	
 	/*private boolean returned;
 	private boolean graded;
@@ -48,12 +50,6 @@ public class AssignmentSubmissionVersion {
 	}
 	public void setId(Long id) {
 		this.id = id;
-	}
-	public int getRevisionNum() {
-		return revisionNum;
-	}
-	public void setRevisionNum(int revisionNum) {
-		this.revisionNum = revisionNum;
 	}
 	public AssignmentSubmission getAssignmentSubmission() {
 		return assignmentSubmission;
@@ -169,5 +165,58 @@ public class AssignmentSubmissionVersion {
 	}
 	public void setLastModifiedTime(Date lastModifiedTime) {
 		this.lastModifiedTime = lastModifiedTime;
+	}
+	public int getHibernateVersion() {
+		return hibernateVersion;
+	}
+	public void setHibernateVersion(int hibernateVersion) {
+		this.hibernateVersion = hibernateVersion;
+	}
+	public boolean isReturned() {
+		return returned;
+	}
+	public void setReturned(boolean returned) {
+		this.returned = returned;
+	}
+	public AssignmentSubmissionVersion(Long id, int hibernateVersion,
+			AssignmentSubmission assignmentSubmission, String submitterId,
+			Date timeSubmitted, Date timeReleased,
+			List<SubmissionAttachment> submittedAttachments,
+			List<FeedbackAttachment> feedbackAttachments, String submittedText,
+			String feedbackComment, String feedbackText, String grade,
+			boolean draft, boolean returned, int reviewScore,
+			String reviewReport, String reviewStatus, String reviewIconUrl,
+			String createdBy, Date createdTime, String lastModifiedBy,
+			Date lastModifiedTime) {
+		super();
+		this.id = id;
+		this.hibernateVersion = hibernateVersion;
+		this.assignmentSubmission = assignmentSubmission;
+		this.submitterId = submitterId;
+		this.timeSubmitted = timeSubmitted;
+		this.timeReleased = timeReleased;
+		this.submittedAttachments = submittedAttachments;
+		this.feedbackAttachments = feedbackAttachments;
+		this.submittedText = submittedText;
+		this.feedbackComment = feedbackComment;
+		this.feedbackText = feedbackText;
+		this.grade = grade;
+		this.draft = draft;
+		this.returned = returned;
+		this.reviewScore = reviewScore;
+		this.reviewReport = reviewReport;
+		this.reviewStatus = reviewStatus;
+		this.reviewIconUrl = reviewIconUrl;
+		this.createdBy = createdBy;
+		this.createdTime = createdTime;
+		this.lastModifiedBy = lastModifiedBy;
+		this.lastModifiedTime = lastModifiedTime;
+	}
+	/**
+	 * default constructor
+	 */
+	public AssignmentSubmissionVersion()
+	{
+		
 	}
 }
