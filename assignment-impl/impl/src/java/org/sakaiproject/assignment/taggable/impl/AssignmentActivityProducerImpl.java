@@ -167,7 +167,7 @@ public class AssignmentActivityProducerImpl implements
 		try {
 			Assignment assignment = (Assignment) activity.getObject();
 			AssignmentSubmission submission = assignmentService.getSubmission(
-					assignment, userDirectoryService
+					assignment.getReference(), userDirectoryService
 							.getUser(userId));
 			if (submission != null) {
 				TaggableItem item = new AssignmentItemImpl(submission, userId,

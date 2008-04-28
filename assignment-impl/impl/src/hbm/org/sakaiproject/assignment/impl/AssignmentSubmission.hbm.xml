@@ -1,0 +1,50 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE hibernate-mapping PUBLIC "-//Hibernate/Hibernate Mapping DTD 3.0//EN"
+          "http://hibernate.sourceforge.net/hibernate-mapping-3.0.dtd">
+
+<hibernate-mapping>
+    <class name="org.sakaiproject.assignment.model.AssignmentSubmission" table="SUBMISSION_T">
+       
+        <id name="id" column="SUBMISSION_ID" type="long">
+					<generator class="native">
+						<param name="sequence">SUBMISSION_S</param>
+					</generator>
+				</id>
+        
+        <version name="hibernateVersion" type="integer" column="VERSION"/>
+        
+        <!--  This maps to the ASSIGNMENT_T table -->
+        <many-to-one name="assignment" column="ASSIGNMENT_ID"
+        	class="org.sakaiproject.assignment.model.Assignment"
+        	not-null="true" unique-key="ASSIGN_ID_USER_ID" lazy="false" 
+        	index="SUBMISSION_ASSIGN_I" />
+
+        <!-- The userId of the user associated with this submission -->
+        <property name="userId" type="java.lang.String">
+            <column name="USER_ID" not-null="true" length="99" 
+            	unique-key="ASSIGN_ID_USER_ID" index="SUBMISSION_USER_ID_I" />
+        </property>
+        
+        <!-- Time after which the user can no longer resubmit -->
+        <property name="resubmitCloseTime" type="java.util.Date">
+            <column name="RESUBMIT_CLOSE_TIME" />
+        </property>
+        <!-- restrict num submissions allowed  -->
+        <property name="numSubmissionsAllowed" type="java.lang.Integer" >
+            <column name="NUM_SUB_ALLOWED" />
+        </property>
+        
+        <set name="submissionHistorySet" lazy="true" inverse="true" cascade="none"
+        	order-by="SUBMISSION_ID desc">
+	    	<key column="SUBMISSION_ID"/>                        
+	    	<one-to-many class="org.sakaiproject.assignment.model.AssignmentSubmissionVersion"/>            
+    	</set>
+              
+    </class>
+    
+    <query name="getSubmissionByAssignmentUser">
+    <![CDATA[from org.sakaiproject.assignment.model.AssignmentSubmission submission
+             where submission.assignmentId = :assignmentId and submission.userId = :userId]]>
+  	</query>
+  	
+</hibernate-mapping>

@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE hibernate-mapping PUBLIC "-//Hibernate/Hibernate Mapping DTD 3.0//EN"
+          "http://hibernate.sourceforge.net/hibernate-mapping-3.0.dtd">
+
+<hibernate-mapping>
+    <class name="org.sakaiproject.assignment.model.AssignmentAttachment" table="ASSIGN_ATTACH">
+
+        <id name="id" column="ASSIGN_ATTACH_ID" type="long">
+					<generator class="native">
+						<param name="sequence">ASSIGN_ATTACH_S</param>
+					</generator>
+				</id>
+        <version name="hibernateVersion" type="integer" column="VERSION"/>
+        
+        <!--  This maps to the ASSIGNMENT_T table -->
+        <many-to-one name="assignment" column="ASSIGNMENT_ID"
+        	class="org.sakaiproject.assignment.model.Assignment"
+        	not-null="true" index="ASSIGN_ATTACH_ASSIGN_I" />
+
+        <!-- The reference for the attachment -->
+        <property name="attachmentReference" type="java.lang.String">
+            <column name="ATTACHMENT_REFERENCE" not-null="true" length="255" />
+        </property>
+    </class>
+</hibernate-mapping>

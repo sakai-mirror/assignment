@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE hibernate-mapping PUBLIC "-//Hibernate/Hibernate Mapping DTD 3.0//EN"
+          "http://hibernate.sourceforge.net/hibernate-mapping-3.0.dtd">
+
+<hibernate-mapping>
+    <class name="org.sakaiproject.assignment.model.AssignmentGroup" table="ASSIGN_GROUP_T">
+       
+        <id name="id" column="ASSIGNMENT_GROUP_ID" type="long">
+					<generator class="native">
+						<param name="sequence">ASSIGN_GROUP_S</param>
+					</generator>
+				</id>
+        
+        <version name="hibernateVersion" type="integer" column="VERSION"/>
+        
+        <!--  This maps to the ASSIGNMENT_T table -->
+        <many-to-one name="assignment" column="ASSIGNMENT_ID"
+        	class="org.sakaiproject.assignment.model.Assignment"
+        	not-null="true" unique-key="ASSIGN_ID_GROUP_ID"  
+        	index="ASSIGN_GROUP_ASSIGN_I" />
+
+        <!-- The Authz groupId -->
+        <property name="groupId" type="java.lang.String" unique-key="ASSIGN_ID_GROUP_ID">
+            <column name="GROUP_ID" not-null="true" length="255" />
+        </property>
+              
+    </class>
+</hibernate-mapping>

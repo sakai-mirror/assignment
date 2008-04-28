@@ -1,0 +1,46 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE hibernate-mapping PUBLIC "-//Hibernate/Hibernate Mapping DTD 3.0//EN"
+          "http://hibernate.sourceforge.net/hibernate-mapping-3.0.dtd">
+
+<hibernate-mapping>
+    <class
+    	name="org.sakaiproject.assignment.model.SubmissionAttachmentBase"
+    	table="SUBMISSION_ATTACH_T">
+
+    	<id name="id" column="SUBMISSION_ATTACH_ID" type="long">
+    		<generator class="native">
+    			<param name="sequence">SUBMISSION_ATTACH_S</param>
+    		</generator>
+    	</id>
+
+	    	<!--  Discriminator field used for polymorphism in the database -->
+	    <discriminator>
+	      <column name="SUB_ATTACH_TYPE" length="1" index="SUB_ATTACH_TYPE_I"/>
+	    </discriminator>
+	        	
+    	<version name="hibernateVersion" type="integer" column="VERSION"/>
+
+    	<!--  This maps to the ASSIGN_SUBMISSION_T table -->
+    	<many-to-one name="submissionVersion"
+    		column="SUBMISSION_VERSION_ID"
+    		class="org.sakaiproject.assignment.model.AssignmentSubmissionVersion"
+    		not-null="true" index="SUB_ATTACH_VERSION_I" />
+
+    	<!-- The reference for the attachment -->
+    	<property name="attachmentReference" type="java.lang.String">
+    		<column name="ATTACHMENT_REFERENCE" not-null="true"
+    			length="255" />
+    	</property>
+
+    	<subclass name="org.sakaiproject.assignment.model.SubmissionAttachment"
+    		extends="org.sakaiproject.assignment.model.SubmissionAttachmentBase"
+    		discriminator-value="S">
+    	</subclass>
+    	
+    	<subclass name="org.sakaiproject.assignment.model.FeedbackAttachment"
+    		extends="org.sakaiproject.assignment.model.SubmissionAttachmentBase"
+    		discriminator-value="F">
+    	</subclass>
+    	
+    </class>
+</hibernate-mapping>

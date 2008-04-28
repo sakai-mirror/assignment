@@ -35,7 +35,13 @@ public class Assignment {
 
 	/** the assignment id */
 	private Long id;
-	
+    
+	/** whether to add or not to gradebook */
+	private String addedToGradebook;
+    
+	/** the associated gradebook object id */
+    private Long gradableObjectId;
+    
 	/** the Hibernate version number */
     private int hibernateVersion;
 
@@ -57,8 +63,10 @@ public class Assignment {
 	/** the close date that submission will no longer be accepted */
 	private Date closeTime;
 
-	private Date resubmission_closeTime;
+	private Date resubmissionCloseTime;
 
+	private Integer resubmissionNumber;
+	
 	/** is assignment a draft*/
 	private boolean draft;
 	
@@ -86,11 +94,11 @@ public class Assignment {
 
 	private int maxGradePoint;
 	
-    private Long gradableObjectId;
+	private String noSubmissionDefaultGrade;
 	
-	private boolean allowReviewService;
+	private Boolean allowReviewService;
 	
-	private boolean allowStudentViewReport;
+	private Boolean allowStudentViewReport;
 
 	private String creator;
 	
@@ -156,14 +164,6 @@ public class Assignment {
 
 	public void setCloseTime(Date closeTime) {
 		this.closeTime = closeTime;
-	}
-
-	public Date getDropDeadTime() {
-		return resubmission_closeTime;
-	}
-
-	public void setDropDeadTime(Date resubmission_closeTime) {
-		this.resubmission_closeTime = resubmission_closeTime;
 	}
 
 	public boolean isDraft() {
@@ -349,52 +349,11 @@ public class Assignment {
 	public void setHibernateVersion(int hibernateVersion) {
 		this.hibernateVersion = hibernateVersion;
 	}
-
-	public Assignment(Long id, int hibernateVersion, String title,
-			String context, Date openTime, Date dueTime, Date closeTime,
-			Date resubmission_closeTime, boolean draft, boolean deleted,
-			int positionOrder, List<AssignmentGroup> groups,
-			List<AssignmentAttachment> attachments, Boolean honorPledge,
-			Integer typeOfSubmission, Integer numSubmissionsAllowed,
-			Integer typeOfGrade, int maxGradePoint, Long gradableObjectId,
-			boolean allowReviewService, boolean allowStudentViewReport,
-			String creator, Date createdTime, String lastModifiedBy,
-			Date lastModifiedTime, int notificationType,
-			Boolean hasAnnouncement, String announcementId,
-			Boolean addedToSchedule, String scheduleEventId) {
-		super();
-		this.id = id;
-		this.hibernateVersion = hibernateVersion;
-		this.title = title;
-		this.context = context;
-		this.openTime = openTime;
-		this.dueTime = dueTime;
-		this.closeTime = closeTime;
-		this.resubmission_closeTime = resubmission_closeTime;
-		this.draft = draft;
-		this.deleted = deleted;
-		this.positionOrder = positionOrder;
-		this.groups = groups;
-		this.attachments = attachments;
-		this.honorPledge = honorPledge;
-		this.typeOfSubmission = typeOfSubmission;
-		this.numSubmissionsAllowed = numSubmissionsAllowed;
-		this.typeOfGrade = typeOfGrade;
-		this.maxGradePoint = maxGradePoint;
-		this.gradableObjectId = gradableObjectId;
-		this.allowReviewService = allowReviewService;
-		this.allowStudentViewReport = allowStudentViewReport;
-		this.creator = creator;
-		this.createdTime = createdTime;
-		this.lastModifiedBy = lastModifiedBy;
-		this.lastModifiedTime = lastModifiedTime;
-		this.notificationType = notificationType;
-		this.hasAnnouncement = hasAnnouncement;
-		this.announcementId = announcementId;
-		this.addedToSchedule = addedToSchedule;
-		this.scheduleEventId = scheduleEventId;
-	}
 	
+	public void setResubmissionNumber(Integer resubmissionNumber) {
+		this.resubmissionNumber = resubmissionNumber;
+	}
+
 	/**
 	 * the default constructor
 	 */
@@ -425,4 +384,55 @@ public class Assignment {
 		return sb.toString();
 	}
 
+	public String getNoSubmissionDefaultGrade() {
+		return noSubmissionDefaultGrade;
+	}
+
+	public void setNoSubmissionDefaultGrade(String noSubmissionDefaultGrade) {
+		this.noSubmissionDefaultGrade = noSubmissionDefaultGrade;
+	}
+
+	public Date getResubmissionCloseTime() {
+		return resubmissionCloseTime;
+	}
+
+	public void setResubmissionCloseTime(Date resubmissionCloseTime) {
+		this.resubmissionCloseTime = resubmissionCloseTime;
+	}
+
+	public void setCreatedTime(Date createdTime) {
+		this.createdTime = createdTime;
+	}
+
+	public void setLastModifiedTime(Date lastModifiedTime) {
+		this.lastModifiedTime = lastModifiedTime;
+	}
+
+	public Boolean getAllowReviewService() {
+		return allowReviewService;
+	}
+
+	public void setAllowReviewService(Boolean allowReviewService) {
+		this.allowReviewService = allowReviewService;
+	}
+
+	public Boolean getAllowStudentViewReport() {
+		return allowStudentViewReport;
+	}
+
+	public void setAllowStudentViewReport(Boolean allowStudentViewReport) {
+		this.allowStudentViewReport = allowStudentViewReport;
+	}
+
+	public String getAddedToGradebook() {
+		return addedToGradebook;
+	}
+
+	public void setAddedToGradebook(String addedToGradebook) {
+		this.addedToGradebook = addedToGradebook;
+	}
+
+	public Integer getResubmissionNumber() {
+		return resubmissionNumber;
+	}
 }

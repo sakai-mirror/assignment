@@ -404,6 +404,30 @@ public interface AssignmentService extends EntityProducer, CompleteGenericDao
 	 *         if the current user is not allowed to read this.
 	 */
 	public AssignmentSubmission getSubmission(String submissionId) throws IdUnusedException, PermissionException;
+	
+	/**
+	 * get new submission version object
+	 * @param submissionReference
+	 * @param submitterId
+	 * @return
+	 * @throws PermissionException
+	 */
+	public AssignmentSubmissionVersion newSubmissionVersion(String submissionReference) throws PermissionException;
+	
+	/**
+	 * get the AssignmentSubmissionVersion object
+	 * @param submissionId
+	 * @return
+	 * @throws IdUnusedException
+	 * @throws PermissionException
+	 */
+	public AssignmentSubmissionVersion getSubmissionVersion(String submissionId) throws IdUnusedException, PermissionException;
+	
+	/**
+	 * Saves the AssignmentSubmissionVersion object
+	 * @param submissionVersion
+	 */
+	public void saveSubmissionVersion(AssignmentSubmissionVersion submissionVersion);
 
 	/**
 	 * Access all the Assignemnts associated with the context.
@@ -447,7 +471,7 @@ public interface AssignmentService extends EntityProducer, CompleteGenericDao
 	 * @throws PermissionException
 	 *         if the current user is not allowed to read this.
 	 */
-	public AssignmentSubmission getSubmission(Assignment assignment, User person);
+	public AssignmentSubmission getSubmission(String assignmentReference, User person);
 	
 	/**
 	 * Access a User's AssignmentSubmission inside a list of AssignmentSubmission object.
@@ -567,5 +591,19 @@ public interface AssignmentService extends EntityProducer, CompleteGenericDao
 	 * Whether the current user can submit
 	 */
 	public boolean canSubmit(String context, Assignment a);
+	
+	/**
+	 * get the assignment status
+	 * @param a
+	 * @return
+	 */
+	public String getAssignmentStatus(Assignment a);
+	
+	/**
+	 * get the submission status
+	 * @param sVersion
+	 * @return
+	 */
+	public String getSubmissionStatus(AssignmentSubmissionVersion sVersion);
 	
 }

@@ -1,0 +1,144 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE hibernate-mapping PUBLIC "-//Hibernate/Hibernate Mapping DTD 3.0//EN"
+          "http://hibernate.sourceforge.net/hibernate-mapping-3.0.dtd">
+
+<hibernate-mapping>
+    <class name="org.sakaiproject.assignment.model.AssignmentSubmissionVersion" table="SUBMISSION_VERSION_T">
+       
+        <id name="id" column="SUBMISSION_VERSION_ID" type="long">
+					<generator class="native">
+						<param name="sequence">SUBMISSION_VERSION_S</param>
+					</generator>
+				</id>
+				
+				<version name="hibernateVersion" type="integer" column="VERSION"/>
+        
+        <!--  This maps to the SUBMISSION_T table -->
+        <many-to-one name="assignmentSubmission" column="SUBMISSION_ID"
+        	class="org.sakaiproject.assignment.model.AssignmentSubmission"
+        	not-null="true" lazy="false" index="SUB_VERSION_SUB_I" />
+        <!-- the time of submission -->
+        <property name="submittedTime" type="java.util.Date">
+            <column name="SUBMITTED_TIME" not-null="false" />
+        </property>
+        <!-- the time feedback for this version was released to submitter -->
+        <property name="releasedTime" type="java.util.Date">
+            <column name="RELEASED_TIME" not-null="false" />
+        </property>
+        <!-- the inline text for this submission -->
+        <property name="submittedText" type="text">
+        	<column name="SUBMITTED_TEXT" not-null="false" />
+        </property>
+        <!-- the submitted text with grader annotation -->
+        <property name="annotatedText" type="text">
+        	<column name="ANNOTATED_TEXT" not-null="false" />
+        </property>
+        <!-- the grader's additional comments -->
+        <property name="feedbackNotes" type="text">
+            <column name="FEEDBACK_NOTES" not-null="false" />
+        </property>
+        
+        <!-- draft status for this submission -->
+        <property name="draft" type="java.lang.Boolean">
+            <column name="DRAFT" not-null="true" />
+        </property>
+        <!-- is this submission been returned -->
+        <property name="returned" type="java.lang.Boolean">
+            <column name="RETURNED" not-null="true" />
+        </property>
+        <!-- the honor pldege setting -->
+        <property name="honorPledgeFlag" type="java.lang.Boolean">
+            <column name="HONORPLDEGE_FLAG" not-null="true" />
+        </property>
+        <!-- url for review service report url -->
+        <property name="reviewReportUrl" type="java.lang.String">
+            <column name="REVIEW_REPORT_URL" length="255" />
+        </property>
+        <!-- score from review service -->
+        <property name="reviewReportScore" type="int">
+            <column name="REVIEW_REPORT_SCORE" />
+        </property>
+        <!-- review report status -->
+        <property name="reviewStatus" type="java.lang.String">
+            <column name="REVIEW_STATUS" length="255" />
+        </property>
+        <!-- review report icon url -->
+        <property name="reviewIconUrl" type="java.lang.String">
+            <column name="REVIEW_ICON_URL" length="255" />
+        </property>
+        <!-- version created by -->
+        <property name="createdBy" type="java.lang.String">
+            <column name="CREATED_BY" length="99" not-null="true" />
+        </property>
+        <!-- version created time -->
+        <property name="createdTime" type="java.util.Date">
+            <column name="CREATED_TIME" not-null="true" />
+        </property>
+        <!-- version modified by -->
+        <property name="lastModifiedBy" type="java.lang.String">
+            <column name="MODIFIED_BY" length="99" />
+        </property>
+        <!-- version modified time -->
+        <property name="lastModifiedTime" type="java.util.Date">
+            <column name="MODIFIED_TIME" />
+        </property>
+        
+        <!--  the last feedback was submitted by -->
+        <property name="lastFeedbackSubmittedBy" type="java.lang.String">
+            <column name="LAST_FEEDBACK_BY" length="99" not-null="false" />
+        </property>
+        <!-- last feedback time -->
+        <property name="lastFeedbackTime" type="java.util.Date">
+            <column name="LAST_FEEDBACK_TIME" not-null="false" />
+        </property>
+        
+        <set name="submissionAttachSet" lazy="true" where="SUB_ATTACH_TYPE = 'S'" cascade="none">
+	        <key column="SUBMISSION_VERSION_ID"/>                        
+	        <one-to-many class="org.sakaiproject.assignment.model.SubmissionAttachment"/>            
+    		</set>
+    		
+    		<set name="feedbackAttachSet" lazy="true" where="SUB_ATTACH_TYPE = 'F'" cascade="none">
+	        <key column="SUBMISSION_VERSION_ID"/>                        
+	        <one-to-many class="org.sakaiproject.assignment.model.FeedbackAttachment"/>            
+    		</set>
+              
+    </class>
+
+    <query name="findSubmissionVersionByIdWithAttachments">
+    <![CDATA[from org.sakaiproject.assignment.model.AssignmentSubmissionVersion submissionVersion
+             left join fetch submissionVersion.submissionAttachSet
+             left join fetch submissionVersion.feedbackAttachSet
+             where submissionVersion.id = :submissionVersionId]]>
+  	</query>
+
+  	<query name="findCurrentVersionIds">
+    <![CDATA[select max(submissionVersion.id) 
+    				 from org.sakaiproject.assignment.model.AssignmentSubmissionVersion submissionVersion
+             where submissionVersion.assignmentSubmission in (:submissionList)
+    		     group by submissionVersion.assignmentSubmission]]>
+  	</query>
+
+  	<query name="findVersionHistoryForSubmission">
+    <![CDATA[from org.sakaiproject.assignment.model.AssignmentSubmissionVersion submissionVersion
+             left join fetch submissionVersion.submissionAttachSet
+             left join fetch submissionVersion.feedbackAttachSet
+             where submissionVersion.assignmentSubmission = :submission]]>
+  	</query>
+
+	<query name="findVersionByUserIdAndSubmittedTime">
+	<![CDATA[from org.sakaiproject.assignment.model.AssignmentSubmissionVersion as version
+		left join fetch version.feedbackAttachSet
+		where version.createdBy = :userId
+			and version.submittedTime = :submittedTime]]>
+	</query>
+	
+	<query name="countNumSubmittedVersions">
+    <![CDATA[select count(*) from org.sakaiproject.assignment.model.AssignmentSubmissionVersion submissionVersion
+             join submissionVersion.assignmentSubmission as submission
+             join submission.assignment as assignment
+             where assignment.id = :assignmentId
+             and submission.userId = :studentId
+             and submissionVersion.submittedTime != null]]>
+  	</query>
+	
+</hibernate-mapping>

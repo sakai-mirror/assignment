@@ -104,4 +104,12 @@ public class AssignmentConstants {
     public static final String ASSIGNMENT_TYPE = "a";
     
     public static final String SUBMISSION_TYPE = "s";
+    
+    public static final String ALLOW_RESUBMIT_NUMBER = "allow_resubmit_number";
+    
+    public static final String ALLOW_RESUBMIT_CLOSETIME = "allow_resubmit_closetime";
+    
+    public static final String GROUPED = "grouped";
+    
+    public static final String SITE = "site";
 }

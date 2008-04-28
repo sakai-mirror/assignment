@@ -51,6 +51,7 @@ import org.sakaiproject.assignment.model.AssignmentSubmissionVersion;
 import org.sakaiproject.assignment.model.constants.AssignmentConstants;
 import org.sakaiproject.assignment.api.AssignmentService;
 import org.sakaiproject.assignment.model.AssignmentSubmission;
+import org.sakaiproject.assignment.model.AssignmentSubmissionVersion;
 import org.sakaiproject.assignment.taggable.api.AssignmentActivityProducer;
 import org.sakaiproject.assignment.util.AssignmentComparator;
 import org.sakaiproject.taggable.api.TaggingManager;
@@ -184,10 +185,19 @@ public class AssignmentServiceImpl extends HibernateCompleteGenericDao implement
 	protected static final String GET_ALL_SUBMISSIONS_FOR_CONTEXT= "getAllSubmissionsForContext";
 	protected static final String GET_SUBMISSION_BY_ASSIGNMENT_USER = "getSubmissionByAssignmentUser";
 		
+	private ContentReviewService contentReviewService;
+	public String getReportURL(Long score) {
+		getContentReviewService();
+		return contentReviewService.getIconUrlforScore(score);
+	}
 	
-
-	//	spring service injection
-	protected ContentReviewService contentReviewService;
+	private void getContentReviewService() {
+		if (contentReviewService == null)
+		{
+			contentReviewService = (ContentReviewService) ComponentManager.get(ContentReviewService.class.getName());
+		}
+	}
+	
 	public void setContentReviewService(ContentReviewService contentReviewService) {
 		this.contentReviewService = contentReviewService;
 	}
@@ -886,6 +896,29 @@ public class AssignmentServiceImpl extends HibernateCompleteGenericDao implement
 		
 		return null;
 	}
+	
+	/**
+	 * {@inheritDoc}
+	 */
+	public AssignmentSubmissionVersion newSubmissionVersion(String submissionReference) throws PermissionException
+	{
+		AssignmentSubmissionVersion submissionVersion = new AssignmentSubmissionVersion();
+		
+		try
+		{
+			AssignmentSubmission submission = getSubmission(submissionReference);
+
+			unlock(SECURE_ADD_ASSIGNMENT_SUBMISSION, submissionReference);
+			submissionVersion.setAssignmentSubmission(submission);
+			return submissionVersion;
+		}
+		catch (Exception e)
+		{
+			if (log.isDebugEnabled()) log.debug(this + ".newSubmissionVersion() : exception : submission id=" + submissionReference);
+		}
+		
+		return null;
+	}
 
 	/**
 	 * Add a new AssignmentSubmission to the directory, from a definition in XML. Must commitEdit() to make official, or cancelEdit() when done!
@@ -1504,13 +1537,13 @@ public class AssignmentServiceImpl extends HibernateCompleteGenericDao implement
 	 * @throws PermissionException
 	 *         if the current user is not allowed to access this.
 	 */
-	public AssignmentSubmission getSubmission(Assignment assignment, User person)
+	public AssignmentSubmission getSubmission(String assignmentReference, User person)
 	{
 		AssignmentSubmission submission = null;
 
-		String assignmentId = String.valueOf(assignment.getId());
+		String assignmentId = assignmentId(assignmentReference);
 		
-		if ((assignmentReference(assignment) != null) && (person != null))
+		if ((assignmentReference != null) && (person != null))
 		{
 			/*List<AssignmentSubmission> rvList = (getHibernateTemplate().findByNamedQueryAndNamedParam(GET_SUBMISSION_BY_ASSIGNMENT_USER, "assignmentId", assignmentId, "userId", person.getId()));
 			if (rvList != null && rvList.size() == 1)
@@ -1636,6 +1669,31 @@ public class AssignmentServiceImpl extends HibernateCompleteGenericDao implement
 		return submission;
 
 	}// getAssignmentSubmission
+	
+	/**
+	 * {@inheritDoc}
+	 */
+	public AssignmentSubmissionVersion getSubmissionVersion(String submissionVersionReference) throws IdUnusedException, PermissionException
+	{
+		if (log.isDebugEnabled()) log.debug(this + " GET SUBMISSION : REF : " + submissionVersionReference);
+		
+		// check permission
+		unlock2(SECURE_ACCESS_ASSIGNMENT_SUBMISSION, SECURE_ACCESS_ASSIGNMENT, submissionVersionReference);
+
+		AssignmentSubmissionVersion submissionVersion = null;
+
+		String submissionVersionId = submissionId(submissionVersionReference);
+
+		submissionVersion = (AssignmentSubmissionVersion) getHibernateTemplate().get(AssignmentSubmissionVersion.class, submissionVersionId);
+		
+		if (submissionVersion == null) throw new IdUnusedException(submissionVersionId);
+
+		// track event
+		// EventTrackingService.post(EventTrackingService.newEvent(EVENT_ACCESS_ASSIGNMENT_SUBMISSION, submission.getReference(), false));
+
+		return submissionVersion;
+
+	}// getAssignmentSubmissionVersion
 
 	/**
 	 * Return the reference root for use in resource references and urls.
@@ -4096,6 +4154,24 @@ public class AssignmentServiceImpl extends HibernateCompleteGenericDao implement
 
 		return body;
 	}
+	
+	/**
+	 * {@inheritDoc}
+	 */
+	public String getAssignmentStatus(Assignment a)
+	{
+		//TODO:zqian
+		return "";
+	}
+	
+	/**
+	 * {@inheritDoc}
+	 */
+	public String getSubmissionStatus(AssignmentSubmissionVersion sVersion)
+	{
+		//TODO:zqian
+		return "";
+	}
 
-} // BaseAssignmentService
+} // AssignmentServiceImpl
 

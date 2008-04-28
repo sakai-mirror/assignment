@@ -1,0 +1,151 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE hibernate-mapping PUBLIC "-//Hibernate/Hibernate Mapping DTD 3.0//EN"
+          "http://hibernate.sourceforge.net/hibernate-mapping-3.0.dtd">
+
+<hibernate-mapping>
+    <class name="org.sakaiproject.assignment.model.Assignment" table="ASSIGNMENT">
+       
+        <id name="id" column="ASSIGNMENT_ID" type="long">
+					<generator class="native">
+						<param name="sequence">ASSIGNMENT_S</param>
+					</generator>
+				</id>
+        <version name="hibernateVersion" type="integer" column="VERSION"/>
+        
+       	<property name="gradableObjectId" type="java.lang.Long">
+            <column name="GRADABLE_OBJECT_ID" not-null="false"  />
+        </property>
+
+        <property name="contextId" type="java.lang.String">
+            <column name="CONTEXT" not-null="true" length="99" 
+            	index="ASSIGN_CONTEXT_I"/>
+        </property>
+        
+        <!-- the title of this assignment -->
+        <property name="title" type="java.lang.String">
+            <column name="TITLE" not-null="true" length="255" />
+        </property>
+        <!-- the draft status for this assignment -->
+        <property name="draft" type="java.lang.Boolean">
+            <column name="DRAFT" not-null="true" />
+        </property>
+        <!-- the index used for ordering assignments in the UI -->
+        <property name="possitionOrder" type="integer">
+            <column name="POSSITION_ORDER" not-null="true" />
+        </property>
+        <!-- The time the assignment can be viewed by student -->
+        <property name="openTime" type="java.util.Date">
+            <column name="OPEN_TIME" not-null="true" />
+        </property>
+        <!-- The time after which responses to this assignment are considered late -->
+        <property name="dueTime" type="java.util.Date">
+            <column name="DUE_TIME" />
+        </property>
+        <!-- stores close date for assignment - optional -->
+        <property name="closeTime" type="java.util.Date">
+            <column name="CLOSE_TIME" />
+        </property>
+        <!-- true if assignment requires student to agree to honor pledge -->
+        <property name="honorPledge" type="java.lang.Boolean">
+            <column name="HONOR_PLEDGE" not-null="true" />
+        </property>
+        <!-- assignment instructions -->
+        <property name="instructions" type="text">
+            <column name="INSTRUCTIONS" />
+        </property>
+        <!-- submission type: inline, non-electronic, etc.  -->
+        <property name="submissionType" type="integer" >
+            <column name="SUBMISSION_TYPE" not-null="true"/>
+        </property>
+        <!-- notification type: none, email for each submission, etc.  -->
+        <property name="notificationType" type="integer" >
+            <column name="NOTIFICATION_TYPE" not-null="true"/>
+        </property>
+        <property name="hasAnnouncement" type="java.lang.Boolean">
+        	<column name="HAS_ANNOUNCEMENT" not-null="true" />
+        </property>
+        <!-- used if assignment open date is added as an announcement  -->
+        <property name="announcementId" type="java.lang.String">
+        	<column name="ANNOUNCEMENT_ID" length="99" />
+        </property>
+        <!-- used if assignment due date has been added to the Schedule (aka Calendar) tool  -->
+        <property name="addedToSchedule" type="java.lang.Boolean">
+        	<column name="ADDED_TO_SCHEDULE" not-null="true" />
+        </property>
+        <!-- used if assignment due date has been added to the Schedule (aka Calendar) tool.this is
+        the id of the event in the Schedule tool  -->
+        <property name="eventId" type="java.lang.String">
+        	<column name="EVENT_ID" length="99" />
+        </property>
+        <!-- restrict num submissions allowed  -->
+        <property name="numSubmissionsAllowed" type="java.lang.Integer" >
+            <column name="NUM_SUB_ALLOWED" />
+        </property>
+        <!-- the type of grade  -->
+        <property name="typeOfGrade" type="java.lang.Integer" >
+            <column name="TYPE_OF_GRADE" />
+        </property>
+        <!-- the maximum point allowed if the type of grading is of point-based  -->
+                <property name="maxGradePoint" type="java.lang.Integer" >
+            <column name="MAX_GRADE_POINT" />
+        </property>
+        <!-- the default grade for no-submission  -->
+                <property name="noSubmissionDefaultGrade" type="java.lang.String" >
+            <column name="NO_SUBMISSION_DEFAULT_GRADE" />
+        </property>
+        <!-- allow a review service  -->
+        <property name="allowReviewService" type="java.lang.Boolean" >
+            <column name="ALLOW_REVIEW_SERVICE"  />
+        </property>
+        <!-- allow student to view the review report  -->
+        <property name="allowStudentViewReport" type="java.lang.Boolean" >
+            <column name="ALLOW_STUDENT_VIEW_REPORT" />
+        </property>
+        <!-- assignment creator  -->
+        <property name="creator" type="java.lang.String" >
+            <column name="CREATOR" length="99" not-null="true" />
+        </property>
+        <!-- assignment create time  -->
+        <property name="createTime" type="java.util.Date" >
+            <column name="CREATE_TIME" not-null="true" />
+        </property>
+        <!-- assignment last modifier  -->
+        <property name="lastModifiedBy" type="java.lang.String" >
+            <column name="LAST_MODIFIED_BY" length="99" />
+        </property>
+        <!-- last modified time  -->
+        <property name="lastModifiedTime" type="java.util.Date" >
+            <column name="LAST_MODIFIED_TIME" />
+        </property>
+        <!-- true if this assignment was deleted -->
+        <property name="deleted" type="java.lang.Boolean" >
+        		<column name="DELETED" not-null="true" />
+        </property>
+        
+        <set name="submissionsSet" lazy="true" inverse="true" cascade="none">
+	        <key column="ASSIGNMENT_ID"/>                        
+	        <one-to-many class="org.sakaiproject.assignment.model.AssignmentSubmission"/>            
+    		</set>
+        
+        <set name="attachmentSet" lazy="true" inverse="true" cascade="none">
+	        <key column="ASSIGNMENT_ID"/>                        
+	        <one-to-many class="org.sakaiproject.assignment.model.AssignmentAttachment"/>            
+    		</set>
+              
+        <set name="assignmentGroupSet" lazy="true" inverse="true" cascade="none">
+	        <key column="ASSIGNMENT_ID"/>                        
+	        <one-to-many class="org.sakaiproject.assignment.model.AssignmentGroup"/>            
+    		</set>
+    </class>
+    
+    <query name="getAssignmentById">
+    <![CDATA[from org.sakaiproject.assignment.model.Assignment assignment
+             where assignment.id = :id]]>
+  	</query>
+  	
+  	<query name="getAssignmentByContext">
+    <![CDATA[from org.sakaiproject.assignment.model.Assignment assignment
+             where assignment.context = :context]]>
+  	</query>
+   
+</hibernate-mapping>

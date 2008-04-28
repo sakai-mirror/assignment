@@ -86,4 +86,19 @@ public class AssignmentGroup {
 		this.hibernateVersion = hibernateVersion;
 	}
 
+	public AssignmentGroup(Long id, Assignment assignment, String groupId,
+			int hibernateVersion) {
+		super();
+		this.id = id;
+		this.assignment = assignment;
+		this.groupId = groupId;
+	}
+	
+	/**
+	 * the default constructor
+	 */
+	public AssignmentGroup(){
+		
+	}
+
 }
