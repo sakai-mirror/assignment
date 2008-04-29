@@ -19,6 +19,12 @@
   <dependencies>
     <dependency>
       <groupId>org.sakaiproject</groupId>
+      <artifactId>generic-dao</artifactId>
+      <version>${sakai.generic-dao.version}</version>
+      <scope>provided</scope>
+    </dependency>
+    <dependency>
+      <groupId>org.sakaiproject</groupId>
       <artifactId>sakai-contentreview-service-api</artifactId>
       <version>${sakai.version}</version>
     </dependency>

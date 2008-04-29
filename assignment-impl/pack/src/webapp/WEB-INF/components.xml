@@ -4,24 +4,18 @@
 <beans>
 
 	<bean id="org.sakaiproject.assignment.api.AssignmentService"
-			class="org.sakaiproject.assignment.impl.DbAssignmentService"
+			class="org.sakaiproject.assignment.impl.AssignmentServiceImpl"
 			init-method="init"
 			destroy-method="destroy"
 			singleton="true">
 		<property name="contentHostingService"><ref bean="org.sakaiproject.content.api.ContentHostingService"/></property>
-		<property name="memoryService"><ref bean="org.sakaiproject.memory.api.MemoryService"/></property>
-		<property name="sqlService"><ref bean="org.sakaiproject.db.api.SqlService"/></property>
 		<property name="serverConfigurationService"><ref bean="org.sakaiproject.component.api.ServerConfigurationService"/></property>
 		<property name="entityManager"><ref bean="org.sakaiproject.entity.api.EntityManager"/></property>
 		<property name="taggingManager"><ref bean="org.sakaiproject.taggable.api.TaggingManager"/></property>
 		<property name="assignmentActivityProducer"><ref bean="org.sakaiproject.assignment.taggable.api.AssignmentActivityProducer"/></property>
- 		<property name="assignmentTableName"><value>ASSIGNMENT_ASSIGNMENT</value></property>
- 		<property name="contentTableName"><value>ASSIGNMENT_CONTENT</value></property>
- 		<property name="submissionTableName"><value>ASSIGNMENT_SUBMISSION</value></property>
- 		<property name="locksInDb"><value>false</value></property>
- 		<property name="autoDdl"><value>${auto.ddl}</value></property>
- 		
- 		
+ 		<property name="sessionFactory">
+			<ref bean="org.sakaiproject.springframework.orm.hibernate.GlobalSessionFactory" />
+		</property>
  		
  		<!--<property name="contentReviewService"><ref bean="org.sakaiproject.contentreview.service.ContentReviewService"/></property>-->
  		
