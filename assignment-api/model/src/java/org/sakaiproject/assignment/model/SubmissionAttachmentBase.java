@@ -25,8 +25,7 @@ package org.sakaiproject.assignment.model;
  * @author zqian
  *
  */
-public class SubmissionAttachmentBase {
-	
+public class SubmissionAttachmentBase extends AttachmentBase{
 	
 	public SubmissionAttachmentBase ()
 	{
@@ -49,17 +48,5 @@ public class SubmissionAttachmentBase {
 	public void setSubmissionVersion(AssignmentSubmissionVersion submissionVersion) {
 		this.submissionVersion = submissionVersion;
 	}
-	
-	/** the reference string for attachment object */
-	protected String attachmentReference;
-
-	public String getAttachmentReference() {
-		return attachmentReference;
-	}
-
-	public void setAttachmentReference(String attachmentReference) {
-		this.attachmentReference = attachmentReference;
-	}
-	
 
 }

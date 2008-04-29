@@ -949,7 +949,7 @@ public class AssignmentServiceImpl extends HibernateCompleteGenericDao implement
 		AssignmentSubmission submission = m_submissionStorage.put(	submissionFromXml.getId(), 
 																		submissionFromXml.getAssignmentId(),
 																		submissionFromXml.getSubmitterIdString(),
-																		(submissionFromXml.getTimeSubmitted() != null)?String.valueOf(submissionFromXml.getTimeSubmitted().getTime()):null,
+																		(submissionFromXml.getSubmittedTime() != null)?String.valueOf(submissionFromXml.getSubmittedTime().getTime()):null,
 																		Boolean.valueOf(submissionFromXml.getSubmitted()).toString(),
 																		Boolean.valueOf(submissionFromXml.getGraded()).toString());
 		if (submission == null)
@@ -998,8 +998,8 @@ public class AssignmentServiceImpl extends HibernateCompleteGenericDao implement
 		{
 			Assignment a = submissionVersion.getAssignmentSubmission().getAssignment();
 			
-			Date returnedTime = submissionVersion.getTimeReleased();
-			Date submittedTime = submissionVersion.getTimeSubmitted();
+			Date returnedTime = submissionVersion.getReleasedTime();
+			Date submittedTime = submissionVersion.getSubmittedTime();
 			
 			// track it
 			if (submissionVersion.isDraft())
@@ -1283,7 +1283,7 @@ public class AssignmentServiceImpl extends HibernateCompleteGenericDao implement
 		buffer.append(rb.getString("noti.submit.id") + " " + s.getId() + newline);
 		
 		// submit time 
-		buffer.append(rb.getString("noti.submit.time") + " " + s.getTimeSubmitted().toString() + newline + newline);
+		buffer.append(rb.getString("noti.submit.time") + " " + s.getSubmittedTime().toString() + newline + newline);
 		
 		// submit text
 		String text = StringUtil.trimToNull(s.getSubmittedText());
@@ -2646,11 +2646,11 @@ public class AssignmentServiceImpl extends HibernateCompleteGenericDao implement
 										}
 										
 										// record submission timestamp
-										if (s.getSubmitted() && s.getTimeSubmitted() != null)
+										if (s.getSubmitted() && s.getSubmittedTime() != null)
 										{
 											ZipEntry textEntry = new ZipEntry(submittersName + "timestamp.txt");
 											out.putNextEntry(textEntry);
-											byte[] b = (s.getTimeSubmitted().toString()).getBytes();
+											byte[] b = (s.getSubmittedTime().toString()).getBytes();
 											out.write(b);
 											textEntry.setSize(b.length);
 											out.closeEntry();

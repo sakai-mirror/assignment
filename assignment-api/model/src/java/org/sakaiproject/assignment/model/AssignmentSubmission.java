@@ -45,7 +45,7 @@ public class AssignmentSubmission {
 	private String submitterId;
 	private Date resubmitCloseTime;
 	private Integer numSubmissionsAllowed;
-	private List<AssignmentSubmissionVersion> submissionVersions;
+	private Set<AssignmentSubmissionVersion> submissionHistorySet;
 	// the current submission version must be populated manually b/c we want
 	// to retrieve the version rec with the highest id
 	private AssignmentSubmissionVersion currentSubmissionVersion;
@@ -80,13 +80,6 @@ public class AssignmentSubmission {
 	public void setNumSubmissionsAllowed(Integer numSubmissionsAllowed) {
 		this.numSubmissionsAllowed = numSubmissionsAllowed;
 	}
-	public List<AssignmentSubmissionVersion> getSubmissionVersions() {
-		return submissionVersions;
-	}
-	public void setSubmissionVersions(
-			List<AssignmentSubmissionVersion> submissionVersions) {
-		this.submissionVersions = submissionVersions;
-	}
 	public int getHibernateVersion() {
 		return hibernateVersion;
 	}
@@ -113,5 +106,12 @@ public class AssignmentSubmission {
 		sb.append(Entity.SEPARATOR);
 		sb.append(Long.toString(id));
 		return sb.toString();
+	}
+	public Set<AssignmentSubmissionVersion> getSubmissionHistorySet() {
+		return submissionHistorySet;
+	}
+	public void setSubmissionHistorySet(
+			Set<AssignmentSubmissionVersion> submissionHistorySet) {
+		this.submissionHistorySet = submissionHistorySet;
 	}
 }

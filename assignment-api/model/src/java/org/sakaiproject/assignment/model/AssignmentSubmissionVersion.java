@@ -63,8 +63,8 @@ public class AssignmentSubmissionVersion {
     private int hibernateVersion;
 	private AssignmentSubmission assignmentSubmission;
 	private String submitterId;
-	private Date timeSubmitted;
-	private Date timeReleased;
+	private Date submittedTime;
+	private Date releasedTime;
 	
 	private List<SubmissionAttachment> submittedAttachments;
 	private List<FeedbackAttachment> feedbackAttachments;
@@ -81,6 +81,7 @@ public class AssignmentSubmissionVersion {
 	
 	//The score given by the review service
 	private int reviewScore;
+	private String reviewReportUrl;
 	// The report given by the content review service
 	private String reviewReport;
 	// The status of the review service
@@ -92,6 +93,11 @@ public class AssignmentSubmissionVersion {
 	private Date createdTime;
 	private String lastModifiedBy;
 	private Date lastModifiedTime;
+	
+
+	private Set<FeedbackAttachment> feedbackAttachSet;
+	private Set<SubmissionAttachment> submissionAttachSet;
+	
 	public Long getId() {
 		return id;
 	}
@@ -109,18 +115,6 @@ public class AssignmentSubmissionVersion {
 	}
 	public void setSubmitterId(String submitterId) {
 		this.submitterId = submitterId;
-	}
-	public Date getTimeSubmitted() {
-		return timeSubmitted;
-	}
-	public void setTimeSubmitted(Date timeSubmitted) {
-		this.timeSubmitted = timeSubmitted;
-	}
-	public Date getTimeReleased() {
-		return timeReleased;
-	}
-	public void setTimeReleased(Date timeReleased) {
-		this.timeReleased = timeReleased;
 	}
 	public List<SubmissionAttachment> getSubmittedAttachments() {
 		return submittedAttachments;
@@ -226,9 +220,11 @@ public class AssignmentSubmissionVersion {
 		this.returned = returned;
 	}
 
-	public AssignmentSubmissionVersion(Long id, int hibernateVersion,
-			AssignmentSubmission assignmentSubmission, String submitterId,
-			Date timeSubmitted, Date timeReleased,
+
+	public AssignmentSubmissionVersion(
+			ContentHostingService contentHostingService, Long id,
+			int hibernateVersion, AssignmentSubmission assignmentSubmission,
+			String submitterId, Date submittedTime, Date releasedTime,
 			List<SubmissionAttachment> submittedAttachments,
 			List<FeedbackAttachment> feedbackAttachments, String submittedText,
 			String feedbackComment, String feedbackText, String grade,
@@ -237,12 +233,13 @@ public class AssignmentSubmissionVersion {
 			String reviewIconUrl, String createdBy, Date createdTime,
 			String lastModifiedBy, Date lastModifiedTime) {
 		super();
+		this.contentHostingService = contentHostingService;
 		this.id = id;
 		this.hibernateVersion = hibernateVersion;
 		this.assignmentSubmission = assignmentSubmission;
 		this.submitterId = submitterId;
-		this.timeSubmitted = timeSubmitted;
-		this.timeReleased = timeReleased;
+		this.submittedTime = submittedTime;
+		this.releasedTime = releasedTime;
 		this.submittedAttachments = submittedAttachments;
 		this.feedbackAttachments = feedbackAttachments;
 		this.submittedText = submittedText;
@@ -261,6 +258,7 @@ public class AssignmentSubmissionVersion {
 		this.lastModifiedBy = lastModifiedBy;
 		this.lastModifiedTime = lastModifiedTime;
 	}
+
 	/**
 	 * default constructor
 	 */
@@ -329,5 +327,45 @@ public class AssignmentSubmissionVersion {
 			
 		}
 		return null;
+	}
+
+	public Date getSubmittedTime() {
+		return submittedTime;
+	}
+
+	public void setSubmittedTime(Date submittedTime) {
+		this.submittedTime = submittedTime;
+	}
+
+	public Date getReleasedTime() {
+		return releasedTime;
+	}
+
+	public void setReleasedTime(Date releasedTime) {
+		this.releasedTime = releasedTime;
+	}
+
+	public String getReviewReportUrl() {
+		return reviewReportUrl;
+	}
+
+	public void setReviewReportUrl(String reviewReportUrl) {
+		this.reviewReportUrl = reviewReportUrl;
+	}
+
+	public Set<FeedbackAttachment> getFeedbackAttachSet() {
+		return feedbackAttachSet;
+	}
+
+	public void setFeedbackAttachSet(Set<FeedbackAttachment> feedbackAttachSet) {
+		this.feedbackAttachSet = feedbackAttachSet;
+	}
+
+	public Set<SubmissionAttachment> getSubmissionAttachSet() {
+		return submissionAttachSet;
+	}
+
+	public void setSubmissionAttachSet(Set<SubmissionAttachment> submissionAttachSet) {
+		this.submissionAttachSet = submissionAttachSet;
 	}
 }

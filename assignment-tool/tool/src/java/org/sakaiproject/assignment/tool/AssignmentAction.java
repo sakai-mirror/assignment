@@ -1000,9 +1000,9 @@ public class AssignmentAction extends PagedResourceActionII
 			{
 				context.put("submitted", Boolean.valueOf(!s.getCurrentSubmissionVersion().isDraft()));
 				context.put("submission_id", s.getId());
-				if (s.getCurrentSubmissionVersion().getTimeSubmitted() != null)
+				if (s.getCurrentSubmissionVersion().getSubmittedTime() != null)
 				{
-					context.put("submit_time", s.getCurrentSubmissionVersion().getTimeSubmitted().toString());
+					context.put("submit_time", s.getCurrentSubmissionVersion().getSubmittedTime().toString());
 				}
 				List attachments = s.getCurrentSubmissionVersion().getSubmittedAttachments();
 				if (attachments != null && attachments.size()>0)
@@ -3157,12 +3157,12 @@ public class AssignmentAction extends PagedResourceActionII
 			if (gradeOption.equals("release"))
 			{
 				s.setReturned(true);
-				s.setTimeReleased(new Date());
+				s.setReleasedTime(new Date());
 			}
 			else if (gradeOption.equals("save"))
 			{
 				s.setReturned(false);
-				s.setTimeReleased(null);
+				s.setReleasedTime(null);
 			}
 
 			if (state.getAttribute(AssignmentConstants.ALLOW_RESUBMIT_NUMBER) != null)
@@ -3454,7 +3454,7 @@ public class AssignmentAction extends PagedResourceActionII
 						AssignmentSubmissionVersion sEdit = assignmentService.getSubmissionVersion(submission.getReference());
 						sEdit.setSubmittedText(text);
 						sEdit.setHonorPledgeFlag(Boolean.valueOf(honorPledgeYes).booleanValue());
-						sEdit.setTimeSubmitted(new Date());
+						sEdit.setSubmittedTime(new Date());
 						sEdit.setDraft(false);
 
 						// for resubmissions
@@ -3605,7 +3605,7 @@ public class AssignmentAction extends PagedResourceActionII
 						AssignmentSubmissionVersion edit = assignmentService.newSubmissionVersion(submission.getReference());
 						edit.setSubmittedText(text);
 						edit.setHonorPledgeFlag(Boolean.valueOf(honorPledgeYes).booleanValue());
-						edit.setTimeSubmitted(new Date());
+						edit.setSubmittedTime(new Date());
 						edit.setDraft(false);
 	
 						// add attachments
@@ -4439,7 +4439,7 @@ public class AssignmentAction extends PagedResourceActionII
 								{
 									AssignmentSubmissionVersion sVersion = assignmentService.getSubmission(s.getReference()).getCurrentSubmissionVersion();
 									sVersion.setDraft(true);
-									sVersion.setTimeSubmitted(null);
+									sVersion.setSubmittedTime(null);
 									assignmentService.saveSubmissionVersion(sVersion);
 								}
 								catch (Exception e)
@@ -4528,7 +4528,7 @@ public class AssignmentAction extends PagedResourceActionII
 					assignmentService.saveSubmission(submission);
 					
 					AssignmentSubmissionVersion submissionVersion = assignmentService.newSubmissionVersion(submission.getReference());
-					submissionVersion.setTimeSubmitted(new Date());
+					submissionVersion.setSubmittedTime(new Date());
 					submissionVersion.setDraft(false);
 					assignmentService.saveSubmissionVersion(submissionVersion);
 				}
@@ -5278,7 +5278,7 @@ public class AssignmentAction extends PagedResourceActionII
 					{
 						AssignmentSubmission s = (AssignmentSubmission) submissions.next();
 						AssignmentSubmissionVersion sVersion = s.getCurrentSubmissionVersion();
-						if (!sVersion.isDraft() && sVersion.getTimeSubmitted() != null)
+						if (!sVersion.isDraft() && sVersion.getSubmittedTime() != null)
 						{
 							anySubmitted = true;
 						}
@@ -5897,7 +5897,7 @@ public class AssignmentAction extends PagedResourceActionII
 					}
 					
 					// also set the return status
-					sVersion.setTimeReleased(new Date());
+					sVersion.setReleasedTime(new Date());
 					sVersion.setHonorPledgeFlag(Boolean.FALSE.booleanValue());
 					
 					assignmentService.saveSubmissionVersion(sVersion);
@@ -7526,15 +7526,15 @@ public class AssignmentAction extends PagedResourceActionII
 					AssignmentSubmissionVersion s2 = u2.getSubmission().getCurrentSubmissionVersion();
 
 
-					if (s1 == null || s1.getTimeSubmitted() == null)
+					if (s1 == null || s1.getSubmittedTime() == null)
 					{
 						result = -1;
 					}
-					else if (s2 == null || s2.getTimeSubmitted() == null)
+					else if (s2 == null || s2.getSubmittedTime() == null)
 					{
 						result = 1;
 					}
-					else if (s1.getTimeSubmitted().before(s2.getTimeSubmitted()))
+					else if (s1.getSubmittedTime().before(s2.getSubmittedTime()))
 					{
 						result = -1;
 					}
@@ -7695,8 +7695,8 @@ public class AssignmentAction extends PagedResourceActionII
 			else if (m_criteria.equals(SORTED_SUBMISSION_BY_SUBMIT_TIME))
 			{
 				// sorted by submission time
-				Date t1 = ((AssignmentSubmission) o1).getCurrentSubmissionVersion().getTimeSubmitted();
-				Date t2 = ((AssignmentSubmission) o2).getCurrentSubmissionVersion().getTimeSubmitted();
+				Date t1 = ((AssignmentSubmission) o1).getCurrentSubmissionVersion().getSubmittedTime();
+				Date t2 = ((AssignmentSubmission) o2).getCurrentSubmissionVersion().getSubmittedTime();
 
 				if (t1 == null)
 				{
@@ -7895,11 +7895,11 @@ public class AssignmentAction extends PagedResourceActionII
 					if (sVersion.getGrade() != null && sVersion.isReturned())
 						status = rb.getString("grad3");
 					else if (sVersion.isReturned())
-						status = rb.getString("return") + " " + sVersion.getTimeReleased().toString();
+						status = rb.getString("return") + " " + sVersion.getReleasedTime().toString();
 					else
 					{
-						status = rb.getString("submitt") + sVersion.getTimeSubmitted().toString();
-						if (sVersion.getTimeSubmitted().after(assignment.getDueTime())) status = status + rb.getString("late");
+						status = rb.getString("submitt") + sVersion.getSubmittedTime().toString();
+						if (sVersion.getSubmittedTime().after(assignment.getDueTime())) status = status + rb.getString("late");
 					}
 				else
 					status = rb.getString("inpro");
@@ -8135,7 +8135,7 @@ public class AssignmentAction extends PagedResourceActionII
 						{
 							AssignmentSubmission s = (AssignmentSubmission) assignmentSubmissions.get(k);
 							AssignmentSubmissionVersion sVersion = s.getCurrentSubmissionVersion();
-							if (s != null && (!sVersion.isDraft() || (sVersion.isReturned() && (sVersion.getLastModifiedTime().before(sVersion.getTimeReleased())))))
+							if (s != null && (!sVersion.isDraft() || (sVersion.isReturned() && (sVersion.getLastModifiedTime().before(sVersion.getReleasedTime())))))
 							{
 								// has been subitted or has been returned and not work on it yet
 								if (!allowGradeAssignmentUsers.contains(s.getSubmitterId()))
@@ -8254,7 +8254,7 @@ public class AssignmentAction extends PagedResourceActionII
 													assignmentService.saveSubmission(submission);
 													
 													AssignmentSubmissionVersion submissionVersion = assignmentService.newSubmissionVersion(submission.getReference());
-													submissionVersion.setTimeSubmitted(new Date());
+													submissionVersion.setSubmittedTime(new Date());
 													submissionVersion.setDraft(false);
 													assignmentService.saveSubmissionVersion(submissionVersion);
 													
@@ -9044,7 +9044,7 @@ public class AssignmentAction extends PagedResourceActionII
 						assignmentService.saveSubmission(submission);
 						
 						AssignmentSubmissionVersion submissionVersion = assignmentService.newSubmissionVersion(submission.getReference());
-						submissionVersion.setTimeSubmitted(new Date());
+						submissionVersion.setSubmittedTime(new Date());
 						submissionVersion.setDraft(false);
 						submissionVersion.setGrade(grade);
 						assignmentService.saveSubmissionVersion(submissionVersion);
@@ -9192,7 +9192,7 @@ public class AssignmentAction extends PagedResourceActionII
 					{
 						AssignmentSubmission s = (AssignmentSubmission) sIterator.next();
 						AssignmentSubmissionVersion sVersion = s.getCurrentSubmissionVersion();
-						submissionTable.put(s.getSubmitterId(), new UploadGradeWrapper(sVersion.getGrade(), sVersion.getSubmittedText(), sVersion.getFeedbackComment(), sVersion.getSubmittedAttachments(), sVersion.getFeedbackAttachments(), (!sVersion.isDraft() && sVersion.getTimeSubmitted() != null)?sVersion.getTimeSubmitted().toString():"", sVersion.getFeedbackText()));
+						submissionTable.put(s.getSubmitterId(), new UploadGradeWrapper(sVersion.getGrade(), sVersion.getSubmittedText(), sVersion.getFeedbackComment(), sVersion.getSubmittedAttachments(), sVersion.getFeedbackAttachments(), (!sVersion.isDraft() && sVersion.getSubmittedTime() != null)?sVersion.getSubmittedTime().toString():"", sVersion.getFeedbackText()));
 					}
 				}
 			}
@@ -9481,13 +9481,13 @@ public class AssignmentAction extends PagedResourceActionII
 								
 								if (releaseGrades && sEdit.getGrade() != null)
 								{
-									sEdit.setTimeReleased(new Date());
+									sEdit.setReleasedTime(new Date());
 								}
 								
 								// if the current submission lacks timestamp while the timestamp exists inside the zip file
-								if (StringUtil.trimToNull(w.getSubmissionTimeStamp()) != null && sEdit.getTimeSubmitted() == null)
+								if (StringUtil.trimToNull(w.getSubmissionTimeStamp()) != null && sEdit.getSubmittedTime() == null)
 								{
-									sEdit.setTimeSubmitted(new Date(Long.valueOf(w.getSubmissionTimeStamp())));
+									sEdit.setSubmittedTime(new Date(Long.valueOf(w.getSubmissionTimeStamp())));
 								}
 								
 								// for further information

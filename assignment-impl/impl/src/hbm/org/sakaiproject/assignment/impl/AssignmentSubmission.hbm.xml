@@ -19,10 +19,10 @@
         	not-null="true" unique-key="ASSIGN_ID_USER_ID" lazy="false" 
         	index="SUBMISSION_ASSIGN_I" />
 
-        <!-- The userId of the user associated with this submission -->
-        <property name="userId" type="java.lang.String">
-            <column name="USER_ID" not-null="true" length="99" 
-            	unique-key="ASSIGN_ID_USER_ID" index="SUBMISSION_USER_ID_I" />
+        <!-- The Id of the submitter associated with this submission -->
+        <property name="submitterId" type="java.lang.String">
+            <column name="SUBMITTER_ID" not-null="true" length="99" 
+            	unique-key="ASSIGN_ID_SUBMITTER_ID" index="SUBMISSION_SUBMITTER_ID_I" />
         </property>
         
         <!-- Time after which the user can no longer resubmit -->
@@ -39,12 +39,11 @@
 	    	<key column="SUBMISSION_ID"/>                        
 	    	<one-to-many class="org.sakaiproject.assignment.model.AssignmentSubmissionVersion"/>            
     	</set>
-              
     </class>
     
     <query name="getSubmissionByAssignmentUser">
     <![CDATA[from org.sakaiproject.assignment.model.AssignmentSubmission submission
-             where submission.assignmentId = :assignmentId and submission.userId = :userId]]>
+             where submission.assignmentId = :assignment and submission.submitterId = :submitterId]]>
   	</query>
   	
 </hibernate-mapping>

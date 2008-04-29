@@ -22,8 +22,12 @@ package org.sakaiproject.assignment.model;
 
 import java.util.Date;
 import java.util.List;
+import java.util.Set;
 
 import org.sakaiproject.assignment.model.constants.AssignmentConstants;
+import org.sakaiproject.assignment.model.AssignmentAttachment;
+import org.sakaiproject.assignment.model.AssignmentGroup;
+import org.sakaiproject.assignment.model.AssignmentSubmission;
 import org.sakaiproject.entity.api.Entity;
 
 /**
@@ -117,6 +121,12 @@ public class Assignment {
     private Boolean addedToSchedule;
     
     private String scheduleEventId;
+    
+    private Set<AssignmentSubmission> submissionsSet;
+    
+    private Set<AssignmentAttachment> attachmentSet;
+    
+    private Set<AssignmentGroup> assignmentGroupSet;
 
 	public Long getId() {
 		return id;
@@ -434,5 +444,29 @@ public class Assignment {
 
 	public Integer getResubmissionNumber() {
 		return resubmissionNumber;
+	}
+
+	public Set<AssignmentSubmission> getSubmissionsSet() {
+		return submissionsSet;
+	}
+
+	public void setSubmissionsSet(Set<AssignmentSubmission> submissionsSet) {
+		this.submissionsSet = submissionsSet;
+	}
+
+	public Set<AssignmentAttachment> getAttachmentSet() {
+		return attachmentSet;
+	}
+
+	public void setAttachmentSet(Set<AssignmentAttachment> attachmentSet) {
+		this.attachmentSet = attachmentSet;
+	}
+
+	public Set<AssignmentGroup> getAssignmentGroupSet() {
+		return assignmentGroupSet;
+	}
+
+	public void setAssignmentGroupSet(Set<AssignmentGroup> assignmentGroupSet) {
+		this.assignmentGroupSet = assignmentGroupSet;
 	}
 }

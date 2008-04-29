@@ -17,7 +17,7 @@
   <inceptionYear>2003</inceptionYear>
   <packaging>jar</packaging>
   <properties>
-    <deploy.target/>
+    <deploy.target>shared</deploy.target>
   </properties>
   <dependencies>
     <dependency>
@@ -191,9 +191,9 @@
   <build>
     <resources>
       <resource>
-        <directory>${basedir}/src/sql</directory>
+        <directory>${basedir}/src/hbm</directory>
         <includes>
-          <include>**/*.sql</include>
+          <include>**/*.hbm.xml</include>
         </includes>
       </resource>
       <resource>

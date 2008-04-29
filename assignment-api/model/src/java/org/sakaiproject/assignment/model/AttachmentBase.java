@@ -22,25 +22,51 @@
 package org.sakaiproject.assignment.model;
 
 /**
- * Assignment attachment object
+ * The base class for all attachment type
  * @author zqian
  *
  */
-public class AssignmentAttachment extends AttachmentBase {
-	private Assignment assignment;
+public class AttachmentBase {
+	protected Long id;
+	protected String attachmentReference;
+	protected int hibernateVersion;  //for optimistic locking
+
 	/**
-	 * get Assignment
-	 * @return
+	 * @return the id of this assignment attachment
 	 */
-	public Assignment getAssignment() {
-		return assignment;
+	public Long getId() {
+		return id;
 	}
-	
+
 	/**
-	 * set Assignment
-	 * @param assignment
+	 * set the the id of this assignment attachment
+	 * @param id
 	 */
-	public void setAssignment(Assignment assignment) {
-		this.assignment = assignment;
+	public void setId(Long id) {
+		this.id = id;
+	}
+
+	/**
+	 * 
+	 * @return the reference to this attachment
+	 */
+	public String getAttachmentReference() {
+		return attachmentReference;
+	}
+
+	/**
+	 * set the reference to this attachment
+	 * @param attachmentReference
+	 */
+	public void setAttachmentReference(String attachmentReference) {
+		this.attachmentReference = attachmentReference;
+	}
+
+	public int getHibernateVersion() {
+		return hibernateVersion;
+	}
+
+	public void setHibernateVersion(int hibernateVersion) {
+		this.hibernateVersion = hibernateVersion;
 	}
 }
