@@ -69,9 +69,12 @@ import org.sakaiproject.taggable.api.TaggingProvider;
 import org.sakaiproject.authz.api.AuthzGroup;
 import org.sakaiproject.authz.api.AuthzPermissionException;
 import org.sakaiproject.authz.api.GroupNotDefinedException;
+import org.sakaiproject.authz.api.Member;
+import org.sakaiproject.authz.api.Role;
 import org.sakaiproject.authz.cover.AuthzGroupService;
 import org.sakaiproject.authz.cover.FunctionManager;
 import org.sakaiproject.authz.cover.SecurityService;
+import org.sakaiproject.authz.api.SecurityAdvisor;
 import org.sakaiproject.component.api.ServerConfigurationService;
 import org.sakaiproject.content.api.ContentResource;
 import org.sakaiproject.content.api.ContentResourceEdit;
@@ -232,6 +235,8 @@ public abstract class BaseAssignmentService implements AssignmentService, Entity
 	
 	/** Event for grading an assignment submission. */
 	public static final String EVENT_GRADE_ASSIGNMENT_SUBMISSION = "asn.grade.submission";
+	
+	private static final String NEW_ASSIGNMENT_DUE_DATE_SCHEDULED = "new_assignment_due_date_scheduled";
 
 	protected static final String GROUP_LIST = "group";
 
@@ -675,6 +680,7 @@ public abstract class BaseAssignmentService implements AssignmentService, Entity
 		FunctionManager.registerFunction(SECURE_UPDATE_ASSIGNMENT);
 		FunctionManager.registerFunction(SECURE_GRADE_ASSIGNMENT_SUBMISSION);
 		FunctionManager.registerFunction(SECURE_ASSIGNMENT_RECEIVE_NOTIFICATIONS);
+		FunctionManager.registerFunction(SECURE_SHARE_DRAFTS);
 		
  		//if no contentReviewService was set try discovering it
  		if (contentReviewService == null)
@@ -1834,7 +1840,7 @@ public abstract class BaseAssignmentService implements AssignmentService, Entity
 		AssignmentSubmissionEdit submission = m_submissionStorage.put(	submissionFromXml.getId(), 
 																		submissionFromXml.getAssignmentId(),
 																		submissionFromXml.getSubmitterIdString(),
-																		submissionFromXml.getTimeSubmittedString(),
+																		(submissionFromXml.getTimeSubmitted() != null)?String.valueOf(submissionFromXml.getTimeSubmitted().getTime()):null,
 																		Boolean.valueOf(submissionFromXml.getSubmitted()).toString(),
 																		Boolean.valueOf(submissionFromXml.getGraded()).toString());
 		if (submission == null)
@@ -2580,9 +2586,8 @@ public abstract class BaseAssignmentService implements AssignmentService, Entity
 						// not deleted, show it
 						if (tempAssignment.getDraft())
 						{
-							// for draft assignment, only admin users or the creator can see it
-							if (SecurityService.isSuperUser()
-									|| tempAssignment.getCreator().equals(UserDirectoryService.getCurrentUser().getId()))
+							// who can see the draft assigment
+							if (isDraftAssignmentVisible(tempAssignment, context))
 							{
 								retVal.add(tempAssignment);
 							}
@@ -2598,6 +2603,45 @@ public abstract class BaseAssignmentService implements AssignmentService, Entity
 
 		return retVal;
 
+	}
+	
+	/**
+	 * who can see the draft assignment
+	 * @param assignment
+	 * @param context
+	 * @return
+	 */
+	private boolean isDraftAssignmentVisible(Assignment assignment, String context) 
+	{
+		return SecurityService.isSuperUser() // super user can always see it
+			|| assignment.getCreator().equals(UserDirectoryService.getCurrentUser().getId()) // the creator can see it
+			|| (unlockCheck(SECURE_SHARE_DRAFTS, SiteService.siteReference(context)) && isCurrentUserInSameRoleAsCreator(assignment.getCreator(), context)); // same role user with share draft permission
+	}
+	
+	/**
+	 * is current user has same role as the specified one?
+	 * @param assignment
+	 * @param context
+	 * @return
+	 */
+	private boolean isCurrentUserInSameRoleAsCreator(String creatorUserId, String context) 
+	{	
+		try {
+			User currentUser = UserDirectoryService.getCurrentUser();
+			
+			AuthzGroup group = AuthzGroupService.getAuthzGroup(SiteService.siteReference(context));
+			
+			Member currentUserMember = group.getMember(currentUser.getId());
+			Member creatorMember = group.getMember(creatorUserId);
+			Role role = currentUserMember.getRole();
+		
+			return role != null && role.getId().equals(creatorMember.getRole().getId());
+		
+		} catch (GroupNotDefinedException gnde) {
+			M_log.warn("No group defined for this site " + context);
+		}
+		
+		return false;
 	}
 	
 	/**
@@ -10610,7 +10654,8 @@ public abstract class BaseAssignmentService implements AssignmentService, Entity
 				M_log.error(new Exception(this + " AssignmentSubmissionStorageUser storageFields Unique constraint is in force -- submitter[0] cannot be null"));
  			}
 			
-			rv[2] = ((AssignmentSubmission) r).getTimeSubmittedString();
+			Time submitTime = ((AssignmentSubmission) r).getTimeSubmitted();
+			rv[2] = (submitTime != null)?String.valueOf(submitTime.getTime()):null;
 			
 			rv[3] = Boolean.valueOf(((AssignmentSubmission) r).getSubmitted()).toString();
 			
@@ -10936,6 +10981,65 @@ public abstract class BaseAssignmentService implements AssignmentService, Entity
 				result = -result;
 			}
 			return result;
+		}
+	}
+	
+	public void transferCopyEntities(String fromContext, String toContext, List ids, boolean cleanup)
+	{	
+		try
+		{
+			if(cleanup == true)
+			{
+				SecurityService.pushAdvisor(new SecurityAdvisor() 
+				{
+					public SecurityAdvice isAllowed(String userId, String function, String reference)       
+					{    
+						return SecurityAdvice.ALLOWED;       
+					} 
+				});
+
+				String toSiteId = toContext;
+				Iterator assignmentsIter = getAssignmentsForContext(toSiteId);
+				while (assignmentsIter.hasNext())
+				{
+					try 
+					{
+						Assignment assignment = (Assignment) assignmentsIter.next();
+						String assignmentId = assignment.getId();
+						AssignmentEdit aEdit = editAssignment(assignmentId);
+						try
+						{
+							removeAssignmentContent(editAssignmentContent(aEdit.getContent().getReference()));
+						}
+						catch (Exception eee)
+						{
+							M_log.debug("removeAssignmentContent error:" + eee);
+						}
+						try
+						{
+							removeAssignment(aEdit);
+						}
+						catch (Exception eeee)
+						{
+							M_log.debug("removeAssignment error:" + eeee);
+						}
+					}
+					catch(Exception ee)
+					{
+						M_log.debug("removeAssignment process error:" + ee);
+					}
+				}
+				   
+			}
+			transferCopyEntities(fromContext, toContext, ids);
+		}
+		catch (Exception e)
+		{
+			M_log.info("transferCopyEntities: End removing Assignmentt data" + e);
+		}
+		finally
+		{
+			SecurityService.popAdvisor();
 		}
 	}
 
