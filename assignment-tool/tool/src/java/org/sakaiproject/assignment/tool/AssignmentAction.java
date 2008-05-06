@@ -8100,8 +8100,23 @@ public class AssignmentAction extends PagedResourceActionII
 					}
 					else
 					{
-						result = (new Double(grade1)).doubleValue() > (new Double(grade2)).doubleValue() ? 1 : -1;
-
+						try
+						{
+							double d1 = Double.parseDouble(grade1);
+							try
+							{
+								double d2 = Double.parseDouble(grade2);
+								result = d1 > d2 ? 1 : -1;
+							}
+							catch (NumberFormatException ne2)
+							{
+								result = 1;
+							}
+						}
+						catch (NumberFormatException ne1)
+						{
+							result = -1;
+						}
 					}
 				}
 				else
