@@ -666,8 +666,8 @@ public class AssignmentAction extends PagedResourceActionII
 	
 	private ContentHostingService m_contentHostingService = null;
 	
-	private AssignmentService assignmentService = (AssignmentService) ComponentManager.get("org.sakaiproject.assignment.api.AssignmentService");
-	
+	private static AssignmentService assignmentService = (AssignmentService) ComponentManager.get(AssignmentService.class);
+
 	/**
 	 * central place for dispatching the build routines based on the state name
 	 */
@@ -1169,7 +1169,7 @@ public class AssignmentAction extends PagedResourceActionII
 	protected String build_list_assignments_context(VelocityPortlet portlet, Context context, RunData data, SessionState state)
 	{
 		TaggingManager taggingManager = (TaggingManager) ComponentManager
-				.get("org.sakaiproject.taggable.api.TaggingManager");
+				.get(TaggingManager.class);
 		if (taggingManager.isTaggable())
 		{
 			context.put("producer", ComponentManager

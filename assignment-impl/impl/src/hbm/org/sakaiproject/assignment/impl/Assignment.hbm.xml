@@ -3,7 +3,7 @@
           "http://hibernate.sourceforge.net/hibernate-mapping-3.0.dtd">
 
 <hibernate-mapping auto-import="false">
-    <class name="org.sakaiproject.assignment.model.Assignment" table="ASSIGNMENT">
+    <class name="org.sakaiproject.assignment.model.Assignment" table="ASSIGNMENT_T">
        
         <id name="id" column="ASSIGNMENT_ID" type="long">
 					<generator class="native">
@@ -143,7 +143,7 @@
              where assignment.id = :id]]>
   	</query>
   	
-  	<query name="getAssignmentByContext">
+  	<query name="getAssignmentsByContext">
     <![CDATA[from org.sakaiproject.assignment.model.Assignment assignment
              where assignment.context = :context]]>
   	</query>

@@ -51,7 +51,7 @@ public class AssignmentActivityProducerImpl implements
 	private static final Log logger = LogFactory
 			.getLog(AssignmentActivityProducerImpl.class);
 
-	private static ResourceLoader rb = new ResourceLoader("assignment");
+	//private static ResourceLoader rb;
 
 	protected AssignmentService assignmentService;
 
@@ -202,12 +202,14 @@ public class AssignmentActivityProducerImpl implements
 	}
 
 	public String getName() {
-		return rb.getString("service_name");
+		return "";//return rb.getString("service_name");
 	}
 
 	public void init() {
 		logger.info("init()");
 
+		//if (rb == null)
+			//rb = new ResourceLoader("assignment");
 		taggingManager.registerProducer(this);
 	}
 

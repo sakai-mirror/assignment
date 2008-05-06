@@ -3,7 +3,7 @@
           "http://hibernate.sourceforge.net/hibernate-mapping-3.0.dtd">
 
 <hibernate-mapping>
-    <class name="org.sakaiproject.assignment.model.AssignmentAttachment" table="ASSIGN_ATTACH">
+    <class name="org.sakaiproject.assignment.model.AssignmentAttachment" table="ASSIGN_ATTACH_T">
 
         <id name="id" column="ASSIGN_ATTACH_ID" type="long">
 					<generator class="native">

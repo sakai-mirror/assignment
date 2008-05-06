@@ -43,7 +43,7 @@
     
     <query name="getSubmissionByAssignmentUser">
     <![CDATA[from org.sakaiproject.assignment.model.AssignmentSubmission submission
-             where submission.assignmentId = :assignment and submission.submitterId = :submitterId]]>
+             where submission.assignment = :assignment and submission.submitterId = :submitterId]]>
   	</query>
   	
 </hibernate-mapping>

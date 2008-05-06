@@ -36,14 +36,14 @@ import org.sakaiproject.user.api.User;
 import org.w3c.dom.Element;
 
 import org.sakaiproject.assignment.model.*;
-import org.sakaiproject.genericdao.api.CompleteGenericDao;
+//import org.sakaiproject.genericdao.api.CompleteGenericDao;
 
 /**
  * <p>
  * AssignmentService is the service that handles assignments.
  * </p>
  */
-public interface AssignmentService extends EntityProducer, CompleteGenericDao
+public interface AssignmentService extends EntityProducer//, CompleteGenericDao
 {
 	/** The type string for this application: should not change over time as it may be stored in various parts of persistent entities. */
 	static final String APPLICATION_ID = "sakai:assignment";

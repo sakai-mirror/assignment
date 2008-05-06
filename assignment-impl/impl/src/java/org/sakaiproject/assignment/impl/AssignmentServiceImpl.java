@@ -21,6 +21,7 @@
 
 package org.sakaiproject.assignment.impl;
 
+import java.sql.SQLException;
 import java.io.BufferedInputStream;
 import java.io.InputStream;
 import java.io.IOException;
@@ -52,7 +53,6 @@ import org.sakaiproject.assignment.model.constants.AssignmentConstants;
 import org.sakaiproject.assignment.api.AssignmentService;
 import org.sakaiproject.assignment.model.AssignmentSubmission;
 import org.sakaiproject.assignment.model.AssignmentSubmissionVersion;
-import org.sakaiproject.assignment.taggable.api.AssignmentActivityProducer;
 import org.sakaiproject.assignment.util.AssignmentComparator;
 import org.sakaiproject.taggable.api.TaggingManager;
 import org.sakaiproject.taggable.api.TaggingProvider;
@@ -148,7 +148,9 @@ import org.hibernate.Hibernate;
 import org.hibernate.HibernateException;
 import org.hibernate.Query;
 import org.hibernate.Session;
-import org.sakaiproject.genericdao.hibernate.HibernateCompleteGenericDao;
+//import org.sakaiproject.genericdao.hibernate.HibernateCompleteGenericDao;
+
+import org.springframework.orm.hibernate3.support.HibernateDaoSupport;
 import org.springframework.dao.DataAccessException;
 import org.springframework.orm.hibernate3.HibernateCallback;
 
@@ -158,13 +160,13 @@ import org.springframework.orm.hibernate3.HibernateCallback;
  * AssignmentServiceImpl is the implementation service class for AssignmentService.
  * </p>
  */
-public class AssignmentServiceImpl extends HibernateCompleteGenericDao implements AssignmentService, EntityTransferrer
+public class AssignmentServiceImpl extends HibernateDaoSupport implements AssignmentService, EntityTransferrer
 {
 	/** Our logger. */
 	private static Log log = LogFactory.getLog(AssignmentServiceImpl.class);
 
 	/** the resource bundle */
-	private static ResourceLoader rb = new ResourceLoader("assignment");
+	private static ResourceLoader rb;
 
 	/** The access point URL. */
 	protected String m_relativeAccessPoint = null;
@@ -453,20 +455,6 @@ public class AssignmentServiceImpl extends HibernateCompleteGenericDao implement
 		m_taggingManager = manager;
 	}
 
-	/** Dependency: AssignmentActivityProducer. */
-	protected AssignmentActivityProducer m_assignmentActivityProducer = null;
-
-	/**
-	 * Dependency: AssignmentActivityProducer.
-	 * 
-	 * @param assignmentActivityProducer
-	 *        The AssignmentActivityProducer.
-	 */
-	public void setAssignmentActivityProducer(AssignmentActivityProducer assignmentActivityProducer)
-	{
-		m_assignmentActivityProducer = assignmentActivityProducer;
-	}
-
 	/** Dependency: allowGroupAssignments setting */
 	protected boolean m_allowGroupAssignments = true;
 
@@ -542,6 +530,9 @@ public class AssignmentServiceImpl extends HibernateCompleteGenericDao implement
  		{
  			contentReviewService = (ContentReviewService) ComponentManager.get(ContentReviewService.class.getName());
  		}
+ 		
+ 		/*if (rb==null)
+ 			rb = new ResourceLoader("assignment");*/
 	} // init
 
 	/**
@@ -706,8 +697,7 @@ public class AssignmentServiceImpl extends HibernateCompleteGenericDao implement
 		{
 			userId = SessionManager.getCurrentSessionUserId();
 		}
-
-		List<Assignment> assignments = (getHibernateTemplate().findByNamedQueryAndNamedParam(GET_ASSIGNMENTS_BY_CONTEXT, "context", context));
+		List<Assignment> assignments = getHibernateTemplate().findByNamedQueryAndNamedParam(GET_ALL_SUBMISSIONS_FOR_CONTEXT, "context", context);
 		if (assignments == null)
 		{
 			return new Vector<Assignment>();
