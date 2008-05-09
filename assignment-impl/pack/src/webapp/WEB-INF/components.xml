@@ -2,7 +2,8 @@
 <!DOCTYPE beans PUBLIC "-//SPRING//DTD BEAN//EN" "http://www.springframework.org/dtd/spring-beans.dtd">
 
 <beans>
-	<bean id="org.sakaiproject.springframework.orm.hibernate.impl.AdditionalHibernateMappingsImpl.assignment"
+	<bean
+		id="org.sakaiproject.assignment.hibernate.AdditionalHibernateMappings"
 		class="org.sakaiproject.springframework.orm.hibernate.impl.AdditionalHibernateMappingsImpl">
 		<property name="mappingResources">
 			<list>
@@ -28,7 +29,7 @@
 		</property>
 	</bean>
 	
-	 <bean id="org.sakaiproject.assignment.impl.AssignmentServiceImpl"
+	 <bean id="org.sakaiproject.assignment.api.AssignmentService"
     	class="org.sakaiproject.assignment.impl.AssignmentServiceImpl"
     	singleton="true" init-method="init" destroy-method="destroy">
     	<property name="sessionFactory">
@@ -50,21 +51,6 @@
  			By default this is false -->
  		<property name="allowGroupAssignmentsInGradebook"><value>true</value></property>
 	</bean>
-
-	<bean id="org.sakaiproject.assignment.api.AssignmentService"
-        class="org.springframework.transaction.interceptor.TransactionProxyFactoryBean">
-        <property name="transactionManager">
-            <ref bean="org.sakaiproject.springframework.orm.hibernate.GlobalTransactionManager" />
-        </property>
-        <property name="target">
-            <ref bean="org.sakaiproject.assignment.impl.AssignmentServiceImpl" />
-        </property>
-        <property name="transactionAttributes">
-            <props>
-                <prop key="*">PROPAGATION_REQUIRED</prop>
-            </props>
-        </property>
-    </bean>
 
 	<bean id="org.sakaiproject.assignment.taggable.impl.AssignmentActivityProducerImpl"
     	  class="org.sakaiproject.assignment.taggable.impl.AssignmentActivityProducerImpl"

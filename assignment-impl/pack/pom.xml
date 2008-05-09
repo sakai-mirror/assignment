@@ -35,12 +35,13 @@
 		<artifactId>sakai-contentreview-model-api</artifactId>
 	</exclusion>
       </exclusions>
+      <scope>runtime</scope>
     </dependency>
     <dependency>
       <groupId>org.sakaiproject</groupId>
       <artifactId>generic-dao</artifactId>
       <version>${sakai.generic-dao.version}</version>
-      <scope>provided</scope>
+      <scope>runtime</scope>
     </dependency>
     <dependency>
       <groupId>org.sakaiproject</groupId>
@@ -48,22 +49,5 @@
       <version>${sakai.version}</version>
     </dependency>
   </dependencies>
-  <build>
-    <sourceDirectory>src/java</sourceDirectory>
-    <resources>
-      <resource>
-            <directory>src/java</directory>
-            <includes>
-               <include>**/*.xml</include>
-            </includes>
-         </resource>
-      <resource>
-        <directory>${basedir}/../../bundle</directory>
-        <includes>
-        	<include>**/*.properties</include>
-        </includes>
-        <filtering>false</filtering>
-      </resource>
-    </resources>
-  </build>
+  <build/>
 </project>

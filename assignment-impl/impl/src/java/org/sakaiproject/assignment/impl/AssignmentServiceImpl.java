@@ -47,12 +47,12 @@ import javax.servlet.http.HttpServletResponse;
 import org.sakaiproject.contentreview.exception.QueueException;
 import org.sakaiproject.contentreview.service.ContentReviewService;
 
-import org.sakaiproject.assignment.model.Assignment;
-import org.sakaiproject.assignment.model.AssignmentSubmissionVersion;
-import org.sakaiproject.assignment.model.constants.AssignmentConstants;
+import org.sakaiproject.assignment.api.Assignment;
+import org.sakaiproject.assignment.api.AssignmentSubmissionVersion;
+import org.sakaiproject.assignment.api.constants.AssignmentConstants;
 import org.sakaiproject.assignment.api.AssignmentService;
-import org.sakaiproject.assignment.model.AssignmentSubmission;
-import org.sakaiproject.assignment.model.AssignmentSubmissionVersion;
+import org.sakaiproject.assignment.api.AssignmentSubmission;
+import org.sakaiproject.assignment.api.AssignmentSubmissionVersion;
 import org.sakaiproject.assignment.util.AssignmentComparator;
 import org.sakaiproject.taggable.api.TaggingManager;
 import org.sakaiproject.taggable.api.TaggingProvider;
@@ -691,13 +691,23 @@ public class AssignmentServiceImpl extends HibernateDaoSupport implements Assign
 	} // getAssignments
 
 	//
-	private List assignments(String context, String userId) 
+	private List assignments(final String context, String userId) 
 	{
 		if (userId == null)
 		{
 			userId = SessionManager.getCurrentSessionUserId();
 		}
-		List<Assignment> assignments = getHibernateTemplate().findByNamedQueryAndNamedParam(GET_ALL_SUBMISSIONS_FOR_CONTEXT, "context", context);
+		
+		final HibernateCallback hcb = new HibernateCallback()
+		{
+			public Object doInHibernate(Session session) throws HibernateException, SQLException
+			{
+				final Query q = session.getNamedQuery(GET_ASSIGNMENTS_BY_CONTEXT);
+				q.setParameter("context", context);
+				return q.list();
+			}
+		};
+		List<Assignment> assignments = getHibernateTemplate().executeFind(hcb);
 		if (assignments == null)
 		{
 			return new Vector<Assignment>();

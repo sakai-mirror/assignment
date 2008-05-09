@@ -23,7 +23,7 @@ package org.sakaiproject.assignment.taggable.impl;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
-import org.sakaiproject.assignment.model.AssignmentSubmission;
+import org.sakaiproject.assignment.api.AssignmentSubmission;
 import org.sakaiproject.taggable.api.TaggableActivity;
 import org.sakaiproject.taggable.api.TaggableItem;
 import org.sakaiproject.user.api.User;

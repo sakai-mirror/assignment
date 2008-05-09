@@ -211,10 +211,11 @@
   <build>
     <resources>
       <resource>
-        <directory>${basedir}/src/hbm</directory>
+      	<directory>${basedir}/src/hbm</directory>
         <includes>
-          <include>**/*.hbm.xml</include>
+        <include>**/*.xml</include>
         </includes>
+        <filtering>false</filtering>
       </resource>
       <resource>
         <directory>${basedir}/src/bundle</directory>
