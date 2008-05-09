@@ -18,7 +18,7 @@
  * limitations under the License.
  *
  **********************************************************************************/
-package org.sakaiproject.assignment.model;
+package org.sakaiproject.assignment.api;
 
 public class AssignmentGroup {
 	private Long id;

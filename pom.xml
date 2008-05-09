@@ -21,7 +21,6 @@
 
   <modules>
     <module>assignment-api/exception</module>
-    <module>assignment-api/model</module>
     <module>assignment-api/api</module>
     <module>assignment-api/taggable</module>
     <module>assignment-help</module>

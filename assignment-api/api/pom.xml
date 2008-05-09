@@ -21,12 +21,12 @@
   <dependencies>
     <dependency>
       <groupId>org.sakaiproject</groupId>
-      <artifactId>sakai-assignment-model</artifactId>
+      <artifactId>sakai-assignment-exception</artifactId>
       <version>${sakai.version}</version>
     </dependency>
     <dependency>
       <groupId>org.sakaiproject</groupId>
-      <artifactId>sakai-assignment-exception</artifactId>
+      <artifactId>sakai-content-api</artifactId>
       <version>${sakai.version}</version>
     </dependency>
     <dependency>

@@ -18,20 +18,24 @@
  * limitations under the License.
  *
  **********************************************************************************/
-package org.sakaiproject.assignment.model;
+
+package org.sakaiproject.assignment.api;
+
+import org.sakaiproject.assignment.api.AssignmentSubmissionVersion;
+import org.sakaiproject.assignment.api.SubmissionAttachmentBase;
 
 /**
- * the student submitted attachment
+ * the attachment used for feedback purpose
  * @author zqian
  *
  */
-public class SubmissionAttachment extends SubmissionAttachmentBase {
+public class FeedbackAttachment extends SubmissionAttachmentBase {
 	
-	public SubmissionAttachment() {
+	public FeedbackAttachment() {
 		
 	}
 	
-	public SubmissionAttachment(AssignmentSubmissionVersion submissionVersion, String attachmentReference) {
+	public FeedbackAttachment(AssignmentSubmissionVersion submissionVersion, String attachmentReference) {
 		this.submissionVersion = submissionVersion;
 		this.attachmentReference = attachmentReference;
 	}

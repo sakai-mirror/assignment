@@ -19,15 +19,15 @@
  *
  **********************************************************************************/
 
-package org.sakaiproject.assignment.model;
+package org.sakaiproject.assignment.api;
 
 import java.util.Date;
 import java.util.List;
 import java.util.Set;
 
-import org.sakaiproject.assignment.model.Assignment;
-import org.sakaiproject.assignment.model.AssignmentSubmissionVersion;
-import org.sakaiproject.assignment.model.constants.AssignmentConstants;
+import org.sakaiproject.assignment.api.Assignment;
+import org.sakaiproject.assignment.api.AssignmentSubmissionVersion;
+import org.sakaiproject.assignment.api.constants.AssignmentConstants;
 import org.sakaiproject.entity.api.Entity;
 import org.sakaiproject.time.api.Time;
 

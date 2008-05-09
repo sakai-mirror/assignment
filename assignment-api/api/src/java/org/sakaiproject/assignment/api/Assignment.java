@@ -18,16 +18,16 @@
  * limitations under the License.
  *
  **********************************************************************************/
-package org.sakaiproject.assignment.model;
+package org.sakaiproject.assignment.api;
 
 import java.util.Date;
 import java.util.List;
 import java.util.Set;
 
-import org.sakaiproject.assignment.model.constants.AssignmentConstants;
-import org.sakaiproject.assignment.model.AssignmentAttachment;
-import org.sakaiproject.assignment.model.AssignmentGroup;
-import org.sakaiproject.assignment.model.AssignmentSubmission;
+import org.sakaiproject.assignment.api.constants.AssignmentConstants;
+import org.sakaiproject.assignment.api.AssignmentAttachment;
+import org.sakaiproject.assignment.api.AssignmentGroup;
+import org.sakaiproject.assignment.api.AssignmentSubmission;
 import org.sakaiproject.entity.api.Entity;
 
 /**

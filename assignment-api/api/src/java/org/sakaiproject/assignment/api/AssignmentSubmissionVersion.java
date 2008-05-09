@@ -1,13 +1,13 @@
-package org.sakaiproject.assignment.model;
+package org.sakaiproject.assignment.api;
 
 import java.util.Date;
 import java.util.List;
 import java.util.Set;
 
-import org.sakaiproject.assignment.model.AssignmentSubmission;
-import org.sakaiproject.assignment.model.FeedbackAttachment;
-import org.sakaiproject.assignment.model.SubmissionAttachment;
-import org.sakaiproject.assignment.model.constants.AssignmentConstants;
+import org.sakaiproject.assignment.api.AssignmentSubmission;
+import org.sakaiproject.assignment.api.FeedbackAttachment;
+import org.sakaiproject.assignment.api.SubmissionAttachment;
+import org.sakaiproject.assignment.api.constants.AssignmentConstants;
 import org.sakaiproject.entity.api.Entity;
 import org.sakaiproject.time.api.Time;
 
@@ -28,9 +28,6 @@ import org.sakaiproject.entity.cover.EntityManager;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 
-import org.sakaiproject.contentreview.exception.QueueException;
-import org.sakaiproject.contentreview.service.ContentReviewService;
-
 import org.sakaiproject.exception.PermissionException;
 import org.sakaiproject.exception.TypeException;
 import org.sakaiproject.exception.IdUnusedException;
@@ -39,24 +36,7 @@ public class AssignmentSubmissionVersion {
 	/** Our logger. */
 	private static Log log = LogFactory.getLog(AssignmentSubmissionVersion.class);
 	
-	private ContentReviewService contentReviewService;
-	public String getReportURL(Long score) {
-		getContentReviewService();
-		return contentReviewService.getIconUrlforScore(score);
-	}
-	
-	private void getContentReviewService() {
-		if (contentReviewService == null)
-		{
-			contentReviewService = (ContentReviewService) ComponentManager.get(ContentReviewService.class.getName());
-		}
-	}
-	
-	public void setContentReviewService(ContentReviewService contentReviewService) {
-		this.contentReviewService = contentReviewService;
-	}
-	
-	private ContentHostingService contentHostingService = (ContentHostingService) ComponentManager.get(ContentHostingService.class.getName());  
+	private static ContentHostingService contentHostingService = (ContentHostingService) ComponentManager.get("org.sakaiproject.content.api.ContentHostingService");
 	
 	private Long id;
 	/** the Hibernate version number */
@@ -287,46 +267,6 @@ public class AssignmentSubmissionVersion {
 	}
 	public void setHonorPledgeFlag(boolean honorPledgeFlag) {
 		this.honorPledgeFlag = honorPledgeFlag;
-	}
-	
-	public void postAttachment(List attachments){
-		//Send the attachment to the review service
-
-		try {
-			ContentResource cr = getFirstAcceptableAttachement(attachments);
-			Assignment ass = this.getAssignmentSubmission().getAssignment();
-			contentReviewService.queueContent(null, null, ass.getReference(), cr.getId());
-		} catch (QueueException qe) {
-			log.warn(this + " BaseAssignmentSubmissionEdit postAttachment: Unable to add content to Content Review queue: " + qe.getMessage());
-		} catch (Exception e) {
-			e.printStackTrace();
-		}
-
-	}
-
-	private ContentResource getFirstAcceptableAttachement(List attachments) {
-		
-		for( int i =0; i < attachments.size();i++ ) { 
-			Reference attachment = (Reference)attachments.get(i);
-			try {
-				ContentResource res = contentHostingService.getResource(attachment.getId());
-				if (contentReviewService.isAcceptableContent(res)) {
-					return res;
-				}
-			} catch (PermissionException e) {
-				// TODO Auto-generated catch block
-				e.printStackTrace();
-			} catch (IdUnusedException e) {
-				// TODO Auto-generated catch block
-				e.printStackTrace();
-			} catch (TypeException e) {
-				// TODO Auto-generated catch block
-				e.printStackTrace();
-			}
-
-			
-		}
-		return null;
 	}
 
 	public Date getSubmittedTime() {

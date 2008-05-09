@@ -18,55 +18,35 @@
  * limitations under the License.
  *
  **********************************************************************************/
-
-package org.sakaiproject.assignment.model;
+package org.sakaiproject.assignment.api;
 
 /**
- * The base class for all attachment type
+ * The base class for attachments associated with AssignmentSubmission
  * @author zqian
  *
  */
-public class AttachmentBase {
-	protected Long id;
-	protected String attachmentReference;
-	protected int hibernateVersion;  //for optimistic locking
-
-	/**
-	 * @return the id of this assignment attachment
-	 */
-	public Long getId() {
-		return id;
+public class SubmissionAttachmentBase extends AttachmentBase{
+	
+	public SubmissionAttachmentBase ()
+	{
+		
 	}
-
-	/**
-	 * set the the id of this assignment attachment
-	 * @param id
-	 */
-	public void setId(Long id) {
-		this.id = id;
-	}
-
-	/**
-	 * 
-	 * @return the reference to this attachment
-	 */
-	public String getAttachmentReference() {
-		return attachmentReference;
-	}
-
-	/**
-	 * set the reference to this attachment
-	 * @param attachmentReference
-	 */
-	public void setAttachmentReference(String attachmentReference) {
+	
+	public SubmissionAttachmentBase (AssignmentSubmissionVersion submissionVersion, String attachmentReference)
+	{
+		this.submissionVersion = submissionVersion;
 		this.attachmentReference = attachmentReference;
 	}
+	
+	/** the associated AssignmentSubmissionVersion object */
+	protected AssignmentSubmissionVersion submissionVersion;
 
-	public int getHibernateVersion() {
-		return hibernateVersion;
+	public AssignmentSubmissionVersion getSubmissionVersion() {
+		return submissionVersion;
 	}
 
-	public void setHibernateVersion(int hibernateVersion) {
-		this.hibernateVersion = hibernateVersion;
+	public void setSubmissionVersion(AssignmentSubmissionVersion submissionVersion) {
+		this.submissionVersion = submissionVersion;
 	}
+
 }

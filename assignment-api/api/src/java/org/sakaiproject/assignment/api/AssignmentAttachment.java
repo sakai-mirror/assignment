@@ -19,7 +19,7 @@
  *
  **********************************************************************************/
 
-package org.sakaiproject.assignment.model;
+package org.sakaiproject.assignment.api;
 
 /**
  * Assignment attachment object

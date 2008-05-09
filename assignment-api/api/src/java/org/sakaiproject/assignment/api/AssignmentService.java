@@ -35,7 +35,6 @@ import org.sakaiproject.exception.PermissionException;
 import org.sakaiproject.user.api.User;
 import org.w3c.dom.Element;
 
-import org.sakaiproject.assignment.model.*;
 //import org.sakaiproject.genericdao.api.CompleteGenericDao;
 
 /**

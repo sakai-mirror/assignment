@@ -55,11 +55,11 @@ import org.sakaiproject.announcement.api.AnnouncementMessage;
 import org.sakaiproject.announcement.api.AnnouncementMessageEdit;
 import org.sakaiproject.announcement.api.AnnouncementMessageHeaderEdit;
 import org.sakaiproject.announcement.api.AnnouncementService;
-import org.sakaiproject.assignment.model.Assignment;
-import org.sakaiproject.assignment.model.AssignmentGroup;
-import org.sakaiproject.assignment.model.AssignmentSubmission;
-import org.sakaiproject.assignment.model.AssignmentSubmissionVersion;
-import org.sakaiproject.assignment.model.constants.AssignmentConstants;
+import org.sakaiproject.assignment.api.Assignment;
+import org.sakaiproject.assignment.api.AssignmentGroup;
+import org.sakaiproject.assignment.api.AssignmentSubmission;
+import org.sakaiproject.assignment.api.AssignmentSubmissionVersion;
+import org.sakaiproject.assignment.api.constants.AssignmentConstants;
 
 import org.sakaiproject.assignment.api.AssignmentService;
 import org.sakaiproject.assignment.taggable.api.AssignmentActivityProducer;
@@ -666,7 +666,7 @@ public class AssignmentAction extends PagedResourceActionII
 	
 	private ContentHostingService m_contentHostingService = null;
 	
-	private static AssignmentService assignmentService = (AssignmentService) ComponentManager.get(AssignmentService.class);
+	private AssignmentService assignmentService = null;
 
 	/**
 	 * central place for dispatching the build routines based on the state name
@@ -3611,11 +3611,7 @@ public class AssignmentAction extends PagedResourceActionII
 						// add attachments
 						List attachments = (List) state.getAttribute(ATTACHMENTS);
 						if (attachments != null)
-						{
-							// add each attachment
-							if ((!attachments.isEmpty()) && a.getAllowReviewService().booleanValue()) 
-								edit.postAttachment(attachments);								
-							
+						{								
 							// add each attachment
 							edit.setSubmittedAttachments(attachments);
 						}
@@ -6428,6 +6424,11 @@ public class AssignmentAction extends PagedResourceActionII
 		if (m_contentHostingService == null)
 		{
 			m_contentHostingService = (ContentHostingService) ComponentManager.get("org.sakaiproject.content.api.ContentHostingService");
+		}
+		
+		if (assignmentService == null)
+		{
+			assignmentService = (AssignmentService) ComponentManager.get("org.sakaiproject.assignment.api.AssignmentService");
 		}
 
 		String siteId = ToolManager.getCurrentPlacement().getContext();

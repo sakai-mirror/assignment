@@ -18,7 +18,7 @@
  * limitations under the License.
  *
  **********************************************************************************/
-package org.sakaiproject.assignment.model.constants;
+package org.sakaiproject.assignment.api.constants;
 
 /**
  * store the constants definitions related to assignment
