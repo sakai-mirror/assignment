@@ -77,10 +77,14 @@ CoreEntityProvider, AutoRegisterEntityProvider, PropertyProvideable {
     String parsedRef = reference;
     String defaultView = "doView_submission";
     String[] refParts = reference.split(Entity.SEPARATOR);
+    String submissionId = "";
     
     if (refParts.length >= 4) {
     	parsedRef = refParts[0] + Entity.SEPARATOR + refParts[1] + Entity.SEPARATOR + refParts[2];
     	defaultView = refParts[3];
+    	if (refParts.length >= 5) {
+    		submissionId = refParts[4].replaceAll("_", Entity.SEPARATOR);
+    	}
     }
     
     String assignmentId = parsedRef;
@@ -96,8 +100,10 @@ CoreEntityProvider, AutoRegisterEntityProvider, PropertyProvideable {
           props.put("modified_time", assignment.getTimeLastModified().getDisplay());
 
       String placement = siteService.getSite(assignment.getContext()).getToolForCommonId("sakai.assignment.grades").getId();
-      props.put("url", "/portal/tool/" + placement + "?assignmentId=" + assignment.getId() + "&assignmentReference=" + assignment.getReference() + "&panel=Main&sakai_action=" + defaultView);
-      //props.put("url", "/portal/tool/" + placement + "?assignmentId=" + assignment.getId() + "&panel=Main&sakai_action=" + defaultView);
+      props.put("url", "/portal/tool/" + placement + "?assignmentId=" + assignment.getId() + 
+    		  "&submissionId=" + submissionId +
+    		  "&assignmentReference=" + assignment.getReference() + 
+    		  "&panel=Main&sakai_action=" + defaultView);
       props.put("status", assignment.getStatus());
       props.put("due_time", assignment.getDueTimeString());
       props.put("open_time", assignment.getOpenTimeString());

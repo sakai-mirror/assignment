@@ -77,4 +77,9 @@ public class AssignmentActivityImpl implements TaggableActivity {
 			"/direct/assignment/" + assignment.getId() + "/doView_assignment?TB_iframe=true";
 		return url;
 	}
+
+	public String getTypeName()
+	{
+		return producer.getName();
+	}
 }
