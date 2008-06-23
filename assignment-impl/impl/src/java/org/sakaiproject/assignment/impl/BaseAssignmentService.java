@@ -56,6 +56,7 @@ import org.apache.poi.hssf.usermodel.HSSFRow;
 import org.apache.poi.hssf.usermodel.HSSFSheet;
 import org.apache.poi.hssf.usermodel.HSSFWorkbook;
 import org.sakaiproject.assignment.api.Assignment;
+import org.sakaiproject.assignment.api.AssignmentConstants;
 import org.sakaiproject.assignment.api.AssignmentContent;
 import org.sakaiproject.assignment.api.AssignmentContentEdit;
 import org.sakaiproject.assignment.api.AssignmentContentNotEmptyException;
@@ -1624,7 +1625,7 @@ public abstract class BaseAssignmentService implements AssignmentService, Entity
 				EventTrackingService.post(EventTrackingService.newEvent(EVENT_SUBMIT_ASSIGNMENT_SUBMISSION, submissionRef, true));
 			
 				// only doing the notification for real online submissions
-				if (a.getTypeOfSubmission() != Assignment.NON_ELECTRONIC_ASSIGNMENT_SUBMISSION)
+				if (a.getTypeOfSubmission() != AssignmentConstants.NON_ELECTRONIC_ASSIGNMENT_SUBMISSION)
 				{
 					// instructor notification
 					notificationToInstructors(s, a);
@@ -1666,8 +1667,8 @@ public abstract class BaseAssignmentService implements AssignmentService, Entity
 	 */
 	private void notificationToInstructors(AssignmentSubmission s, Assignment a) 
 	{
-		String notiOption = a.getProperties().getProperty(Assignment.ASSIGNMENT_INSTRUCTOR_NOTIFICATIONS_VALUE);
-		if (notiOption != null && !notiOption.equals(Assignment.ASSIGNMENT_INSTRUCTOR_NOTIFICATIONS_NONE))
+		String notiOption = a.getProperties().getProperty(AssignmentConstants.ASSIGNMENT_INSTRUCTOR_NOTIFICATIONS_VALUE);
+		if (notiOption != null && !notiOption.equals(AssignmentConstants.ASSIGNMENT_INSTRUCTOR_NOTIFICATIONS_NONE))
 		{
 			// need to send notification email
 			String context = s.getContext();
@@ -1719,12 +1720,12 @@ public abstract class BaseAssignmentService implements AssignmentService, Entity
 			
 			String messageBody = getNotificationMessage(s);
 			
-			if (notiOption.equals(Assignment.ASSIGNMENT_INSTRUCTOR_NOTIFICATIONS_EACH))
+			if (notiOption.equals(AssignmentConstants.ASSIGNMENT_INSTRUCTOR_NOTIFICATIONS_EACH))
 			{
 				// send the message immidiately
 				EmailService.sendToUsers(finalReceivers, getHeaders(null), messageBody);
 			}
-			else if (notiOption.equals(Assignment.ASSIGNMENT_INSTRUCTOR_NOTIFICATIONS_DIGEST))
+			else if (notiOption.equals(AssignmentConstants.ASSIGNMENT_INSTRUCTOR_NOTIFICATIONS_DIGEST))
 			{
 				// digest the message to each user
 				for (Iterator iReceivers = finalReceivers.iterator(); iReceivers.hasNext();)
@@ -3452,7 +3453,7 @@ public abstract class BaseAssignmentService implements AssignmentService, Entity
 									{
 										submittersName = submittersName.concat("/");
 										// create the folder structure - named after the submitter's name
-										if (typeOfSubmission != Assignment.ATTACHMENT_ONLY_ASSIGNMENT_SUBMISSION)
+										if (typeOfSubmission != AssignmentConstants.ATTACHMENT_ONLY_ASSIGNMENT_SUBMISSION)
 										{
 											// create the text file only when a text submission is allowed
 											ZipEntry textEntry = new ZipEntry(submittersName + submittersString + "_submissionText" + ZIP_SUBMITTED_TEXT_FILE_TYPE);

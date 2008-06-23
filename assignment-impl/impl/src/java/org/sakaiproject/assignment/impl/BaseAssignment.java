@@ -11,6 +11,7 @@ import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.sakaiproject.assignment.api.Assignment;
 import org.sakaiproject.assignment.api.AssignmentContent;
+import org.sakaiproject.assignment.api.AssignmentConstants;
 import org.sakaiproject.assignment.api.AssignmentEdit;
 import org.sakaiproject.assignment.api.Assignment.AssignmentAccess;
 import org.sakaiproject.entity.api.AttachmentContainer;
@@ -205,9 +206,9 @@ public class BaseAssignment implements Assignment, AttachmentContainer
 		/*** from AssignmentContent ***/
 		m_attachments = assignmentService.entityManager().newReferenceList();
 		m_instructions = "";
-		m_honorPledge = Assignment.HONOR_PLEDGE_NOT_SET;
-		m_typeOfSubmission = Assignment.ASSIGNMENT_SUBMISSION_TYPE_NOT_SET;
-		m_typeOfGrade = Assignment.GRADE_TYPE_NOT_SET;
+		m_honorPledge = AssignmentConstants.HONOR_PLEDGE_NOT_SET;
+		m_typeOfSubmission = AssignmentConstants.ASSIGNMENT_SUBMISSION_TYPE_NOT_SET;
+		m_typeOfGrade = AssignmentConstants.GRADE_TYPE_NOT_SET;
 		m_maxGradePoint = 0;
 		m_timeCreated = TimeService.newTime();
 		m_timeLastModified = TimeService.newTime();

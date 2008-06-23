@@ -8,6 +8,7 @@ import java.util.Vector;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.sakaiproject.assignment.api.Assignment;
+import org.sakaiproject.assignment.api.AssignmentConstants;
 import org.sakaiproject.assignment.api.AssignmentSubmission;
 import org.sakaiproject.authz.cover.SecurityService;
 import org.sakaiproject.component.cover.ComponentManager;
@@ -38,7 +39,6 @@ import org.xml.sax.Attributes;
 import org.xml.sax.ContentHandler;
 import org.xml.sax.SAXException;
 
-import org.sakaiproject.contentreview.exception.QueueException;
 import org.sakaiproject.contentreview.service.ContentReviewService;
 
 /**********************************************************************************************************************************************************************************************************************************************************
@@ -1085,7 +1085,7 @@ public class BaseAssignmentSubmission implements AssignmentSubmission
 	public String getGradeDisplay()
 	{
 		Assignment m = getAssignment();
-		if (m.getContent().getTypeOfGrade() == Assignment.SCORE_GRADE_TYPE)
+		if (m.getTypeOfGrade() == AssignmentConstants.SCORE_GRADE_TYPE)
 		{
 			if (m_grade != null && m_grade.length() > 0 && !m_grade.equals("0"))
 			{

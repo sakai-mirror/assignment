@@ -25,7 +25,6 @@ import java.io.OutputStream;
 import java.util.Set;
 import java.util.Vector;
 
-import org.sakaiproject.assignment.api.Assignment;
 import org.sakaiproject.component.cover.ComponentManager;
 
 /**
@@ -109,13 +108,13 @@ public class AssignmentService {
 
 	public static java.lang.String PROP_ASSIGNMENT_ASSOCIATE_GRADEBOOK_ASSIGNMENT = org.sakaiproject.assignment.api.AssignmentService.PROP_ASSIGNMENT_ASSOCIATE_GRADEBOOK_ASSIGNMENT;
 
-	public static java.lang.String ASSIGNMENT_INSTRUCTOR_NOTIFICATIONS_VALUE= org.sakaiproject.assignment.api.Assignment.ASSIGNMENT_INSTRUCTOR_NOTIFICATIONS_VALUE;
+	public static java.lang.String ASSIGNMENT_INSTRUCTOR_NOTIFICATIONS_VALUE= org.sakaiproject.assignment.api.AssignmentConstants.ASSIGNMENT_INSTRUCTOR_NOTIFICATIONS_VALUE;
 	
-	public static java.lang.String ASSIGNMENT_INSTRUCTOR_NOTIFICATIONS_NONE = org.sakaiproject.assignment.api.Assignment.ASSIGNMENT_INSTRUCTOR_NOTIFICATIONS_NONE;
+	public static java.lang.String ASSIGNMENT_INSTRUCTOR_NOTIFICATIONS_NONE = org.sakaiproject.assignment.api.AssignmentConstants.ASSIGNMENT_INSTRUCTOR_NOTIFICATIONS_NONE;
 	
-	public static java.lang.String ASSIGNMENT_INSTRUCTOR_NOTIFICATIONS_EACH = org.sakaiproject.assignment.api.Assignment.ASSIGNMENT_INSTRUCTOR_NOTIFICATIONS_EACH;
+	public static java.lang.String ASSIGNMENT_INSTRUCTOR_NOTIFICATIONS_EACH = org.sakaiproject.assignment.api.AssignmentConstants.ASSIGNMENT_INSTRUCTOR_NOTIFICATIONS_EACH;
 	
-	public static java.lang.String ASSIGNMENT_INSTRUCTOR_NOTIFICATIONS_DIGEST = org.sakaiproject.assignment.api.Assignment.ASSIGNMENT_INSTRUCTOR_NOTIFICATIONS_DIGEST;
+	public static java.lang.String ASSIGNMENT_INSTRUCTOR_NOTIFICATIONS_DIGEST = org.sakaiproject.assignment.api.AssignmentConstants.ASSIGNMENT_INSTRUCTOR_NOTIFICATIONS_DIGEST;
 	
 	public static java.lang.String NEW_ASSIGNMENT_ADD_TO_GRADEBOOK = org.sakaiproject.assignment.api.AssignmentService.NEW_ASSIGNMENT_ADD_TO_GRADEBOOK;
 	 
