@@ -782,7 +782,7 @@ public abstract class BaseAssignmentService implements AssignmentService, Entity
 	public Assignment mergeAssignment(Element el) throws IdInvalidException, IdUsedException, PermissionException
 	{
 		// construct from the XML
-		Assignment assignmentFromXml = new BaseAssignment(el);
+		Assignment assignmentFromXml = new BaseAssignment(this, el);
 
 		// check for a valid assignment name
 		if (!Validator.checkResourceId(assignmentFromXml.getId())) throw new IdInvalidException(assignmentFromXml.getId());
@@ -5125,7 +5125,7 @@ public abstract class BaseAssignmentService implements AssignmentService, Entity
 		 */
 		public Entity newResource(Entity container, String id, Object[] others)
 		{
-			return new BaseAssignment(id, (String) others[0]);
+			return new BaseAssignment(BaseAssignmentService.this, id, (String) others[0]);
 		}
 
 		/**
@@ -5139,7 +5139,7 @@ public abstract class BaseAssignmentService implements AssignmentService, Entity
 		 */
 		public Entity newResource(Entity container, Element element)
 		{
-			return new BaseAssignment(element);
+			return new BaseAssignment(BaseAssignmentService.this, element);
 		}
 
 		/**
@@ -5153,7 +5153,7 @@ public abstract class BaseAssignmentService implements AssignmentService, Entity
 		 */
 		public Entity newResource(Entity container, Entity other)
 		{
-			return new BaseAssignment((Assignment) other);
+			return new BaseAssignment(BaseAssignmentService.this, (Assignment) other);
 		}
 		
 		/**
@@ -5169,7 +5169,7 @@ public abstract class BaseAssignmentService implements AssignmentService, Entity
 		 */
 		public Edit newResourceEdit(Entity container, String id, Object[] others)
 		{
-			BaseAssignment e = new BaseAssignment(id, (String) others[0]);
+			BaseAssignment e = new BaseAssignment(BaseAssignmentService.this, id, (String) others[0]);
 			e.activate();
 			return e;
 		}
@@ -5185,7 +5185,7 @@ public abstract class BaseAssignmentService implements AssignmentService, Entity
 		 */
 		public Edit newResourceEdit(Entity container, Element element)
 		{
-			BaseAssignment e = new BaseAssignment(element);
+			BaseAssignment e = new BaseAssignment(BaseAssignmentService.this, element);
 			e.activate();
 			return e;
 		}
@@ -5201,7 +5201,7 @@ public abstract class BaseAssignmentService implements AssignmentService, Entity
 		 */
 		public Edit newResourceEdit(Entity container, Entity other)
 		{
-			BaseAssignment e = new BaseAssignment((Assignment) other);
+			BaseAssignment e = new BaseAssignment(BaseAssignmentService.this, (Assignment) other);
 			e.activate();
 			return e;
 		}
@@ -5284,7 +5284,7 @@ public abstract class BaseAssignmentService implements AssignmentService, Entity
 						{
 							if ("assignment".equals(qName))
 							{
-								BaseAssignment ba = new BaseAssignment();
+								BaseAssignment ba = new BaseAssignment(BaseAssignmentService.this);
 								entity = ba;
 								setContentHandler(ba.getContentHandler(services), uri,
 										localName, qName, attributes);

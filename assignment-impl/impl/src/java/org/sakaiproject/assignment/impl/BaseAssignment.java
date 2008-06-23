@@ -168,24 +168,28 @@ public class BaseAssignment implements Assignment, AttachmentContainer
 	/**
 	 * constructor
 	 */
-	public BaseAssignment()
+	public BaseAssignment(BaseAssignmentService assignmentService)
 	{
+		this.assignmentService = assignmentService;
 		m_properties = new BaseResourcePropertiesEdit();
 	}// constructor
 	
 	/**
 	 * Copy constructor
 	 */
-	public BaseAssignment(Assignment assignment)
+	public BaseAssignment(BaseAssignmentService assignmentService, Assignment assignment)
 	{
+		this.assignmentService = assignmentService;
 		setAll(assignment);
 	}// copy constructor
 
 	/**
 	 * Constructor used in addAssignment
 	 */
-	public BaseAssignment(String id, String context)
+	public BaseAssignment(BaseAssignmentService assignmentService, String id, String context)
 	{
+		this.assignmentService = assignmentService;
+		
 		m_properties = new BaseResourcePropertiesEdit();
 		AssignmentUtil.addLiveProperties(m_properties);
 		m_id = id;
@@ -208,6 +212,18 @@ public class BaseAssignment implements Assignment, AttachmentContainer
 		m_timeCreated = TimeService.newTime();
 		m_timeLastModified = TimeService.newTime();
 	}
+	
+	/**
+	 * Reads the Assignment's attribute values from xml.
+	 * 
+	 * @param s -
+	 *        Data structure holding the xml info.
+	 */
+	public BaseAssignment(BaseAssignmentService assignmentService, Element el)
+	{
+		this.assignmentService = assignmentService;
+		elementConstructor(el);
+	}
 
 	/**
 	 * Reads the Assignment's attribute values from xml.
@@ -218,7 +234,12 @@ public class BaseAssignment implements Assignment, AttachmentContainer
 	public BaseAssignment(Element el)
 	{
 		M_log.warn(this + " BASE ASSIGNMENT : ENTERING STORAGE CONSTRUCTOR");
+		
+		elementConstructor(el);
 
+	}// storage constructor
+
+	private void elementConstructor(Element el) {
 		m_properties = new BaseResourcePropertiesEdit();
 
 		int numAttributes = 0;
@@ -442,8 +463,7 @@ public class BaseAssignment implements Assignment, AttachmentContainer
 		{
 			M_log.warn(this + " BaseAssignment: Exception reading attachments : " + e);
 		}
-
-	}// storage constructor
+	}
 
 	/**
 	 * @param services
