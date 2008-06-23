@@ -31,6 +31,7 @@ import org.sakaiproject.time.api.Time;
  * <p>
  * AssignmentContent is the an interface for the Sakai assignments module. It represents the part of the assignment content that is "unchanging" for different versions of the assignment.
  * </p>
+ * @deprecated As of Sakai 2.6, the AssignmentContent object is deprecated. Corresponding attributes have moved into Assignment class
  */
 public interface AssignmentContent extends Entity, AttachmentContainer
 {

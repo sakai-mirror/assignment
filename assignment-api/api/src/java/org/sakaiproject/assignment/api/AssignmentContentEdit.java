@@ -30,6 +30,7 @@ import org.sakaiproject.user.api.User;
  * <p>
  * AssignmentContentEdit is the an interface for the Sakai assignments module. It represents the editable part of the assignment content that is "unchanging" for different versions of the assignment.
  * </p>
+ * @deprecated The AssignmentContentEdit is deprecated after 2.6
  */
 public interface AssignmentContentEdit extends AssignmentContent, AttachmentContainerEdit, Edit
 {

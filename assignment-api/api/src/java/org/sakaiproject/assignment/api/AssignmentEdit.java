@@ -33,6 +33,7 @@ import org.sakaiproject.user.api.User;
  * <p>
  * Assignment is an interface for the Sakai assignments module. It represents a specific assignment (as for a specific section or class).
  * </p>
+ * @deprecated AssignmentEdit is deprecated since Sakai 2.6
  */
 public interface AssignmentEdit extends Assignment, Edit
 {

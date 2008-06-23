@@ -32,6 +32,7 @@ import org.sakaiproject.user.api.User;
  * <p>
  * AssignmentSubmissionEdit is an interface for the Sakai assignments module. It represents editable student submissions for assignments.
  * </p>
+ * @deprecated AssignmentSubmissionEdit is deprecated after Sakai 2.6. All function definitions should be moved into AssignmentSubmission interface
  */
 public interface AssignmentSubmissionEdit extends AssignmentSubmission, Edit
 {

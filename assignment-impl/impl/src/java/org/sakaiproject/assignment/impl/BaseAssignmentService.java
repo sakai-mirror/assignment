@@ -170,16 +170,10 @@ public abstract class BaseAssignmentService implements AssignmentService, Entity
 	protected AssignmentStorage m_assignmentStorage = null;
 
 	/** A Storage object for persistent storage of Assignments. */
-	protected AssignmentContentStorage m_contentStorage = null;
-
-	/** A Storage object for persistent storage of Assignments. */
 	protected AssignmentSubmissionStorage m_submissionStorage = null;
 
 	/** A Cache for this service - Assignments keyed by reference. */
 	protected Cache m_assignmentCache = null;
-
-	/** A Cache for this service - AssignmentContents keyed by reference. */
-	protected Cache m_contentCache = null;
 
 	/** A Cache for this service - AssignmentSubmissions keyed by reference. */
 	protected Cache m_submissionCache = null;
@@ -238,10 +232,6 @@ public abstract class BaseAssignmentService implements AssignmentService, Entity
 	
 	private static final String NEW_ASSIGNMENT_DUE_DATE_SCHEDULED = "new_assignment_due_date_scheduled";
 
-	protected static final String GROUP_LIST = "group";
-
-	protected static final String GROUP_NAME = "authzGroup";
-	
 	// the file types for zip download
 	protected static final String ZIP_COMMENT_FILE_TYPE = ".txt";
 	protected static final String ZIP_SUBMITTED_TEXT_FILE_TYPE = ".html";
@@ -254,7 +244,26 @@ public abstract class BaseAssignmentService implements AssignmentService, Entity
 		this.contentReviewService = contentReviewService;
 	}
 	
+	/**********************************************************************************************************************************************************************************************************************************************************
+	 * Dependencies
+	 *********************************************************************************************************************************************************************************************************************************************************/
 
+	/**
+	 * @return the EntityManager collaborator.
+	 */
+	protected EntityManager entityManager()
+	{
+		return m_entityManager;
+	}
+	
+
+	/**
+	 * @return the ContentHostingService collaborator.
+	 */
+	protected ContentHostingService contentHostingService()
+	{
+		return m_contentHostingService;
+	}
 	
 	/**********************************************************************************************************************************************************************************************************************************************************
 	 * Abstractions, etc.
@@ -266,13 +275,6 @@ public abstract class BaseAssignmentService implements AssignmentService, Entity
 	 * @return The new storage object.
 	 */
 	protected abstract AssignmentStorage newAssignmentStorage();
-
-	/**
-	 * Construct a Storage object for AssignmentContents.
-	 * 
-	 * @return The new storage object.
-	 */
-	protected abstract AssignmentContentStorage newContentStorage();
 
 	/**
 	 * Construct a Storage object for AssignmentSubmissions.
@@ -541,6 +543,7 @@ public abstract class BaseAssignmentService implements AssignmentService, Entity
 	{
 		m_entityManager = service;
 	}
+	
 
 	/** Dependency: ServerConfigurationService. */
 	protected ServerConfigurationService m_serverConfigurationService = null;
@@ -643,8 +646,6 @@ public abstract class BaseAssignmentService implements AssignmentService, Entity
 		// construct storage helpers and read
 		m_assignmentStorage = newAssignmentStorage();
 		m_assignmentStorage.open();
-		m_contentStorage = newContentStorage();
-		m_contentStorage.open();
 		m_submissionStorage = newSubmissionStorage();
 		m_submissionStorage.open();
 
@@ -656,11 +657,6 @@ public abstract class BaseAssignmentService implements AssignmentService, Entity
 							"org.sakaiproject.assignment.api.AssignmentService.assignmentCache",
 							new AssignmentCacheRefresher(),
 							assignmentReference(null, ""));
-			m_contentCache = m_memoryService
-					.newCache(
-							"org.sakaiproject.assignment.api.AssignmentService.contentCache",
-							new AssignmentContentCacheRefresher(),
-							contentReference(null, ""));
 			m_submissionCache = m_memoryService
 					.newCache(
 							"org.sakaiproject.assignment.api.AssignmentService.submissionCache",
@@ -701,11 +697,6 @@ public abstract class BaseAssignmentService implements AssignmentService, Entity
 				m_assignmentCache.destroy();
 				m_assignmentCache = null;
 			}
-			if (m_contentCache != null)
-			{
-				m_contentCache.destroy();
-				m_contentCache = null;
-			}
 			if (m_submissionCache != null)
 			{
 				m_submissionCache.destroy();
@@ -715,8 +706,6 @@ public abstract class BaseAssignmentService implements AssignmentService, Entity
 
 		m_assignmentStorage.close();
 		m_assignmentStorage = null;
-		m_contentStorage.close();
-		m_contentStorage = null;
 		m_submissionStorage.close();
 		m_submissionStorage = null;
 
@@ -740,7 +729,7 @@ public abstract class BaseAssignmentService implements AssignmentService, Entity
 	 * @throws PermissionException
 	 *         if current User does not have permission to do this.
 	 */
-	public AssignmentEdit addAssignment(String context) throws PermissionException
+	public Assignment addAssignment(String context) throws PermissionException
 	{
 		M_log.warn(this + " ENTERING ADD ASSIGNMENT : CONTEXT : " + context);
 
@@ -765,10 +754,10 @@ public abstract class BaseAssignmentService implements AssignmentService, Entity
 		}
 
 		// storage
-		AssignmentEdit assignment = m_assignmentStorage.put(assignmentId, context);
+		Assignment assignment = m_assignmentStorage.put(assignmentId, context);
 
 		// event for tracking
-		((BaseAssignmentEdit) assignment).setEvent(EVENT_ADD_ASSIGNMENT);
+		((BaseAssignment) assignment).setEvent(EVENT_ADD_ASSIGNMENT);
 
 		
 			M_log.warn(this + " LEAVING ADD ASSIGNMENT WITH : ID : " + assignment.getId());
@@ -790,7 +779,7 @@ public abstract class BaseAssignmentService implements AssignmentService, Entity
 	 * @exception PermissionException
 	 *            if the current user does not have permission to add an assignnment.
 	 */
-	public AssignmentEdit mergeAssignment(Element el) throws IdInvalidException, IdUsedException, PermissionException
+	public Assignment mergeAssignment(Element el) throws IdInvalidException, IdUsedException, PermissionException
 	{
 		// construct from the XML
 		Assignment assignmentFromXml = new BaseAssignment(el);
@@ -802,16 +791,16 @@ public abstract class BaseAssignmentService implements AssignmentService, Entity
 		unlock(SECURE_ADD_ASSIGNMENT, assignmentFromXml.getReference());
 
 		// reserve a assignment with this id from the info store - if it's in use, this will return null
-		AssignmentEdit assignment = m_assignmentStorage.put(assignmentFromXml.getId(), assignmentFromXml.getContext());
+		Assignment assignment = m_assignmentStorage.put(assignmentFromXml.getId(), assignmentFromXml.getContext());
 		if (assignment == null)
 		{
 			throw new IdUsedException(assignmentFromXml.getId());
 		}
 
 		// transfer from the XML read assignment object to the AssignmentEdit
-		((BaseAssignmentEdit) assignment).set(assignmentFromXml);
+		((BaseAssignment) assignment).set(assignmentFromXml);
 
-		((BaseAssignmentEdit) assignment).setEvent(EVENT_ADD_ASSIGNMENT);
+		((BaseAssignment) assignment).setEvent(EVENT_ADD_ASSIGNMENT);
 
 		ResourcePropertiesEdit propertyEdit = (BaseResourcePropertiesEdit)assignment.getProperties();
 		try
@@ -840,14 +829,13 @@ public abstract class BaseAssignmentService implements AssignmentService, Entity
 	 * @throws PermissionException
 	 *         if current User does not have permission to do this.
 	 */
-	public AssignmentEdit addDuplicateAssignment(String context, String assignmentReference) throws PermissionException,
+	public Assignment addDuplicateAssignment(String context, String assignmentReference) throws PermissionException,
 			IdInvalidException, IdUsedException, IdUnusedException
 	{
 		
 			M_log.warn(this + " ENTERING ADD DUPLICATE ASSIGNMENT WITH ID : " + assignmentReference);
 
-		AssignmentEdit retVal = null;
-		AssignmentContentEdit newContent = null;
+		Assignment retVal = null;
 
 		if (assignmentReference != null)
 		{
@@ -860,11 +848,8 @@ public abstract class BaseAssignmentService implements AssignmentService, Entity
 					M_log.warn(this + " addDuplicateAssignment : assignment exists - will copy");
 
 				Assignment existingAssignment = getAssignment(assignmentReference);
-				newContent = addDuplicateAssignmentContent(context, existingAssignment.getContentReference());
-				commitEdit(newContent);
 
 				retVal = addAssignment(context);
-				retVal.setContentReference(newContent.getReference());
 				retVal.setTitle(existingAssignment.getTitle() + " - Copy");
 				retVal.setSection(existingAssignment.getSection());
 				retVal.setOpenTime(existingAssignment.getOpenTime());
@@ -874,7 +859,56 @@ public abstract class BaseAssignmentService implements AssignmentService, Entity
 				retVal.setDraft(true);
 				ResourcePropertiesEdit pEdit = (BaseResourcePropertiesEdit) retVal.getProperties();
 				pEdit.addAll(existingAssignment.getProperties());
-				addLiveProperties(pEdit);
+				AssignmentUtil.addLiveProperties(pEdit);
+				
+				retVal.setInstructions(existingAssignment.getInstructions());
+				retVal.setHonorPledge(existingAssignment.getHonorPledge());
+				retVal.setTypeOfSubmission(existingAssignment.getTypeOfSubmission());
+				retVal.setTypeOfGrade(existingAssignment.getTypeOfGrade());
+				retVal.setMaxGradePoint(existingAssignment.getMaxGradePoint());
+				retVal.setGroupProject(existingAssignment.getGroupProject());
+				retVal.setIndividuallyGraded(existingAssignment.individuallyGraded());
+				retVal.setReleaseGrades(existingAssignment.releaseGrades());
+				retVal.setAllowAttachments(existingAssignment.getAllowAttachments());
+
+
+				List tempVector = null;
+
+				Reference tempRef = null;
+				Reference newRef = null;
+				tempVector = existingAssignment.getAttachments();
+				if (tempVector != null)
+				{
+					for (int z = 0; z < tempVector.size(); z++)
+					{
+						tempRef = (Reference) tempVector.get(z);
+						if (tempRef != null)
+						{
+							String tempRefId = tempRef.getId();
+							String tempRefCollectionId = m_contentHostingService.getContainingCollectionId(tempRefId);
+							try
+							{
+								// get the original attachment display name
+								ResourceProperties p = m_contentHostingService.getProperties(tempRefId);
+								String displayName = p.getProperty(ResourceProperties.PROP_DISPLAY_NAME);
+								// add another attachment instance
+								String newItemId = m_contentHostingService.copyIntoFolder(tempRefId, tempRefCollectionId);
+								ContentResourceEdit copy = m_contentHostingService.editResource(newItemId);
+								// with the same display name
+								ResourcePropertiesEdit pedit = copy.getPropertiesEdit();
+								pedit.addProperty(ResourceProperties.PROP_DISPLAY_NAME, displayName);
+								m_contentHostingService.commitResource(copy, NotificationService.NOTI_NONE);
+								newRef = m_entityManager.newReference(copy.getReference());
+								retVal.addAttachment(newRef);
+							}
+							catch (Exception e)
+							{
+								
+									M_log.warn(this + " LEAVING ADD DUPLICATE CONTENT : " + e.toString());
+							}	
+						}
+					}
+				}
 			}
 		}
 
@@ -1147,6 +1181,7 @@ public abstract class BaseAssignmentService implements AssignmentService, Entity
 	}
 
 	/**
+	 * @deprecated
 	 * Get a locked assignment object for editing. Must commitEdit() to make official, or cancelEdit() when done!
 	 * 
 	 * @param id
@@ -1161,24 +1196,7 @@ public abstract class BaseAssignmentService implements AssignmentService, Entity
 	 */
 	public AssignmentEdit editAssignment(String assignmentReference) throws IdUnusedException, PermissionException, InUseException
 	{
-		// check security (throws if not permitted)
-		unlock(SECURE_UPDATE_ASSIGNMENT, assignmentReference);
-
-		String assignmentId = assignmentId(assignmentReference);
-
-		// check for existance
-		if (!m_assignmentStorage.check(assignmentId))
-		{
-			throw new IdUnusedException(assignmentId);
-		}
-
-		// ignore the cache - get the assignment with a lock from the info store
-		AssignmentEdit assignmentEdit = m_assignmentStorage.edit(assignmentId);
-		if (assignmentEdit == null) throw new InUseException(assignmentId);
-
-		((BaseAssignmentEdit) assignmentEdit).setEvent(EVENT_UPDATE_ASSIGNMENT);
-
-		return assignmentEdit;
+		return null;
 
 	} // editAssignment
 
@@ -1188,7 +1206,7 @@ public abstract class BaseAssignmentService implements AssignmentService, Entity
 	 * @param assignment
 	 *        The AssignmentEdit object to commit.
 	 */
-	public void commitEdit(AssignmentEdit assignment)
+	public void saveAssignment(Assignment assignment)
 	{
 		// check for closed edit
 		if (!assignment.isActiveEdit())
@@ -1205,21 +1223,30 @@ public abstract class BaseAssignmentService implements AssignmentService, Entity
 		}
 
 		// update the properties
-		addLiveUpdateProperties(assignment.getPropertiesEdit());
+		AssignmentUtil.addLiveUpdateProperties(assignment.getPropertiesEdit());
 
 		// complete the edit
 		m_assignmentStorage.commit(assignment);
 
 		// track it
-		EventTrackingService.post(EventTrackingService.newEvent(((BaseAssignmentEdit) assignment).getEvent(), assignment
+		EventTrackingService.post(EventTrackingService.newEvent(((BaseAssignment) assignment).getEvent(), assignment
 				.getReference(), true));
 
-		// close the edit object
-		((BaseAssignmentEdit) assignment).closeEdit();
-
+	} // commitEdit
+	
+	/**
+	 * @deprecated
+	 * Commit the changes made to an AssignmentEdit object, and release the lock.
+	 * 
+	 * @param assignment
+	 *        The AssignmentEdit object to commit.
+	 */
+	public void commitEdit(AssignmentEdit assignment)
+	{
 	} // commitEdit
 
 	/**
+	 * @deprecated
 	 * Cancel the changes made to a AssignmentEdit object, and release the lock.
 	 * 
 	 * @param assignment
@@ -1227,29 +1254,10 @@ public abstract class BaseAssignmentService implements AssignmentService, Entity
 	 */
 	public void cancelEdit(AssignmentEdit assignment)
 	{
-		// check for closed edit
-		if (!assignment.isActiveEdit())
-		{
-			try
-			{
-				throw new Exception();
-			}
-			catch (Exception e)
-			{
-				M_log.warn(this + " cancelEdit(): closed AssignmentEdit " + e.getMessage() + " assignment id=" + assignment.getId());
-			}
-			return;
-		}
-
-		// release the edit lock
-		m_assignmentStorage.cancel(assignment);
-
-		// close the edit object
-		((BaseAssignmentEdit) assignment).closeEdit();
-
 	} // cancelEdit(Assignment)
 
 	/**
+	 * @deprecated
 	 * Removes this Assignment and all references to it.
 	 * 
 	 * @param assignment -
@@ -1258,6 +1266,17 @@ public abstract class BaseAssignmentService implements AssignmentService, Entity
 	 *         if current User does not have permission to do this.
 	 */
 	public void removeAssignment(AssignmentEdit assignment) throws PermissionException
+	{
+	}
+	/**
+	 * Removes this Assignment and all references to it.
+	 * 
+	 * @param assignment -
+	 *        The Assignment to remove.
+	 * @throws PermissionException
+	 *         if current User does not have permission to do this.
+	 */
+	public void removeAssignment(Assignment assignment) throws PermissionException
 	{
 		if (assignment != null)
 		{
@@ -1285,9 +1304,6 @@ public abstract class BaseAssignmentService implements AssignmentService, Entity
 			// track event
 			EventTrackingService.post(EventTrackingService.newEvent(EVENT_REMOVE_ASSIGNMENT, assignment.getReference(), true));
 
-			// close the edit object
-			((BaseAssignmentEdit) assignment).closeEdit();
-
 			// remove any realm defined for this resource
 			try
 			{
@@ -1302,6 +1318,7 @@ public abstract class BaseAssignmentService implements AssignmentService, Entity
 	}// removeAssignment
 
 	/**
+	 * @deprecated
 	 * Creates and adds a new AssignmentContent to the service.
 	 * 
 	 * @param context -
@@ -1312,39 +1329,12 @@ public abstract class BaseAssignmentService implements AssignmentService, Entity
 	 */
 	public AssignmentContentEdit addAssignmentContent(String context) throws PermissionException
 	{
-		M_log.warn(this + " ENTERING ADD ASSIGNMENT CONTENT");
-
-		String contentId = null;
-		boolean badId = false;
-
-		do
-		{
-			badId = !Validator.checkResourceId(contentId);
-			contentId = IdManager.createUuid();
-
-			if (m_contentStorage.check(contentId)) badId = true;
-		}
-		while (badId);
-
-		// security check
-		if (!allowAddAssignmentContent(context))
-		{
-			throw new PermissionException(SessionManager.getCurrentSessionUserId(), SECURE_ADD_ASSIGNMENT_CONTENT, contentId);
-		}
-
-		AssignmentContentEdit content = m_contentStorage.put(contentId, context);
-
-		
-			M_log.warn(this + " LEAVING ADD ASSIGNMENT CONTENT : ID : " + content.getId());
-
-		// event for tracking
-		((BaseAssignmentContentEdit) content).setEvent(EVENT_ADD_ASSIGNMENT_CONTENT);
-
-		return content;
+		return null;
 
 	}// addAssignmentContent
 
 	/**
+	 * @deprecated
 	 * Add a new AssignmentContent to the directory, from a definition in XML. Must commitEdit() to make official, or cancelEdit() when done!
 	 * 
 	 * @param el
@@ -1359,31 +1349,11 @@ public abstract class BaseAssignmentService implements AssignmentService, Entity
 	 */
 	public AssignmentContentEdit mergeAssignmentContent(Element el) throws IdInvalidException, IdUsedException, PermissionException
 	{
-		// construct from the XML
-		AssignmentContent contentFromXml = new BaseAssignmentContent(el);
-
-		// check for a valid assignment name
-		if (!Validator.checkResourceId(contentFromXml.getId())) throw new IdInvalidException(contentFromXml.getId());
-
-		// check security (throws if not permitted)
-		unlock(SECURE_ADD_ASSIGNMENT_CONTENT, contentFromXml.getReference());
-
-		// reserve a content with this id from the info store - if it's in use, this will return null
-		AssignmentContentEdit content = m_contentStorage.put(contentFromXml.getId(), contentFromXml.getContext());
-		if (content == null)
-		{
-			throw new IdUsedException(contentFromXml.getId());
-		}
-
-		// transfer from the XML read content object to the AssignmentContentEdit
-		((BaseAssignmentContentEdit) content).set(contentFromXml);
-
-		((BaseAssignmentContentEdit) content).setEvent(EVENT_ADD_ASSIGNMENT_CONTENT);
-
-		return content;
+		return null;
 	}
 
 	/**
+	 * @deprecated
 	 * Creates and adds a new AssignmentContent to the service which is a copy of an existing AssignmentContent.
 	 * 
 	 * @param context -
@@ -1397,84 +1367,11 @@ public abstract class BaseAssignmentService implements AssignmentService, Entity
 	public AssignmentContentEdit addDuplicateAssignmentContent(String context, String contentReference) throws PermissionException,
 			IdInvalidException, IdUnusedException
 	{
-		
-			M_log.warn(this + " ENTERING ADD DUPLICATE ASSIGNMENT CONTENT : " + contentReference);
-
-		AssignmentContentEdit retVal = null;
-		AssignmentContent existingContent = null;
-		List tempVector = null;
-		Reference tempRef = null;
-		Reference newRef = null;
-
-		if (contentReference != null)
-		{
-			String contentId = contentId(contentReference);
-			if (!m_contentStorage.check(contentId))
-				throw new IdUnusedException(contentId);
-			else
-			{
-				M_log.warn(this + " ADD DUPL. CONTENT : found match - will copy");
-
-				existingContent = getAssignmentContent(contentReference);
-				retVal = addAssignmentContent(context);
-				retVal.setTitle(existingContent.getTitle() + " - Copy");
-				retVal.setInstructions(existingContent.getInstructions());
-				retVal.setHonorPledge(existingContent.getHonorPledge());
-				retVal.setTypeOfSubmission(existingContent.getTypeOfSubmission());
-				retVal.setTypeOfGrade(existingContent.getTypeOfGrade());
-				retVal.setMaxGradePoint(existingContent.getMaxGradePoint());
-				retVal.setGroupProject(existingContent.getGroupProject());
-				retVal.setIndividuallyGraded(existingContent.individuallyGraded());
-				retVal.setReleaseGrades(existingContent.releaseGrades());
-				retVal.setAllowAttachments(existingContent.getAllowAttachments());
-
-				tempVector = existingContent.getAttachments();
-				if (tempVector != null)
-				{
-					for (int z = 0; z < tempVector.size(); z++)
-					{
-						tempRef = (Reference) tempVector.get(z);
-						if (tempRef != null)
-						{
-							String tempRefId = tempRef.getId();
-							String tempRefCollectionId = m_contentHostingService.getContainingCollectionId(tempRefId);
-							try
-							{
-								// get the original attachment display name
-								ResourceProperties p = m_contentHostingService.getProperties(tempRefId);
-								String displayName = p.getProperty(ResourceProperties.PROP_DISPLAY_NAME);
-								// add another attachment instance
-								String newItemId = m_contentHostingService.copyIntoFolder(tempRefId, tempRefCollectionId);
-								ContentResourceEdit copy = m_contentHostingService.editResource(newItemId);
-								// with the same display name
-								ResourcePropertiesEdit pedit = copy.getPropertiesEdit();
-								pedit.addProperty(ResourceProperties.PROP_DISPLAY_NAME, displayName);
-								m_contentHostingService.commitResource(copy, NotificationService.NOTI_NONE);
-								newRef = m_entityManager.newReference(copy.getReference());
-								retVal.addAttachment(newRef);
-							}
-							catch (Exception e)
-							{
-								
-									M_log.warn(this + " LEAVING ADD DUPLICATE CONTENT : " + e.toString());
-							}	
-						}
-					}
-				}
-				
-				ResourcePropertiesEdit pEdit = (BaseResourcePropertiesEdit) retVal.getPropertiesEdit();
-				pEdit.addAll(existingContent.getProperties());
-				addLiveProperties(pEdit);
-			}
-		}
-
-		
-			M_log.warn(this + " LEAVING ADD DUPLICATE CONTENT WITH ID : " + retVal.getId());
-
-		return retVal;
+		return null;
 	}
 
 	/**
+	 * @deprecated
 	 * Access the AssignmentContent with the specified reference.
 	 * 
 	 * @param contentReference -
@@ -1487,131 +1384,24 @@ public abstract class BaseAssignmentService implements AssignmentService, Entity
 	 */
 	public AssignmentContent getAssignmentContent(String contentReference) throws IdUnusedException, PermissionException
 	{
-		M_log.warn(this + " GET CONTENT : ID : " + contentReference);
-
-		// check security on the assignment content
-		unlockCheck(SECURE_ACCESS_ASSIGNMENT_CONTENT, contentReference);
-		
-		AssignmentContent content = null;
-
-		// if we have it in the cache, use it
-		String contentId = contentId(contentReference);
-
-		if ((m_caching) && (m_contentCache != null) && (!m_contentCache.disabled()))
-		{
-			if (m_contentCache.containsKey(contentReference))
-				content = (AssignmentContent) m_contentCache.get(contentReference);
-			if ( content == null ) //SAK-12447 cache.get can return null on expired
-			{
-				content = m_contentStorage.get(contentId);
-
-				// cache the result
-				m_contentCache.put(contentReference, content);
-			}
-		}
-
-		else
-		{
-			// // if we have done this already in this thread, use that
-			// content = (AssignmentContent) CurrentService.getInThread(contentId+".assignment.content");
-			// if (content == null)
-			// {
-			content = m_contentStorage.get(contentId);
-			//				
-			// // "cache" the content in the current service in case they are needed again in this thread...
-			// if (content != null)
-			// {
-			// CurrentService.setInThread(contentId+".assignment.content", contentId);
-			// }
-			// }
-		}
-
-		if (content == null) throw new IdUnusedException(contentId);
-
-		M_log.warn(this + " GOT ASSIGNMENT CONTENT : ID : " + content.getId());
-
-		// track event
-		// EventTrackingService.post(EventTrackingService.newEvent(EVENT_ACCESS_ASSIGNMENT_CONTENT, content.getReference(), false));
-
-		return content;
+		return null;
 
 	}// getAssignmentContent
 
 	/**
+	 * @deprecated
 	 * Access all AssignmentContent objects - known to us (not from external providers).
 	 * 
 	 * @return A list of AssignmentContent objects.
 	 */
 	protected List getAssignmentContents(String context)
 	{
-		List contents = new Vector();
-
-		if ((m_caching) && (m_contentCache != null) && (!m_contentCache.disabled()))
-		{
-			// if the cache is complete, use it
-			if (m_contentCache.isComplete())
-			{
-				contents = m_contentCache.getAll();
-				// TODO: filter by context
-			}
-
-			// otherwise get all the contents from storage
-			else
-			{
-				// Note: while we are getting from storage, storage might change. These can be processed
-				// after we get the storage entries, and put them in the cache, and mark the cache complete.
-				// -ggolden
-				synchronized (m_contentCache)
-				{
-					// if we were waiting and it's now complete...
-					if (m_contentCache.isComplete())
-					{
-						contents = m_contentCache.getAll();
-						return contents;
-					}
-
-					// save up any events to the cache until we get past this load
-					m_contentCache.holdEvents();
-
-					contents = m_contentStorage.getAll(context);
-
-					// update the cache, and mark it complete
-					for (int i = 0; i < contents.size(); i++)
-					{
-						AssignmentContent content = (AssignmentContent) contents.get(i);
-						m_contentCache.put(content.getReference(), content);
-					}
-
-					m_contentCache.setComplete();
-					// TODO: not really, just for context
-
-					// now we are complete, process any cached events
-					m_contentCache.processEvents();
-				}
-			}
-		}
-
-		else
-		{
-			// // if we have done this already in this thread, use that
-			// contents = (List) CurrentService.getInThread(context+".assignment.contents");
-			// if (contents == null)
-			// {
-			contents = m_contentStorage.getAll(context);
-			//
-			// // "cache" the contents in the current service in case they are needed again in this thread...
-			// if (contents != null)
-			// {
-			// CurrentService.setInThread(context+".assignment.contents", contents);
-			// }
-			// }
-		}
-
-		return contents;
+		return null;
 
 	} // getAssignmentContents
 
 	/**
+	 * @deprecated
 	 * Get a locked AssignmentContent object for editing. Must commitEdit() to make official, or cancelEdit() when done!
 	 * 
 	 * @param id
@@ -1627,28 +1417,12 @@ public abstract class BaseAssignmentService implements AssignmentService, Entity
 	public AssignmentContentEdit editAssignmentContent(String contentReference) throws IdUnusedException, PermissionException,
 			InUseException
 	{
-		// check security (throws if not permitted)
-		unlock(SECURE_UPDATE_ASSIGNMENT_CONTENT, contentReference);
-
-		String contentId = contentId(contentReference);
-
-		// check for existance
-		if (!m_contentStorage.check(contentId))
-		{
-			throw new IdUnusedException(contentId);
-		}
-
-		// ignore the cache - get the AssignmentContent with a lock from the info store
-		AssignmentContentEdit content = m_contentStorage.edit(contentId);
-		if (content == null) throw new InUseException(contentId);
-
-		((BaseAssignmentContentEdit) content).setEvent(EVENT_UPDATE_ASSIGNMENT_CONTENT);
-
-		return content;
+		return null;
 
 	} // editAssignmentContent
 
 	/**
+	 * @deprecated
 	 * Commit the changes made to an AssignmentContentEdit object, and release the lock.
 	 * 
 	 * @param content
@@ -1656,36 +1430,11 @@ public abstract class BaseAssignmentService implements AssignmentService, Entity
 	 */
 	public void commitEdit(AssignmentContentEdit content)
 	{
-		// check for closed edit
-		if (!content.isActiveEdit())
-		{
-			try
-			{
-				throw new Exception();
-			}
-			catch (Exception e)
-			{
-				M_log.warn(this + " commitEdit(): closed AssignmentContentEdit " + e + " content id=" + content.getId());
-			}
-			return;
-		}
-
-		// update the properties
-		addLiveUpdateProperties(content.getPropertiesEdit());
-
-		// complete the edit
-		m_contentStorage.commit(content);
-
-		// track it
-		EventTrackingService.post(EventTrackingService.newEvent(((BaseAssignmentContentEdit) content).getEvent(), content
-				.getReference(), true));
-
-		// close the edit object
-		((BaseAssignmentContentEdit) content).closeEdit();
 
 	} // commitEdit(AssignmentContent)
 
 	/**
+	 * @deprecated
 	 * Cancel the changes made to a AssignmentContentEdit object, and release the lock.
 	 * 
 	 * @param content
@@ -1693,29 +1442,11 @@ public abstract class BaseAssignmentService implements AssignmentService, Entity
 	 */
 	public void cancelEdit(AssignmentContentEdit content)
 	{
-		// check for closed edit
-		if (!content.isActiveEdit())
-		{
-			try
-			{
-				throw new Exception();
-			}
-			catch (Exception e)
-			{
-				M_log.warn(this + " cancelEdit(): closed AssignmentContentEdit " + e.getMessage() + " assignment content id=" + content.getId());
-			}
-			return;
-		}
-
-		// release the edit lock
-		m_contentStorage.cancel(content);
-
-		// close the edit object
-		((BaseAssignmentContentEdit) content).closeEdit();
 
 	} // cancelEdit(Content)
 
 	/**
+	 * @deprecated
 	 * Removes an AssignmentContent
 	 * 
 	 * @param content -
@@ -1728,54 +1459,12 @@ public abstract class BaseAssignmentService implements AssignmentService, Entity
 	public void removeAssignmentContent(AssignmentContentEdit content) throws AssignmentContentNotEmptyException,
 			PermissionException
 	{
-		if (content != null)
-		{
-			if (!content.isActiveEdit())
-			{
-				try
-				{
-					throw new Exception();
-				}
-				catch (Exception e)
-				{
-					M_log.warn(this + " removeAssignmentContent(): closed AssignmentContentEdit " + e.getMessage() + " assignment content id=" + content.getId());
-				}
-				return;
-			}
-
-			// CHECK SECURITY
-			unlock(SECURE_REMOVE_ASSIGNMENT_CONTENT, content.getReference());
-
-			// complete the edit
-			m_contentStorage.remove(content);
-
-			// track event
-			EventTrackingService.post(EventTrackingService.newEvent(EVENT_REMOVE_ASSIGNMENT_CONTENT, content.getReference(),
-					true));
-
-			// close the edit object
-			((BaseAssignmentContentEdit) content).closeEdit();
-
-			// remove any realm defined for this resource
-			try
-			{
-				AuthzGroupService.removeAuthzGroup(AuthzGroupService.getAuthzGroup(content.getReference()));
-			}
-			catch (AuthzPermissionException e)
-			{
-				M_log.warn(this + " removeAssignmentContent: removing realm for assignment content reference=" + content.getReference() + " : " + e);
-			}
-			catch (GroupNotDefinedException e)
-			{
-				M_log.warn(this + " removeAssignmentContent " + content.getReference() + e.getMessage());
-			}
-		}
 	}
 
 	/**
 	 * {@inheritDoc}
 	 */
-	public AssignmentSubmissionEdit addSubmission(String context, String assignmentId, String submitterId) throws PermissionException
+	public AssignmentSubmission addSubmission(String context, String assignmentId, String submitterId) throws PermissionException
 	{
 		M_log.warn(this + " ENTERING ADD SUBMISSION");
 
@@ -1800,7 +1489,7 @@ public abstract class BaseAssignmentService implements AssignmentService, Entity
 		M_log.warn(this + " ADD SUBMISSION : UNLOCKED");
 
 		// storage
-		AssignmentSubmissionEdit submission = m_submissionStorage.put(submissionId, assignmentId, submitterId, null, null, null);
+		AssignmentSubmission submission = m_submissionStorage.put(submissionId, assignmentId, submitterId, null, null, null);
 
 		submission.setContext(context);
 		
@@ -1808,7 +1497,7 @@ public abstract class BaseAssignmentService implements AssignmentService, Entity
 			M_log.warn(this + " LEAVING ADD SUBMISSION : REF : " + submission.getReference());
 
 		// event for tracking
-		((BaseAssignmentSubmissionEdit) submission).setEvent(EVENT_ADD_ASSIGNMENT_SUBMISSION);
+		((BaseAssignmentSubmission) submission).setEvent(EVENT_ADD_ASSIGNMENT_SUBMISSION);
 
 		return submission;
 	}
@@ -1826,7 +1515,7 @@ public abstract class BaseAssignmentService implements AssignmentService, Entity
 	 * @exception PermissionException
 	 *            if the current user does not have permission to add a submission.
 	 */
-	public AssignmentSubmissionEdit mergeSubmission(Element el) throws IdInvalidException, IdUsedException, PermissionException
+	public AssignmentSubmission mergeSubmission(Element el) throws IdInvalidException, IdUsedException, PermissionException
 	{
 		// construct from the XML
 		BaseAssignmentSubmission submissionFromXml = new BaseAssignmentSubmission(el);
@@ -1838,7 +1527,7 @@ public abstract class BaseAssignmentService implements AssignmentService, Entity
 		unlock(SECURE_ADD_ASSIGNMENT_SUBMISSION, submissionFromXml.getReference());
 
 		// reserve a submission with this id from the info store - if it's in use, this will return null
-		AssignmentSubmissionEdit submission = m_submissionStorage.put(	submissionFromXml.getId(), 
+		AssignmentSubmission submission = m_submissionStorage.put(	submissionFromXml.getId(), 
 																		submissionFromXml.getAssignmentId(),
 																		submissionFromXml.getSubmitterIdString(),
 																		(submissionFromXml.getTimeSubmitted() != null)?String.valueOf(submissionFromXml.getTimeSubmitted().getTime()):null,
@@ -1850,14 +1539,15 @@ public abstract class BaseAssignmentService implements AssignmentService, Entity
 		}
 
 		// transfer from the XML read submission object to the SubmissionEdit
-		((BaseAssignmentSubmissionEdit) submission).set(submissionFromXml);
+		((BaseAssignmentSubmission) submission).set(submissionFromXml);
 
-		((BaseAssignmentSubmissionEdit) submission).setEvent(EVENT_ADD_ASSIGNMENT_SUBMISSION);
+		((BaseAssignmentSubmission) submission).setEvent(EVENT_ADD_ASSIGNMENT_SUBMISSION);
 
 		return submission;
 	}
 
 	/**
+	 * @deprecated
 	 * Get a locked AssignmentSubmission object for editing. Must commitEdit() to make official, or cancelEdit() when done!
 	 * 
 	 * @param submissionrReference -
@@ -1873,93 +1563,27 @@ public abstract class BaseAssignmentService implements AssignmentService, Entity
 	public AssignmentSubmissionEdit editSubmission(String submissionReference) throws IdUnusedException, PermissionException,
 			InUseException
 	{
-		String submissionId = submissionId(submissionReference);
-		// ignore the cache - get the AssignmentSubmission with a lock from the info store
-		AssignmentSubmissionEdit submission = m_submissionStorage.edit(submissionId);
-		if (submission == null) throw new InUseException(submissionId);
-		
-		// pass if with grade or update assignment right
-		if (!unlockCheck(SECURE_GRADE_ASSIGNMENT_SUBMISSION, submissionReference) && !unlockCheck(SECURE_UPDATE_ASSIGNMENT, submissionReference))
-		{
-			boolean notAllowed = true;
-			// normal user(not a grader) can only edit his/her own submission
-			User currentUser = UserDirectoryService.getCurrentUser(); 
-			if (unlockCheck(SECURE_UPDATE_ASSIGNMENT_SUBMISSION, submissionReference))
-			{
-				User[] submitters = submission.getSubmitters();
-				if (submitters != null && submitters.length == 1 && submitters[0].equals(currentUser))
-				{
-					// is editing one's own submission
-					// then test against extra criteria depend on the status of submission
-					try
-					{
-						Assignment a = submission.getAssignment();
-						if (canSubmit(a.getContext(), a))
-						{
-							notAllowed = false;
-						}
-					}
-					catch (Exception e)
-					{
-						M_log.warn(this + " editSubmission(): cannot get assignment for submission " + submissionReference + e.getMessage());
-					}
-				}
-			}
-			
-			if (notAllowed)
-			{
-				// throw PermissionException
-				throw new PermissionException(currentUser.getId(), SECURE_UPDATE_ASSIGNMENT, submissionReference);
-			}
-			
-		}
-
-		// check for existance
-		if (!m_submissionStorage.check(submissionId))
-		{
-			throw new IdUnusedException(submissionId);
-		}
-
-		((BaseAssignmentSubmissionEdit) submission).setEvent(EVENT_UPDATE_ASSIGNMENT_SUBMISSION);
-
-		return submission;
+		return null;
 
 	} // editSubmission
-
+	
 	/**
 	 * Commit the changes made to an AssignmentSubmissionEdit object, and release the lock.
 	 * 
 	 * @param submission
 	 *        The AssignmentSubmissionEdit object to commit.
 	 */
-	public void commitEdit(AssignmentSubmissionEdit submission)
+	public void saveSubmission(AssignmentSubmission submission)
 	{
 		String submissionRef = submission.getReference();
-		
-		// check for closed edit
-		if (!submission.isActiveEdit())
-		{
-			try
-			{
-				throw new Exception();
-			}
-			catch (Exception e)
-			{
-				M_log.warn(this + " commitEdit(): closed AssignmentSubmissionEdit assignment submission id=" + submission.getId() + e.getMessage());
-			}
-			return;
-		}
 
 		// update the properties
-		addLiveUpdateProperties(submission.getPropertiesEdit());
+		AssignmentUtil.addLiveUpdateProperties(submission.getPropertiesEdit());
 
 		submission.setTimeLastModified(TimeService.newTime());
 
 		// complete the edit
 		m_submissionStorage.commit(submission);
-		
-		// close the edit object
-		((BaseAssignmentSubmissionEdit) submission).closeEdit();
 
 		try
 		{
@@ -2000,7 +1624,7 @@ public abstract class BaseAssignmentService implements AssignmentService, Entity
 				EventTrackingService.post(EventTrackingService.newEvent(EVENT_SUBMIT_ASSIGNMENT_SUBMISSION, submissionRef, true));
 			
 				// only doing the notification for real online submissions
-				if (a.getContent().getTypeOfSubmission() != Assignment.NON_ELECTRONIC_ASSIGNMENT_SUBMISSION)
+				if (a.getTypeOfSubmission() != Assignment.NON_ELECTRONIC_ASSIGNMENT_SUBMISSION)
 				{
 					// instructor notification
 					notificationToInstructors(s, a);
@@ -2020,6 +1644,18 @@ public abstract class BaseAssignmentService implements AssignmentService, Entity
 		{
 			M_log.warn(this + " commitEdit(), submissionId=" + submissionRef, e);
 		}
+
+	} // saveSubmission(Submission)
+
+	/**
+	 * @deprecated
+	 * Commit the changes made to an AssignmentSubmissionEdit object, and release the lock.
+	 * 
+	 * @param submission
+	 *        The AssignmentSubmissionEdit object to commit.
+	 */
+	public void commitEdit(AssignmentSubmissionEdit submission)
+	{
 
 	} // commitEdit(Submission)
 
@@ -2287,6 +1923,7 @@ public abstract class BaseAssignmentService implements AssignmentService, Entity
 	}
 
 	/**
+	 * @deprecated
 	 * Cancel the changes made to a AssignmentSubmissionEdit object, and release the lock.
 	 * 
 	 * @param submission
@@ -2294,27 +1931,21 @@ public abstract class BaseAssignmentService implements AssignmentService, Entity
 	 */
 	public void cancelEdit(AssignmentSubmissionEdit submission)
 	{
-		// check for closed edit
-		if (!submission.isActiveEdit())
-		{
-			try
-			{
-				throw new Exception();
-			}
-			catch (Exception e)
-			{
-				M_log.warn(this + " cancelEdit(): closed AssignmentSubmissionEdit assignment submission id=" + submission.getId() + " " + e.getMessage());
-			}
-			return;
-		}
-
-		// release the edit lock
-		m_submissionStorage.cancel(submission);
-
-		// close the edit object
-		((BaseAssignmentSubmissionEdit) submission).closeEdit();
 
 	} // cancelEdit(Submission)
+	
+	/**
+	 * @deprecated
+	 * Removes an AssignmentSubmission and all references to it
+	 * 
+	 * @param submission -
+	 *        the AssignmentSubmission to remove.
+	 * @throws PermissionException
+	 *         if current User does not have permission to do this.
+	 */
+	public void removeSubmission(AssignmentSubmissionEdit submission) throws PermissionException
+	{
+	}
 
 	/**
 	 * Removes an AssignmentSubmission and all references to it
@@ -2324,7 +1955,7 @@ public abstract class BaseAssignmentService implements AssignmentService, Entity
 	 * @throws PermissionException
 	 *         if current User does not have permission to do this.
 	 */
-	public void removeSubmission(AssignmentSubmissionEdit submission) throws PermissionException
+	public void removeSubmission(AssignmentSubmission submission) throws PermissionException
 	{
 		if (submission != null)
 		{
@@ -2350,9 +1981,6 @@ public abstract class BaseAssignmentService implements AssignmentService, Entity
 			// track event
 			EventTrackingService.post(EventTrackingService.newEvent(EVENT_REMOVE_ASSIGNMENT_SUBMISSION, submission.getReference(),
 					true));
-
-			// close the edit object
-			((BaseAssignmentSubmissionEdit) submission).closeEdit();
 
 			// remove any realm defined for this resource
 			try
@@ -2853,32 +2481,6 @@ public abstract class BaseAssignmentService implements AssignmentService, Entity
 	{
 		return REFERENCE_ROOT;
 	}
-
-	/**
-	 * Update the live properties for an object when modified.
-	 */
-	protected void addLiveUpdateProperties(ResourcePropertiesEdit props)
-	{
-		props.addProperty(ResourceProperties.PROP_MODIFIED_BY, SessionManager.getCurrentSessionUserId());
-
-		props.addProperty(ResourceProperties.PROP_MODIFIED_DATE, TimeService.newTime().toString());
-
-	} // addLiveUpdateProperties
-
-	/**
-	 * Create the live properties for the object.
-	 */
-	protected void addLiveProperties(ResourcePropertiesEdit props)
-	{
-		String current = SessionManager.getCurrentSessionUserId();
-		props.addProperty(ResourceProperties.PROP_CREATOR, current);
-		props.addProperty(ResourceProperties.PROP_MODIFIED_BY, current);
-
-		String now = TimeService.newTime().toString();
-		props.addProperty(ResourceProperties.PROP_CREATION_DATE, now);
-		props.addProperty(ResourceProperties.PROP_MODIFIED_DATE, now);
-
-	} // addLiveProperties
 
 	/**
 	 * check permissions for addAssignment().
@@ -4781,9 +4383,8 @@ public abstract class BaseAssignmentService implements AssignmentService, Entity
 							}
 
 							// merge in this assignment
-							AssignmentEdit edit = mergeAssignment(el2clone);
-							edit.setContent(contentEdit);
-							commitEdit(edit);
+							Assignment edit = mergeAssignment(el2clone);
+							saveAssignment(edit);
 
 							count++;
 						} // if goAhead
@@ -4838,8 +4439,7 @@ public abstract class BaseAssignmentService implements AssignmentService, Entity
 
 			if (toBeImported)
 			{
-				AssignmentEdit nAssignment = null;
-				AssignmentContentEdit nContent = null;
+				Assignment nAssignment = null;
 
 				if (!m_assignmentStorage.check(oAssignmentId))
 				{
@@ -4849,129 +4449,94 @@ public abstract class BaseAssignmentService implements AssignmentService, Entity
 				{
 					try
 					{
-						// add new Assignment content
-						String oContentReference = oAssignment.getContentReference();
-						String oContentId = contentId(oContentReference);
-						if (!m_contentStorage.check(oContentId))
-							throw new IdUnusedException(oContentId);
-						else
+						// add new assignment
+						nAssignment = addAssignment(toContext);
+						// attribute
+						nAssignment.setAllowAttachments(oAssignment.getAllowAttachments());
+						nAssignment.setContext(toContext);
+						nAssignment.setGroupProject(oAssignment.getGroupProject());
+						nAssignment.setHonorPledge(oAssignment.getHonorPledge());
+						nAssignment.setIndividuallyGraded(oAssignment.individuallyGraded());
+						nAssignment.setInstructions(oAssignment.getInstructions());
+						nAssignment.setMaxGradePoint(oAssignment.getMaxGradePoint());
+						nAssignment.setReleaseGrades(oAssignment.releaseGrades());
+						nAssignment.setTimeLastModified(oAssignment.getTimeLastModified());
+						nAssignment.setTypeOfGrade(oAssignment.getTypeOfGrade());
+						nAssignment.setTypeOfSubmission(oAssignment.getTypeOfSubmission());
+						// attachment
+						List oAttachments = oAssignment.getAttachments();
+						List nAttachments = m_entityManager.newReferenceList();
+						for (int n = 0; n < oAttachments.size(); n++)
 						{
-							AssignmentContent oContent = getAssignmentContent(oContentReference);
-							nContent = addAssignmentContent(toContext);
-							// attributes
-
-							nContent.setAllowAttachments(oContent.getAllowAttachments());
-							nContent.setContext(toContext);
-							nContent.setGroupProject(oContent.getGroupProject());
-							nContent.setHonorPledge(oContent.getHonorPledge());
-							nContent.setIndividuallyGraded(oContent.individuallyGraded());
-							nContent.setInstructions(oContent.getInstructions());
-							nContent.setMaxGradePoint(oContent.getMaxGradePoint());
-							nContent.setReleaseGrades(oContent.releaseGrades());
-							nContent.setTimeLastModified(oContent.getTimeLastModified());
-							nContent.setTitle(oContent.getTitle());
-							nContent.setTypeOfGrade(oContent.getTypeOfGrade());
-							nContent.setTypeOfSubmission(oContent.getTypeOfSubmission());
-							// properties
-							ResourcePropertiesEdit p = nContent.getPropertiesEdit();
-							p.clear();
-							p.addAll(oContent.getProperties());
-							// update live properties
-							addLiveProperties(p);
-							// attachment
-							List oAttachments = oContent.getAttachments();
-							List nAttachments = m_entityManager.newReferenceList();
-							for (int n = 0; n < oAttachments.size(); n++)
+							Reference oAttachmentRef = (Reference) oAttachments.get(n);
+							String oAttachmentId = ((Reference) oAttachments.get(n)).getId();
+							if (oAttachmentId.indexOf(fromContext) != -1)
 							{
-								Reference oAttachmentRef = (Reference) oAttachments.get(n);
-								String oAttachmentId = ((Reference) oAttachments.get(n)).getId();
-								if (oAttachmentId.indexOf(fromContext) != -1)
-								{
-									// transfer attachment, replace the context string and add new attachment if necessary
-									transferAttachment(fromContext, toContext, nAttachments, oAttachmentId);
-								}
-								else
-								{
-									nAttachments.add(oAttachmentRef);
-								}
-							}
-							nContent.replaceAttachments(nAttachments);
-							// complete the edit
-							m_contentStorage.commit(nContent);
-							((BaseAssignmentContentEdit) nContent).closeEdit();
-						}
-					}
-					catch (Exception e)
-					{
-						if (M_log.isWarnEnabled()) M_log.warn(this + " transferCopyEntities " + e.toString()  + " oAssignmentId=" + oAssignmentId);
-					}
-
-					if (nContent != null)
-					{
-						try
-						{
-							// add new assignment
-							nAssignment = addAssignment(toContext);
-							// attribute
-							nAssignment.setCloseTime(oAssignment.getCloseTime());
-							nAssignment.setContentReference(nContent.getReference());
-							nAssignment.setContext(toContext);
-							
- 							// when importing, refer to property to determine draft status
-							if ("false".equalsIgnoreCase(m_serverConfigurationService.getString("import.importAsDraft")))
-							{
-								nAssignment.setDraft(oAssignment.getDraft());
+								// transfer attachment, replace the context string and add new attachment if necessary
+								transferAttachment(fromContext, toContext, nAttachments, oAttachmentId);
 							}
 							else
 							{
-								nAssignment.setDraft(true);
-							}
-							
-							nAssignment.setDropDeadTime(oAssignment.getDropDeadTime());
-							nAssignment.setDueTime(oAssignment.getDueTime());
-							nAssignment.setOpenTime(oAssignment.getOpenTime());
-							nAssignment.setSection(oAssignment.getSection());
-							nAssignment.setTitle(oAssignment.getTitle());
-							// properties
-							ResourcePropertiesEdit p = nAssignment.getPropertiesEdit();
-							p.clear();
-							p.addAll(oAssignment.getProperties());
-							
-							// one more touch on the gradebook-integration link
-							if (StringUtil.trimToNull(p.getProperty(PROP_ASSIGNMENT_ASSOCIATE_GRADEBOOK_ASSIGNMENT)) != null)
-							{
-								// assignments are imported as drafts;
-								// mark the integration with "add" for now, later when user posts the assignment, the corresponding assignment will be created in gradebook.
-								p.removeProperty(PROP_ASSIGNMENT_ASSOCIATE_GRADEBOOK_ASSIGNMENT);
-								p.addProperty(NEW_ASSIGNMENT_ADD_TO_GRADEBOOK, GRADEBOOK_INTEGRATION_ADD);
-							}
-							
-							// update live properties
-							addLiveProperties(p);
-							// complete the edit
-							m_assignmentStorage.commit(nAssignment);
-							((BaseAssignmentEdit) nAssignment).closeEdit();
-							
-							try {
-								if (m_taggingManager.isTaggable()) {
-									for (TaggingProvider provider : m_taggingManager
-											.getProviders()) {
-										provider
-												.transferCopyTags(
-														m_assignmentActivityProducer
-																.getActivity(oAssignment),
-														m_assignmentActivityProducer
-																.getActivity(nAssignment));
-									}
-								}
-							} catch (PermissionException pe) {
-								M_log.error(this + " transferCopyEntities " + pe.toString()  + " oAssignmentId=" + oAssignment.getId() + " nAssignmentId=" + nAssignment.getId());
+								nAttachments.add(oAttachmentRef);
 							}
 						}
-						catch (Exception ee)
+						nAssignment.replaceAttachments(nAttachments);
+						
+						nAssignment.setCloseTime(oAssignment.getCloseTime());
+						nAssignment.setContext(toContext);
+						
+						// when importing, refer to property to determine draft status
+						if ("false".equalsIgnoreCase(m_serverConfigurationService.getString("import.importAsDraft")))
 						{
-							M_log.error(this + " transferCopyEntities " + ee.toString() + " oAssignmentId=" + oAssignment.getId() + " nAssignmentId=" + nAssignment.getId());
+							nAssignment.setDraft(oAssignment.getDraft());
 						}
+						else
+						{
+							nAssignment.setDraft(true);
+						}
+						
+						nAssignment.setDropDeadTime(oAssignment.getDropDeadTime());
+						nAssignment.setDueTime(oAssignment.getDueTime());
+						nAssignment.setOpenTime(oAssignment.getOpenTime());
+						nAssignment.setSection(oAssignment.getSection());
+						nAssignment.setTitle(oAssignment.getTitle());
+						// properties
+						ResourcePropertiesEdit p = nAssignment.getPropertiesEdit();
+						p.clear();
+						p.addAll(oAssignment.getProperties());
+						
+						// one more touch on the gradebook-integration link
+						if (StringUtil.trimToNull(p.getProperty(PROP_ASSIGNMENT_ASSOCIATE_GRADEBOOK_ASSIGNMENT)) != null)
+						{
+							// assignments are imported as drafts;
+							// mark the integration with "add" for now, later when user posts the assignment, the corresponding assignment will be created in gradebook.
+							p.removeProperty(PROP_ASSIGNMENT_ASSOCIATE_GRADEBOOK_ASSIGNMENT);
+							p.addProperty(NEW_ASSIGNMENT_ADD_TO_GRADEBOOK, GRADEBOOK_INTEGRATION_ADD);
+						}
+						
+						// update live properties
+						AssignmentUtil.addLiveProperties(p);
+						// complete the edit
+						m_assignmentStorage.commit(nAssignment);
+						
+						try {
+							if (m_taggingManager.isTaggable()) {
+								for (TaggingProvider provider : m_taggingManager
+										.getProviders()) {
+									provider
+											.transferCopyTags(
+													m_assignmentActivityProducer
+															.getActivity(oAssignment),
+													m_assignmentActivityProducer
+															.getActivity(nAssignment));
+								}
+							}
+						} catch (PermissionException pe) {
+							M_log.error(this + " transferCopyEntities " + pe.toString()  + " oAssignmentId=" + oAssignment.getId() + " nAssignmentId=" + nAssignment.getId());
+						}
+					} catch (Exception e)
+					{
+						M_log.error(this + " transferCopyEntities oAssignmentId=" + oAssignment.getId() + " nAssignmentId=" + nAssignment.getId());
 					}
 				} // if-else
 			} // if
@@ -5235,4357 +4800,7 @@ public abstract class BaseAssignmentService implements AssignmentService, Entity
 			return false;
 		}
 	}
-
-	/**********************************************************************************************************************************************************************************************************************************************************
-	 * Assignment Implementation
-	 *********************************************************************************************************************************************************************************************************************************************************/
-
-	public class BaseAssignment implements Assignment
-	{
-		protected ResourcePropertiesEdit m_properties;
-
-		protected String m_id;
-
-		protected String m_assignmentContent;
-
-		protected String m_title;
-
-		protected String m_context;
-
-		protected String m_section;
-
-		protected Time m_openTime;
-
-		protected Time m_dueTime;
-
-		protected Time m_closeTime;
-
-		protected Time m_dropDeadTime;
-
-		protected List m_authors;
-
-		protected boolean m_draft;
-		
-		protected int m_position_order;
-
-		/** The Collection of groups (authorization group id strings). */
-		protected Collection m_groups = new Vector();
-
-		/** The assignment access. */
-		protected AssignmentAccess m_access = AssignmentAccess.SITE;
-
-		/**
-		 * constructor
-		 */
-		public BaseAssignment()
-		{
-			m_properties = new BaseResourcePropertiesEdit();
-		}// constructor
-		
-		/**
-		 * Copy constructor
-		 */
-		public BaseAssignment(Assignment assignment)
-		{
-			setAll(assignment);
-		}// copy constructor
-
-		/**
-		 * Constructor used in addAssignment
-		 */
-		public BaseAssignment(String id, String context)
-		{
-			m_properties = new BaseResourcePropertiesEdit();
-			addLiveProperties(m_properties);
-			m_id = id;
-			m_assignmentContent = "";
-			m_title = "";
-			m_context = context;
-			m_section = "";
-			m_authors = new Vector();
-			m_draft = true;
-			m_groups = new Vector();
-			m_position_order = 0;
-		}
-
-		/**
-		 * Reads the Assignment's attribute values from xml.
-		 * 
-		 * @param s -
-		 *        Data structure holding the xml info.
-		 */
-		public BaseAssignment(Element el)
-		{
-			M_log.warn(this + " BASE ASSIGNMENT : ENTERING STORAGE CONSTRUCTOR");
-
-			m_properties = new BaseResourcePropertiesEdit();
-
-			int numAttributes = 0;
-			String intString = null;
-			String attributeString = null;
-			String tempString = null;
-
-			m_id = el.getAttribute("id");
-			
-				M_log.warn(this + " BASE ASSIGNMENT : STORAGE CONSTRUCTOR : ASSIGNMENT ID : " + m_id);
-			m_title = el.getAttribute("title");
-			m_section = el.getAttribute("section");
-			m_draft = getBool(el.getAttribute("draft"));
-			
-				M_log.warn(this + " BASE ASSIGNMENT : STORAGE CONSTRUCTOR : READ THROUGH REG ATTS");
-
-			m_assignmentContent = el.getAttribute("assignmentcontent");
-			
-				M_log.warn(this + " BASE ASSIGNMENT : STORAGE CONSTRUCTOR : CONTENT ID : "
-						+ m_assignmentContent);
-
-			m_openTime = getTimeObject(el.getAttribute("opendate"));
-			m_dueTime = getTimeObject(el.getAttribute("duedate"));
-			m_dropDeadTime = getTimeObject(el.getAttribute("dropdeaddate"));
-			m_closeTime = getTimeObject(el.getAttribute("closedate"));
-			m_context = el.getAttribute("context");
-			m_position_order = 0; // prevents null pointer if there is no position_order defined as well as helps with the sorting
-			try
-			{
-				m_position_order = new Long(el.getAttribute("position_order")).intValue();
-			}
-			catch (Exception e)
-			{
-				M_log.warn(this + ": BaseAssignment(Element) " + e.getMessage());
-			}
-
-			// READ THE AUTHORS
-			m_authors = new Vector();
-			intString = el.getAttribute("numberofauthors");
-			
-				M_log.warn(this + " BASE ASSIGNMENT : STORAGE CONSTRUCTOR : number of authors : " + intString);
-			try
-			{
-				numAttributes = Integer.parseInt(intString);
-
-				for (int x = 0; x < numAttributes; x++)
-				{
-					
-						M_log.warn(this + " BASE ASSIGNMENT : STORAGE CONSTRUCTOR : reading author # " + x);
-					attributeString = "author" + x;
-					tempString = el.getAttribute(attributeString);
-
-					if (tempString != null)
-					{
-						
-							M_log.warn(this + " BASE ASSIGNMENT : STORAGE CONSTRUCTOR : adding author # " + x
-									+ " id :  " + tempString);
-						m_authors.add(tempString);
-					}
-				}
-			}
-			catch (Exception e)
-			{
-				M_log.warn(this + " BASE ASSIGNMENT : STORAGE CONSTRUCTOR : Exception reading authors : " + e);
-			}
-
-			// READ THE PROPERTIES AND INSTRUCTIONS
-			NodeList children = el.getChildNodes();
-			final int length = children.getLength();
-			for (int i = 0; i < length; i++)
-			{
-				Node child = children.item(i);
-				if (child.getNodeType() != Node.ELEMENT_NODE) continue;
-				Element element = (Element) child;
-
-				// look for properties
-				if (element.getTagName().equals("properties"))
-				{
-					// re-create properties
-					m_properties = new BaseResourcePropertiesEdit(element);
-				}
-
-				// look for an group
-				else if (element.getTagName().equals("group"))
-				{
-					m_groups.add(element.getAttribute("authzGroup"));
-				}
-			}
-
-			// extract access
-			AssignmentAccess access = AssignmentAccess.fromString(el.getAttribute("access"));
-			if (access != null)
-			{
-				m_access = access;
-			}
-
-			M_log.warn(this + " BASE ASSIGNMENT : LEAVING STORAGE CONSTRUCTOR");
-
-		}// storage constructor
-
-		/**
-		 * @param services
-		 * @return
-		 */
-		public ContentHandler getContentHandler(Map<String, Object> services)
-		{
-			final Entity thisEntity = this;
-			return new DefaultEntityHandler()
-			{
-				/*
-				 * (non-Javadoc)
-				 * 
-				 * @see org.sakaiproject.util.DefaultEntityHandler#startElement(java.lang.String,
-				 *      java.lang.String, java.lang.String,
-				 *      org.xml.sax.Attributes)
-				 */
-				@Override
-				public void startElement(String uri, String localName, String qName,
-						Attributes attributes) throws SAXException
-				{
-					if (doStartElement(uri, localName, qName, attributes))
-					{
-						if ("assignment".equals(qName) && entity == null)
-						{
-							m_id = attributes.getValue("id");
-							m_properties = new BaseResourcePropertiesEdit();
-							
-							int numAttributes = 0;
-							String intString = null;
-							String attributeString = null;
-							String tempString = null;
-
-							m_title = attributes.getValue("title");
-							m_section = attributes.getValue("section");
-							m_draft = getBool(attributes.getValue("draft"));
-							
-								M_log.warn(this + " getContentHandler: READ THROUGH REG ATTS");
-
-							m_assignmentContent = attributes.getValue("assignmentcontent");
-							
-								M_log.warn(this + " getContentHandler: STORAGE CONSTRUCTOR : CONTENT ID : "
-										+ m_assignmentContent);
-
-							m_openTime = getTimeObject(attributes.getValue("opendate"));
-							m_dueTime = getTimeObject(attributes.getValue("duedate"));
-							m_dropDeadTime = getTimeObject(attributes.getValue("dropdeaddate"));
-							m_closeTime = getTimeObject(attributes.getValue("closedate"));
-							m_context = attributes.getValue("context");
-							m_position_order = 0; // prevents null pointer if there is no position_order defined as well as helps with the sorting
-							try
-							{
-								m_position_order = new Long(attributes.getValue("position_order")).intValue();
-							}
-							catch (Exception e)
-							{
-								M_log.warn(this + ":getContentHandler:DefaultEntityHandler Long data parse problem " + attributes.getValue("position_order") + e.getMessage());
-							}
-
-							// READ THE AUTHORS
-							m_authors = new Vector();
-							intString = attributes.getValue("numberofauthors");
-							try
-							{
-								numAttributes = Integer.parseInt(intString);
-
-								for (int x = 0; x < numAttributes; x++)
-								{
-									attributeString = "author" + x;
-									tempString = attributes.getValue(attributeString);
-
-									if (tempString != null)
-									{
-										m_authors.add(tempString);
-									}
-								}
-							}
-							catch (Exception e)
-							{
-								M_log.warn(this + " BASE ASSIGNMENT getContentHandler startElement : Exception reading authors : " + e.toString());
-							}
-
-							// extract access
-							AssignmentAccess access = AssignmentAccess.fromString(attributes.getValue("access"));
-							if (access != null)
-							{
-								m_access = access;
-							}
-							
-							entity = thisEntity;
-						}
-						else if (GROUP_LIST.equals(qName))
-						{
-							String groupRef = attributes.getValue(GROUP_NAME);
-							if (groupRef != null)
-							{
-								m_groups.add(groupRef);
-							}
-						}
-						else
-						{
-							M_log.warn(this + " BaseAssignment getContentHandler Unexpected Element " + qName);
-						}
-
-					}
-				}
-			};
-		}
-		
-		/**
-		 * Takes the Assignment's attribute values and puts them into the xml document.
-		 * 
-		 * @param s -
-		 *        Data structure holding the object to be stored.
-		 * @param doc -
-		 *        The xml document.
-		 */
-		public Element toXml(Document doc, Stack stack)
-		{
-			M_log.warn(this + " BASE ASSIGNMENT : ENTERING TOXML");
-
-			Element assignment = doc.createElement("assignment");
-
-			if (stack.isEmpty())
-			{
-				doc.appendChild(assignment);
-			}
-			else
-			{
-				((Element) stack.peek()).appendChild(assignment);
-			}
-			stack.push(assignment);
-
-			// SET ASSIGNMENT ATTRIBUTES
-			String numItemsString = null;
-			String attributeString = null;
-			String itemString = null;
-			assignment.setAttribute("id", m_id);
-			assignment.setAttribute("title", m_title);
-			assignment.setAttribute("section", m_section);
-			assignment.setAttribute("context", m_context);
-			assignment.setAttribute("assignmentcontent", m_assignmentContent);
-			assignment.setAttribute("draft", getBoolString(m_draft));
-			assignment.setAttribute("opendate", getTimeString(m_openTime));
-			assignment.setAttribute("duedate", getTimeString(m_dueTime));
-			assignment.setAttribute("dropdeaddate", getTimeString(m_dropDeadTime));
-			assignment.setAttribute("closedate", getTimeString(m_closeTime));
-			assignment.setAttribute("position_order", new Long(m_position_order).toString().trim());
-
-			
-				M_log.warn(this + " BASE ASSIGNMENT : TOXML : saved regular properties");
-
-			// SAVE THE AUTHORS
-			numItemsString = "" + m_authors.size();
-			
-				M_log.warn(this + " BASE ASSIGNMENT : TOXML : saving " + numItemsString + " authors");
-
-			assignment.setAttribute("numberofauthors", numItemsString);
-			for (int x = 0; x < m_authors.size(); x++)
-			{
-				attributeString = "author" + x;
-				itemString = (String) m_authors.get(x);
-				if (itemString != null)
-				{
-					assignment.setAttribute(attributeString, itemString);
-					
-						M_log.warn(this + " BASE ASSIGNMENT : TOXML : saving author : " + itemString);
-				}
-			}
-
-			// add groups
-			if ((m_groups != null) && (m_groups.size() > 0))
-			{
-				for (Iterator i = m_groups.iterator(); i.hasNext();)
-				{
-					String group = (String) i.next();
-					Element sect = doc.createElement("group");
-					assignment.appendChild(sect);
-					sect.setAttribute("authzGroup", group);
-				}
-			}
-
-			// add access
-			assignment.setAttribute("access", m_access.toString());
-
-			// SAVE THE PROPERTIES
-			m_properties.toXml(doc, stack);
-			M_log.warn(this + " BASE ASSIGNMENT : TOXML : SAVED PROPERTIES");
-			stack.pop();
-
-			M_log.warn("ASSIGNMENT : BASE ASSIGNMENT : LEAVING TOXML");
-
-			return assignment;
-
-		}// toXml
-
-		protected void setAll(Assignment assignment)
-		{
-			if (assignment != null)
-			{
-				m_id = assignment.getId();
-				m_assignmentContent = assignment.getContentReference();
-				m_authors = assignment.getAuthors();
-				m_title = assignment.getTitle();
-				m_context = assignment.getContext();
-				m_section = assignment.getSection();
-				m_openTime = assignment.getOpenTime();
-				m_dueTime = assignment.getDueTime();
-				m_closeTime = assignment.getCloseTime();
-				m_dropDeadTime = assignment.getDropDeadTime();
-				m_draft = assignment.getDraft();
-				m_position_order = 0;
-				try
-				{
-					m_position_order = assignment.getPosition_order();
-				}
-				catch (Exception e)
-				{
-					M_log.warn(this + ": setAll(Assignment) get position order " + e.getMessage());
-				}
-				m_properties = new BaseResourcePropertiesEdit();
-				m_properties.addAll(assignment.getProperties());
-				m_groups = assignment.getGroups();
-				m_access = assignment.getAccess();
-			}
-		}
-
-		public String getId()
-		{
-			return m_id;
-		}
-
-		/**
-		 * Access the URL which can be used to access the resource.
-		 * 
-		 * @return The URL which can be used to access the resource.
-		 */
-		public String getUrl()
-		{
-			return getAccessPoint(false) + Entity.SEPARATOR + "a" + Entity.SEPARATOR + m_context + Entity.SEPARATOR + m_id;
-
-		} // getUrl
-
-		/**
-		 * Access the internal reference which can be used to access the resource from within the system.
-		 * 
-		 * @return The the internal reference which can be used to access the resource from within the system.
-		 */
-		public String getReference()
-		{
-			return assignmentReference(m_context, m_id);
-
-		} // getReference
-
-		/**
-		 * @inheritDoc
-		 */
-		public String getReference(String rootProperty)
-		{
-			return getReference();
-		}
-
-		/**
-		 * @inheritDoc
-		 */
-		public String getUrl(String rootProperty)
-		{
-			return getUrl();
-		}
-
-		/**
-		 * Access the resource's properties.
-		 * 
-		 * @return The resource's properties.
-		 */
-		public ResourceProperties getProperties()
-		{
-			return m_properties;
-		}
-
-		/**
-		 * Access the list of authors.
-		 * 
-		 * @return FlexStringArray of user ids.
-		 */
-		public List getAuthors()
-		{
-			return m_authors;
-		}
-
-		/**
-		 * Add an author to the author list.
-		 * 
-		 * @param author -
-		 *        The User to add to the author list.
-		 */
-		public void addAuthor(User author)
-		{
-			if (author != null) m_authors.add(author.getId());
-		}
-
-		/**
-		 * Remove an author from the author list.
-		 * 
-		 * @param author -
-		 *        the User to remove from the author list.
-		 */
-		public void removeAuthor(User author)
-		{
-			if (author != null) m_authors.remove(author.getId());
-		}
-
-		/**
-		 * Access the creator of this object.
-		 * 
-		 * @return String The creator's user id.
-		 */
-		public String getCreator()
-		{
-			return m_properties.getProperty(ResourceProperties.PROP_CREATOR);
-		}
-
-		/**
-		 * Access the person of last modificaiton
-		 * 
-		 * @return the User's Id
-		 */
-		public String getAuthorLastModified()
-		{
-			return m_properties.getProperty(ResourceProperties.PROP_MODIFIED_BY);
-		}
-
-		/**
-		 * Access the title.
-		 * 
-		 * @return The Assignment's title.
-		 */
-		public String getTitle()
-		{
-			return m_title;
-		}
-
-		/**
-		 * @inheritDoc
-		 */
-		public String getStatus()
-		{
-			Time currentTime = TimeService.newTime();
-			
-			if (this.getDraft())
-				return rb.getString("gen.dra1");
-			else if (this.getOpenTime().after(currentTime))
-				return rb.getString("gen.notope");
-			else if (this.getDueTime().after(currentTime))
-				return rb.getString("gen.open");
-			else if ((this.getCloseTime() != null) && (this.getCloseTime().before(currentTime)))
-				return rb.getString("gen.closed");
-			else
-				return rb.getString("gen.due1");
-		}
-
-		/**
-		 * Access the time that this object was created.
-		 * 
-		 * @return The Time object representing the time of creation.
-		 */
-		public Time getTimeCreated()
-		{
-			try
-			{
-				return m_properties.getTimeProperty(ResourceProperties.PROP_CREATION_DATE);
-			}
-			catch (EntityPropertyNotDefinedException e)
-			{
-				M_log.warn(this + ":getTimeCreated() no time property defined " + e.getMessage());
-			}
-			catch (EntityPropertyTypeException e)
-			{
-				M_log.warn(this + ":getTimeCreated() no time property defined " + e.getMessage());
-			}
-			return null;
-		}
-
-		/**
-		 * Access the time of last modificaiton.
-		 * 
-		 * @return The Time of last modification.
-		 */
-		public Time getTimeLastModified()
-		{
-			try
-			{
-				return m_properties.getTimeProperty(ResourceProperties.PROP_MODIFIED_DATE);
-			}
-			catch (EntityPropertyNotDefinedException e)
-			{
-				M_log.warn(this + ":getTimeLastModified() no time property defined " + e.getMessage());
-			}
-			catch (EntityPropertyTypeException e)
-			{
-				M_log.warn(this + ":getTimeLastModified() no time property defined " + e.getMessage());
-			}
-			return null;
-		}
-
-		/**
-		 * Access the AssignmentContent of this Assignment.
-		 * 
-		 * @return The Assignment's AssignmentContent.
-		 */
-		public AssignmentContent getContent()
-		{
-			AssignmentContent retVal = null;
-			if (m_assignmentContent != null)
-			{
-				try
-				{
-					retVal = getAssignmentContent(m_assignmentContent);
-				}
-				catch (Exception e)
-				{
-					M_log.warn(this + ":getContent() " + e.getMessage());
-				}
-			}
-
-			return retVal;
-		}
-
-		/**
-		 * Access the reference of the AssignmentContent of this Assignment.
-		 * 
-		 * @return The Assignment's reference.
-		 */
-		public String getContentReference()
-		{
-			return m_assignmentContent;
-		}
-
-		/**
-		 * Access the id of the Assignment's group.
-		 * 
-		 * @return The id of the group for which this Assignment is designed.
-		 */
-		public String getContext()
-		{
-			return m_context;
-		}
-
-		/**
-		 * Access the section info
-		 * 
-		 * @return The section String
-		 */
-		public String getSection()
-		{
-			return m_section;
-		}
-
-		/**
-		 * Access the first time at which the assignment can be viewed; may be null.
-		 * 
-		 * @return The Time at which the assignment is due, or null if unspecified.
-		 */
-		public Time getOpenTime()
-		{
-			return m_openTime;
-		}
-
-	  /**
-		* @inheritDoc
-		*/
-		public String getOpenTimeString()
-		{
-			if ( m_openTime == null )
-				return "";
-			else
-				return m_openTime.toStringLocalFull();
-		}
-
-		/**
-		 * Access the time at which the assignment is due; may be null.
-		 * 
-		 * @return The Time at which the Assignment is due, or null if unspecified.
-		 */
-		public Time getDueTime()
-		{
-			return m_dueTime;
-		}
-
-	  /**
-		* @inheritDoc
-		*/
-		public String getDueTimeString()
-		{
-			if ( m_dueTime == null )
-				return "";
-			else
-				return m_dueTime.toStringLocalFull();
-		}
-
-		/**
-		 * Access the drop dead time after which responses to this assignment are considered late; may be null.
-		 * 
-		 * @return The Time object representing the drop dead time, or null if unspecified.
-		 */
-		public Time getDropDeadTime()
-		{
-			return m_dropDeadTime;
-		}
-
-	  /**
-		* @inheritDoc
-		*/
-		public String getDropDeadTimeString()
-		{
-			if ( m_dropDeadTime == null )
-				return "";
-			else
-				return m_dropDeadTime.toStringLocalFull();
-		}
-
-		/**
-		 * Access the close time after which this assignment can no longer be viewed, and after which submissions will not be accepted. May be null.
-		 * 
-		 * @return The Time after which the Assignment is closed, or null if unspecified.
-		 */
-		public Time getCloseTime()
-		{
-			if (m_closeTime == null)
-			{
-				m_closeTime = m_dueTime;
-			}
-			return m_closeTime;
-		}
-
-	  /**
-		* @inheritDoc
-		*/
-		public String getCloseTimeString()
-		{
-			if ( m_closeTime == null )
-				return "";
-			else
-				return m_closeTime.toStringLocalFull();
-		}
-
-		/**
-		 * Get whether this is a draft or final copy.
-		 * 
-		 * @return True if this is a draft, false if it is a final copy.
-		 */
-		public boolean getDraft()
-		{
-			return m_draft;
-		}
-		
-		/**
-		 * Access the position order.
-		 * 
-		 * @return The Assignment's positionorder.
-		 */
-		public int getPosition_order()
-		{
-			return m_position_order;
-		}
-
-		/**
-		 * @inheritDoc
-		 */
-		public Collection getGroups()
-		{
-			return new Vector(m_groups);
-		}
-
-		/**
-		 * @inheritDoc
-		 */
-		public AssignmentAccess getAccess()
-		{
-			return m_access;
-		}
-
-		/**
-		 * Are these objects equal? If they are both Assignment objects, and they have matching id's, they are.
-		 * 
-		 * @return true if they are equal, false if not.
-		 */
-		public boolean equals(Object obj)
-		{
-			if (!(obj instanceof Assignment)) return false;
-			return ((Assignment) obj).getId().equals(getId());
-
-		} // equals
-
-		/**
-		 * Make a hash code that reflects the equals() logic as well. We want two objects, even if different instances, if they have the same id to hash the same.
-		 */
-		public int hashCode()
-		{
-			return getId().hashCode();
-
-		} // hashCode
-
-		/**
-		 * Compare this object with the specified object for order.
-		 * 
-		 * @return A negative integer, zero, or a positive integer as this object is less than, equal to, or greater than the specified object.
-		 */
-		public int compareTo(Object obj)
-		{
-			if (!(obj instanceof Assignment)) throw new ClassCastException();
-
-			// if the object are the same, say so
-			if (obj == this) return 0;
-
-			// start the compare by comparing their sort names
-			int compare = getTitle().compareTo(((Assignment) obj).getTitle());
-
-			// if these are the same
-			if (compare == 0)
-			{
-				// sort based on (unique) id
-				compare = getId().compareTo(((Assignment) obj).getId());
-			}
-
-			return compare;
-
-		} // compareTo
-
-	} // BaseAssignment
-
-	/**********************************************************************************************************************************************************************************************************************************************************
-	 * AssignmentEdit implementation
-	 *********************************************************************************************************************************************************************************************************************************************************/
-
-	/**
-	 * <p>
-	 * BaseAssignmentEdit is an implementation of the CHEF AssignmentEdit object.
-	 * </p>
-	 * 
-	 * @author University of Michigan, CHEF Software Development Team
-	 */
-	public class BaseAssignmentEdit extends BaseAssignment implements AssignmentEdit, SessionBindingListener
-	{
-		/** The event code for this edit. */
-		protected String m_event = null;
-
-		/** Active flag. */
-		protected boolean m_active = false;
-
-		/**
-		 * Construct from another Assignment object.
-		 * 
-		 * @param Assignment
-		 *        The Assignment object to use for values.
-		 */
-		public BaseAssignmentEdit(Assignment assignment)
-		{
-			super(assignment);
-
-		} // BaseAssignmentEdit
-
-		/**
-		 * Construct.
-		 * 
-		 * @param id
-		 *        The assignment id.
-		 */
-		public BaseAssignmentEdit(String id, String context)
-		{
-			super(id, context);
-
-		} // BaseAssignmentEdit
-
-		/**
-		 * Construct from information in XML.
-		 * 
-		 * @param el
-		 *        The XML DOM Element definining the Assignment.
-		 */
-		public BaseAssignmentEdit(Element el)
-		{
-			super(el);
-
-		} // BaseAssignmentEdit
-
-		/**
-		 * Clean up.
-		 */
-		protected void finalize()
-		{
-			// catch the case where an edit was made but never resolved
-			if (m_active)
-			{
-				cancelEdit(this);
-			}
-
-		} // finalize
-
-		/**
-		 * Set the title.
-		 * 
-		 * @param title -
-		 *        The Assignment's title.
-		 */
-		public void setTitle(String title)
-		{
-			m_title = title;
-		}
-
-		/**
-		 * Set the reference of the AssignmentContent of this Assignment.
-		 * 
-		 * @param String -
-		 *        the reference of the AssignmentContent.
-		 */
-		public void setContentReference(String contentReference)
-		{
-			if (contentReference != null) m_assignmentContent = contentReference;
-		}
-
-		/**
-		 * Set the AssignmentContent of this Assignment.
-		 * 
-		 * @param content -
-		 *        the Assignment's AssignmentContent.
-		 */
-		public void setContent(AssignmentContent content)
-		{
-			if (content != null) m_assignmentContent = content.getReference();
-		}
-
-		/**
-		 * Set the context at the time of creation.
-		 * 
-		 * @param context -
-		 *        the context string.
-		 */
-		public void setContext(String context)
-		{
-			m_context = context;
-		}
-
-		/**
-		 * Set the section info
-		 * 
-		 * @param sectionId -
-		 *        The section id
-		 */
-		public void setSection(String sectionId)
-		{
-			m_section = sectionId;
-		}
-
-		/**
-		 * Set the first time at which the assignment can be viewed; may be null.
-		 * 
-		 * @param opentime -
-		 *        The Time at which the Assignment opens.
-		 */
-		public void setOpenTime(Time opentime)
-		{
-			m_openTime = opentime;
-		}
-
-		/**
-		 * Set the time at which the assignment is due; may be null.
-		 * 
-		 * @param dueTime -
-		 *        The Time at which the Assignment is due.
-		 */
-		public void setDueTime(Time duetime)
-		{
-			m_dueTime = duetime;
-		}
-
-		/**
-		 * Set the drop dead time after which responses to this assignment are considered late; may be null.
-		 * 
-		 * @param dropdeadtime -
-		 *        The Time object representing the drop dead time.
-		 */
-		public void setDropDeadTime(Time dropdeadtime)
-		{
-			m_dropDeadTime = dropdeadtime;
-		}
-
-		/**
-		 * Set the time after which this assignment can no longer be viewed, and after which submissions will not be accepted. May be null.
-		 * 
-		 * @param closetime -
-		 *        The Time after which the Assignment is closed, or null if unspecified.
-		 */
-		public void setCloseTime(Time closetime)
-		{
-			m_closeTime = closetime;
-		}
-
-		/**
-		 * Set whether this is a draft or final copy.
-		 * 
-		 * @param draft -
-		 *        true if this is a draft, false if it is a final copy.
-		 */
-		public void setDraft(boolean draft)
-		{
-			m_draft = draft;
-		}
-		
-		/**
-		 * Set the position order field for the an assignment.
-		 * 
-		 * @param position_order - 
-		 *        The position order.
-		 */
-		public void setPosition_order(int position_order)
-		{
-			m_position_order = position_order;
-		}
-
-		/**
-		 * Take all values from this object.
-		 * 
-		 * @param user
-		 *        The user object to take values from.
-		 */
-		protected void set(Assignment assignment)
-		{
-			setAll(assignment);
-
-		} // set
-
-		/**
-		 * Access the event code for this edit.
-		 * 
-		 * @return The event code for this edit.
-		 */
-		protected String getEvent()
-		{
-			return m_event;
-		}
-
-		/**
-		 * Set the event code for this edit.
-		 * 
-		 * @param event
-		 *        The event code for this edit.
-		 */
-		protected void setEvent(String event)
-		{
-			m_event = event;
-		}
-
-		/**
-		 * Access the resource's properties for modification
-		 * 
-		 * @return The resource's properties.
-		 */
-		public ResourcePropertiesEdit getPropertiesEdit()
-		{
-			return m_properties;
-
-		} // getPropertiesEdit
-
-		/**
-		 * Enable editing.
-		 */
-		protected void activate()
-		{
-			m_active = true;
-
-		} // activate
-
-		/**
-		 * Check to see if the edit is still active, or has already been closed.
-		 * 
-		 * @return true if the edit is active, false if it's been closed.
-		 */
-		public boolean isActiveEdit()
-		{
-			return m_active;
-
-		} // isActiveEdit
-
-		/**
-		 * Close the edit object - it cannot be used after this.
-		 */
-		protected void closeEdit()
-		{
-			m_active = false;
-
-		} // closeEdit
-
-		/******************************************************************************************************************************************************************************************************************************************************
-		 * Group awareness implementation
-		 *****************************************************************************************************************************************************************************************************************************************************/
-		/**
-		 * @inheritDoc
-		 */
-		public void setAccess(AssignmentAccess access)
-		{
-			m_access = access;
-		}
-
-		/**
-		 * @inheritDoc
-		 */
-		public void setGroupAccess(Collection groups) throws PermissionException
-		{	
-			// convenience (and what else are we going to do?)
-			if ((groups == null) || (groups.size() == 0))
-			{
-				clearGroupAccess();
-				return;
-			}
-			
-			// is there any change?  If we are already grouped, and the group list is the same, ignore the call
-			if ((m_access == AssignmentAccess.GROUPED) && (EntityCollections.isEqualEntityRefsToEntities(m_groups, groups))) return;
-			
-			// there should not be a case where there's no context
-			if (m_context == null)
-			{
-				M_log.warn(this + " setGroupAccess() called with null context: " + getReference());
-				throw new PermissionException(SessionManager.getCurrentSessionUserId(), "access:site", getReference());
-			}
-
-			// isolate any groups that would be removed or added
-			Collection addedGroups = new Vector();
-			Collection removedGroups = new Vector();
-			EntityCollections.computeAddedRemovedEntityRefsFromNewEntitiesOldRefs(addedGroups, removedGroups, groups, m_groups);
-
-			// verify that the user has permission to remove
-			if (removedGroups.size() > 0)
-			{
-				// the Group objects the user has remove permission
-				Collection allowedGroups = getGroupsAllowRemoveAssignment(m_context);
-
-				for (Iterator i = removedGroups.iterator(); i.hasNext();)
-				{
-					String ref = (String) i.next();
-
-					// is ref a group the user can remove from?
-					if (!EntityCollections.entityCollectionContainsRefString(allowedGroups, ref))
-					{
-						throw new PermissionException(SessionManager.getCurrentSessionUserId(), "access:group:remove", ref);
-					}
-				}
-			}
-			
-			// verify that the user has permission to add in those contexts
-			if (addedGroups.size() > 0)
-			{
-				// the Group objects the user has add permission
-				Collection allowedGroups = getGroupsAllowAddAssignment(m_context);
-
-				for (Iterator i = addedGroups.iterator(); i.hasNext();)
-				{
-					String ref = (String) i.next();
-
-					// is ref a group the user can remove from?
-					if (!EntityCollections.entityCollectionContainsRefString(allowedGroups, ref))
-					{
-						throw new PermissionException(SessionManager.getCurrentSessionUserId(), "access:group:add", ref);
-					}
-				}
-			}
-			
-			// we are clear to perform this
-			m_access = AssignmentAccess.GROUPED;
-			EntityCollections.setEntityRefsFromEntities(m_groups, groups);
-		}
-
-		/**
-		 * @inheritDoc
-		 */
-		public void clearGroupAccess() throws PermissionException
-		{			
-			// is there any change?  If we are already site, ignore the call
-			if (m_access == AssignmentAccess.SITE)
-			{
-				m_groups.clear();
-				return;
-			}
-
-			if (m_context == null)
-			{
-				// there should not be a case where there's no context
-				M_log.warn(this + " clearGroupAccess() called with null context. " + getReference());
-				throw new PermissionException(SessionManager.getCurrentSessionUserId(), "access:site", getReference());
-			}
-			else
-			{
-				// verify that the user has permission to add in the site context
-				if (!allowAddSiteAssignment(m_context))
-				{
-					throw new PermissionException(SessionManager.getCurrentSessionUserId(), "access:site", getReference());				
-				}
-			}
-
-			// we are clear to perform this
-			m_access = AssignmentAccess.SITE;
-			m_groups.clear();
-			
-		}
-
-		/******************************************************************************************************************************************************************************************************************************************************
-		 * SessionBindingListener implementation
-		 *****************************************************************************************************************************************************************************************************************************************************/
-
-		public void valueBound(SessionBindingEvent event)
-		{
-		}
-
-		public void valueUnbound(SessionBindingEvent event)
-		{
-			M_log.warn(this + " BaseAssignmentEdit valueUnbound()");
-
-			// catch the case where an edit was made but never resolved
-			if (m_active)
-			{
-				cancelEdit(this);
-			}
-
-		} // valueUnbound
-
-	} // BaseAssignmentEdit
-
-	/**********************************************************************************************************************************************************************************************************************************************************
-	 * AssignmentContent Implementation
-	 *********************************************************************************************************************************************************************************************************************************************************/
-
-	public class BaseAssignmentContent implements AssignmentContent
-	{
-		protected ResourcePropertiesEdit m_properties;
-
-		protected String m_id;
-
-		protected String m_context;
-
-		protected List m_attachments;
-
-		protected List m_authors;
-
-		protected String m_title;
-
-		protected String m_instructions;
-
-		protected int m_honorPledge;
-
-		protected int m_typeOfSubmission;
-
-		protected int m_typeOfGrade;
-
-		protected int m_maxGradePoint;
-
-		protected boolean m_groupProject;
-
-		protected boolean m_individuallyGraded;
-
-		protected boolean m_releaseGrades;
-
-		
-		
-		protected boolean m_allowAttachments;
-		
-		protected boolean m_allowReviewService;
-		
-		protected boolean m_allowStudentViewReport;
-
-		protected Time m_timeCreated;
-
-		protected Time m_timeLastModified;
-		
-		/**
-		 * constructor
-		 */
-		public BaseAssignmentContent()
-		{
-			m_properties = new BaseResourcePropertiesEdit();
-		}// constructor
-
-		/**
-		 * Copy constructor.
-		 */
-		public BaseAssignmentContent(AssignmentContent content)
-		{
-			setAll(content);
-		}
-
-		/**
-		 * Constructor used in addAssignmentContent.
-		 */
-		public BaseAssignmentContent(String id, String context)
-		{
-			m_id = id;
-			m_context = context;
-			m_properties = new BaseResourcePropertiesEdit();
-			addLiveProperties(m_properties);
-			m_authors = new Vector();
-			m_attachments = m_entityManager.newReferenceList();
-			m_title = "";
-			m_instructions = "";
-			m_honorPledge = Assignment.HONOR_PLEDGE_NOT_SET;
-			m_typeOfSubmission = Assignment.ASSIGNMENT_SUBMISSION_TYPE_NOT_SET;
-			m_typeOfGrade = Assignment.GRADE_TYPE_NOT_SET;
-			m_maxGradePoint = 0;
-			m_timeCreated = TimeService.newTime();
-			m_timeLastModified = TimeService.newTime();
-		}
-
-		/**
-		 * Reads the AssignmentContent's attribute values from xml.
-		 * 
-		 * @param s -
-		 *        Data structure holding the xml info.
-		 */
-		public BaseAssignmentContent(Element el)
-		{
-			int numAttributes = 0;
-			String intString = null;
-			String attributeString = null;
-			String tempString = null;
-			Reference tempReference = null;
-			M_log.warn(this + " BaseAssignmentContent : Entering read");
-
-			m_id = el.getAttribute("id");
-			m_context = el.getAttribute("context");
-			m_title = el.getAttribute("title");
-			m_groupProject = getBool(el.getAttribute("groupproject"));
-			m_individuallyGraded = getBool(el.getAttribute("indivgraded"));
-			m_releaseGrades = getBool(el.getAttribute("releasegrades"));
-			m_allowAttachments = getBool(el.getAttribute("allowattach"));
-			m_allowReviewService = getBool(el.getAttribute("allowreview"));
-			m_allowStudentViewReport = getBool(el.getAttribute("allowstudentview"));
-			
-			m_timeCreated = getTimeObject(el.getAttribute("datecreated"));
-			m_timeLastModified = getTimeObject(el.getAttribute("lastmod"));
-
-			m_instructions = FormattedText.decodeFormattedTextAttribute(el, "instructions");
-
-			try
-			{
-				m_honorPledge = Integer.parseInt(el.getAttribute("honorpledge"));
-			}
-			catch (Exception e)
-			{
-				M_log.warn(this + " BaseAssignmentContent Exception parsing honor pledge int from xml file string : " + e);
-			}
-
-			try
-			{
-				m_typeOfSubmission = Integer.parseInt(el.getAttribute("submissiontype"));
-			}
-			catch (Exception e)
-			{
-				M_log.warn(this + " BaseAssignmentContent Exception parsing submission type int from xml file string : " + e);
-			}
-
-			try
-			{
-				m_typeOfGrade = Integer.parseInt(el.getAttribute("typeofgrade"));
-			}
-			catch (Exception e)
-			{
-				M_log.warn(this + " BaseAssignmentContent Exception parsing grade type int from xml file string : " + e);
-			}
-
-			try
-			{
-				// %%%zqian
-				// read the scaled max grade point first; if there is none, get the old max grade value and multiple by 10
-				String maxGradePoint = StringUtil.trimToNull(el.getAttribute("scaled_maxgradepoint"));
-				if (maxGradePoint == null)
-				{
-					maxGradePoint = StringUtil.trimToNull(el.getAttribute("maxgradepoint"));
-					if (maxGradePoint != null)
-					{
-						maxGradePoint = maxGradePoint + "0";
-					}
-				}
-				m_maxGradePoint = Integer.parseInt(maxGradePoint);
-			}
-			catch (Exception e)
-			{
-				M_log.warn(this + " BaseAssignmentContent Exception parsing maxgradepoint int from xml file string : " + e);
-			}
-
-			// READ THE AUTHORS
-			m_authors = new Vector();
-			intString = el.getAttribute("numberofauthors");
-			try
-			{
-				numAttributes = Integer.parseInt(intString);
-
-				for (int x = 0; x < numAttributes; x++)
-				{
-					attributeString = "author" + x;
-					tempString = el.getAttribute(attributeString);
-					if (tempString != null) m_authors.add(tempString);
-				}
-			}
-			catch (Exception e)
-			{
-				M_log.warn(this + " BaseAssignmentContent: Exception reading authors : " + e);
-			}
-
-			// READ THE ATTACHMENTS
-			m_attachments = m_entityManager.newReferenceList();
-			M_log.warn(this + " BaseAssignmentContent: Reading attachments : ");
-			intString = el.getAttribute("numberofattachments");
-			M_log.warn(this + " BaseAssignmentContent: num attachments : " + intString);
-			try
-			{
-				numAttributes = Integer.parseInt(intString);
-
-				for (int x = 0; x < numAttributes; x++)
-				{
-					attributeString = "attachment" + x;
-					tempString = el.getAttribute(attributeString);
-					if (tempString != null)
-					{
-						tempReference = m_entityManager.newReference(tempString);
-						m_attachments.add(tempReference);
-						M_log.warn(this + " BaseAssignmentContent: " + attributeString + " : " + tempString);
-					}
-				}
-			}
-			catch (Exception e)
-			{
-				M_log.warn(this + " BaseAssignmentContent: Exception reading attachments : " + e);
-			}
-
-			// READ THE PROPERTIES
-			NodeList children = el.getChildNodes();
-			final int length = children.getLength();
-			for (int i = 0; i < length; i++)
-			{
-				Node child = children.item(i);
-				if (child.getNodeType() != Node.ELEMENT_NODE) continue;
-				Element element = (Element) child;
-
-				// look for properties
-				if (element.getTagName().equals("properties"))
-				{
-					// re-create properties
-					m_properties = new BaseResourcePropertiesEdit(element);
-				}
-				// old style of encoding
-				else if (element.getTagName().equals("instructions-html") || element.getTagName().equals("instructions-formatted")
-						|| element.getTagName().equals("instructions"))
-				{
-					if ((element.getChildNodes() != null) && (element.getChildNodes().item(0) != null))
-					{
-						m_instructions = element.getChildNodes().item(0).getNodeValue();
-						if (element.getTagName().equals("instructions"))
-							m_instructions = FormattedText.convertPlaintextToFormattedText(m_instructions);
-						if (element.getTagName().equals("instructions-formatted"))
-							m_instructions = FormattedText.convertOldFormattedText(m_instructions);
-						
-							M_log.warn(this + " BaseAssignmentContent(Element): instructions : " + m_instructions);
-					}
-					if (m_instructions == null)
-					{
-						m_instructions = "";
-					}
-				}
-			}
-
-			M_log.warn(this + " BaseAssignmentContent(Element): LEAVING STORAGE CONSTRUTOR");
-
-		}// storage constructor
-		
-		/**
-		 * @param services
-		 * @return
-		 */
-		public ContentHandler getContentHandler(Map<String, Object> services)
-		{
-			final Entity thisEntity = this;
-			return new DefaultEntityHandler()
-			{
-				/*
-				 * (non-Javadoc)
-				 * 
-				 * @see org.sakaiproject.util.DefaultEntityHandler#startElement(java.lang.String,
-				 *      java.lang.String, java.lang.String,
-				 *      org.xml.sax.Attributes)
-				 */
-				@Override
-				public void startElement(String uri, String localName, String qName,
-						Attributes attributes) throws SAXException
-				{
-					if (doStartElement(uri, localName, qName, attributes))
-					{
-						if ("content".equals(qName) && entity == null)
-						{
-							int numAttributes = 0;
-							String intString = null;
-							String attributeString = null;
-							String tempString = null;
-							Reference tempReference = null;
-
-							m_id = attributes.getValue("id");
-							m_context = attributes.getValue("context");
-							m_title = attributes.getValue("title");
-							m_groupProject = getBool(attributes.getValue("groupproject"));
-							m_individuallyGraded = getBool(attributes.getValue("indivgraded"));
-							m_releaseGrades = getBool(attributes.getValue("releasegrades"));
-							m_allowAttachments = getBool(attributes.getValue("allowattach"));
-							m_allowReviewService = getBool(attributes.getValue("allowreview"));
-							m_allowStudentViewReport = getBool(attributes.getValue("allowstudentview"));
-							
-							m_timeCreated = getTimeObject(attributes.getValue("datecreated"));
-							m_timeLastModified = getTimeObject(attributes.getValue("lastmod"));
-
-							m_instructions = FormattedTextDecodeFormattedTextAttribute(attributes, "instructions");
-
-							try
-							{
-								m_honorPledge = Integer.parseInt(attributes.getValue("honorpledge"));
-							}
-							catch (Exception e)
-							{
-								M_log.warn(this + " getContentHandler startElement Exception parsing honor pledge int from xml file string : " + e);
-							}
-
-							try
-							{
-								m_typeOfSubmission = Integer.parseInt(attributes.getValue("submissiontype"));
-							}
-							catch (Exception e)
-							{
-								M_log.warn(this + " getContentHandler startElement Exception parsing submission type int from xml file string : " + e);
-							}
-
-							try
-							{
-								m_typeOfGrade = Integer.parseInt(attributes.getValue("typeofgrade"));
-							}
-							catch (Exception e)
-							{
-								M_log.warn(this + " getContentHandler startElement Exception parsing grade type int from xml file string : " + e);
-							}
-
-							try
-							{
-								// %%%zqian
-								// read the scaled max grade point first; if there is none, get the old max grade value and multiple by 10
-								String maxGradePoint = StringUtil.trimToNull(attributes.getValue("scaled_maxgradepoint"));
-								if (maxGradePoint == null)
-								{
-									maxGradePoint = StringUtil.trimToNull(attributes.getValue("maxgradepoint"));
-									if (maxGradePoint != null)
-									{
-										maxGradePoint = maxGradePoint + "0";
-									}
-								}
-								m_maxGradePoint = Integer.parseInt(maxGradePoint);
-							}
-							catch (Exception e)
-							{
-								M_log.warn(this + " getContentHandler startElement Exception parsing maxgradepoint int from xml file string : " + e);
-							}
-
-							// READ THE AUTHORS
-							m_authors = new Vector();
-							intString = attributes.getValue("numberofauthors");
-							try
-							{
-								numAttributes = Integer.parseInt(intString);
-
-								for (int x = 0; x < numAttributes; x++)
-								{
-									attributeString = "author" + x;
-									tempString = attributes.getValue(attributeString);
-									if (tempString != null) m_authors.add(tempString);
-								}
-							}
-							catch (Exception e)
-							{
-								M_log.warn(this + " getContentHandler startElement Exception reading authors : " + e);
-							}
-
-							// READ THE ATTACHMENTS
-							m_attachments = m_entityManager.newReferenceList();
-							intString = attributes.getValue("numberofattachments");
-							try
-							{
-								numAttributes = Integer.parseInt(intString);
-
-								for (int x = 0; x < numAttributes; x++)
-								{
-									attributeString = "attachment" + x;
-									tempString = attributes.getValue(attributeString);
-									if (tempString != null)
-									{
-										tempReference = m_entityManager.newReference(tempString);
-										m_attachments.add(tempReference);
-									}
-								}
-							}
-							catch (Exception e)
-							{
-								M_log.warn(this + " getContentHandler startElement DbCachedContent : Exception reading attachments : " + e);
-							}
-							
-							entity = thisEntity;
-						}
-						else
-						{
-							M_log.warn(this + " getContentHandler startElement Unexpected Element " + qName);
-						}
-					}
-				}
-			};
-		}
-		
-		/**
-		 * Takes the AssignmentContent's attribute values and puts them into the xml document.
-		 * 
-		 * @param s -
-		 *        Data structure holding the object to be stored.
-		 * @param doc -
-		 *        The xml document.
-		 */
-		public Element toXml(Document doc, Stack stack)
-		{
-			M_log.warn(this + " BASE ASSIGNMENT : ENTERING TOXML");
-
-			Element content = doc.createElement("content");
-
-			if (stack.isEmpty())
-			{
-				doc.appendChild(content);
-			}
-			else
-			{
-				((Element) stack.peek()).appendChild(content);
-			}
-			stack.push(content);
-
-			String numItemsString = null;
-			String attributeString = null;
-			String itemString = null;
-			Reference tempReference = null;
-
-			content.setAttribute("id", m_id);
-			content.setAttribute("context", m_context);
-			content.setAttribute("title", m_title);
-			content.setAttribute("groupproject", getBoolString(m_groupProject));
-			content.setAttribute("indivgraded", getBoolString(m_individuallyGraded));
-			content.setAttribute("releasegrades", getBoolString(m_releaseGrades));
-			content.setAttribute("allowattach", getBoolString(m_allowAttachments));
-		
-			content.setAttribute("allowreview", getBoolString(m_allowReviewService));
-			content.setAttribute("allowstudentview", getBoolString(m_allowStudentViewReport));
-			
-			content.setAttribute("honorpledge", String.valueOf(m_honorPledge));
-			content.setAttribute("submissiontype", String.valueOf(m_typeOfSubmission));
-			content.setAttribute("typeofgrade", String.valueOf(m_typeOfGrade));
-			content.setAttribute("scaled_maxgradepoint", String.valueOf(m_maxGradePoint));
-			content.setAttribute("datecreated", getTimeString(m_timeCreated));
-			content.setAttribute("lastmod", getTimeString(m_timeLastModified));
-
-			M_log.warn(this + " BASE CONTENT : TOXML : SAVED REGULAR PROPERTIES");
-
-			// SAVE THE AUTHORS
-			numItemsString = "" + m_authors.size();
-			content.setAttribute("numberofauthors", numItemsString);
-			for (int x = 0; x < m_authors.size(); x++)
-			{
-				attributeString = "author" + x;
-				itemString = (String) m_authors.get(x);
-				if (itemString != null) content.setAttribute(attributeString, itemString);
-			}
-
-			M_log.warn(this + " BASE CONTENT : TOXML : SAVED AUTHORS");
-
-			// SAVE THE ATTACHMENTS
-			numItemsString = "" + m_attachments.size();
-			content.setAttribute("numberofattachments", numItemsString);
-			for (int x = 0; x < m_attachments.size(); x++)
-			{
-				attributeString = "attachment" + x;
-				tempReference = (Reference) m_attachments.get(x);
-				itemString = tempReference.getReference();
-				if (itemString != null) content.setAttribute(attributeString, itemString);
-			}
-
-			// SAVE THE PROPERTIES
-			m_properties.toXml(doc, stack);
-
-			M_log.warn(this + " BASE CONTENT : TOXML : SAVED REGULAR PROPERTIES");
-
-			stack.pop();
-
-			// SAVE THE INSTRUCTIONS
-			FormattedText.encodeFormattedTextAttribute(content, "instructions", m_instructions);
-
-			return content;
-
-		}// toXml
-
-		protected void setAll(AssignmentContent content)
-		{
-			if (content != null)
-			{
-				m_id = content.getId();
-				m_context = content.getContext();
-				m_authors = content.getAuthors();
-				m_attachments = content.getAttachments();
-				m_title = content.getTitle();
-				m_instructions = content.getInstructions();
-				m_honorPledge = content.getHonorPledge();
-				m_typeOfSubmission = content.getTypeOfSubmission();
-				m_typeOfGrade = content.getTypeOfGrade();
-				m_maxGradePoint = content.getMaxGradePoint();
-				m_groupProject = content.getGroupProject();
-				m_individuallyGraded = content.individuallyGraded();
-				m_releaseGrades = content.releaseGrades();
-				m_allowAttachments = content.getAllowAttachments();
-				//Uct
-				m_allowReviewService = content.getAllowReviewService();
-				m_allowStudentViewReport = content.getAllowStudentViewReport();
-				
-				m_timeCreated = content.getTimeCreated();
-				m_timeLastModified = content.getTimeLastModified();
-				m_properties = new BaseResourcePropertiesEdit();
-				m_properties.addAll(content.getProperties());
-			}
-		}
-
-		public String getId()
-		{
-			return m_id;
-		}
-
-		/**
-		 * Access the URL which can be used to access the resource.
-		 * 
-		 * @return The URL which can be used to access the resource.
-		 */
-		public String getUrl()
-		{
-			return getAccessPoint(false) + Entity.SEPARATOR + "c" + Entity.SEPARATOR + m_context + Entity.SEPARATOR + m_id;
-
-		} // getUrl
-
-		/**
-		 * Access the internal reference which can be used to access the resource from within the system.
-		 * 
-		 * @return The the internal reference which can be used to access the resource from within the system.
-		 */
-		public String getReference()
-		{
-			return contentReference(m_context, m_id);
-
-		} // getReference
-
-		/**
-		 * @inheritDoc
-		 */
-		public String getReference(String rootProperty)
-		{
-			return getReference();
-		}
-
-		/**
-		 * @inheritDoc
-		 */
-		public String getUrl(String rootProperty)
-		{
-			return getUrl();
-		}
-
-		/**
-		 * Access the resource's properties.
-		 * 
-		 * @return The resource's properties.
-		 */
-		public ResourceProperties getProperties()
-		{
-			return m_properties;
-		}
-
-		/******************************************************************************************************************************************************************************************************************************************************
-		 * AttachmentContainer Implementation
-		 *****************************************************************************************************************************************************************************************************************************************************/
-
-		/**
-		 * Access the attachments.
-		 * 
-		 * @return The set of attachments (a ReferenceVector containing Reference objects) (may be empty).
-		 */
-		public List getAttachments()
-		{
-			return m_attachments;
-		}
-
-		/******************************************************************************************************************************************************************************************************************************************************
-		 * AssignmentContent Implementation
-		 *****************************************************************************************************************************************************************************************************************************************************/
-
-		/**
-		 * Access the AssignmentContent's context at the time of creation.
-		 * 
-		 * @return String - the context string.
-		 */
-		public String getContext()
-		{
-			return m_context;
-		}
-
-		/**
-		 * Access the list of authors.
-		 * 
-		 * @return FlexStringArray of user ids.
-		 */
-		public List getAuthors()
-		{
-			return m_authors;
-		}
-
-		/**
-		 * Access the creator of this object.
-		 * 
-		 * @return The User object representing the creator.
-		 */
-		public String getCreator()
-		{
-			return m_properties.getProperty(ResourceProperties.PROP_CREATOR);
-		}
-
-		/**
-		 * Access the person of last modificaiton
-		 * 
-		 * @return the User
-		 */
-		public String getAuthorLastModified()
-		{
-			return m_properties.getProperty(ResourceProperties.PROP_MODIFIED_BY);
-		}
-
-		/**
-		 * Access the title.
-		 * 
-		 * @return The Assignment's title.
-		 */
-		public String getTitle()
-		{
-			return m_title;
-		}
-
-		/**
-		 * Access the instructions.
-		 * 
-		 * @return The Assignment Content's instructions.
-		 */
-		public String getInstructions()
-		{
-			return m_instructions;
-		}
-
-		/**
-		 * Get the type of valid submission.
-		 * 
-		 * @return int - Type of Submission.
-		 */
-		public int getTypeOfSubmission()
-		{
-			return m_typeOfSubmission;
-		}
-
-		/**
-		 * Access a string describing the type of grade.
-		 * 
-		 * @param gradeType -
-		 *        The integer representing the type of grade.
-		 * @return Description of the type of grade.
-		 */
-		public String getTypeOfGradeString(int type)
-		{
-			String retVal = null;
-
-			switch (type)
-			{
-				case 1:
-					retVal = rb.getString("ungra");
-					break;
-
-				case 2:
-					retVal = rb.getString("letter");
-					break;
-
-				case 3:
-					retVal = rb.getString("points");
-					break;
-
-				case 4:
-					retVal = rb.getString("pass");
-					break;
-
-				case 5:
-					retVal = rb.getString("check");
-					break;
-
-				default:
-					retVal = "Unknown Grade Type";
-					break;
-			}
-
-			return retVal;
-		}
-
-		/**
-		 * Get the grade type.
-		 * 
-		 * @return gradeType - The type of grade.
-		 */
-		public int getTypeOfGrade()
-		{
-			return m_typeOfGrade;
-		}
-
-		/**
-		 * Get the maximum grade for grade type = SCORE_GRADE_TYPE(3)
-		 * 
-		 * @return The maximum grade score.
-		 */
-		public int getMaxGradePoint()
-		{
-			return m_maxGradePoint;
-		}
-
-		/**
-		 * Get the maximum grade for grade type = SCORE_GRADE_TYPE(3) Formated to show one decimal place
-		 * 
-		 * @return The maximum grade score.
-		 */
-		public String getMaxGradePointDisplay()
-		{
-			// formated to show one decimal place, for example, 1000 to 100.0
-			String one_decimal_maxGradePoint = m_maxGradePoint / 10 + "." + (m_maxGradePoint % 10);
-			return one_decimal_maxGradePoint;
-		}
-
-		/**
-		 * Get whether this project can be a group project.
-		 * 
-		 * @return True if this can be a group project, false otherwise.
-		 */
-		public boolean getGroupProject()
-		{
-			return m_groupProject;
-		}
-
-		/**
-		 * Get whether group projects should be individually graded.
-		 * 
-		 * @return individGraded - true if projects are individually graded, false if grades are given to the group.
-		 */
-		public boolean individuallyGraded()
-		{
-			return m_individuallyGraded;
-		}
-
-		/**
-		 * Gets whether grades can be released once submissions are graded.
-		 * 
-		 * @return true if grades can be released once submission are graded, false if they must be released manually.
-		 */
-		public boolean releaseGrades()
-		{
-			return m_releaseGrades;
-		}
-
-		/**
-		 * Get the Honor Pledge type; values are NONE and ENGINEERING_HONOR_PLEDGE.
-		 * 
-		 * @return the Honor Pledge value.
-		 */
-		public int getHonorPledge()
-		{
-			return m_honorPledge;
-		}
-
-		/**
-		 * Does this Assignment allow attachments?
-		 * 
-		 * @return true if the Assignment allows attachments, false otherwise?
-		 */
-		public boolean getAllowAttachments()
-		{
-			return m_allowAttachments;
-		}
-		
-		/**
-		 * Does this Assignment allow review service?
-		 * 
-		 * @return true if the Assignment allows review service, false otherwise?
-		 */
-		public boolean getAllowReviewService()
-		{
-			return m_allowReviewService;
-		}
-		
-		public boolean getAllowStudentViewReport() {
-			return m_allowStudentViewReport;
-		}
-		
-		
-		/**
-		 * Access the time that this object was created.
-		 * 
-		 * @return The Time object representing the time of creation.
-		 */
-		public Time getTimeCreated()
-		{
-			return m_timeCreated;
-		}
-
-		/**
-		 * Access the time of last modificaiton.
-		 * 
-		 * @return The Time of last modification.
-		 */
-		public Time getTimeLastModified()
-		{
-			return m_timeLastModified;
-		}
-
-		/**
-		 * Is this AssignmentContent selected for use by an Assignment ?
-		 */
-		public boolean inUse()
-		{
-			boolean retVal = false;
-			Assignment assignment = null;
-			List allAssignments = getAssignments(m_context);
-			for (int x = 0; x < allAssignments.size(); x++)
-			{
-				assignment = (Assignment) allAssignments.get(x);
-				if (assignment.getContentReference().equals(getReference())) return true;
-			}
-
-			return retVal;
-		}
-
-		/**
-		 * Are these objects equal? If they are both AssignmentContent objects, and they have matching id's, they are.
-		 * 
-		 * @return true if they are equal, false if not.
-		 */
-		public boolean equals(Object obj)
-		{
-			if (!(obj instanceof AssignmentContent)) return false;
-			return ((AssignmentContent) obj).getId().equals(getId());
-
-		} // equals
-
-		/**
-		 * Make a hash code that reflects the equals() logic as well. We want two objects, even if different instances, if they have the same id to hash the same.
-		 */
-		public int hashCode()
-		{
-			return getId().hashCode();
-
-		} // hashCode
-
-		/**
-		 * Compare this object with the specified object for order.
-		 * 
-		 * @return A negative integer, zero, or a positive integer as this object is less than, equal to, or greater than the specified object.
-		 */
-		public int compareTo(Object obj)
-		{
-			if (!(obj instanceof AssignmentContent)) throw new ClassCastException();
-
-			// if the object are the same, say so
-			if (obj == this) return 0;
-
-			// start the compare by comparing their sort names
-			int compare = getTitle().compareTo(((AssignmentContent) obj).getTitle());
-
-			// if these are the same
-			if (compare == 0)
-			{
-				// sort based on (unique) id
-				compare = getId().compareTo(((AssignmentContent) obj).getId());
-			}
-
-			return compare;
-
-		} // compareTo
-
-	}// BaseAssignmentContent
-
-	/**********************************************************************************************************************************************************************************************************************************************************
-	 * AssignmentContentEdit implementation
-	 *********************************************************************************************************************************************************************************************************************************************************/
-
-	/**
-	 * <p>
-	 * BaseAssignmentContentEdit is an implementation of the CHEF AssignmentContentEdit object.
-	 * </p>
-	 * 
-	 * @author University of Michigan, CHEF Software Development Team
-	 */
-	public class BaseAssignmentContentEdit extends BaseAssignmentContent implements AttachmentContainer, AssignmentContentEdit,
-			SessionBindingListener
-	{
-		/** The event code for this edit. */
-		protected String m_event = null;
-
-		/** Active flag. */
-		protected boolean m_active = false;
-
-		/**
-		 * Construct from another AssignmentContent object.
-		 * 
-		 * @param AssignmentContent
-		 *        The AssignmentContent object to use for values.
-		 */
-		public BaseAssignmentContentEdit(AssignmentContent assignmentContent)
-		{
-			super(assignmentContent);
-
-		} // BaseAssignmentContentEdit
-
-		/**
-		 * Construct.
-		 * 
-		 * @param id
-		 *        The AssignmentContent id.
-		 */
-		public BaseAssignmentContentEdit(String id, String context)
-		{
-			super(id, context);
-
-		} // BaseAssignmentContentEdit
-
-		/**
-		 * Construct from information in XML.
-		 * 
-		 * @param el
-		 *        The XML DOM Element definining the AssignmentContent.
-		 */
-		public BaseAssignmentContentEdit(Element el)
-		{
-			super(el);
-
-		} // BaseAssignmentContentEdit
-
-		/**
-		 * Clean up.
-		 */
-		protected void finalize()
-		{
-			// catch the case where an edit was made but never resolved
-			if (m_active)
-			{
-				cancelEdit(this);
-			}
-
-		} // finalize
-
-		/******************************************************************************************************************************************************************************************************************************************************
-		 * AttachmentContainer Implementation
-		 *****************************************************************************************************************************************************************************************************************************************************/
-
-		/**
-		 * Add an attachment.
-		 * 
-		 * @param ref -
-		 *        The attachment Reference.
-		 */
-		public void addAttachment(Reference ref)
-		{
-			if (ref != null) m_attachments.add(ref);
-		}
-
-		/**
-		 * Remove an attachment.
-		 * 
-		 * @param ref -
-		 *        The attachment Reference to remove (the one removed will equal this, they need not be ==).
-		 */
-		public void removeAttachment(Reference ref)
-		{
-			if (ref != null) m_attachments.remove(ref);
-		}
-
-		/**
-		 * Replace the attachment set.
-		 * 
-		 * @param attachments -
-		 *        A ReferenceVector that will become the new set of attachments.
-		 */
-		public void replaceAttachments(List attachments)
-		{
-			m_attachments = attachments;
-		}
-
-		/**
-		 * Clear all attachments.
-		 */
-		public void clearAttachments()
-		{
-			m_attachments.clear();
-		}
-
-		/******************************************************************************************************************************************************************************************************************************************************
-		 * AssignmentContentEdit Implementation
-		 *****************************************************************************************************************************************************************************************************************************************************/
-
-		/**
-		 * Set the title.
-		 * 
-		 * @param title -
-		 *        The Assignment's title.
-		 */
-		public void setTitle(String title)
-		{
-			m_title = title;
-		}
-
-		/**
-		 * Set the instructions.
-		 * 
-		 * @param instructions -
-		 *        The Assignment's instructions.
-		 */
-		public void setInstructions(String instructions)
-		{
-			m_instructions = instructions;
-		}
-
-		/**
-		 * Set the context at the time of creation.
-		 * 
-		 * @param context -
-		 *        the context string.
-		 */
-		public void setContext(String context)
-		{
-			m_context = context;
-		}
-
-		/**
-		 * Set the type of valid submission.
-		 * 
-		 * @param int -
-		 *        Type of Submission.
-		 */
-		public void setTypeOfSubmission(int type)
-		{
-			m_typeOfSubmission = type;
-		}
-
-		/**
-		 * Set the grade type.
-		 * 
-		 * @param gradeType -
-		 *        The type of grade.
-		 */
-		public void setTypeOfGrade(int gradeType)
-		{
-			m_typeOfGrade = gradeType;
-		}
-
-		/**
-		 * Set the maximum grade for grade type = SCORE_GRADE_TYPE(3)
-		 * 
-		 * @param maxPoints -
-		 *        The maximum grade score.
-		 */
-		public void setMaxGradePoint(int maxPoints)
-		{
-			m_maxGradePoint = maxPoints;
-		}
-
-		/**
-		 * Set whether this project can be a group project.
-		 * 
-		 * @param groupProject -
-		 *        True if this can be a group project, false otherwise.
-		 */
-		public void setGroupProject(boolean groupProject)
-		{
-			m_groupProject = groupProject;
-		}
-
-		/**
-		 * Set whether group projects should be individually graded.
-		 * 
-		 * @param individGraded -
-		 *        true if projects are individually graded, false if grades are given to the group.
-		 */
-		public void setIndividuallyGraded(boolean individGraded)
-		{
-			m_individuallyGraded = individGraded;
-		}
-
-		/**
-		 * Sets whether grades can be released once submissions are graded.
-		 * 
-		 * @param release -
-		 *        true if grades can be released once submission are graded, false if they must be released manually.
-		 */
-		public void setReleaseGrades(boolean release)
-		{
-			m_releaseGrades = release;
-		}
-
-		/**
-		 * Set the Honor Pledge type; values are NONE and ENGINEERING_HONOR_PLEDGE.
-		 * 
-		 * @param pledgeType -
-		 *        the Honor Pledge value.
-		 */
-		public void setHonorPledge(int pledgeType)
-		{
-			m_honorPledge = pledgeType;
-		}
-
-		
-		/**
-		 * Does this Assignment allow using the review service?
-		 * 
-		 * @param allow -
-		 *        true if the Assignment allows review service, false otherwise?
-		 */
-		public void setAllowReviewService(boolean allow)
-		{
-			m_allowReviewService = allow;
-		}
-		
-		/**
-		 * Does this Assignment allow students to view the report?
-		 * 
-		 * @param allow -
-		 *        true if the Assignment allows students to view the report, false otherwise?
-		 */
-		public void setAllowStudentViewReport(boolean allow) {
-			m_allowStudentViewReport = allow;
-		}
-		
-		/**
-		 * Does this Assignment allow attachments?
-		 * 
-		 * @param allow -
-		 *        true if the Assignment allows attachments, false otherwise?
-		 */
-		public void setAllowAttachments(boolean allow)
-		{
-			m_allowAttachments = allow;
-		}
-
-		/**
-		 * Add an author to the author list.
-		 * 
-		 * @param author -
-		 *        The User to add to the author list.
-		 */
-		public void addAuthor(User author)
-		{
-			if (author != null) m_authors.add(author.getId());
-		}
-
-		/**
-		 * Remove an author from the author list.
-		 * 
-		 * @param author -
-		 *        the User to remove from the author list.
-		 */
-		public void removeAuthor(User author)
-		{
-			if (author != null) m_authors.remove(author.getId());
-		}
-
-		/**
-		 * Set the time last modified.
-		 * 
-		 * @param lastmod -
-		 *        The Time at which the Content was last modified.
-		 */
-		public void setTimeLastModified(Time lastmod)
-		{
-			if (lastmod != null) m_timeLastModified = lastmod;
-		}
-
-		/**
-		 * Take all values from this object.
-		 * 
-		 * @param AssignmentContent
-		 *        The AssignmentContent object to take values from.
-		 */
-		protected void set(AssignmentContent assignmentContent)
-		{
-			setAll(assignmentContent);
-
-		} // set
-
-		/**
-		 * Access the event code for this edit.
-		 * 
-		 * @return The event code for this edit.
-		 */
-		protected String getEvent()
-		{
-			return m_event;
-		}
-
-		/**
-		 * Set the event code for this edit.
-		 * 
-		 * @param event
-		 *        The event code for this edit.
-		 */
-		protected void setEvent(String event)
-		{
-			m_event = event;
-		}
-
-		/**
-		 * Access the resource's properties for modification
-		 * 
-		 * @return The resource's properties.
-		 */
-		public ResourcePropertiesEdit getPropertiesEdit()
-		{
-			return m_properties;
-
-		} // getPropertiesEdit
-
-		/**
-		 * Enable editing.
-		 */
-		protected void activate()
-		{
-			m_active = true;
-
-		} // activate
-
-		/**
-		 * Check to see if the edit is still active, or has already been closed.
-		 * 
-		 * @return true if the edit is active, false if it's been closed.
-		 */
-		public boolean isActiveEdit()
-		{
-			return m_active;
-
-		} // isActiveEdit
-
-		/**
-		 * Close the edit object - it cannot be used after this.
-		 */
-		protected void closeEdit()
-		{
-			m_active = false;
-
-		} // closeEdit
-
-		/******************************************************************************************************************************************************************************************************************************************************
-		 * SessionBindingListener implementation
-		 *****************************************************************************************************************************************************************************************************************************************************/
-
-		public void valueBound(SessionBindingEvent event)
-		{
-		}
-
-		public void valueUnbound(SessionBindingEvent event)
-		{
-			M_log.warn(" BaseAssignmentContent valueUnbound()");
-
-			// catch the case where an edit was made but never resolved
-			if (m_active)
-			{
-				cancelEdit(this);
-			}
-
-		} // valueUnbound
-
-	} // BaseAssignmentContentEdit
-
-	/**********************************************************************************************************************************************************************************************************************************************************
-	 * AssignmentSubmission implementation
-	 *********************************************************************************************************************************************************************************************************************************************************/
-
-	public class BaseAssignmentSubmission implements AssignmentSubmission
-	{
-		protected final String STATUS_DRAFT = "Drafted";
-
-		protected final String STATUS_SUBMITTED = "Submitted";
-
-		protected final String STATUS_RETURNED = "Returned";
-
-		protected final String STATUS_GRADED = "Graded";
-
-		protected ResourcePropertiesEdit m_properties;
-
-		protected String m_id;
-
-		protected String m_assignment;
-
-		protected String m_context;
-
-		protected List m_submitters;
-
-		protected Time m_timeSubmitted;
-
-		protected Time m_timeReturned;
-
-		protected Time m_timeLastModified;
-
-		protected List m_submittedAttachments;
-
-		protected List m_feedbackAttachments;
-
-		protected String m_submittedText;
-
-		protected String m_feedbackComment;
-
-		protected String m_feedbackText;
-
-		protected String m_grade;
-
-		protected boolean m_submitted;
-
-		protected boolean m_returned;
-
-		protected boolean m_graded;
-
-		protected boolean m_gradeReleased;
-
-		protected boolean m_honorPledgeFlag;
-
-		
-		//The score given by the review service
-		protected int m_reviewScore;
-		// The report given by the content review service
-		protected String m_reviewReport;
-		// The status of the review service
-		protected String m_reviewStatus;
-		
-		protected String m_reviewIconUrl;
-		
-		// return the variables
-		// Get new values from review service if defaults
-		public int getReviewScore() {
-			// Code to get updated score if default
-			M_log.warn(this + " getReviewScore for submission " + this.getId() + " and review service is: " + (this.getAssignment().getContent().getAllowReviewService()));
-			if (!this.getAssignment().getContent().getAllowReviewService()) {
-				M_log.warn(this + " getReviewScore Content review is not enabled for this assignment");
-				return -2;
-			}
-			
-			if (m_submittedAttachments.isEmpty()) M_log.warn(this + " getReviewScore No attachments submitted.");
-			else
-			{
-				try {
-					//we need to find the first attachment the CR will accept
-					
-					ContentResource cr = getFirstAcceptableAttachement();
-					if (cr == null )
-					{
-						M_log.warn(this + " getReviewScore No suitable attachments found in list");
-						return -2;
-					}
-					String contentId = cr.getId();
-					M_log.warn(this + " getReviewScore checking for socre for content: " + contentId);
-					int score =contentReviewService.getReviewScore(contentId);
-					M_log.warn(this + " getReviewScore CR returned a score of: " + score);
-					return contentReviewService.getReviewScore(contentId);
-						
-				} 
-				catch (QueueException cie) {
-					//should we add the item
-					try {
-						
-							M_log.warn(this + " getReviewScore Item is not in queue we will try add it");
-							ContentResource cr = getFirstAcceptableAttachement();
-							if (cr == null )
-							{
-								M_log.warn(this + " getReviewScore No suitable attachments found in list");
-								return -2;
-							}
-							String contentId = cr.getId();
-							String userId = (String)this.getSubmitterIds().get(0);
-							try {
-								contentReviewService.queueContent(userId, null, getAssignment().getReference(), contentId);
-							}
-							catch (QueueException qe) {
-								M_log.warn(this + " getReviewScore Unable to queue content with content review Service: " + qe.getMessage());
-							}
-								
-							
-						
-					} catch (Exception e) {
-						e.printStackTrace();
-					}
-					return -1;
-					
-				}
-				catch (Exception e) {
-					
-						M_log.warn(this + " getReviewScore " + e.getMessage());
-					return -1;
-				}
-					
-			}
-			//No assignment available
-			return -2;
-			
-		}
-		
-		public String getReviewReport() {
-//			 Code to get updated report if default
-			if (m_submittedAttachments.isEmpty()) M_log.warn(this + " getReviewReport No attachments submitted.");
-			else
-			{
-				try {
-					ContentResource cr = getFirstAcceptableAttachement();
-					if (cr == null )
-					{
-						M_log.warn(this + " getReviewReport No suitable attachments found in list");
-						return "error";
-					}
-					
-					String contentId = cr.getId();
-					
-					if (SecurityService.unlock(UserDirectoryService.getCurrentUser(), "asn.grade", "/site/" + this.m_context))
-						return contentReviewService.getReviewReportInstructor(contentId);
-					else
-						return contentReviewService.getReviewReportStudent(contentId);
-					
-				} catch (Exception e) {
-					//e.printStackTrace();
-					M_log.warn(this + ":getReviewReport() " + e.getMessage());
-					return "Error";
-				}
-					
-			}
-			return "Error";
-		}
-		
-		private ContentResource getFirstAcceptableAttachement() {
-			String contentId = null;
-			try {
-			for( int i =0; i < m_submittedAttachments.size();i++ ) {
-				Reference ref = (Reference)m_submittedAttachments.get(i);
-				ContentResource contentResource = (ContentResource)ref.getEntity();
-				if (contentReviewService.isAcceptableContent(contentResource)) {
-					return (ContentResource)contentResource;
-				}
-			}
-			}
-			catch (Exception e) {
-				M_log.warn(this + ":getFirstAcceptableAttachment() " + e.getMessage());
-				e.printStackTrace();
-			}
-			return null;
-		}
-		
-		public String getReviewStatus() {
-			return m_reviewStatus;
-		}
-		
-		public String getReviewIconUrl() {
-			if (m_reviewIconUrl == null )
-				m_reviewIconUrl = contentReviewService.getIconUrlforScore(new Long(this.getReviewScore()));
-				
-			return m_reviewIconUrl;
-		}
-		
-		/**
-		 * constructor
-		 */
-		public BaseAssignmentSubmission()
-		{
-			m_properties = new BaseResourcePropertiesEdit();
-		}// constructor
-		
-		/**
-		 * Copy constructor.
-		 */
-		public BaseAssignmentSubmission(AssignmentSubmission submission)
-		{
-			setAll(submission);
-		}
-
-		/**
-		 * Constructor used by addSubmission.
-		 */
-		public BaseAssignmentSubmission(String id, String assignId, String submitterId, String submitTime, String submitted, String graded)
-		{
-			
-			// must set initial review status
-			m_reviewStatus = "";
-			m_reviewScore = -1;
-			m_reviewReport = "Not available yet";
-			
-			m_id = id;
-			m_assignment = assignId;
-			m_properties = new BaseResourcePropertiesEdit();
-			addLiveProperties(m_properties);
-			m_submitters = new Vector();
-			m_feedbackAttachments = m_entityManager.newReferenceList();
-			m_submittedAttachments = m_entityManager.newReferenceList();
-			m_submitted = false;
-			m_returned = false;
-			m_graded = false;
-			m_gradeReleased = false;
-			m_submittedText = "";
-			m_feedbackComment = "";
-			m_feedbackText = "";
-			m_grade = "";
-			m_timeLastModified = TimeService.newTime();
-
-			if (submitterId == null)
-			{
-				String currentUser = SessionManager.getCurrentSessionUserId();
-				if (currentUser == null) currentUser = "";
-				m_submitters.add(currentUser);
-			}
-			else
-			{
-				m_submitters.add(submitterId);
-			}
-			
-			if (submitted != null)
-			{
-				m_submitted = Boolean.valueOf(submitted).booleanValue();
-			}
-			
-			if (graded != null)
-			{
-				m_graded = Boolean.valueOf(graded).booleanValue();
-			}
-		}
-
-		
-		// todo work out what this does
-		/**
-		 * Reads the AssignmentSubmission's attribute values from xml.
-		 * 
-		 * @param s -
-		 *        Data structure holding the xml info.
-		 */
-		public BaseAssignmentSubmission(Element el)
-		{
-			int numAttributes = 0;
-			String intString = null;
-			String attributeString = null;
-			String tempString = null;
-			Reference tempReference = null;
-
-			M_log.warn(this + " BaseAssigmentSubmission : ENTERING STORAGE CONSTRUCTOR");
-
-			m_id = el.getAttribute("id");
-			m_context = el.getAttribute("context");
-
-			// %%%zqian
-			// read the scaled grade point first; if there is none, get the old grade value
-			String grade = StringUtil.trimToNull(el.getAttribute("scaled_grade"));
-			if (grade == null)
-			{
-				grade = StringUtil.trimToNull(el.getAttribute("grade"));
-				if (grade != null)
-				{
-					try
-					{
-						Integer.parseInt(grade);
-						// for the grades in points, multiple those by 10
-						grade = grade + "0";
-					}
-					catch (Exception e)
-					{
-						M_log.warn(this + ":BaseAssignmentSubmission(Element el) " + e.getMessage());
-					}
-				}
-			}
-			m_grade = grade;
-
-			m_assignment = el.getAttribute("assignment");
-
-			m_timeSubmitted = getTimeObject(el.getAttribute("datesubmitted"));
-			m_timeReturned = getTimeObject(el.getAttribute("datereturned"));
-			m_assignment = el.getAttribute("assignment");
-			m_timeLastModified = getTimeObject(el.getAttribute("lastmod"));
-
-			m_submitted = getBool(el.getAttribute("submitted"));
-			m_returned = getBool(el.getAttribute("returned"));
-			m_graded = getBool(el.getAttribute("graded"));
-			m_gradeReleased = getBool(el.getAttribute("gradereleased"));
-			m_honorPledgeFlag = getBool(el.getAttribute("pledgeflag"));
-
-			m_submittedText = FormattedText.decodeFormattedTextAttribute(el, "submittedtext");
-			m_feedbackComment = FormattedText.decodeFormattedTextAttribute(el, "feedbackcomment");
-			m_feedbackText = FormattedText.decodeFormattedTextAttribute(el, "feedbacktext");
-
-			// READ THE SUBMITTERS
-			m_submitters = new Vector();
-			M_log.warn(this + " BaseAssignmentSubmission : CONSTRUCTOR : Reading submitters : ");
-			intString = el.getAttribute("numberofsubmitters");
-			try
-			{
-				numAttributes = Integer.parseInt(intString);
-
-				for (int x = 0; x < numAttributes; x++)
-				{
-					attributeString = "submitter" + x;
-					tempString = el.getAttribute(attributeString);
-					if (tempString != null) m_submitters.add(tempString);
-				}
-			}
-			catch (Exception e)
-			{
-				M_log.warn(this + " BaseAssignmentSubmission: CONSTRUCTOR : Exception reading submitters : " + e);
-			}
-
-			// READ THE FEEDBACK ATTACHMENTS
-			m_feedbackAttachments = m_entityManager.newReferenceList();
-			intString = el.getAttribute("numberoffeedbackattachments");
-			
-				M_log.warn(this + " BaseAssignmentSubmission: CONSTRUCTOR : num feedback attachments : " + intString);
-			try
-			{
-				numAttributes = Integer.parseInt(intString);
-
-				for (int x = 0; x < numAttributes; x++)
-				{
-					attributeString = "feedbackattachment" + x;
-					tempString = el.getAttribute(attributeString);
-					if (tempString != null)
-					{
-						tempReference = m_entityManager.newReference(tempString);
-						m_feedbackAttachments.add(tempReference);
-						
-							M_log.warn(this + " BaseAssignmentSubmission: CONSTRUCTOR : " + attributeString + " : "
-									+ tempString);
-					}
-				}
-			}
-			catch (Exception e)
-			{
-				M_log.warn(this + " BaseAssignmentSubmission: CONSTRUCTOR : Exception reading feedback attachments : " + e);
-			}
-
-			// READ THE SUBMITTED ATTACHMENTS
-			m_submittedAttachments = m_entityManager.newReferenceList();
-			intString = el.getAttribute("numberofsubmittedattachments");
-			
-				M_log.warn(this + " BaseAssignmentSubmission: CONSTRUCTOR : num submitted attachments : " + intString);
-			try
-			{
-				numAttributes = Integer.parseInt(intString);
-
-				for (int x = 0; x < numAttributes; x++)
-				{
-					attributeString = "submittedattachment" + x;
-					tempString = el.getAttribute(attributeString);
-					if (tempString != null)
-					{
-						tempReference = m_entityManager.newReference(tempString);
-						m_submittedAttachments.add(tempReference);
-						
-							M_log.warn(this + " BaseAssignmentSubmission: CONSTRUCTOR : " + attributeString + " : "
-									+ tempString);
-					}
-				}
-			}
-			catch (Exception e)
-			{
-				M_log.warn(this + " BaseAssignmentSubmission: CONSTRUCTOR : Exception reading submitted attachments : " + e);
-			}
-
-			// READ THE PROPERTIES, SUBMITTED TEXT, FEEDBACK COMMENT, FEEDBACK TEXT
-			NodeList children = el.getChildNodes();
-			final int length = children.getLength();
-			for (int i = 0; i < length; i++)
-			{
-				Node child = children.item(i);
-				if (child.getNodeType() != Node.ELEMENT_NODE) continue;
-				Element element = (Element) child;
-
-				// look for properties
-				if (element.getTagName().equals("properties"))
-				{
-					// re-create properties
-					m_properties = new BaseResourcePropertiesEdit(element);
-				}
-				// old style encoding
-				else if (element.getTagName().equals("submittedtext"))
-				{
-					if ((element.getChildNodes() != null) && (element.getChildNodes().item(0) != null))
-					{
-						m_submittedText = element.getChildNodes().item(0).getNodeValue();
-						
-							M_log.warn(this + " BaseAssignmentSubmission: CONSTRUCTOR : submittedtext : " + m_submittedText);
-					}
-					if (m_submittedText == null)
-					{
-						m_submittedText = "";
-					}
-				}
-				// old style encoding
-				else if (element.getTagName().equals("feedbackcomment"))
-				{
-					if ((element.getChildNodes() != null) && (element.getChildNodes().item(0) != null))
-					{
-						m_feedbackComment = element.getChildNodes().item(0).getNodeValue();
-						
-							M_log.warn(this + " BaseAssignmentSubmission: CONSTRUCTOR : feedbackcomment : "
-									+ m_feedbackComment);
-					}
-					if (m_feedbackComment == null)
-					{
-						m_feedbackComment = "";
-					}
-				}
-				// old style encoding
-				else if (element.getTagName().equals("feedbacktext"))
-				{
-					if ((element.getChildNodes() != null) && (element.getChildNodes().item(0) != null))
-					{
-						m_feedbackText = element.getChildNodes().item(0).getNodeValue();
-						
-							M_log.warn(this + " BaseAssignmentSubmission: CONSTRUCTOR : FEEDBACK TEXT : " + m_feedbackText);
-					}
-					if (m_feedbackText == null)
-					{
-						m_feedbackText = "";
-					}
-				}
-			}
-
-		
-			
-			try {
-				if (el.getAttribute("reviewScore")!=null)
-					m_reviewScore = Integer.parseInt(el.getAttribute("reviewScore"));
-				else
-					m_reviewScore = -1;
-			}
-			catch (NumberFormatException nfe) {
-				m_reviewScore = -1;
-				M_log.warn(this + ":BaseAssignmentSubmission(Element) " + nfe.getMessage());
-			}
-			try {
-			// The report given by the content review service
-				if (el.getAttribute("reviewReport")!=null)
-					m_reviewReport = el.getAttribute("reviewReport");
-				else 
-					m_reviewReport = "no report available";
-				
-			// The status of the review service
-				if (el.getAttribute("reviewStatus")!=null)
-					m_reviewStatus = el.getAttribute("reviewStatus");
-				else 
-					m_reviewStatus = "";
-			}
-			catch (Exception e) {
-				M_log.error("error constructing Submission: " + e);
-			}
-			
-			//get the review Status from ContentReview rather than using old ones
-			m_reviewStatus = this.getReviewStatus();
-			m_reviewScore  = this.getReviewScore();
-			
-			
-			
-			M_log.warn(this + " BaseAssignmentSubmission: LEAVING STORAGE CONSTRUCTOR");
-
-		}// storage constructor
-		
-		/**
-		 * @param services
-		 * @return
-		 */
-		public ContentHandler getContentHandler(Map<String, Object> services)
-		{
-			final Entity thisEntity = this;
-			return new DefaultEntityHandler()
-			{
-				/*
-				 * (non-Javadoc)
-				 * 
-				 * @see org.sakaiproject.util.DefaultEntityHandler#startElement(java.lang.String,
-				 *      java.lang.String, java.lang.String,
-				 *      org.xml.sax.Attributes)
-				 */
-				@Override
-				public void startElement(String uri, String localName, String qName,
-						Attributes attributes) throws SAXException
-				{
-					if (doStartElement(uri, localName, qName, attributes))
-					{
-						if ("submission".equals(qName) && entity == null)
-						{
-							try {
-								if (attributes.getValue("reviewScore")!=null)
-									m_reviewScore = Integer.parseInt(attributes.getValue("reviewScore"));
-								else
-									m_reviewScore = -1;
-							}
-							catch (NumberFormatException nfe) {
-								m_reviewScore = -1;
-								M_log.warn(this + ":AssignmentSubmission:getContentHandler:DefaultEntityHandler " + nfe.getMessage());
-							}
-							try {
-							// The report given by the content review service
-								if (attributes.getValue("reviewReport")!=null)
-									m_reviewReport = attributes.getValue("reviewReport");
-								else 
-									m_reviewReport = "no report available";
-								
-							// The status of the review service
-								if (attributes.getValue("reviewStatus")!=null)
-									m_reviewStatus = attributes.getValue("reviewStatus");
-								else 
-									m_reviewStatus = "";
-							}
-							catch (Exception e) {
-								M_log.error("error constructing Submission: " + e);
-							}
-							
-							
-							int numAttributes = 0;
-							String intString = null;
-							String attributeString = null;
-							String tempString = null;
-							Reference tempReference = null;
-
-							m_id = attributes.getValue("id");
-							// M_log.info(this + " BASE SUBMISSION : CONSTRUCTOR : m_id : " + m_id);
-							m_context = attributes.getValue("context");
-							// M_log.info(this + " BASE SUBMISSION : CONSTRUCTOR : m_context : " + m_context);
-
-							// %%%zqian
-							// read the scaled grade point first; if there is none, get the old grade value
-							String grade = StringUtil.trimToNull(attributes.getValue("scaled_grade"));
-							if (grade == null)
-							{
-								grade = StringUtil.trimToNull(attributes.getValue("grade"));
-								if (grade != null)
-								{
-									try
-									{
-										Integer.parseInt(grade);
-										// for the grades in points, multiple those by 10
-										grade = grade + "0";
-									}
-									catch (Exception e)
-									{
-										M_log.warn(this + ":BaseAssignmentSubmission:getContentHanler:DefaultEnityHandler " + e.getMessage());
-									}
-								}
-							}
-							m_grade = grade;
-
-							m_assignment = attributes.getValue("assignment");
-
-							m_timeSubmitted = getTimeObject(attributes.getValue("datesubmitted"));
-							m_timeReturned = getTimeObject(attributes.getValue("datereturned"));
-							m_assignment = attributes.getValue("assignment");
-							m_timeLastModified = getTimeObject(attributes.getValue("lastmod"));
-
-							m_submitted = getBool(attributes.getValue("submitted"));
-							m_returned = getBool(attributes.getValue("returned"));
-							m_graded = getBool(attributes.getValue("graded"));
-							m_gradeReleased = getBool(attributes.getValue("gradereleased"));
-							m_honorPledgeFlag = getBool(attributes.getValue("pledgeflag"));
-
-							m_submittedText = FormattedTextDecodeFormattedTextAttribute(attributes, "submittedtext");
-							m_feedbackComment = FormattedTextDecodeFormattedTextAttribute(attributes, "feedbackcomment");
-							m_feedbackText = FormattedTextDecodeFormattedTextAttribute(attributes, "feedbacktext");
-							 
-
-							// READ THE SUBMITTERS
-							m_submitters = new Vector();
-							intString = attributes.getValue("numberofsubmitters");
-							try
-							{
-								numAttributes = Integer.parseInt(intString);
-
-								for (int x = 0; x < numAttributes; x++)
-								{
-									attributeString = "submitter" + x;
-									tempString = attributes.getValue(attributeString);
-									if (tempString != null) m_submitters.add(tempString);
-								}
-							}
-							catch (Exception e)
-							{
-								M_log.warn(this + " BaseAssignmentSubmission getContentHandler : Exception reading submitters : " + e);
-							}
-
-							// READ THE FEEDBACK ATTACHMENTS
-							m_feedbackAttachments = m_entityManager.newReferenceList();
-							intString = attributes.getValue("numberoffeedbackattachments");
-							try
-							{
-								numAttributes = Integer.parseInt(intString);
-
-								for (int x = 0; x < numAttributes; x++)
-								{
-									attributeString = "feedbackattachment" + x;
-									tempString = attributes.getValue(attributeString);
-									if (tempString != null)
-									{
-										tempReference = m_entityManager.newReference(tempString);
-										m_feedbackAttachments.add(tempReference);
-									}
-								}
-							}
-							catch (Exception e)
-							{
-								M_log.warn(this + " BaseAssignmentSubmission getContentHandler : Exception reading feedback attachments : " + e);
-							}
-
-							// READ THE SUBMITTED ATTACHMENTS
-							m_submittedAttachments = m_entityManager.newReferenceList();
-							intString = attributes.getValue("numberofsubmittedattachments");
-							try
-							{
-								numAttributes = Integer.parseInt(intString);
-
-								for (int x = 0; x < numAttributes; x++)
-								{
-									attributeString = "submittedattachment" + x;
-									tempString = attributes.getValue(attributeString);
-									if (tempString != null)
-									{
-										tempReference = m_entityManager.newReference(tempString);
-										m_submittedAttachments.add(tempReference);
-									}
-								}
-							}
-							catch (Exception e)
-							{
-								M_log.warn(this + " BaseAssignmentSubmission getContentHandler: Exception reading submitted attachments : " + e);
-							}
-							
-							entity = thisEntity;
-						}
-					}
-				}
-			};
-		}
-
-		
-		/**
-		 * Takes the AssignmentContent's attribute values and puts them into the xml document.
-		 * 
-		 * @param s -
-		 *        Data structure holding the object to be stored.
-		 * @param doc -
-		 *        The xml document.
-		 */
-		public Element toXml(Document doc, Stack stack)
-		{
-			M_log.warn(this + " BaseAssignmentSubmission : ENTERING TOXML");
-
-			Element submission = doc.createElement("submission");
-			if (stack.isEmpty())
-			{
-				doc.appendChild(submission);
-			}
-			else
-			{
-				((Element) stack.peek()).appendChild(submission);
-			}
-
-			stack.push(submission);
-
-			String numItemsString = null;
-			String attributeString = null;
-			String itemString = null;
-			Reference tempReference = null;
-
-			
-			submission.setAttribute("reviewScore",Integer.toString(m_reviewScore));
-			submission.setAttribute("reviewReport",m_reviewReport);
-			submission.setAttribute("reviewStatus",m_reviewStatus);
-			
-			
-			submission.setAttribute("id", m_id);
-			submission.setAttribute("context", m_context);
-			submission.setAttribute("scaled_grade", m_grade);
-			submission.setAttribute("assignment", m_assignment);
-			submission.setAttribute("datesubmitted", getTimeString(m_timeSubmitted));
-			submission.setAttribute("datereturned", getTimeString(m_timeReturned));
-			submission.setAttribute("lastmod", getTimeString(m_timeLastModified));
-			submission.setAttribute("submitted", getBoolString(m_submitted));
-			submission.setAttribute("returned", getBoolString(m_returned));
-			submission.setAttribute("graded", getBoolString(m_graded));
-			submission.setAttribute("gradereleased", getBoolString(m_gradeReleased));
-			submission.setAttribute("pledgeflag", getBoolString(m_honorPledgeFlag));
-
-			M_log.warn(this + " BaseAssignmentSubmission: SAVED REGULAR PROPERTIES");
-
-			// SAVE THE SUBMITTERS
-			numItemsString = "" + m_submitters.size();
-			submission.setAttribute("numberofsubmitters", numItemsString);
-			for (int x = 0; x < m_submitters.size(); x++)
-			{
-				attributeString = "submitter" + x;
-				itemString = (String) m_submitters.get(x);
-				if (itemString != null) submission.setAttribute(attributeString, itemString);
-			}
-
-			M_log.warn(this + " BaseAssignmentSubmission: SAVED SUBMITTERS");
-
-			// SAVE THE FEEDBACK ATTACHMENTS
-			numItemsString = "" + m_feedbackAttachments.size();
-			submission.setAttribute("numberoffeedbackattachments", numItemsString);
-			
-			M_log.warn("DB : DbCachedStorage : DbCachedAssignmentSubmission : entering fb attach loop : size : "
-						+ numItemsString);
-			for (int x = 0; x < m_feedbackAttachments.size(); x++)
-			{
-				attributeString = "feedbackattachment" + x;
-				tempReference = (Reference) m_feedbackAttachments.get(x);
-				itemString = tempReference.getReference();
-				if (itemString != null) submission.setAttribute(attributeString, itemString);
-			}
-
-			M_log.warn(this + " BaseAssignmentSubmission: SAVED FEEDBACK ATTACHMENTS");
-
-			// SAVE THE SUBMITTED ATTACHMENTS
-			numItemsString = "" + m_submittedAttachments.size();
-			submission.setAttribute("numberofsubmittedattachments", numItemsString);
-			for (int x = 0; x < m_submittedAttachments.size(); x++)
-			{
-				attributeString = "submittedattachment" + x;
-				tempReference = (Reference) m_submittedAttachments.get(x);
-				itemString = tempReference.getReference();
-				if (itemString != null) submission.setAttribute(attributeString, itemString);
-			}
-
-			M_log.warn(this + " BaseAssignmentSubmission: SAVED SUBMITTED ATTACHMENTS");
-
-			// SAVE THE PROPERTIES
-			m_properties.toXml(doc, stack);
-			stack.pop();
-
-			FormattedText.encodeFormattedTextAttribute(submission, "submittedtext", m_submittedText);
-			FormattedText.encodeFormattedTextAttribute(submission, "feedbackcomment", m_feedbackComment);
-			FormattedText.encodeFormattedTextAttribute(submission, "feedbacktext", m_feedbackText);
-
-			M_log.warn(this + " BaseAssignmentSubmission: LEAVING TOXML");
-
-			return submission;
-
-		}// toXml
-
-		
-		protected void setAll(AssignmentSubmission submission)
-		{
-			
-			
-			m_reviewScore = submission.getReviewScore();
-			// The report given by the content review service
-			m_reviewReport = submission.getReviewReport();
-			// The status of the review service
-			m_reviewStatus = submission.getReviewStatus();
-			
-			
-			m_id = submission.getId();
-			m_context = submission.getContext();
-			m_assignment = submission.getAssignmentId();
-			m_grade = submission.getGrade();
-			m_submitters = submission.getSubmitterIds();
-			m_submitted = submission.getSubmitted();
-			m_timeSubmitted = submission.getTimeSubmitted();
-			m_timeReturned = submission.getTimeReturned();
-			m_timeLastModified = submission.getTimeLastModified();
-			m_submittedAttachments = submission.getSubmittedAttachments();
-			m_feedbackAttachments = submission.getFeedbackAttachments();
-			m_submittedText = submission.getSubmittedText();
-			m_feedbackComment = submission.getFeedbackComment();
-			m_feedbackText = submission.getFeedbackText();
-			m_returned = submission.getReturned();
-			m_graded = submission.getGraded();
-			m_gradeReleased = submission.getGradeReleased();
-			m_honorPledgeFlag = submission.getHonorPledgeFlag();
-			m_properties = new BaseResourcePropertiesEdit();
-			m_properties.addAll(submission.getProperties());
-		}
-
-		/**
-		 * Access the URL which can be used to access the resource.
-		 * 
-		 * @return The URL which can be used to access the resource.
-		 */
-		public String getUrl()
-		{
-			return getAccessPoint(false) + Entity.SEPARATOR + "s" + Entity.SEPARATOR + m_context + Entity.SEPARATOR + m_id;
-
-		} // getUrl
-
-		/**
-		 * Access the internal reference which can be used to access the resource from within the system.
-		 * 
-		 * @return The the internal reference which can be used to access the resource from within the system.
-		 */
-		public String getReference()
-		{
-			return submissionReference(m_context, m_id, m_assignment);
-
-		} // getReference
-
-		/**
-		 * @inheritDoc
-		 */
-		public String getReference(String rootProperty)
-		{
-			return getReference();
-		}
-
-		/**
-		 * @inheritDoc
-		 */
-		public String getUrl(String rootProperty)
-		{
-			return getUrl();
-		}
-
-		/**
-		 * Access the id of the resource.
-		 * 
-		 * @return The id.
-		 */
-		public String getId()
-		{
-			return m_id;
-		}
-
-		/**
-		 * Access the resource's properties.
-		 * 
-		 * @return The resource's properties.
-		 */
-		public ResourceProperties getProperties()
-		{
-			return m_properties;
-		}
-
-		/******************************************************************************************************************************************************************************************************************************************************
-		 * AssignmentSubmission implementation
-		 *****************************************************************************************************************************************************************************************************************************************************/
-
-		/**
-		 * Access the AssignmentSubmission's context at the time of creation.
-		 * 
-		 * @return String - the context string.
-		 */
-		public String getContext()
-		{
-			return m_context;
-		}
-
-		/**
-		 * Access the Assignment for this Submission
-		 * 
-		 * @return the Assignment
-		 */
-		public Assignment getAssignment()
-		{
-			Assignment retVal = null;
-			if (m_assignment != null)
-			{
-				retVal = m_assignmentStorage.get(m_assignment);
-			}
-			
-			// track event
-			//EventTrackingService.post(EventTrackingService.newEvent(EVENT_ACCESS_ASSIGNMENT, retVal.getReference(), false));
-
-			return retVal;
-		}
-
-		/**
-		 * Access the Id for the Assignment for this Submission
-		 * 
-		 * @return String - the Assignment Id
-		 */
-		public String getAssignmentId()
-		{
-			return m_assignment;
-		}
-
-		/**
-		 * Get whether this is a final submission.
-		 * 
-		 * @return True if a final submission, false if still a draft.
-		 */
-		public boolean getSubmitted()
-		{
-			return m_submitted;
-		}
-
-		/**
-		 * Access the list of Users who submitted this response to the Assignment.
-		 * 
-		 * @return Array of User objects.
-		 */
-		public User[] getSubmitters()
-		{
-			List retVal = new Vector();
-			for (int x = 0; x < m_submitters.size(); x++)
-			{
-				String userId = (String) m_submitters.get(x);
-				try
-				{
-					retVal.add(UserDirectoryService.getUser(userId));
-				}
-				catch (Exception e)
-				{
-					M_log.warn(this + " BaseAssignmentSubmission getSubmitters" + e.getMessage() + userId);
-				}
-			}
-			
-			// get the User[] array
-			int size = retVal.size();
-			User[] rv = new User[size];
-			for(int k = 0; k<size; k++)
-			{
-				rv[k] = (User) retVal.get(k);
-			}
-			
-			return rv;
-		}
-
-		/**
-		 * Access the list of Users who submitted this response to the Assignment.
-		 * 
-		 * @return FlexStringArray of user ids.
-		 */
-		public List getSubmitterIds()
-		{
-			return m_submitters;
-		}
-
-		/**
-		 * {@inheritDoc}
-		 */
-		public String getSubmitterIdString ()
-		{
-			String rv = "";
-			if (m_submitters != null)
-			{
-				for (int j = 0; j < m_submitters.size(); j++)
-				{
-					rv = rv.concat((String) m_submitters.get(j));
-				}
-			}
-			return rv;
-		}
-		
-		/**
-		 * Set the time at which this response was submitted; null signifies the response is unsubmitted.
-		 * 
-		 * @return Time of submission.
-		 */
-		public Time getTimeSubmitted()
-		{
-			return m_timeSubmitted;
-		}
-
-		/**
-		 * @inheritDoc
-		 */
-		public String getTimeSubmittedString()
-		{
-			if ( m_timeSubmitted == null )
-				return "";
-			else
-				return m_timeSubmitted.toStringLocalFull();
-		}
-
-		/**
-		 * Get whether the grade has been released.
-		 * 
-		 * @return True if the Submissions's grade has been released, false otherwise.
-		 */
-		public boolean getGradeReleased()
-		{
-			return m_gradeReleased;
-		}
-
-		/**
-		 * Access the grade recieved.
-		 * 
-		 * @return The Submission's grade..
-		 */
-		public String getGrade()
-		{
-			return m_grade;
-		}
-
-		/**
-		 * Access the grade recieved.
-		 * 
-		 * @return The Submission's grade..
-		 */
-		public String getGradeDisplay()
-		{
-			Assignment m = getAssignment();
-			if (m.getContent().getTypeOfGrade() == Assignment.SCORE_GRADE_TYPE)
-			{
-				if (m_grade != null && m_grade.length() > 0 && !m_grade.equals("0"))
-				{
-					try
-					{
-						Integer.parseInt(m_grade);
-						// if point grade, display the grade with one decimal place
-						return m_grade.substring(0, m_grade.length() - 1) + "." + m_grade.substring(m_grade.length() - 1);
-					}
-					catch (Exception e)
-					{
-						return m_grade;
-					}
-				}
-				else
-				{
-					return StringUtil.trimToZero(m_grade);
-				}
-			}
-			else
-			{
-				return StringUtil.trimToZero(m_grade);
-			}
-		}
-
-		/**
-		 * Get the time of last modification;
-		 * 
-		 * @return The time of last modification.
-		 */
-		public Time getTimeLastModified()
-		{
-			return m_timeLastModified;
-		}
-
-		/**
-		 * Text submitted in response to the Assignment.
-		 * 
-		 * @return The text of the submission.
-		 */
-		public String getSubmittedText()
-		{
-			return m_submittedText;
-		}
-
-		/**
-		 * Access the list of attachments to this response to the Assignment.
-		 * 
-		 * @return ReferenceVector of the list of attachments as Reference objects;
-		 */
-		public List getSubmittedAttachments()
-		{
-			return m_submittedAttachments;
-		}
-
-		/**
-		 * Get the general comments by the grader
-		 * 
-		 * @return The text of the grader's comments; may be null.
-		 */
-		public String getFeedbackComment()
-		{	
-			return m_feedbackComment;
-		}
-
-		/**
-		 * Access the text part of the instructors feedback; usually an annotated copy of the submittedText
-		 * 
-		 * @return The text of the grader's feedback.
-		 */
-		public String getFeedbackText()
-		{
-			return m_feedbackText;
-		}
-
-		/**
-		 * Access the formatted text part of the instructors feedback; usually an annotated copy of the submittedText
-		 * 
-		 * @return The formatted text of the grader's feedback.
-		 */
-		public String getFeedbackFormattedText()
-		{
-			if (m_feedbackText == null || m_feedbackText.length() == 0) 
-				return m_feedbackText;
-
-			String value = fixAssignmentFeedback(m_feedbackText);
-
-			StringBuffer buf = new StringBuffer(value);
-			int pos = -1;
-
-			while ((pos = buf.indexOf("{{")) != -1)
-			{
-				buf.replace(pos, pos + "{{".length(), "<span class='highlight'>");
-			}
-
-			while ((pos = buf.indexOf("}}")) != -1)
-			{
-				buf.replace(pos, pos + "}}".length(), "</span>");
-			}
-
-			return FormattedText.escapeHtmlFormattedText(buf.toString());
-		}
-
-		/**
-		 * Apply the fix to pre 1.1.05 assignments submissions feedback.
-		 */
-		private String fixAssignmentFeedback(String value)
-		{
-			if (value == null || value.length() == 0) return value;
-			
-			StringBuffer buf = new StringBuffer(value);
-			int pos = -1;
-			
-			// <br/> -> \n
-			while ((pos = buf.indexOf("<br/>")) != -1)
-			{
-				buf.replace(pos, pos + "<br/>".length(), "\n");
-			}
-			
-			// <span class='chefAlert'>( -> {{
-			while ((pos = buf.indexOf("<span class='chefAlert'>(")) != -1)
-			{
-				buf.replace(pos, pos + "<span class='chefAlert'>(".length(), "{{");
-			}
-			
-			// )</span> -> }}
-			while ((pos = buf.indexOf(")</span>")) != -1)
-			{
-				buf.replace(pos, pos + ")</span>".length(), "}}");
-			}
-			
-			while ((pos = buf.indexOf("<ins>")) != -1)
-			{
-				buf.replace(pos, pos + "<ins>".length(), "{{");
-			}
-			
-			while ((pos = buf.indexOf("</ins>")) != -1)
-			{
-				buf.replace(pos, pos + "</ins>".length(), "}}");
-			}
-			
-			return buf.toString();
-			
-		} // fixAssignmentFeedback
-
-		/**
-		 * Access the list of attachments returned to the students in the process of grading this assignment; usually a modified or annotated version of the attachment submitted.
-		 * 
-		 * @return ReferenceVector of the Resource objects pointing to the attachments.
-		 */
-		public List getFeedbackAttachments()
-		{
-			return m_feedbackAttachments;
-		}
-
-		/**
-		 * Get whether this Submission was rejected by the grader.
-		 * 
-		 * @return True if this response was rejected by the grader, false otherwise.
-		 */
-		public boolean getReturned()
-		{
-			return m_returned;
-		}
-
-		/**
-		 * Get whether this Submission has been graded.
-		 * 
-		 * @return True if the submission has been graded, false otherwise.
-		 */
-		public boolean getGraded()
-		{
-			return m_graded;
-		}
-
-		/**
-		 * Get the time on which the graded submission was returned; null means the response is not yet graded.
-		 * 
-		 * @return the time (may be null)
-		 */
-		public Time getTimeReturned()
-		{
-			return m_timeReturned;
-		}
-
-		/**
-		 * Access the checked status of the honor pledge flag.
-		 * 
-		 * @return True if the honor pledge is checked, false otherwise.
-		 */
-		public boolean getHonorPledgeFlag()
-		{
-			return m_honorPledgeFlag;
-		}
-
-		/**
-		 * Returns the status of the submission : Not Started, submitted, returned or graded.
-		 * 
-		 * @return The Submission's status.
-		 */
-		public String getStatus()
-		{
-			boolean allowGrade = allowGradeSubmission(getReference());
-			String retVal = "";
-			
-			Time submitTime = getTimeSubmitted();
-			Time returnTime = getTimeReturned();
-			Time lastModTime = getTimeLastModified();
-		
-			if (getSubmitted() || (!getSubmitted() && allowGrade))
-			{
-				if (submitTime != null)
-				{
-					if (getReturned())
-					{
-						if (returnTime != null && returnTime.before(submitTime))
-						{
-							if (!getGraded())
-							{
-								retVal = rb.getString("listsub.resubmi") + " " + submitTime.toStringLocalFull();
-								if (submitTime.after(getAssignment().getDueTime()))
-									retVal = retVal + rb.getString("gen.late2");
-							}
-									
-							else
-								retVal = rb.getString("gen.returned");
-						}
-						else
-							retVal = rb.getString("gen.returned");
-					}
-					else if (getGraded() && allowGrade)
-					{
-							retVal = getGradeOrComment();
-					}
-					else 
-					{
-						if (allowGrade)
-						{
-							// ungraded submission
-							retVal = rb.getString("gen.ung1");
-						}
-						else
-						{
-							// submitted
-							retVal = rb.getString("gen.subm4");
-							
-							if(submitTime != null)
-							{
-								retVal = rb.getString("gen.subm4") + " " + submitTime.toStringLocalFull();
-							}
-						}
-					}
-				}
-				else
-				{
-					if (getReturned())
-					{
-						// instructor can return grading to non-submitted user
-						retVal = rb.getString("gen.returned");
-					}
-					else if (getGraded() && allowGrade)
-					{
-						// instructor can grade non-submitted ones
-						retVal = getGradeOrComment();
-					}
-					else
-					{
-						if (allowGrade)
-						{
-							// show "no submission" to graders
-							retVal = rb.getString("listsub.nosub");
-						}
-						else
-						{
-							// show "not started" to students
-							retVal = rb.getString("gen.notsta");
-						}
-					}
-				}
-			}
-			else
-			{
-				if (getGraded())
-				{
-					if (getReturned())
-					{
-						if (lastModTime != null && returnTime != null && lastModTime.after(TimeService.newTime(returnTime.getTime() + 1000 * 10)) && !allowGrade)
-						{
-							// working on a returned submission now
-							retVal = rb.getString("gen.dra2") + " " + rb.getString("gen.inpro");
-						}
-						else
-						{
-							// not submitted submmission has been graded and returned
-							retVal = rb.getString("gen.returned");
-						}
-					}
-					else if (allowGrade)
-						// grade saved but not release yet, show this to graders
-						retVal = getGradeOrComment();
-				}
-				else	
-				{
-					if (allowGrade)
-						retVal = rb.getString("gen.ung1");
-					else
-						// submission saved, not submitted.
-						retVal = rb.getString("gen.dra2") + " " + rb.getString("gen.inpro");
-				}
-			}
-
-			return retVal;
-		}
-
-		private String getGradeOrComment() {
-			String retVal;
-			if (getGrade() != null && getGrade().length() > 0)
-				retVal = rb.getString("grad3");
-			else
-				retVal = rb.getString("gen.commented");
-			return retVal;
-		}
-
-		/**
-		 * Are these objects equal? If they are both AssignmentSubmission objects, and they have matching id's, they are.
-		 * 
-		 * @return true if they are equal, false if not.
-		 */
-		public boolean equals(Object obj)
-		{
-			if (!(obj instanceof AssignmentSubmission)) return false;
-			return ((AssignmentSubmission) obj).getId().equals(getId());
-
-		} // equals
-
-		/**
-		 * Make a hash code that reflects the equals() logic as well. We want two objects, even if different instances, if they have the same id to hash the same.
-		 */
-		public int hashCode()
-		{
-			return getId().hashCode();
-
-		} // hashCode
-
-		/**
-		 * Compare this object with the specified object for order.
-		 * 
-		 * @return A negative integer, zero, or a positive integer as this object is less than, equal to, or greater than the specified object.
-		 */
-		public int compareTo(Object obj)
-		{
-			if (!(obj instanceof AssignmentSubmission)) throw new ClassCastException();
-
-			// if the object are the same, say so
-			if (obj == this) return 0;
-
-			// start the compare by comparing their sort names
-			int compare = getTimeSubmitted().toString().compareTo(((AssignmentSubmission) obj).getTimeSubmitted().toString());
-
-			// if these are the same
-			if (compare == 0)
-			{
-				// sort based on (unique) id
-				compare = getId().compareTo(((AssignmentSubmission) obj).getId());
-			}
-
-			return compare;
-
-		} // compareTo
-		
-		/**
-		 * {@inheritDoc}
-		 */
-		public int getResubmissionNum()
-		{
-			String numString = StringUtil.trimToNull(m_properties.getProperty(AssignmentSubmission.ALLOW_RESUBMIT_NUMBER));
-			return numString != null?Integer.valueOf(numString).intValue():0;
-		}
-		
-		/**
-		 * {@inheritDoc}
-		 */
-		public Time getCloseTime()
-		{
-			String closeTimeString = StringUtil.trimToNull(m_properties.getProperty(AssignmentSubmission.ALLOW_RESUBMIT_CLOSETIME));
-			if (closeTimeString != null && getResubmissionNum() != 0)
-			{
-				// return the close time if it is set
-				return TimeService.newTime(Long.parseLong(closeTimeString));
-			}
-			else
-			{
-				// else use the assignment close time setting
-				Assignment a = getAssignment();
-				return a!=null?a.getCloseTime():null;	
-			}
-		}
-		
-	} // AssignmentSubmission
 	
-	/***************************************************************************
-	 * AssignmentSubmissionEdit implementation
-	 **************************************************************************/
-
-	/**
-	 * <p>
-	 * BaseAssignmentSubmissionEdit is an implementation of the CHEF AssignmentSubmissionEdit object.
-	 * </p>
-	 * 
-	 * @author University of Michigan, CHEF Software Development Team
-	 */
-	public class BaseAssignmentSubmissionEdit extends BaseAssignmentSubmission implements AssignmentSubmissionEdit,
-			SessionBindingListener
-	{
-		/** The event code for this edit. */
-		protected String m_event = null;
-
-		/** Active flag. */
-		protected boolean m_active = false;
-
-		/**
-		 * Construct from another AssignmentSubmission object.
-		 * 
-		 * @param AssignmentSubmission
-		 *        The AssignmentSubmission object to use for values.
-		 */
-		public BaseAssignmentSubmissionEdit(AssignmentSubmission assignmentSubmission)
-		{
-			super(assignmentSubmission);
-
-		} // BaseAssignmentSubmissionEdit
-
-		/**
-		 * Construct.
-		 * 
-		 * @param id
-		 *        The AssignmentSubmission id.
-		 */
-		public BaseAssignmentSubmissionEdit(String id, String assignmentId, String submitterId, String submitTime, String submitted, String graded)
-		{
-			super(id, assignmentId, submitterId, submitTime, submitted, graded);
-
-		} // BaseAssignmentSubmissionEdit
-
-		/**
-		 * Construct from information in XML.
-		 * 
-		 * @param el
-		 *        The XML DOM Element definining the AssignmentSubmission.
-		 */
-		public BaseAssignmentSubmissionEdit(Element el)
-		{
-			super(el);
-
-		} // BaseAssignmentSubmissionEdit
-
-		/**
-		 * Clean up.
-		 */
-		protected void finalize()
-		{
-			// catch the case where an edit was made but never resolved
-			if (m_active)
-			{
-				cancelEdit(this);
-			}
-
-		} // finalize
-
-		/**
-		 * Set the context at the time of creation.
-		 * 
-		 * @param context -
-		 *        the context string.
-		 */
-		public void setContext(String context)
-		{
-			m_context = context;
-		}
-
-		/**
-		 * Set the Assignment for this Submission
-		 * 
-		 * @param assignment -
-		 *        the Assignment
-		 */
-		public void setAssignment(Assignment assignment)
-		{
-			if (assignment != null)
-			{
-				m_assignment = assignment.getId();
-			}
-			else
-				m_assignment = "";
-		}
-
-		/**
-		 * Set whether this is a final submission.
-		 * 
-		 * @param submitted -
-		 *        True if a final submission, false if still a draft.
-		 */
-		public void setSubmitted(boolean submitted)
-		{
-			m_submitted = submitted;
-		}
-
-		/**
-		 * Add a User to the submitters list.
-		 * 
-		 * @param submitter -
-		 *        the User to add.
-		 */
-		public void addSubmitter(User submitter)
-		{
-			if (submitter != null) m_submitters.add(submitter.getId());
-		}
-
-		/**
-		 * Remove an User from the submitter list
-		 * 
-		 * @param submitter -
-		 *        the User to remove.
-		 */
-		public void removeSubmitter(User submitter)
-		{
-			if (submitter != null) m_submitters.remove(submitter.getId());
-		}
-
-		/**
-		 * Remove all user from the submitter list
-		 */
-		public void clearSubmitters()
-		{
-			m_submitters.clear();
-		}
-
-		/**
-		 * Set the time at which this response was submitted; setting it to null signifies the response is unsubmitted.
-		 * 
-		 * @param timeSubmitted -
-		 *        Time of submission.
-		 */
-		public void setTimeSubmitted(Time value)
-		{
-			m_timeSubmitted = value;
-		}
-
-		/**
-		 * Set whether the grade has been released.
-		 * 
-		 * @param released -
-		 *        True if the Submissions's grade has been released, false otherwise.
-		 */
-		public void setGradeReleased(boolean released)
-		{
-			m_gradeReleased = released;
-		}
-
-		/**
-		 * Sets the grade for the Submisssion.
-		 * 
-		 * @param grade -
-		 *        The Submission's grade.
-		 */
-		public void setGrade(String grade)
-		{
-			m_grade = grade;
-		}
-
-		/**
-		 * Text submitted in response to the Assignment.
-		 * 
-		 * @param submissionText -
-		 *        The text of the submission.
-		 */
-		public void setSubmittedText(String value)
-		{
-			m_submittedText = value;
-		}
-
-		/**
-		 * Add an attachment to the list of submitted attachments.
-		 * 
-		 * @param attachment -
-		 *        The Reference object pointing to the attachment.
-		 */
-		public void addSubmittedAttachment(Reference attachment)
-		{
-			if (attachment != null) m_submittedAttachments.add(attachment);
-		}
-
-		/**
-		 * Remove an attachment from the list of submitted attachments
-		 * 
-		 * @param attachment -
-		 *        The Reference object pointing to the attachment.
-		 */
-		public void removeSubmittedAttachment(Reference attachment)
-		{
-			if (attachment != null) m_submittedAttachments.remove(attachment);
-		}
-
-		/**
-		 * Remove all submitted attachments.
-		 */
-		public void clearSubmittedAttachments()
-		{
-			m_submittedAttachments.clear();
-		}
-
-		/**
-		 * Set the general comments by the grader.
-		 * 
-		 * @param comment -
-		 *        the text of the grader's comments; may be null.
-		 */
-		public void setFeedbackComment(String value)
-		{
-			m_feedbackComment = value;
-		}
-
-		/**
-		 * Set the text part of the instructors feedback; usually an annotated copy of the submittedText
-		 * 
-		 * @param feedback -
-		 *        The text of the grader's feedback.
-		 */
-		public void setFeedbackText(String value)
-		{
-			m_feedbackText = value;
-		}
-
-		/**
-		 * Add an attachment to the list of feedback attachments.
-		 * 
-		 * @param attachment -
-		 *        The Resource object pointing to the attachment.
-		 */
-		public void addFeedbackAttachment(Reference attachment)
-		{
-			if (attachment != null) m_feedbackAttachments.add(attachment);
-		}
-
-		/**
-		 * Remove an attachment from the list of feedback attachments.
-		 * 
-		 * @param attachment -
-		 *        The Resource pointing to the attachment to remove.
-		 */
-		public void removeFeedbackAttachment(Reference attachment)
-		{
-			if (attachment != null) m_feedbackAttachments.remove(attachment);
-		}
-
-		/**
-		 * Remove all feedback attachments.
-		 */
-		public void clearFeedbackAttachments()
-		{
-			m_feedbackAttachments.clear();
-		}
-
-		/**
-		 * Set whether this Submission was rejected by the grader.
-		 * 
-		 * @param returned -
-		 *        true if this response was rejected by the grader, false otherwise.
-		 */
-		public void setReturned(boolean value)
-		{
-			m_returned = value;
-		}
-
-		/**
-		 * Set whether this Submission has been graded.
-		 * 
-		 * @param graded -
-		 *        true if the submission has been graded, false otherwise.
-		 */
-		public void setGraded(boolean value)
-		{
-			m_graded = value;
-		}
-
-		/**
-		 * Set the time at which the graded Submission was returned; setting it to null means it is not yet graded.
-		 * 
-		 * @param timeReturned -
-		 *        The time at which the graded Submission was returned.
-		 */
-		public void setTimeReturned(Time timeReturned)
-		{
-			m_timeReturned = timeReturned;
-		}
-
-		/**
-		 * Set the checked status of the honor pledge flag.
-		 * 
-		 * @param honorPledgeFlag -
-		 *        True if the honor pledge is checked, false otherwise.
-		 */
-		public void setHonorPledgeFlag(boolean honorPledgeFlag)
-		{
-			m_honorPledgeFlag = honorPledgeFlag;
-		}
-
-		/**
-		 * Set the time last modified.
-		 * 
-		 * @param lastmod -
-		 *        The Time at which the Assignment was last modified.
-		 */
-		public void setTimeLastModified(Time lastmod)
-		{
-			if (lastmod != null) m_timeLastModified = lastmod;
-		}
-		
-		
-		
-		public void postAttachment(List attachments){
-			//Send the attachment to the review service
-
-			try {
-				ContentResource cr = getFirstAcceptableAttachement(attachments);
-				Assignment ass = this.getAssignment();
-				contentReviewService.queueContent(null, null, ass.getReference(), cr.getId());
-			} catch (QueueException qe) {
-				M_log.warn(this + " BaseAssignmentSubmissionEdit postAttachment: Unable to add content to Content Review queue: " + qe.getMessage());
-			} catch (Exception e) {
-				e.printStackTrace();
-			}
-
-		}
-
-		private ContentResource getFirstAcceptableAttachement(List attachments) {
-			
-			for( int i =0; i < attachments.size();i++ ) { 
-				Reference attachment = (Reference)attachments.get(i);
-				try {
-					ContentResource res = m_contentHostingService.getResource(attachment.getId());
-					if (contentReviewService.isAcceptableContent(res)) {
-						return res;
-					}
-				} catch (PermissionException e) {
-					// TODO Auto-generated catch block
-					e.printStackTrace();
-					M_log.warn(this + ":geFirstAcceptableAttachment " + e.getMessage());
-				} catch (IdUnusedException e) {
-					// TODO Auto-generated catch block
-					e.printStackTrace();
-					M_log.warn(this + ":geFirstAcceptableAttachment " + e.getMessage());
-				} catch (TypeException e) {
-					// TODO Auto-generated catch block
-					e.printStackTrace();
-					M_log.warn(this + ":geFirstAcceptableAttachment " + e.getMessage());
-				}
-
-				
-			}
-			return null;
-		}
-		
-		/**
-		 * Take all values from this object.
-		 * 
-		 * @param AssignmentSubmission
-		 *        The AssignmentSubmission object to take values from.
-		 */
-		protected void set(AssignmentSubmission assignmentSubmission)
-		{
-			setAll(assignmentSubmission);
-
-		} // set
-
-		/**
-		 * Access the event code for this edit.
-		 * 
-		 * @return The event code for this edit.
-		 */
-		protected String getEvent()
-		{
-			return m_event;
-		}
-
-		/**
-		 * Set the event code for this edit.
-		 * 
-		 * @param event
-		 *        The event code for this edit.
-		 */
-		protected void setEvent(String event)
-		{
-			m_event = event;
-		}
-
-		/**
-		 * Access the resource's properties for modification
-		 * 
-		 * @return The resource's properties.
-		 */
-		public ResourcePropertiesEdit getPropertiesEdit()
-		{
-			return m_properties;
-
-		} // getPropertiesEdit
-
-		/**
-		 * Enable editing.
-		 */
-		protected void activate()
-		{
-			m_active = true;
-
-		} // activate
-
-		/**
-		 * Check to see if the edit is still active, or has already been closed.
-		 * 
-		 * @return true if the edit is active, false if it's been closed.
-		 */
-		public boolean isActiveEdit()
-		{
-			return m_active;
-
-		} // isActiveEdit
-
-		/**
-		 * Close the edit object - it cannot be used after this.
-		 */
-		protected void closeEdit()
-		{
-			m_active = false;
-
-		} // closeEdit
-
-		/******************************************************************************************************************************************************************************************************************************************************
-		 * SessionBindingListener implementation
-		 *****************************************************************************************************************************************************************************************************************************************************/
-
-		public void valueBound(SessionBindingEvent event)
-		{
-		}
-
-		public void valueUnbound(SessionBindingEvent event)
-		{
-			M_log.warn(this + " BaseAssignmentSubmissionEdit valueUnbound()");
-
-			// catch the case where an edit was made but never resolved
-			if (m_active)
-			{
-				cancelEdit(this);
-			}
-
-		} // valueUnbound
-
-	} // BaseAssignmentSubmissionEdit
-
 	/**********************************************************************************************************************************************************************************************************************************************************
 	 * Assignment Storage
 	 *********************************************************************************************************************************************************************************************************************************************************/
@@ -9636,7 +4851,7 @@ public abstract class BaseAssignmentService implements AssignmentService, Entity
 		 *        The context.
 		 * @return The locked Assignment object with this id, or null if the id is in use.
 		 */
-		public AssignmentEdit put(String id, String context);
+		public Assignment put(String id, String context);
 
 		/**
 		 * Get a lock on the Assignment with this id, or null if a lock cannot be gotten.
@@ -9645,7 +4860,7 @@ public abstract class BaseAssignmentService implements AssignmentService, Entity
 		 *        The Assignment id.
 		 * @return The locked Assignment with this id, or null if this records cannot be locked.
 		 */
-		public AssignmentEdit edit(String id);
+		public Assignment edit(String id);
 
 		/**
 		 * Commit the changes and release the lock.
@@ -9653,7 +4868,7 @@ public abstract class BaseAssignmentService implements AssignmentService, Entity
 		 * @param Assignment
 		 *        The Assignment to commit.
 		 */
-		public void commit(AssignmentEdit assignment);
+		public void commit(Assignment assignment);
 
 		/**
 		 * Cancel the changes and release the lock.
@@ -9661,7 +4876,7 @@ public abstract class BaseAssignmentService implements AssignmentService, Entity
 		 * @param Assignment
 		 *        The Assignment to commit.
 		 */
-		public void cancel(AssignmentEdit assignment);
+		public void cancel(Assignment assignment);
 
 		/**
 		 * Remove this Assignment.
@@ -9669,97 +4884,10 @@ public abstract class BaseAssignmentService implements AssignmentService, Entity
 		 * @param Assignment
 		 *        The Assignment to remove.
 		 */
-		public void remove(AssignmentEdit assignment);
+		public void remove(Assignment assignment);
 
 	} // AssignmentStorage
-
-	/**********************************************************************************************************************************************************************************************************************************************************
-	 * AssignmentContent Storage
-	 *********************************************************************************************************************************************************************************************************************************************************/
-
-	protected interface AssignmentContentStorage
-	{
-		/**
-		 * Open.
-		 */
-		public void open();
-
-		/**
-		 * Close.
-		 */
-		public void close();
-
-		/**
-		 * Check if a AssignmentContent by this id exists.
-		 * 
-		 * @param id
-		 *        The AssignmentContent id.
-		 * @return true if a AssignmentContent by this id exists, false if not.
-		 */
-		public boolean check(String id);
-
-		/**
-		 * Get the AssignmentContent with this id, or null if not found.
-		 * 
-		 * @param id
-		 *        The AssignmentContent id.
-		 * @return The AssignmentContent with this id, or null if not found.
-		 */
-		public AssignmentContent get(String id);
-
-		/**
-		 * Get all AssignmentContents.
-		 * 
-		 * @return The list of all AssignmentContents.
-		 */
-		public List getAll(String context);
-
-		/**
-		 * Add a new AssignmentContent with this id.
-		 * 
-		 * @param id
-		 *        The AssignmentContent id.
-		 * @param context
-		 *        The context.
-		 * @return The locked AssignmentContent object with this id, or null if the id is in use.
-		 */
-		public AssignmentContentEdit put(String id, String context);
-
-		/**
-		 * Get a lock on the AssignmentContent with this id, or null if a lock cannot be gotten.
-		 * 
-		 * @param id
-		 *        The AssignmentContent id.
-		 * @return The locked AssignmentContent with this id, or null if this records cannot be locked.
-		 */
-		public AssignmentContentEdit edit(String id);
-
-		/**
-		 * Commit the changes and release the lock.
-		 * 
-		 * @param AssignmentContent
-		 *        The AssignmentContent to commit.
-		 */
-		public void commit(AssignmentContentEdit content);
-
-		/**
-		 * Cancel the changes and release the lock.
-		 * 
-		 * @param AssignmentContent
-		 *        The AssignmentContent to commit.
-		 */
-		public void cancel(AssignmentContentEdit content);
-
-		/**
-		 * Remove this AssignmentContent.
-		 * 
-		 * @param AssignmentContent
-		 *        The AssignmentContent to remove.
-		 */
-		public void remove(AssignmentContentEdit content);
-
-	} // AssignmentContentStorage
-
+	
 	/**********************************************************************************************************************************************************************************************************************************************************
 	 * AssignmentSubmission Storage
 	 *********************************************************************************************************************************************************************************************************************************************************/
@@ -9784,7 +4912,7 @@ public abstract class BaseAssignmentService implements AssignmentService, Entity
 		 * @return true if a AssignmentSubmission by this id exists, false if not.
 		 */
 		public boolean check(String id);
-
+		
 		/**
 		 * Get the AssignmentSubmission with this id, or null if not found.
 		 * 
@@ -9839,7 +4967,7 @@ public abstract class BaseAssignmentService implements AssignmentService, Entity
 		 *        The context.
 		 * @return The locked AssignmentSubmission object with this id, or null if the id is in use.
 		 */
-		public AssignmentSubmissionEdit put(String id, String assignmentId, String submitterId, String submitTime, String submitted, String graded);
+		public AssignmentSubmission put(String id, String assignmentId, String submitterId, String submitTime, String submitted, String graded);
 
 		/**
 		 * Get a lock on the AssignmentSubmission with this id, or null if a lock cannot be gotten.
@@ -9848,7 +4976,7 @@ public abstract class BaseAssignmentService implements AssignmentService, Entity
 		 *        The AssignmentSubmission id.
 		 * @return The locked AssignmentSubmission with this id, or null if this records cannot be locked.
 		 */
-		public AssignmentSubmissionEdit edit(String id);
+		public AssignmentSubmission edit(String id);
 
 		/**
 		 * Commit the changes and release the lock.
@@ -9856,7 +4984,7 @@ public abstract class BaseAssignmentService implements AssignmentService, Entity
 		 * @param AssignmentSubmission
 		 *        The AssignmentSubmission to commit.
 		 */
-		public void commit(AssignmentSubmissionEdit submission);
+		public void commit(AssignmentSubmission submission);
 
 		/**
 		 * Cancel the changes and release the lock.
@@ -9864,7 +4992,7 @@ public abstract class BaseAssignmentService implements AssignmentService, Entity
 		 * @param AssignmentSubmission
 		 *        The AssignmentSubmission to commit.
 		 */
-		public void cancel(AssignmentSubmissionEdit submission);
+		public void cancel(AssignmentSubmission submission);
 
 		/**
 		 * Remove this AssignmentSubmission.
@@ -9872,89 +5000,9 @@ public abstract class BaseAssignmentService implements AssignmentService, Entity
 		 * @param AssignmentSubmission
 		 *        The AssignmentSubmission to remove.
 		 */
-		public void remove(AssignmentSubmissionEdit submission);
+		public void remove(AssignmentSubmission submission);
 
 	} // AssignmentSubmissionStorage
-
-	/**
-	 * Utility function which returns the string representation of the long value of the time object.
-	 * 
-	 * @param t -
-	 *        the Time object.
-	 * @return A String representation of the long value of the time object.
-	 */
-	protected String getTimeString(Time t)
-	{
-		String retVal = "";
-		if (t != null) retVal = t.toString();
-		return retVal;
-	}
-
-	/**
-	 * Utility function which returns a string from a boolean value.
-	 * 
-	 * @param b -
-	 *        the boolean value.
-	 * @return - "True" if the input value is true, "false" otherwise.
-	 */
-	protected String getBoolString(boolean b)
-	{
-		if (b)
-			return "true";
-		else
-			return "false";
-	}
-
-	/**
-	 * Utility function which returns a boolean value from a string.
-	 * 
-	 * @param s -
-	 *        The input string.
-	 * @return the boolean true if the input string is "true", false otherwise.
-	 */
-	protected boolean getBool(String s)
-	{
-		boolean retVal = false;
-		if (s != null)
-		{
-			if (s.equalsIgnoreCase("true")) retVal = true;
-		}
-		return retVal;
-	}
-
-	/**
-	 * Utility function which converts a string into a chef time object.
-	 * 
-	 * @param timeString -
-	 *        String version of a time in long format, representing the standard ms since the epoch, Jan 1, 1970 00:00:00.
-	 * @return A chef Time object.
-	 */
-	protected Time getTimeObject(String timeString)
-	{
-		Time aTime = null;
-		timeString = StringUtil.trimToNull(timeString);
-		if (timeString != null)
-		{
-			try
-			{
-				aTime = TimeService.newTimeGmt(timeString);
-			}
-			catch (Exception e)
-			{
-				M_log.warn(this + ":geTimeObject " + e.getMessage());
-				try
-				{
-					long longTime = Long.parseLong(timeString);
-					aTime = TimeService.newTime(longTime);
-				}
-				catch (Exception ee)
-				{
-					M_log.warn(this + " getTimeObject Base Exception creating time object from xml file : " + ee.getMessage() + " timeString=" + timeString);
-				}
-			}
-		}
-		return aTime;
-	}
 
 	protected String getGroupNameFromContext(String context)
 	{
@@ -10027,51 +5075,7 @@ public abstract class BaseAssignmentService implements AssignmentService, Entity
 		{
 			return null;
 		}
-
-		/**
-		 * Construct a new resource given just an id.
-		 * 
-		 * @param container
-		 *        The Resource that is the container for the new resource (may be null).
-		 * @param id
-		 *        The id for the new object.
-		 * @param others
-		 *        (options) array of objects to load into the Resource's fields.
-		 * @return The new resource.
-		 */
-		public Entity newResource(Entity container, String id, Object[] others)
-		{
-			return new BaseAssignment(id, (String) others[0]);
-		}
-
-		/**
-		 * Construct a new resource, from an XML element.
-		 * 
-		 * @param container
-		 *        The Resource that is the container for the new resource (may be null).
-		 * @param element
-		 *        The XML.
-		 * @return The new resource from the XML.
-		 */
-		public Entity newResource(Entity container, Element element)
-		{
-			return new BaseAssignment(element);
-		}
-
-		/**
-		 * Construct a new resource from another resource of the same type.
-		 * 
-		 * @param container
-		 *        The Resource that is the container for the new resource (may be null).
-		 * @param other
-		 *        The other resource.
-		 * @return The new resource as a copy of the other.
-		 */
-		public Entity newResource(Entity container, Entity other)
-		{
-			return new BaseAssignment((Assignment) other);
-		}
-
+		
 		/**
 		 * Construct a new continer given just an id.
 		 * 
@@ -10119,9 +5123,53 @@ public abstract class BaseAssignmentService implements AssignmentService, Entity
 		 *        (options) array of objects to load into the Resource's fields.
 		 * @return The new resource.
 		 */
+		public Entity newResource(Entity container, String id, Object[] others)
+		{
+			return new BaseAssignment(id, (String) others[0]);
+		}
+
+		/**
+		 * Construct a new resource, from an XML element.
+		 * 
+		 * @param container
+		 *        The Resource that is the container for the new resource (may be null).
+		 * @param element
+		 *        The XML.
+		 * @return The new resource from the XML.
+		 */
+		public Entity newResource(Entity container, Element element)
+		{
+			return new BaseAssignment(element);
+		}
+
+		/**
+		 * Construct a new resource from another resource of the same type.
+		 * 
+		 * @param container
+		 *        The Resource that is the container for the new resource (may be null).
+		 * @param other
+		 *        The other resource.
+		 * @return The new resource as a copy of the other.
+		 */
+		public Entity newResource(Entity container, Entity other)
+		{
+			return new BaseAssignment((Assignment) other);
+		}
+		
+		/**
+		 * Construct a new resource given just an id.
+		 * 
+		 * @param container
+		 *        The Resource that is the container for the new resource (may be null).
+		 * @param id
+		 *        The id for the new object.
+		 * @param others
+		 *        (options) array of objects to load into the Resource's fields.
+		 * @return The new resource.
+		 */
 		public Edit newResourceEdit(Entity container, String id, Object[] others)
 		{
-			BaseAssignmentEdit e = new BaseAssignmentEdit(id, (String) others[0]);
+			BaseAssignment e = new BaseAssignment(id, (String) others[0]);
 			e.activate();
 			return e;
 		}
@@ -10137,7 +5185,7 @@ public abstract class BaseAssignmentService implements AssignmentService, Entity
 		 */
 		public Edit newResourceEdit(Entity container, Element element)
 		{
-			BaseAssignmentEdit e = new BaseAssignmentEdit(element);
+			BaseAssignment e = new BaseAssignment(element);
 			e.activate();
 			return e;
 		}
@@ -10153,7 +5201,7 @@ public abstract class BaseAssignmentService implements AssignmentService, Entity
 		 */
 		public Edit newResourceEdit(Entity container, Entity other)
 		{
-			BaseAssignmentEdit e = new BaseAssignmentEdit((Assignment) other);
+			BaseAssignment e = new BaseAssignment((Assignment) other);
 			e.activate();
 			return e;
 		}
@@ -10270,291 +5318,6 @@ public abstract class BaseAssignmentService implements AssignmentService, Entity
 	}// AssignmentStorageUser
 
 	/**********************************************************************************************************************************************************************************************************************************************************
-	 * AssignmentContentStorageUser implementation
-	 *********************************************************************************************************************************************************************************************************************************************************/
-
-	protected class AssignmentContentStorageUser implements StorageUser, SAXEntityReader
-	{
-		private Map<String,Object> m_services;
-		
-		/**
-		 * Construct a new continer given just an id.
-		 * 
-		 * @param id
-		 *        The id for the new object.
-		 * @return The new container Resource.
-		 */
-		public Entity newContainer(String ref)
-		{
-			return null;
-		}
-
-		/**
-		 * Construct a new container resource, from an XML element.
-		 * 
-		 * @param element
-		 *        The XML.
-		 * @return The new container resource.
-		 */
-		public Entity newContainer(Element element)
-		{
-			return null;
-		}
-
-		/**
-		 * Construct a new container resource, as a copy of another
-		 * 
-		 * @param other
-		 *        The other contianer to copy.
-		 * @return The new container resource.
-		 */
-		public Entity newContainer(Entity other)
-		{
-			return null;
-		}
-
-		/**
-		 * Construct a new resource given just an id.
-		 * 
-		 * @param container
-		 *        The Resource that is the container for the new resource (may be null).
-		 * @param id
-		 *        The id for the new object.
-		 * @param others
-		 *        (options) array of objects to load into the Resource's fields.
-		 * @return The new resource.
-		 */
-		public Entity newResource(Entity container, String id, Object[] others)
-		{
-			return new BaseAssignmentContent(id, (String) others[0]);
-		}
-
-		/**
-		 * Construct a new resource, from an XML element.
-		 * 
-		 * @param container
-		 *        The Resource that is the container for the new resource (may be null).
-		 * @param element
-		 *        The XML.
-		 * @return The new resource from the XML.
-		 */
-		public Entity newResource(Entity container, Element element)
-		{
-			return new BaseAssignmentContent(element);
-		}
-
-		/**
-		 * Construct a new resource from another resource of the same type.
-		 * 
-		 * @param container
-		 *        The Resource that is the container for the new resource (may be null).
-		 * @param other
-		 *        The other resource.
-		 * @return The new resource as a copy of the other.
-		 */
-		public Entity newResource(Entity container, Entity other)
-		{
-			return new BaseAssignmentContent((AssignmentContent) other);
-		}
-
-		/**
-		 * Construct a new continer given just an id.
-		 * 
-		 * @param id
-		 *        The id for the new object.
-		 * @return The new containe Resource.
-		 */
-		public Edit newContainerEdit(String ref)
-		{
-			return null;
-		}
-
-		/**
-		 * Construct a new container resource, from an XML element.
-		 * 
-		 * @param element
-		 *        The XML.
-		 * @return The new container resource.
-		 */
-		public Edit newContainerEdit(Element element)
-		{
-			return null;
-		}
-
-		/**
-		 * Construct a new container resource, as a copy of another
-		 * 
-		 * @param other
-		 *        The other contianer to copy.
-		 * @return The new container resource.
-		 */
-		public Edit newContainerEdit(Entity other)
-		{
-			return null;
-		}
-
-		/**
-		 * Construct a new rsource given just an id.
-		 * 
-		 * @param container
-		 *        The Resource that is the container for the new resource (may be null).
-		 * @param id
-		 *        The id for the new object.
-		 * @param others
-		 *        (options) array of objects to load into the Resource's fields.
-		 * @return The new resource.
-		 */
-		public Edit newResourceEdit(Entity container, String id, Object[] others)
-		{
-			BaseAssignmentContentEdit e = new BaseAssignmentContentEdit(id, (String) others[0]);
-			e.activate();
-			return e;
-		}
-
-		/**
-		 * Construct a new resource, from an XML element.
-		 * 
-		 * @param container
-		 *        The Resource that is the container for the new resource (may be null).
-		 * @param element
-		 *        The XML.
-		 * @return The new resource from the XML.
-		 */
-		public Edit newResourceEdit(Entity container, Element element)
-		{
-			BaseAssignmentContentEdit e = new BaseAssignmentContentEdit(element);
-			e.activate();
-			return e;
-		}
-
-		/**
-		 * Construct a new resource from another resource of the same type.
-		 * 
-		 * @param container
-		 *        The Resource that is the container for the new resource (may be null).
-		 * @param other
-		 *        The other resource.
-		 * @return The new resource as a copy of the other.
-		 */
-		public Edit newResourceEdit(Entity container, Entity other)
-		{
-			BaseAssignmentContentEdit e = new BaseAssignmentContentEdit((AssignmentContent) other);
-			e.activate();
-			return e;
-		}
-
-		/**
-		 * Collect the fields that need to be stored outside the XML (for the resource).
-		 * 
-		 * @return An array of field values to store in the record outside the XML (for the resource).
-		 */
-		public Object[] storageFields(Entity r)
-		{
-			Object rv[] = new Object[1];
-			rv[0] = ((AssignmentContent) r).getCreator();
-			return rv;
-		}
-
-		/**
-		 * Check if this resource is in draft mode.
-		 * 
-		 * @param r
-		 *        The resource.
-		 * @return true if the resource is in draft mode, false if not.
-		 */
-		public boolean isDraft(Entity r)
-		{
-			return false;
-		}
-
-		/**
-		 * Access the resource owner user id.
-		 * 
-		 * @param r
-		 *        The resource.
-		 * @return The resource owner user id.
-		 */
-		public String getOwnerId(Entity r)
-		{
-			return null;
-		}
-
-		/**
-		 * Access the resource date.
-		 * 
-		 * @param r
-		 *        The resource.
-		 * @return The resource date.
-		 */
-		public Time getDate(Entity r)
-		{
-			return null;
-		}
-		
-		/***********************************************************************
-		 * SAXEntityReader
-		 */
-		/*
-		 * (non-Javadoc)
-		 * 
-		 * @see org.sakaiproject.util.SAXEntityReader#getDefaultHandler(java.util.Map)
-		 */
-		public DefaultEntityHandler getDefaultHandler(final Map<String, Object> services)
-		{
-			return new DefaultEntityHandler()
-			{
-
-				/*
-				 * (non-Javadoc)
-				 * 
-				 * @see org.xml.sax.helpers.DefaultHandler#startElement(java.lang.String,
-				 *      java.lang.String, java.lang.String,
-				 *      org.xml.sax.Attributes)
-				 */
-				@Override
-				public void startElement(String uri, String localName, String qName,
-						Attributes attributes) throws SAXException
-				{
-					if (doStartElement(uri, localName, qName, attributes))
-					{
-						if (entity == null)
-						{
-							if ("content".equals(qName))
-							{
-								BaseAssignmentContent bac = new BaseAssignmentContent();
-								entity = bac;
-								setContentHandler(bac.getContentHandler(services), uri,
-										localName, qName, attributes);
-							}
-							else
-							{
-								M_log.warn(this + " AssignmentContentStorageUser getDefaultEntityHandler startElement Unexpected Element in XML [" + qName + "]");
-							}
-
-						}
-					}
-				}
-
-			};
-		}
-
-		/*
-		 * (non-Javadoc)
-		 * 
-		 * @see org.sakaiproject.util.SAXEntityReader#getServices()
-		 */
-		public Map<String, Object> getServices()
-		{
-			if (m_services == null)
-			{
-				m_services = new HashMap<String, Object>();
-			}
-			return m_services;
-		}
-
-	}// ContentStorageUser
-
-	/**********************************************************************************************************************************************************************************************************************************************************
 	 * SubmissionStorageUser implementation
 	 *********************************************************************************************************************************************************************************************************************************************************/
 
@@ -10594,6 +5357,42 @@ public abstract class BaseAssignmentService implements AssignmentService, Entity
 		 * @return The new container resource.
 		 */
 		public Entity newContainer(Entity other)
+		{
+			return null;
+		}
+		
+		/**
+		 * Construct a new continer given just an id.
+		 * 
+		 * @param id
+		 *        The id for the new object.
+		 * @return The new containe Resource.
+		 */
+		public Edit newContainerEdit(String ref)
+		{
+			return null;
+		}
+
+		/**
+		 * Construct a new container resource, from an XML element.
+		 * 
+		 * @param element
+		 *        The XML.
+		 * @return The new container resource.
+		 */
+		public Edit newContainerEdit(Element element)
+		{
+			return null;
+		}
+
+		/**
+		 * Construct a new container resource, as a copy of another
+		 * 
+		 * @param other
+		 *        The other contianer to copy.
+		 * @return The new container resource.
+		 */
+		public Edit newContainerEdit(Entity other)
 		{
 			return null;
 		}
@@ -10641,43 +5440,7 @@ public abstract class BaseAssignmentService implements AssignmentService, Entity
 		{
 			return new BaseAssignmentSubmission((AssignmentSubmission) other);
 		}
-
-		/**
-		 * Construct a new continer given just an id.
-		 * 
-		 * @param id
-		 *        The id for the new object.
-		 * @return The new containe Resource.
-		 */
-		public Edit newContainerEdit(String ref)
-		{
-			return null;
-		}
-
-		/**
-		 * Construct a new container resource, from an XML element.
-		 * 
-		 * @param element
-		 *        The XML.
-		 * @return The new container resource.
-		 */
-		public Edit newContainerEdit(Element element)
-		{
-			return null;
-		}
-
-		/**
-		 * Construct a new container resource, as a copy of another
-		 * 
-		 * @param other
-		 *        The other contianer to copy.
-		 * @return The new container resource.
-		 */
-		public Edit newContainerEdit(Entity other)
-		{
-			return null;
-		}
-
+		
 		/**
 		 * Construct a new rsource given just an id.
 		 * 
@@ -10691,7 +5454,7 @@ public abstract class BaseAssignmentService implements AssignmentService, Entity
 		 */
 		public Edit newResourceEdit(Entity container, String id, Object[] others)
 		{
-			BaseAssignmentSubmissionEdit e = new BaseAssignmentSubmissionEdit(id, (String) others[0], (String) others[1], (String) others[2], (String) others[3], (String) others[4]);
+			BaseAssignmentSubmission e = new BaseAssignmentSubmission(id, (String) others[0], (String) others[1], (String) others[2], (String) others[3], (String) others[4]);
 			e.activate();
 			return e;
 		}
@@ -10707,7 +5470,7 @@ public abstract class BaseAssignmentService implements AssignmentService, Entity
 		 */
 		public Edit newResourceEdit(Entity container, Element element)
 		{
-			BaseAssignmentSubmissionEdit e = new BaseAssignmentSubmissionEdit(element);
+			BaseAssignmentSubmission e = new BaseAssignmentSubmission(element);
 			e.activate();
 			return e;
 		}
@@ -10723,7 +5486,7 @@ public abstract class BaseAssignmentService implements AssignmentService, Entity
 		 */
 		public Edit newResourceEdit(Entity container, Entity other)
 		{
-			BaseAssignmentSubmissionEdit e = new BaseAssignmentSubmissionEdit((AssignmentSubmission) other);
+			BaseAssignmentSubmission e = new BaseAssignmentSubmission((AssignmentSubmission) other);
 			e.activate();
 			return e;
 		}
@@ -10891,38 +5654,6 @@ public abstract class BaseAssignmentService implements AssignmentService, Entity
 		} // refresh
 
 	}// AssignmentCacheRefresher
-
-	/**********************************************************************************************************************************************************************************************************************************************************
-	 * AssignmentContentCacheRefresher implementation
-	 *********************************************************************************************************************************************************************************************************************************************************/
-
-	protected class AssignmentContentCacheRefresher implements CacheRefresher
-	{
-		/**
-		 * Get a new value for this key whose value has already expired in the cache.
-		 * 
-		 * @param key
-		 *        The key whose value has expired and needs to be refreshed.
-		 * @param oldValue
-		 *        The old expired value of the key.
-		 * @return a new value for use in the cache for this key; if null, the entry will be removed.
-		 */
-		public Object refresh(Object key, Object oldValue, Event event)
-		{
-
-			// key is a reference, but our storage wants an id
-			String id = contentId((String) key);
-
-			// get whatever we have from storage for the cache for this vale
-			AssignmentContent content = m_contentStorage.get(id);
-
-			M_log.warn(this + " AssignmentContentCacheRefresher: refresh(): " + key + " : " + id);
-
-			return content;
-
-		} // refresh
-
-	}// AssignmentContentCacheRefresher
 
 	/**********************************************************************************************************************************************************************************************************************************************************
 	 * AssignmentSubmissionCacheRefresher implementation
@@ -11134,60 +5865,6 @@ public abstract class BaseAssignmentService implements AssignmentService, Entity
 		{
 			SecurityService.popAdvisor();
 		}
-	}
-
-	/**
-	 * This is to mimic the FormattedText.decodeFormattedTextAttribute but use SAX serialization instead
-	 * @return
-	 */
-	protected String FormattedTextDecodeFormattedTextAttribute(Attributes attributes, String baseAttributeName)
-	{
-		String ret;
-
-		// first check if an HTML-encoded attribute exists, for example "foo-html", and use it if available
-		ret = StringUtil.trimToNull(XmlDecodeAttribute(attributes, baseAttributeName + "-html"));
-		if (ret != null) return ret;
-
-		// next try the older kind of formatted text like "foo-formatted", and convert it if found
-		ret = StringUtil.trimToNull(XmlDecodeAttribute(attributes, baseAttributeName + "-formatted"));
-		ret = FormattedText.convertOldFormattedText(ret);
-		if (ret != null) return ret;
-
-		// next try just a plaintext attribute and convert the plaintext to formatted text if found
-		// convert from old plaintext instructions to new formatted text instruction
-		ret = XmlDecodeAttribute(attributes, baseAttributeName);
-		ret = FormattedText.convertPlaintextToFormattedText(ret);
-		return ret;
-	}
-	
-	/**
-	 * this is to mimic the Xml.decodeAttribute
-	 * @param el
-	 * @param tag
-	 * @return
-	 */
-	protected String XmlDecodeAttribute(Attributes attributes, String tag)
-	{
-		String charset = StringUtil.trimToNull(attributes.getValue("charset"));
-		if (charset == null) charset = "UTF-8";
-
-		String body = StringUtil.trimToNull(attributes.getValue(tag));
-		if (body != null)
-		{
-			try
-			{
-				byte[] decoded = CommonsCodecBase64.decodeBase64(body.getBytes("UTF-8"));
-				body = new String(decoded, charset);
-			}
-			catch (Exception e)
-			{
-				M_log.warn(this + " XmlDecodeAttribute: " + e.getMessage() + " tag=" + tag);
-			}
-		}
-
-		if (body == null) body = "";
-
-		return body;
 	}
 
 } // BaseAssignmentService

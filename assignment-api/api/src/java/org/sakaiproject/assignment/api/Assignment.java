@@ -21,18 +21,22 @@
 
 package org.sakaiproject.assignment.api;
 
+import java.io.Serializable;
 import java.util.Collection;
 import java.util.List;
 
-import org.sakaiproject.entity.api.Entity;
+import org.sakaiproject.entity.api.AttachmentContainerEdit;
+import org.sakaiproject.entity.api.Edit;
+import org.sakaiproject.exception.PermissionException;
 import org.sakaiproject.time.api.Time;
+import org.sakaiproject.user.api.User;
 
 /**
  * <p>
  * Assignment is an interface for the Sakai assignments module. It represents a specific assignment (as for a specific section or class).
  * </p>
  */
-public interface Assignment extends Entity, Comparable
+public interface Assignment extends Edit, Comparable, Serializable, AttachmentContainerEdit
 {
 	/** Grade type not set */
 	public static final int GRADE_TYPE_NOT_SET = -1;
@@ -106,16 +110,18 @@ public interface Assignment extends Entity, Comparable
 	public static final String ASSIGNMENT_INSTRUCTOR_NOTIFICATIONS_DIGEST = "assignment_instructor_notifications_digest";
 
 	/**
-	 * Access the AssignmentContent of this Assignment.
+	 * Access the Assignment of this Assignment.
 	 * 
-	 * @return The Assignment's AssignmentContent.
+	 * @return The Assignment's Assignment.
+	 * @deprecated The function is deprecated after Sakai 2.6
 	 */
 	public AssignmentContent getContent();
 
 	/**
-	 * Access the reference of the AssignmentContent of this Assignment.
+	 * Access the reference of the Assignment of this Assignment.
 	 * 
-	 * @return The AssignmentContent's reference.
+	 * @return The Assignment's reference.
+	 * @deprecated The function is deprecated after Sakai 2.6
 	 */
 	public String getContentReference();
 
@@ -299,4 +305,329 @@ public interface Assignment extends Entity, Comparable
 		/** grouped access; only members of the getGroup() groups (authorization groups) have access */
 		public static final AssignmentAccess GROUPED = new AssignmentAccess("grouped");
 	}
+	
+	/**
+	 * Set the reference of the Assignment of this Assignment.
+	 * 
+	 * @param String -
+	 *        the reference of the Assignment.
+	 */
+	public void setContentReference(String contentReference);
+
+	/**
+	 * Set the Assignment of this Assignment.
+	 * 
+	 * @param content -
+	 *        the Assignment's Assignment.
+	 */
+	public void setContent(AssignmentContent content);
+
+	/**
+	 * Set the first time at which the assignment can be viewed; may be null.
+	 * 
+	 * @param openTime -
+	 *        The Time at which the Assignment opens.
+	 */
+	public void setOpenTime(Time openTime);
+
+	/**
+	 * Set the time at which the assignment is due; may be null.
+	 * 
+	 * @param dueTime -
+	 *        The Time at which the Assignment is due.
+	 */
+	public void setDueTime(Time dueTime);
+
+	/**
+	 * Set the drop dead time after which responses to this assignment are considered late; may be null.
+	 * 
+	 * @param dropDeadTime -
+	 *        The Time object representing the drop dead time.
+	 */
+	public void setDropDeadTime(Time dropDeadTime);
+
+	/**
+	 * Set the time after which this assignment can no longer be viewed, and after which submissions will not be accepted. May be null.
+	 * 
+	 * @param closeTime -
+	 *        The Time after which the Assignment is closed, or null if unspecified.
+	 */
+	public void setCloseTime(Time closeTime);
+
+	/**
+	 * Set the section info
+	 * 
+	 * @param sectionId -
+	 *        The section id.
+	 */
+	public void setSection(String sectionId);
+
+	/**
+	 * Set the Assignment's context at the time of creation.
+	 * 
+	 * @param context -
+	 *        The context string.
+	 */
+	public void setContext(String context);
+
+	/**
+	 * Set whether this is a draft or final copy.
+	 * 
+	 * @param draft -
+	 *        true if this is a draft, false if it is a final copy.
+	 */
+	public void setDraft(boolean draft);
+
+	/**
+	 * Add an author to the author list.
+	 * 
+	 * @param author -
+	 *        The User to add to the author list.
+	 */
+	public void addAuthor(User author);
+
+	/**
+	 * Remove an author from the author list.
+	 * 
+	 * @param author -
+	 *        the User to remove from the author list.
+	 */
+	public void removeAuthor(User author);
+
+	/**
+	 * Set the title.
+	 * 
+	 * @param title -
+	 *        The Assignment's title.
+	 */
+	public void setTitle(String title);
+
+	/**
+	 * Set these as the message's groups, replacing the access and groups already defined.
+	 * 
+	 * @param Collection
+	 *        groups The colelction of Group objects to use for this message.
+	 * @throws PermissionException
+	 *         if the end user does not have permission to remove from the groups that would be removed or add to the groups that would be added.
+	 */
+	void setGroupAccess(Collection groups) throws PermissionException;
+
+	/**
+	 * Remove any grouping for this message; the access mode reverts to channel and any groups are removed.
+	 * 
+	 * @throws PermissionException
+	 *         if the end user does not have permission to do this.
+	 */
+	void clearGroupAccess() throws PermissionException;
+
+	/**
+	 * Set the access mode for the assignment - how we compute who has access to the assignment.
+	 * 
+	 * @param access
+	 *        The AssignmentAccess access mode for the message.
+	 */
+	void setAccess(AssignmentAccess access);
+	
+    /**
+	 * Set the position order field for the assignment.
+	 *
+	 * @param position_order -
+	 *        The Assignment's order.
+	 */
+	public void setPosition_order(int position_order);
+	
+	/****************** from previous Assignment interface *********************/
+
+	/**
+	 * Access the instructions for the assignment
+	 * 
+	 * @return The Assignment's instructions.
+	 */
+	public String getInstructions();
+
+	/**
+	 * Access the type of submission.
+	 * 
+	 * @return An integer representing the type of submission.
+	 */
+	public int getTypeOfSubmission();
+
+	/**
+	 * Access the grade type
+	 * 
+	 * @return The integer representing the type of grade.
+	 */
+	public int getTypeOfGrade();
+
+	/**
+	 * Access a string describing the type of grade.
+	 * 
+	 * @param gradeType -
+	 *        The integer representing the type of grade.
+	 * @return Description of the type of grade.
+	 */
+	public String getTypeOfGradeString(int gradeType);
+
+	/**
+	 * Gets the maximum grade if grade type is SCORE_GRADE_TYPE(3)
+	 * 
+	 * @return int The maximum grade score, or zero if the grade type is not SCORE_GRADE_TYPE(3).
+	 */
+	public int getMaxGradePoint();
+
+	/**
+	 * Get the maximum grade for grade type = SCORE_GRADE_TYPE(3) Formated to show one decimal place
+	 * 
+	 * @return The maximum grade score.
+	 */
+	public String getMaxGradePointDisplay();
+
+	/**
+	 * Get whether this project can be a group project.
+	 * 
+	 * @return True if this can be a group project, false otherwise.
+	 */
+	public boolean getGroupProject();
+
+	/**
+	 * Access whether group projects should be individually graded.
+	 * 
+	 * @return true if projects are individually graded, false if grades are given to the group.
+	 */
+	public boolean individuallyGraded();
+
+	/**
+	 * Access whether grades can be released once submissions are graded.
+	 * 
+	 * @return True if grades can be released once submission are graded, false if they must be released manually.
+	 */
+	public boolean releaseGrades();
+
+	/**
+	 * Access the Honor Pledge type; values are NONE and ENGINEERING_HONOR_PLEDGE.
+	 * 
+	 * @return The type of pledge.
+	 */
+	public int getHonorPledge();
+
+	/**
+	 * Access whether this Assignment allows attachments.
+	 * 
+	 * @return true if the Assignment allows attachments, false otherwise.
+	 */
+	public boolean getAllowAttachments();
+	
+	
+	
+	/**
+	 * Access whether this Assignment allows review service.
+	 * 
+	 * @return true if the Assignment allows review service, false otherwise.
+	 */
+	public boolean getAllowReviewService();
+
+	/**
+	 * Access whether this Assignment allows students to view review service reports.
+	 * 
+	 * @return true if the Assignment allows students to view review service reports, false otherwise.
+	 */
+	
+	public boolean getAllowStudentViewReport();
+	
+	/********************* from previous AssignmentEdit interface ******************/
+
+	/**
+	 * Set the instructions for the Assignment.
+	 * 
+	 * @param instructions -
+	 *        The Assignment's instructions.
+	 */
+	public void setInstructions(String instructions);
+	/**
+	 * Set the type of submission.
+	 * 
+	 * @param subType -
+	 *        The type of submission.
+	 */
+	public void setTypeOfSubmission(int subType);
+
+	/**
+	 * Set the grade type.
+	 * 
+	 * @param gradeType -
+	 *        The type of grade.
+	 */
+	public void setTypeOfGrade(int gradeType);
+
+	/**
+	 * Set the maximum grade for grade type = SCORE_GRADE_TYPE(3)
+	 * 
+	 * @param maxPoints -
+	 *        The maximum grade score.
+	 */
+	public void setMaxGradePoint(int maxPoints);
+
+	/**
+	 * Set whether this project can be a group project.
+	 * 
+	 * @param groupProject -
+	 *        True if this can be a group project, false otherwise.
+	 */
+	public void setGroupProject(boolean groupProject);
+
+	/**
+	 * Set whether group projects should be individually graded.
+	 * 
+	 * @param individGraded -
+	 *        true if projects are individually graded, false if grades are given to the group.
+	 */
+	public void setIndividuallyGraded(boolean individGraded);
+
+	/**
+	 * Sets whether grades can be released once submissions are graded.
+	 * 
+	 * @param release -
+	 *        true if grades can be released once submission are graded, false if they must be released manually.
+	 */
+	public void setReleaseGrades(boolean release);
+
+	/**
+	 * Set the Honor Pledge type; values are NONE and ENGINEERING_HONOR_PLEDGE.
+	 * 
+	 * @param pledgeType -
+	 *        the Honor Pledge value.
+	 */
+	public void setHonorPledge(int pledgeType);
+
+	/**
+	 * Does this Assignment allow attachments?
+	 * 
+	 * @param allow -
+	 *        true if the Assignment allows attachments, false otherwise?
+	 */
+	public void setAllowAttachments(boolean allow);
+
+	/**
+	 * Does this Assignment allow using the review service?
+	 * 
+	 * @param allow -
+	 *        true if the Assignment allows review service, false otherwise?
+	 */
+	public void setAllowReviewService(boolean allow);
+	
+	/**
+	 * Set whether this sssignment allow students to view review service reports?
+	 * 
+	 * @param allow -
+	 *        true if the Assignment allows review service, false otherwise?
+	 */
+	public void setAllowStudentViewReport(boolean allow);
+
+	/**
+	 * Set the time last modified.
+	 * 
+	 * @param lastmod -
+	 *        The Time at which the Content was last modified.
+	 */
+	public void setTimeLastModified(Time lastmod);
 }

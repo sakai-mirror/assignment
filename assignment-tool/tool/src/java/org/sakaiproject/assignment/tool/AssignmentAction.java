@@ -3404,7 +3404,7 @@ public class AssignmentAction extends PagedResourceActionII
 					// new submission, save as draft
 					try
 					{
-						AssignmentSubmissionEdit edit = AssignmentService.addSubmission((String) state
+						AssignmentSubmission edit = AssignmentService.addSubmission((String) state
 								.getAttribute(STATE_CONTEXT_STRING), assignmentId, SessionManager.getCurrentSessionUserId());
 						edit.setSubmittedText(text);
 						edit.setHonorPledgeFlag(Boolean.valueOf(honorPledgeYes).booleanValue());
@@ -3422,7 +3422,7 @@ public class AssignmentAction extends PagedResourceActionII
 								edit.addSubmittedAttachment((Reference) it.next());
 							}
 						}
-						AssignmentService.commitEdit(edit);
+						AssignmentService.saveSubmission(edit);
 					}
 					catch (PermissionException e)
 					{
@@ -3718,7 +3718,7 @@ public class AssignmentAction extends PagedResourceActionII
 						// new submission, post it
 						try
 						{
-							AssignmentSubmissionEdit edit = AssignmentService.addSubmission(contextString, assignmentId, SessionManager.getCurrentSessionUserId());
+							AssignmentSubmission edit = AssignmentService.addSubmission(contextString, assignmentId, SessionManager.getCurrentSessionUserId());
 							edit.setSubmittedText(text);
 							edit.setHonorPledgeFlag(Boolean.valueOf(honorPledgeYes).booleanValue());
 							edit.setTimeSubmitted(TimeService.newTime());
@@ -3747,7 +3747,7 @@ public class AssignmentAction extends PagedResourceActionII
 								edit.getPropertiesEdit().addProperty(AssignmentSubmission.ALLOW_RESUBMIT_NUMBER, a.getProperties().getProperty(AssignmentSubmission.ALLOW_RESUBMIT_NUMBER));
 							}
 	
-							AssignmentService.commitEdit(edit);
+							AssignmentService.saveSubmission(edit);
 						}
 						catch (PermissionException e)
 						{
@@ -4666,11 +4666,11 @@ public class AssignmentAction extends PagedResourceActionII
 				if (u != null)
 				{
 					// construct fake submissions for grading purpose
-					AssignmentSubmissionEdit submission = AssignmentService.addSubmission(a.getContext(), a.getId(), userId);
+					AssignmentSubmission submission = AssignmentService.addSubmission(a.getContext(), a.getId(), userId);
 					submission.setTimeSubmitted(TimeService.newTime());
 					submission.setSubmitted(true);
 					submission.setAssignment(a);
-					AssignmentService.commitEdit(submission);
+					AssignmentService.saveSubmission(submission);
 				}
 			}
 			catch (Exception e)
@@ -5297,89 +5297,26 @@ public class AssignmentAction extends PagedResourceActionII
 		}
 	} // reorderAssignments
 
+	/**
+	 * @deprecated
+	 * @param state
+	 * @param assignmentId
+	 * @return
+	 */
 	private AssignmentEdit getAssignmentEdit(SessionState state, String assignmentId) 
 	{
-		AssignmentEdit a = null;
-		if (assignmentId.length() == 0)
-		{
-			// create a new assignment
-			try
-			{
-				a = AssignmentService.addAssignment((String) state.getAttribute(STATE_CONTEXT_STRING));
-			}
-			catch (PermissionException e)
-			{
-				addAlert(state, rb.getString("youarenot1"));
-				M_log.warn(this + ":getAssignmentEdit " + e.getMessage());
-			}
-		}
-		else
-		{
-			try
-			{
-				// edit assignment
-				a = AssignmentService.editAssignment(assignmentId);
-			}
-			catch (InUseException e)
-			{
-				addAlert(state, rb.getString("theassicon"));
-				M_log.warn(this + ":getAssignmentEdit " + e.getMessage());
-			}
-			catch (IdUnusedException e)
-			{
-				addAlert(state, rb.getString("cannotfin3"));
-				M_log.warn(this + ":getAssignmentEdit " + e.getMessage());
-			}
-			catch (PermissionException e)
-			{
-				addAlert(state, rb.getString("youarenot14"));
-				M_log.warn(this + ":getAssignmentEdit " + e.getMessage());
-			} // try-catch
-		} // if-else
-		return a;
+		return null;
 	}
 
+	/**
+	 * @deprecated
+	 * @param state
+	 * @param assignmentContentId
+	 * @return
+	 */
 	private AssignmentContentEdit getAssignmentContentEdit(SessionState state, String assignmentContentId) 
 	{
-		AssignmentContentEdit ac = null;
-		if (assignmentContentId.length() == 0)
-		{
-			// new assignment
-			try
-			{
-				ac = AssignmentService.addAssignmentContent((String) state.getAttribute(STATE_CONTEXT_STRING));
-			}
-			catch (PermissionException e)
-			{
-				addAlert(state, rb.getString("youarenot3"));
-				M_log.warn(this + ":getAssignmentContentEdit " + e.getMessage());
-			}
-		}
-		else
-		{
-			try
-			{
-				// edit assignment
-				ac = AssignmentService.editAssignmentContent(assignmentContentId);
-			}
-			catch (InUseException e)
-			{
-				addAlert(state, rb.getString("theassicon"));
-				M_log.warn(this + ":getAssignmentContentEdit " + e.getMessage());
-			}
-			catch (IdUnusedException e)
-			{
-				addAlert(state, rb.getString("cannotfin4"));
-				M_log.warn(this + ":getAssignmentContentEdit " + e.getMessage());
-			}
-			catch (PermissionException e)
-			{
-				addAlert(state, rb.getString("youarenot15"));
-				M_log.warn(this + ":getAssignmentContentEdit " + e.getMessage());
-			}
-
-		}
-		return ac;
+		return null;
 	}
 
 	private Time getOpenTime(SessionState state) 
@@ -6139,7 +6076,7 @@ public class AssignmentAction extends PagedResourceActionII
 		{
 			try
 			{
-				AssignmentEdit aEdit = AssignmentService.addDuplicateAssignment(contextString, assignmentId);
+				Assignment aEdit = AssignmentService.addDuplicateAssignment(contextString, assignmentId);
 
 				// clean the duplicate's property
 				ResourcePropertiesEdit aPropertiesEdit = aEdit.getPropertiesEdit();
@@ -6148,7 +6085,7 @@ public class AssignmentAction extends PagedResourceActionII
 				aPropertiesEdit.removeProperty(NEW_ASSIGNMENT_OPEN_DATE_ANNOUNCED);
 				aPropertiesEdit.removeProperty(ResourceProperties.PROP_ASSIGNMENT_OPENDATE_ANNOUNCEMENT_MESSAGE_ID);
 
-				AssignmentService.commitEdit(aEdit);
+				AssignmentService.saveAssignment(aEdit);
 			}
 			catch (PermissionException e)
 			{
@@ -8739,10 +8676,10 @@ public class AssignmentAction extends PagedResourceActionII
 											                }
 											            });
 											        
-													AssignmentSubmissionEdit s = AssignmentService.addSubmission(contextString, a.getId(), userId);
+													AssignmentSubmission s = AssignmentService.addSubmission(contextString, a.getId(), userId);
 													s.setSubmitted(true);
 													s.setAssignment(a);
-													AssignmentService.commitEdit(s);
+													AssignmentService.saveSubmission(s);
 													
 													// update the UserSubmission list by adding newly created Submission object
 													AssignmentSubmission sub = AssignmentService.getSubmission(s.getReference());
@@ -9536,13 +9473,13 @@ public class AssignmentAction extends PagedResourceActionII
 					// check whether there is a submission associated
 					if (submission == null)
 					{
-						AssignmentSubmissionEdit s = AssignmentService.addSubmission((String) state.getAttribute(STATE_CONTEXT_STRING), assignmentId, u.getId());
+						AssignmentSubmission s = AssignmentService.addSubmission((String) state.getAttribute(STATE_CONTEXT_STRING), assignmentId, u.getId());
 						// submitted by without submit time
 						s.setSubmitted(true);
 						s.setGrade(grade);
 						s.setGraded(true);
 						s.setAssignment(a);
-						AssignmentService.commitEdit(s);
+						AssignmentService.saveSubmission(s);
 						
 						// update the UserSubmission list by adding newly created Submission object
 						AssignmentSubmission sub = AssignmentService.getSubmission(s.getReference());
@@ -9551,20 +9488,20 @@ public class AssignmentAction extends PagedResourceActionII
 					else if (StringUtil.trimToNull(submission.getGrade()) == null)
 					{
 						// update the grades for those existing non-submissions
-						AssignmentSubmissionEdit sEdit = AssignmentService.editSubmission(submission.getReference());
+						AssignmentSubmission sEdit = AssignmentService.getSubmission(submission.getReference());
 						sEdit.setGrade(grade);
 						sEdit.setSubmitted(true);
 						sEdit.setGraded(true);
-						AssignmentService.commitEdit(sEdit);
+						AssignmentService.saveSubmission(sEdit);
 						
 						userSubmissionsNew.add(new UserSubmission(u, AssignmentService.getSubmission(sEdit.getReference())));
 					}
 					else if (StringUtil.trimToNull(submission.getGrade()) != null && !submission.getGraded())
 					{
 						// correct the grade status if there is a grade but the graded is false
-						AssignmentSubmissionEdit sEdit = AssignmentService.editSubmission(submission.getReference());
+						AssignmentSubmission sEdit = AssignmentService.getSubmission(submission.getReference());
 						sEdit.setGraded(true);
-						AssignmentService.commitEdit(sEdit);
+						AssignmentService.saveSubmission(sEdit);
 						
 						userSubmissionsNew.add(new UserSubmission(u, AssignmentService.getSubmission(sEdit.getReference())));
 					}

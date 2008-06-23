@@ -201,6 +201,11 @@ public class AssignmentService {
 		return service.allowRemoveAssignment(param0);
 	}
 
+	/**
+	 * @deprecated
+	 * @param param0
+	 * @return
+	 */
 	public static boolean allowAddAssignmentContent(java.lang.String param0) {
 		org.sakaiproject.assignment.api.AssignmentService service = getInstance();
 		if (service == null)
@@ -209,6 +214,11 @@ public class AssignmentService {
 		return service.allowAddAssignmentContent(param0);
 	}
 
+	/**
+	 * @deprecated
+	 * @param param0
+	 * @return
+	 */
 	public static boolean allowGetAssignmentContent(java.lang.String param0) {
 		org.sakaiproject.assignment.api.AssignmentService service = getInstance();
 		if (service == null)
@@ -217,6 +227,11 @@ public class AssignmentService {
 		return service.allowGetAssignmentContent(param0);
 	}
 
+	/**
+	 * @deprecated
+	 * @param param0
+	 * @return
+	 */
 	public static boolean allowUpdateAssignmentContent(java.lang.String param0) {
 		org.sakaiproject.assignment.api.AssignmentService service = getInstance();
 		if (service == null)
@@ -225,6 +240,11 @@ public class AssignmentService {
 		return service.allowUpdateAssignmentContent(param0);
 	}
 
+	/**
+	 * @deprecated
+	 * @param param0
+	 * @return
+	 */
 	public static boolean allowRemoveAssignmentContent(java.lang.String param0) {
 		org.sakaiproject.assignment.api.AssignmentService service = getInstance();
 		if (service == null)
@@ -304,8 +324,13 @@ public class AssignmentService {
 
 		return service.allowGradeSubmission(param0);
 	}
-
-	public static org.sakaiproject.assignment.api.AssignmentEdit addAssignment(
+	
+	/**
+	 * @param param0
+	 * @return
+	 * @throws org.sakaiproject.exception.PermissionException
+	 */
+	public static org.sakaiproject.assignment.api.Assignment addAssignment(
 			java.lang.String param0)
 			throws org.sakaiproject.exception.PermissionException {
 		org.sakaiproject.assignment.api.AssignmentService service = getInstance();
@@ -315,7 +340,7 @@ public class AssignmentService {
 		return service.addAssignment(param0);
 	}
 
-	public static org.sakaiproject.assignment.api.AssignmentEdit mergeAssignment(
+	public static org.sakaiproject.assignment.api.Assignment mergeAssignment(
 			org.w3c.dom.Element param0)
 			throws org.sakaiproject.exception.IdInvalidException,
 			org.sakaiproject.exception.IdUsedException,
@@ -327,7 +352,7 @@ public class AssignmentService {
 		return service.mergeAssignment(param0);
 	}
 
-	public static org.sakaiproject.assignment.api.AssignmentEdit addDuplicateAssignment(
+	public static org.sakaiproject.assignment.api.Assignment addDuplicateAssignment(
 			java.lang.String param0, java.lang.String param1)
 			throws org.sakaiproject.exception.IdInvalidException,
 			org.sakaiproject.exception.PermissionException,
@@ -341,7 +366,7 @@ public class AssignmentService {
 	}
 
 	public static void removeAssignment(
-			org.sakaiproject.assignment.api.AssignmentEdit param0)
+			org.sakaiproject.assignment.api.Assignment param0)
 			throws org.sakaiproject.exception.PermissionException {
 		org.sakaiproject.assignment.api.AssignmentService service = getInstance();
 		if (service == null)
@@ -350,6 +375,14 @@ public class AssignmentService {
 		service.removeAssignment(param0);
 	}
 
+	/**
+	 * @deprecated
+	 * @param param0
+	 * @return
+	 * @throws org.sakaiproject.exception.IdUnusedException
+	 * @throws org.sakaiproject.exception.PermissionException
+	 * @throws org.sakaiproject.exception.InUseException
+	 */
 	public static org.sakaiproject.assignment.api.AssignmentEdit editAssignment(
 			java.lang.String param0)
 			throws org.sakaiproject.exception.IdUnusedException,
@@ -362,6 +395,10 @@ public class AssignmentService {
 		return service.editAssignment(param0);
 	}
 
+	/**
+	 * @deprecated
+	 * @param param0
+	 */
 	public static void commitEdit(
 			org.sakaiproject.assignment.api.AssignmentContentEdit param0) {
 		org.sakaiproject.assignment.api.AssignmentService service = getInstance();
@@ -371,6 +408,10 @@ public class AssignmentService {
 		service.commitEdit(param0);
 	}
 
+	/**
+	 * @deprecated
+	 * @param param0
+	 */
 	public static void commitEdit(
 			org.sakaiproject.assignment.api.AssignmentEdit param0) {
 		org.sakaiproject.assignment.api.AssignmentService service = getInstance();
@@ -379,7 +420,20 @@ public class AssignmentService {
 
 		service.commitEdit(param0);
 	}
+	
+	public static void saveAssignment(
+			org.sakaiproject.assignment.api.Assignment param0) {
+		org.sakaiproject.assignment.api.AssignmentService service = getInstance();
+		if (service == null)
+			return;
 
+		service.saveAssignment(param0);
+	}
+
+	/**
+	 * @deprecated
+	 * @param param0
+	 */
 	public static void commitEdit(
 			org.sakaiproject.assignment.api.AssignmentSubmissionEdit param0) {
 		org.sakaiproject.assignment.api.AssignmentService service = getInstance();
@@ -388,7 +442,20 @@ public class AssignmentService {
 
 		service.commitEdit(param0);
 	}
+	
+	public static void saveSubmission(
+			org.sakaiproject.assignment.api.AssignmentSubmission param0) {
+		org.sakaiproject.assignment.api.AssignmentService service = getInstance();
+		if (service == null)
+			return;
 
+		service.saveSubmission(param0);
+	}
+
+	/**
+	 * @deprecated
+	 * @param param0
+	 */
 	public static void cancelEdit(
 			org.sakaiproject.assignment.api.AssignmentSubmissionEdit param0) {
 		org.sakaiproject.assignment.api.AssignmentService service = getInstance();
@@ -398,6 +465,10 @@ public class AssignmentService {
 		service.cancelEdit(param0);
 	}
 
+	/**
+	 * @deprecated
+	 * @param param0
+	 */
 	public static void cancelEdit(
 			org.sakaiproject.assignment.api.AssignmentContentEdit param0) {
 		org.sakaiproject.assignment.api.AssignmentService service = getInstance();
@@ -407,6 +478,10 @@ public class AssignmentService {
 		service.cancelEdit(param0);
 	}
 
+	/**
+	 * @deprecated
+	 * @param param0
+	 */
 	public static void cancelEdit(
 			org.sakaiproject.assignment.api.AssignmentEdit param0) {
 		org.sakaiproject.assignment.api.AssignmentService service = getInstance();
@@ -416,6 +491,12 @@ public class AssignmentService {
 		service.cancelEdit(param0);
 	}
 
+	/**
+	 * @deprecated
+	 * @param param0
+	 * @return
+	 * @throws org.sakaiproject.exception.PermissionException
+	 */
 	public static org.sakaiproject.assignment.api.AssignmentContentEdit addAssignmentContent(
 			java.lang.String param0)
 			throws org.sakaiproject.exception.PermissionException {
@@ -426,6 +507,14 @@ public class AssignmentService {
 		return service.addAssignmentContent(param0);
 	}
 
+	/**
+	 * @deprecated
+	 * @param param0
+	 * @return
+	 * @throws org.sakaiproject.exception.IdInvalidException
+	 * @throws org.sakaiproject.exception.IdUsedException
+	 * @throws org.sakaiproject.exception.PermissionException
+	 */
 	public static org.sakaiproject.assignment.api.AssignmentContentEdit mergeAssignmentContent(
 			org.w3c.dom.Element param0)
 			throws org.sakaiproject.exception.IdInvalidException,
@@ -438,6 +527,15 @@ public class AssignmentService {
 		return service.mergeAssignmentContent(param0);
 	}
 
+	/**
+	 * @deprecated
+	 * @param param0
+	 * @param param1
+	 * @return
+	 * @throws org.sakaiproject.exception.IdInvalidException
+	 * @throws org.sakaiproject.exception.PermissionException
+	 * @throws org.sakaiproject.exception.IdUnusedException
+	 */
 	public static org.sakaiproject.assignment.api.AssignmentContentEdit addDuplicateAssignmentContent(
 			java.lang.String param0, java.lang.String param1)
 			throws org.sakaiproject.exception.IdInvalidException,
@@ -450,6 +548,12 @@ public class AssignmentService {
 		return service.addDuplicateAssignmentContent(param0, param1);
 	}
 
+	/**
+	 * @deprecated
+	 * @param param0
+	 * @throws org.sakaiproject.assignment.api.AssignmentContentNotEmptyException
+	 * @throws org.sakaiproject.exception.PermissionException
+	 */
 	public static void removeAssignmentContent(
 			org.sakaiproject.assignment.api.AssignmentContentEdit param0)
 			throws org.sakaiproject.assignment.api.AssignmentContentNotEmptyException,
@@ -461,6 +565,14 @@ public class AssignmentService {
 		service.removeAssignmentContent(param0);
 	}
 
+	/**
+	 * @deprecated
+	 * @param param0
+	 * @return
+	 * @throws org.sakaiproject.exception.IdUnusedException
+	 * @throws org.sakaiproject.exception.PermissionException
+	 * @throws org.sakaiproject.exception.InUseException
+	 */
 	public static org.sakaiproject.assignment.api.AssignmentContentEdit editAssignmentContent(
 			java.lang.String param0)
 			throws org.sakaiproject.exception.IdUnusedException,
@@ -473,7 +585,14 @@ public class AssignmentService {
 		return service.editAssignmentContent(param0);
 	}
 
-	public static org.sakaiproject.assignment.api.AssignmentSubmissionEdit addSubmission(
+	/**
+	 * @param param0
+	 * @param param1
+	 * @param param2
+	 * @return
+	 * @throws org.sakaiproject.exception.PermissionException
+	 */
+	public static org.sakaiproject.assignment.api.AssignmentSubmission addSubmission(
 			java.lang.String param0, java.lang.String param1, java.lang.String param2)
 			throws org.sakaiproject.exception.PermissionException {
 		org.sakaiproject.assignment.api.AssignmentService service = getInstance();
@@ -483,7 +602,15 @@ public class AssignmentService {
 		return service.addSubmission(param0, param1, param2);
 	}
 
-	public static org.sakaiproject.assignment.api.AssignmentSubmissionEdit mergeSubmission(
+	/**
+	 * @deprecated
+	 * @param param0
+	 * @return
+	 * @throws org.sakaiproject.exception.IdInvalidException
+	 * @throws org.sakaiproject.exception.IdUsedException
+	 * @throws org.sakaiproject.exception.PermissionException
+	 */
+	public static org.sakaiproject.assignment.api.AssignmentSubmission mergeSubmission(
 			org.w3c.dom.Element param0)
 			throws org.sakaiproject.exception.IdInvalidException,
 			org.sakaiproject.exception.IdUsedException,
@@ -496,7 +623,7 @@ public class AssignmentService {
 	}
 
 	public static void removeSubmission(
-			org.sakaiproject.assignment.api.AssignmentSubmissionEdit param0)
+			org.sakaiproject.assignment.api.AssignmentSubmission param0)
 			throws org.sakaiproject.exception.PermissionException {
 		org.sakaiproject.assignment.api.AssignmentService service = getInstance();
 		if (service == null)
@@ -505,6 +632,14 @@ public class AssignmentService {
 		service.removeSubmission(param0);
 	}
 
+	/**
+	 * @deprecated
+	 * @param param0
+	 * @return
+	 * @throws org.sakaiproject.exception.IdUnusedException
+	 * @throws org.sakaiproject.exception.PermissionException
+	 * @throws org.sakaiproject.exception.InUseException
+	 */
 	public static org.sakaiproject.assignment.api.AssignmentSubmissionEdit editSubmission(
 			java.lang.String param0)
 			throws org.sakaiproject.exception.IdUnusedException,
@@ -517,6 +652,11 @@ public class AssignmentService {
 		return service.editSubmission(param0);
 	}
 
+	/**
+	 * @deprecated
+	 * @param param0
+	 * @return
+	 */
 	public static java.util.Iterator getAssignmentContents(
 			org.sakaiproject.user.api.User param0) {
 		org.sakaiproject.assignment.api.AssignmentService service = getInstance();
@@ -537,6 +677,13 @@ public class AssignmentService {
 		return service.getAssignment(param0);
 	}
 
+	/**
+	 * @deprecated
+	 * @param param0
+	 * @return
+	 * @throws org.sakaiproject.exception.IdUnusedException
+	 * @throws org.sakaiproject.exception.PermissionException
+	 */
 	public static org.sakaiproject.assignment.api.AssignmentContent getAssignmentContent(
 			java.lang.String param0)
 			throws org.sakaiproject.exception.IdUnusedException,
@@ -579,6 +726,11 @@ public class AssignmentService {
 		return service.getSubmission(param0, param1);
 	}
 
+	/**
+	 * @deprecated
+	 * @param param0
+	 * @return
+	 */
 	public static java.util.Iterator getAssignments(
 			org.sakaiproject.assignment.api.AssignmentContent param0) {
 		org.sakaiproject.assignment.api.AssignmentService service = getInstance();
@@ -667,6 +819,12 @@ public class AssignmentService {
 		return service.assignmentReference(param0, param1);
 	}
 
+	/**
+	 * @deprecated
+	 * @param param0
+	 * @param param1
+	 * @return
+	 */
 	public static java.lang.String contentReference(java.lang.String param0,
 			java.lang.String param1) {
 		org.sakaiproject.assignment.api.AssignmentService service = getInstance();

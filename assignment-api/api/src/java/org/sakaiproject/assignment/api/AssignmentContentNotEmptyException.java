@@ -25,6 +25,7 @@ package org.sakaiproject.assignment.api;
  * <p>
  * AssignmentContentNotEmptyException is thrown whenever an assignment content is not empty.
  * </p>
+ * @deprecated AssignmentContentNotEmptyException is deprecated after Sakai 2.6
  */
 public class AssignmentContentNotEmptyException extends Exception
 {

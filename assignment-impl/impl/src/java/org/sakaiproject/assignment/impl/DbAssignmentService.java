@@ -211,17 +211,6 @@ public class DbAssignmentService extends BaseAssignmentService
 	} // newAssignmentStorage
 
 	/**
-	 * Construct a Storage object for AssignmentsContents.
-	 * 
-	 * @return The new storage object for AssignmentContents.
-	 */
-	protected AssignmentContentStorage newContentStorage()
-	{
-		return new DbCachedAssignmentContentStorage(new AssignmentContentStorageUser());
-
-	} // newContentStorage
-
-	/**
 	 * Construct a Storage object for AssignmentSubmissions.
 	 * 
 	 * @return The new storage object for AssignmentSubmissions.
@@ -272,101 +261,35 @@ public class DbAssignmentService extends BaseAssignmentService
 			return super.getAllResourcesWhere(FIELDS[0], context);
 		}
 
-		public AssignmentEdit put(String id, String context)
+		public Assignment put(String id, String context)
 		{
 			// pack the context in an array
 			Object[] others = new Object[1];
 			others[0] = context;
-			return (AssignmentEdit) super.putResource(id, others);
+			return (Assignment) super.putResource(id, others);
 		}
 
-		public AssignmentEdit edit(String id)
+		public Assignment edit(String id)
 		{
-			return (AssignmentEdit) super.editResource(id);
+			return (Assignment) super.editResource(id);
 		}
 
-		public void commit(AssignmentEdit edit)
+		public void commit(Assignment edit)
 		{
 			super.commitResource(edit);
 		}
 
-		public void cancel(AssignmentEdit edit)
+		public void cancel(Assignment edit)
 		{
 			super.cancelResource(edit);
 		}
 
-		public void remove(AssignmentEdit edit)
+		public void remove(Assignment edit)
 		{
 			super.removeResource(edit);
 		}
 
 	} // DbCachedAssignmentStorage
-
-	/**********************************************************************************************************************************************************************************************************************************************************
-	 * AssignmentContentStorage implementation
-	 *********************************************************************************************************************************************************************************************************************************************************/
-
-	/**
-	 * Covers for the BaseDbSingleStorage, providing AssignmentContent and AssignmentContentEdit parameters
-	 */
-	protected class DbCachedAssignmentContentStorage extends BaseDbSingleStorage implements AssignmentContentStorage
-	{
-		/**
-		 * Construct.
-		 * 
-		 * @param content
-		 *        The StorageUser class to call back for creation of Resource and Edit objects.
-		 */
-		public DbCachedAssignmentContentStorage(AssignmentContentStorageUser content)
-		{
-			super(m_contentsTableName, "CONTENT_ID", FIELDS, m_locksInDb, "content", content, m_sqlService);
-
-		} // DbCachedAssignmentContentStorage
-
-		public boolean check(String id)
-		{
-			return super.checkResource(id);
-		}
-
-		public AssignmentContent get(String id)
-		{
-			return (AssignmentContent) super.getResource(id);
-		}
-
-		public List getAll(String context)
-		{
-			return super.getAllResourcesWhere(FIELDS[0], context);
-		}
-
-		public AssignmentContentEdit put(String id, String context)
-		{
-			// pack the context in an array
-			Object[] others = new Object[1];
-			others[0] = context;
-			return (AssignmentContentEdit) super.putResource(id, others);
-		}
-
-		public AssignmentContentEdit edit(String id)
-		{
-			return (AssignmentContentEdit) super.editResource(id);
-		}
-
-		public void commit(AssignmentContentEdit edit)
-		{
-			super.commitResource(edit);
-		}
-
-		public void cancel(AssignmentContentEdit edit)
-		{
-			super.cancelResource(edit);
-		}
-
-		public void remove(AssignmentContentEdit edit)
-		{
-			super.removeResource(edit);
-		}
-
-	} // DbCachedAssignmentContentStorage
 
 	/**********************************************************************************************************************************************************************************************************************************************************
 	 * AssignmentSubmissionStorage implementation
@@ -450,7 +373,7 @@ public class DbAssignmentService extends BaseAssignmentService
 			return super.getAllResourcesWhere(SUBMISSION_FIELDS[0], context);
 		}
 
-		public AssignmentSubmissionEdit put(String id, String assignmentId, String submitterId, String submitTime, String submitted, String graded)
+		public AssignmentSubmission put(String id, String assignmentId, String submitterId, String submitTime, String submitted, String graded)
 		{
 			// pack the context in an array
 			Object[] others = new Object[5];
@@ -460,25 +383,25 @@ public class DbAssignmentService extends BaseAssignmentService
 			others[3] = submitted;
 			others[4] = graded;
 			
-			return (AssignmentSubmissionEdit) super.putResource(id, others);
+			return (AssignmentSubmission) super.putResource(id, others);
 		}
 
-		public AssignmentSubmissionEdit edit(String id)
+		public AssignmentSubmission edit(String id)
 		{
-			return (AssignmentSubmissionEdit) super.editResource(id);
+			return (AssignmentSubmission) super.editResource(id);
 		}
 
-		public void commit(AssignmentSubmissionEdit edit)
+		public void commit(AssignmentSubmission edit)
 		{
 			super.commitResource(edit);
 		}
 
-		public void cancel(AssignmentSubmissionEdit edit)
+		public void cancel(AssignmentSubmission edit)
 		{
 			super.cancelResource(edit);
 		}
 
-		public void remove(AssignmentSubmissionEdit edit)
+		public void remove(AssignmentSubmission edit)
 		{
 			super.removeResource(edit);
 		}
@@ -539,51 +462,6 @@ public class DbAssignmentService extends BaseAssignmentService
 					catch (SQLException ignore)
 					{
 						M_log.warn(this + ":convertToContext " + ignore.getMessage());
-						return null;
-					}
-				}
-			});
-
-			// read all content records
-			sql = "select XML from ASSIGNMENT_CONTENT where CONTEXT is null";
-			m_sqlService.dbRead(connection, sql, null, new SqlReader()
-			{
-				public Object readSqlResultRecord(ResultSet result)
-				{
-					try
-					{
-						// create the Resource from the db xml
-						String xml = result.getString(1);
-
-						// read the xml
-						Document doc = Xml.readDocumentFromString(xml);
-
-						// verify the root element
-						Element root = doc.getDocumentElement();
-						if (!root.getTagName().equals("content"))
-						{
-							M_log.warn(this + " convertToContext(): XML root element not content: " + root.getTagName());
-							return null;
-						}
-						AssignmentContent c = new BaseAssignmentContent(root);
-						// context is creator
-						String context = c.getCreator();
-						String id = c.getId();
-
-						// update
-						String update = "update ASSIGNMENT_CONTENT set CONTEXT = ? where CONTENT_ID = ?";
-						Object fields[] = new Object[2];
-						fields[0] = context;
-						fields[1] = id;
-						boolean ok = m_sqlService.dbWrite(connection, update, fields);
-
-						M_log.info(this + " convertToContext: content id: " + id + " context: " + context + " ok: " + ok);
-
-						return null;
-					}
-					catch (SQLException ignore)
-					{
-						M_log.warn(this + ":convertToContext SqlReader " + ignore.getMessage());
 						return null;
 					}
 				}
