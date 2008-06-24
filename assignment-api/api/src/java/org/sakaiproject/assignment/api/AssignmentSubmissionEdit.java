@@ -180,6 +180,27 @@ public interface AssignmentSubmissionEdit extends AssignmentSubmission, Edit
 	public void setGradeReleased(boolean released);
 
 	/**
+	 * Access the grade recieved. When points-type, format it to one decimal place
+	 * 
+	 * @return The Submission's grade..
+	 */
+	public String getGradeDisplay();
+	
+	/**
+	 * Access the checked status of the honor pledge flag.
+	 * 
+	 * @return True if the honor pledge is checked, false otherwise.
+	 */
+	public boolean getHonorPledgeFlag();
+
+	/**
+	 * Returns the status of the submission : Not Started, submitted, returned or graded.
+	 * 
+	 * @return The Submission's status.
+	 */
+	public String getStatus();
+
+	/**
 	 * Sets the grade for the Submisssion.
 	 * 
 	 * @param grade -
@@ -210,8 +231,6 @@ public interface AssignmentSubmissionEdit extends AssignmentSubmission, Edit
 	 *        The Time at which the Submission was last modified.
 	 */
 	public void setTimeLastModified(Time lastmod);
-	
-	
 	
 	/**
 	 * Post attachments to the content review service

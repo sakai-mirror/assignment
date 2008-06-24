@@ -2,7 +2,7 @@
 -- ASSIGNMENT_ASSIGNMENT
 -----------------------------------------------------------------------------
 
-CREATE TABLE ASSIGNMENT_ASSIGNMENT
+CREATE TABLE ASSIGNMENT_ASSIGNMENT_T
 (
     ASSIGNMENT_ID VARCHAR (99) NOT NULL,
 	CONTEXT VARCHAR (99),

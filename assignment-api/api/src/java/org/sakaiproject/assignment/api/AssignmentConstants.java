@@ -76,5 +76,11 @@ public class AssignmentConstants {
 	public static final String GROUP_LIST = "group";
 
 	public static final String GROUP_NAME = "authzGroup";
+	
+	/** number of times that the submission is allowed to resubmit */
+	public static final String ALLOW_RESUBMIT_NUMBER = "allow_resubmit_number";
+	
+	/** submission level of close time*/
+	public static final String ALLOW_RESUBMIT_CLOSETIME = "allow_resubmit_closeTime";
 
 }

@@ -10,6 +10,7 @@ import org.apache.commons.logging.LogFactory;
 import org.sakaiproject.assignment.api.Assignment;
 import org.sakaiproject.assignment.api.AssignmentConstants;
 import org.sakaiproject.assignment.api.AssignmentSubmission;
+import org.sakaiproject.assignment.api.AssignmentSubmissionVersion;
 import org.sakaiproject.authz.cover.SecurityService;
 import org.sakaiproject.component.cover.ComponentManager;
 import org.sakaiproject.content.api.ContentResource;
@@ -1461,7 +1462,7 @@ public class BaseAssignmentSubmission implements AssignmentSubmission
 	 */
 	public int getResubmissionNum()
 	{
-		String numString = StringUtil.trimToNull(m_properties.getProperty(AssignmentSubmission.ALLOW_RESUBMIT_NUMBER));
+		String numString = StringUtil.trimToNull(m_properties.getProperty(AssignmentConstants.ALLOW_RESUBMIT_NUMBER));
 		return numString != null?Integer.valueOf(numString).intValue():0;
 	}
 	
@@ -1470,7 +1471,7 @@ public class BaseAssignmentSubmission implements AssignmentSubmission
 	 */
 	public Time getCloseTime()
 	{
-		String closeTimeString = StringUtil.trimToNull(m_properties.getProperty(AssignmentSubmission.ALLOW_RESUBMIT_CLOSETIME));
+		String closeTimeString = StringUtil.trimToNull(m_properties.getProperty(AssignmentConstants.ALLOW_RESUBMIT_CLOSETIME));
 		if (closeTimeString != null && getResubmissionNum() != 0)
 		{
 			// return the close time if it is set
@@ -1776,6 +1777,44 @@ public class BaseAssignmentSubmission implements AssignmentSubmission
 			
 		}
 		return null;
+	}
+	
+	private List<AssignmentSubmissionVersion> submissionVersionList = null;
+	
+	/**
+	 * Get the list of associated SubmissionVersion object
+	 * @return
+	 */
+	public List<AssignmentSubmissionVersion> getSubmissionVersionList()
+	{
+		return this.submissionVersionList;
+	}
+	
+	/**
+	 * Set the list of associated SubmissionVersion object
+	 * @param submissionVersionList
+	 */
+	public void setSubmissionVersionList(List<AssignmentSubmissionVersion> submissionVersionList)
+	{
+		this.submissionVersionList = submissionVersionList;
+	}
+	
+	private String lastVersionId = null;
+	/**
+	 * Get the id of last/latest version id
+	 * @return
+	 */
+	public String getLastVersionId()
+	{
+		return lastVersionId;
+	}
+	
+	/**
+	 * Set the id of last/latest version id
+	 */
+	public void setLastVersionId(String lastVersionId)
+	{
+		this.lastVersionId = lastVersionId;
 	}
 	
 	/**
