@@ -4424,7 +4424,7 @@ public class AssignmentAction extends PagedResourceActionII
 			// Assignment
 			try
 			{
-				Assignment a = AssignmentService.getAssignment(assignmentId);
+				Assignment a = getAssignmentEdit(state, assignmentId);
 				
 				bool_change_from_non_electronic = change_from_non_electronic(state, assignmentId, assignmentContentId, a);
 	
@@ -4512,9 +4512,6 @@ public class AssignmentAction extends PagedResourceActionII
 					// old due time
 					Time oldDueTime = a.getDueTime();
 					
-					// commit the changes to AssignmentContent object
-					commitAssignmentEdit(state, a, title, submissionType,useReviewService,allowStudentViewReport, gradeType, gradePoints, description, checkAddHonorPledge, attachments1);
-					
 					// set the Assignment Properties object
 					ResourcePropertiesEdit aPropertiesEdit = a.getPropertiesEdit();
 					oAssociateGradebookAssignment = aPropertiesEdit.getProperty(AssignmentService.PROP_ASSIGNMENT_ASSOCIATE_GRADEBOOK_ASSIGNMENT);
@@ -4526,7 +4523,7 @@ public class AssignmentAction extends PagedResourceActionII
 					}
 					
 					// comment the changes to Assignment object
-					commitAssignmentEdit(state, post, a, title, openTime, dueTime, closeTime, enableCloseDate, section, range, groups);
+					commitAssignmentEdit(state, post, a, title, submissionType,useReviewService,allowStudentViewReport, gradeType, gradePoints, description, checkAddHonorPledge, attachments1, openTime, dueTime, closeTime, enableCloseDate, section, range, groups);
 		
 					if (state.getAttribute(STATE_MESSAGE) == null)
 					{
@@ -4602,6 +4599,43 @@ public class AssignmentAction extends PagedResourceActionII
 		
 	} // doPost_assignment
 
+	private Assignment getAssignmentEdit(SessionState state, String assignmentId) 
+	{
+		Assignment a = null;
+		if (assignmentId.length() == 0)
+		{
+			// create a new assignment
+			try
+			{
+				a = AssignmentService.addAssignment((String) state.getAttribute(STATE_CONTEXT_STRING));
+			}
+			catch (PermissionException e)
+			{
+				addAlert(state, rb.getString("youarenot1"));
+				M_log.warn(this + ":getAssignmentEdit " + e.getMessage());
+			}
+		}
+		else
+		{
+			try
+			{
+				// edit assignment
+				a = AssignmentService.getAssignment(assignmentId);
+			}
+			catch (IdUnusedException e)
+			{
+				addAlert(state, rb.getString("cannotfin3"));
+				M_log.warn(this + ":getAssignmentEdit " + e.getMessage());
+			}
+			catch (PermissionException e)
+			{
+				addAlert(state, rb.getString("youarenot14"));
+				M_log.warn(this + ":getAssignmentEdit " + e.getMessage());
+			} // try-catch
+		} // if-else
+		return a;
+	}
+	
 	/**
 	 * 
 	 */
@@ -5094,8 +5128,51 @@ public class AssignmentAction extends PagedResourceActionII
 		}
 	}
 
-	private void commitAssignmentEdit(SessionState state, boolean post, Assignment a, String title, Time openTime, Time dueTime, Time closeTime, boolean enableCloseDate, String s, String range, Collection groups) 
+	private void commitAssignmentEdit(SessionState state, boolean post, Assignment a, String title, int submissionType,boolean useReviewService, boolean allowStudentViewReport, int gradeType, String gradePoints, String description, String checkAddHonorPledge, List attachments1, Time openTime, Time dueTime, Time closeTime, boolean enableCloseDate, String s, String range, Collection groups) 
 	{
+		a.setTitle(title);
+		a.setInstructions(description);
+		a.setHonorPledge(Integer.parseInt(checkAddHonorPledge));
+		a.setTypeOfSubmission(submissionType);
+		a.setAllowReviewService(useReviewService);
+		a.setAllowStudentViewReport(allowStudentViewReport);
+		a.setTypeOfGrade(gradeType);
+		if (gradeType == 3)
+		{
+			try
+			{
+				a.setMaxGradePoint(Integer.parseInt(gradePoints));
+			}
+			catch (NumberFormatException e)
+			{
+				alertInvalidPoint(state, gradePoints);
+				M_log.warn(this + ":commitAssignmentContentEdit " + e.getMessage());
+			}
+		}
+		a.setGroupProject(true);
+		a.setIndividuallyGraded(false);
+
+		if (submissionType != 1)
+		{
+			a.setAllowAttachments(true);
+		}
+		else
+		{
+			a.setAllowAttachments(false);
+		}
+
+		// clear attachments
+		a.clearAttachments();
+
+		// add each attachment
+		Iterator it = EntityManager.newReferenceList(attachments1).iterator();
+		while (it.hasNext())
+		{
+			Reference r = (Reference) it.next();
+			a.addAttachment(r);
+		}
+		state.setAttribute(ATTACHMENTS_MODIFIED, new Boolean(false));
+		
 		a.setTitle(title);
 		a.setContext((String) state.getAttribute(STATE_CONTEXT_STRING));
 		a.setSection(s);
@@ -5184,55 +5261,6 @@ public class AssignmentAction extends PagedResourceActionII
 		{
 			aPropertiesEdit.addProperty(AssignmentConstants.ALLOW_RESUBMIT_NUMBER, allowResubmitNumber);
 		}
-	}
-
-	private void commitAssignmentEdit(SessionState state, Assignment a, String title, int submissionType,boolean useReviewService, boolean allowStudentViewReport, int gradeType, String gradePoints, String description, String checkAddHonorPledge, List attachments1) 
-	{
-		a.setTitle(title);
-		a.setInstructions(description);
-		a.setHonorPledge(Integer.parseInt(checkAddHonorPledge));
-		a.setTypeOfSubmission(submissionType);
-		a.setAllowReviewService(useReviewService);
-		a.setAllowStudentViewReport(allowStudentViewReport);
-		a.setTypeOfGrade(gradeType);
-		if (gradeType == 3)
-		{
-			try
-			{
-				a.setMaxGradePoint(Integer.parseInt(gradePoints));
-			}
-			catch (NumberFormatException e)
-			{
-				alertInvalidPoint(state, gradePoints);
-				M_log.warn(this + ":commitAssignmentContentEdit " + e.getMessage());
-			}
-		}
-		a.setGroupProject(true);
-		a.setIndividuallyGraded(false);
-
-		if (submissionType != 1)
-		{
-			a.setAllowAttachments(true);
-		}
-		else
-		{
-			a.setAllowAttachments(false);
-		}
-
-		// clear attachments
-		a.clearAttachments();
-
-		// add each attachment
-		Iterator it = EntityManager.newReferenceList(attachments1).iterator();
-		while (it.hasNext())
-		{
-			Reference r = (Reference) it.next();
-			a.addAttachment(r);
-		}
-		state.setAttribute(ATTACHMENTS_MODIFIED, new Boolean(false));
-
-		// commit the changes
-		AssignmentService.saveAssignment(a);
 	}
 	
 	/**

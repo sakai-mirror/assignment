@@ -1,6 +1,7 @@
 package org.sakaiproject.assignment.impl;
 
 import java.util.Collection;
+import java.util.Date;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
@@ -184,6 +185,15 @@ public class BaseAssignment implements Assignment, AttachmentContainer
 		setAll(assignment);
 	}// copy constructor
 
+	public BaseAssignment(String id, String context, boolean isSiteRange, Date openDate, Date dueDate, Date closeDate, Date createdOn, 
+						String createdBy, Date modifiedOn, String modifiedBy, int gradeType,
+						int submissionType, int maxPoint, boolean draft, boolean deleted, String instruction, boolean announceOpenDate, 
+						boolean scheduleDueDate, int emailNotificationOption, int resubmissionMaxNumber, Date resubmissionCloseDate, 
+						String associatedGradebookEntry, boolean honorPledge)
+	{
+		// TO-DO
+	}
+	
 	/**
 	 * Constructor used in addAssignment
 	 */

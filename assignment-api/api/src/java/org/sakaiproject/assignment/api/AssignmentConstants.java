@@ -3,7 +3,7 @@ package org.sakaiproject.assignment.api;
 public class AssignmentConstants {
 	
 	/** Grade type not set */
-	public static final int GRADE_TYPE_NOT_SET = -1;
+	public static final int GRADE_TYPE_NOT_SET = 0;
 
 	/** Ungraded grade type */
 	public static final int UNGRADED_GRADE_TYPE = 1;
@@ -36,7 +36,7 @@ public class AssignmentConstants {
 	public static final String CHECK_GRADE_TYPE_STRING = "Checkmark";
 
 	/** Assignment type not yet set */
-	public static final int ASSIGNMENT_SUBMISSION_TYPE_NOT_SET = -1;
+	public static final int ASSIGNMENT_SUBMISSION_TYPE_NOT_SET = 0;
 
 	/** Text only assignment type */
 	public static final int TEXT_ONLY_ASSIGNMENT_SUBMISSION = 1;
@@ -65,13 +65,13 @@ public class AssignmentConstants {
 	public static final String ASSIGNMENT_INSTRUCTOR_NOTIFICATIONS_VALUE= "assignment_instructor_notifications_value";
 	
 	// no email to instructor
-	public static final String ASSIGNMENT_INSTRUCTOR_NOTIFICATIONS_NONE = "assignment_instructor_notifications_none";
+	public static final String ASSIGNMENT_INSTRUCTOR_NOTIFICATIONS_NONE = "0";
 	
 	// send every email to instructor
-	public static final String ASSIGNMENT_INSTRUCTOR_NOTIFICATIONS_EACH = "assignment_instructor_notifications_each";
+	public static final String ASSIGNMENT_INSTRUCTOR_NOTIFICATIONS_EACH = "1";
 	
 	// send email in digest form
-	public static final String ASSIGNMENT_INSTRUCTOR_NOTIFICATIONS_DIGEST = "assignment_instructor_notifications_digest";
+	public static final String ASSIGNMENT_INSTRUCTOR_NOTIFICATIONS_DIGEST = "2";
 
 	public static final String GROUP_LIST = "group";
 

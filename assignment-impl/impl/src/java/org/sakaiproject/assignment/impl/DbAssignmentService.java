@@ -24,6 +24,7 @@ package org.sakaiproject.assignment.impl;
 import java.sql.Connection;
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.util.Date;
 import java.util.List;
 
 import org.apache.commons.logging.Log;
@@ -37,7 +38,12 @@ import org.sakaiproject.assignment.api.AssignmentSubmissionEdit;
 import org.sakaiproject.db.api.SqlReader;
 import org.sakaiproject.db.api.SqlService;
 import org.sakaiproject.entity.api.Entity;
-import org.sakaiproject.util.BaseDbSingleStorage;
+import org.sakaiproject.time.api.Time;
+import org.sakaiproject.time.api.TimeService;
+import org.sakaiproject.tool.api.Session;
+import org.sakaiproject.tool.api.SessionManager;
+import org.sakaiproject.util.BaseDbFlatStorage;
+import org.sakaiproject.util.StringUtil;
 import org.sakaiproject.util.Xml;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
@@ -53,22 +59,31 @@ public class DbAssignmentService extends BaseAssignmentService
 	private static Log M_log = LogFactory.getLog(DbAssignmentService.class);
 
 	/** The name of the db table holding assignment objects. */
-	protected String m_assignmentsTableName = "ASSIGNMENT_ASSIGNMENT";
-
-	/** The name of the db table holding assignment content objects. */
-	protected String m_contentsTableName = "ASSIGNMENT_CONTENT";
+	protected String m_assignmentTableName = "ASSIGNMENT_ASSIGNMENT_T";
 
 	/** The name of the db table holding assignment submission objects. */
-	protected String m_submissionsTableName = "ASSIGNMENT_SUBMISSION";
+	protected String m_submissionsTableName = "ASSIGNMENT_SUBMISSION_T";
 
 	/** If true, we do our locks in the remote database, otherwise we do them here. */
 	protected boolean m_locksInDb = true;
 
-	/** Extra fields to store in the db with the XML. */
-	protected static final String[] FIELDS = { "CONTEXT"};
+	/** assignment table fields. */
+	protected static final String[] m_assignmentFields = { "CONTEXT", "IS_SITE_RANGE", "OPEN_DATE", "DUE_DATE", "CLOSE_DATE", "CREATED_ON", "CREATED_BY", "MODIFIED_ON", "MODIFIED_BY", "GRADE_TYPE", "SUBMISSION_TYPE", "MAX_POINT", "DRAFT", "DELETED", "INSTRUCTION", "ANNOUNCE_OPEN_DATE", "SCHEDULE_DUE_DATE", "EMAIL_NOTIFICATION_OPTION", "RESUBMISSION_MAX_NUMBER", "RESUBMISSION_CLOSE_DATE", "ASSOCIATED_GRADEBOOK_ENTRY", "HONOR_PLEDGE"};
 	
-	/** Extra fields to store in the db with the XML in ASSIGNMENT_SUBMISSION table */
-	protected static final String[] SUBMISSION_FIELDS = { "CONTEXT", "SUBMITTER_ID", "SUBMIT_TIME", "SUBMITTED", "GRADED"};
+	/** assignment property table*/
+	protected static final String m_assignmentPropTableName = "ASSIGNMENT_PROPERTY";
+	
+	/** assignment table id*/
+	protected static final String m_assignmentTableId = "ASSIGNMENT_ID";
+	
+	/** submission table fields*/
+	protected static final String[] m_submissionFields = { "CONTEXT", "SUBMITTER_ID", "SUBMIT_TIME", "SUBMITTED", "GRADED"};
+	
+	/** submission property table*/
+	protected static final String m_submissionPropTableName = "SUBMISSION_PROPERTY";
+	
+	/** submission table id*/
+	protected static final String m_submissionTableId = "SUBMISSION_ID";
 
 	/**********************************************************************************************************************************************************************************************************************************************************
 	 * Constructors, Dependencies and their setter methods
@@ -87,6 +102,34 @@ public class DbAssignmentService extends BaseAssignmentService
 	{
 		m_sqlService = service;
 	}
+	
+	/** Dependency: session Service */
+	protected SessionManager m_sessionManager = null;
+
+	/**
+	 * Dependency: SessionManager.
+	 * 
+	 * @param sessionManager
+	 *        The SessionManager.
+	 */
+	public void setSessionManager(SessionManager sessionManager)
+	{
+		m_sessionManager = sessionManager;
+	}
+	
+	/** Dependency: time Service */
+	protected TimeService m_timeService = null;
+
+	/**
+	 * Dependency: TimeService.
+	 * 
+	 * @param timeService
+	 *        The timeService.
+	 */
+	public void settimeService(TimeService timeService)
+	{
+		m_timeService = timeService;
+	}
 
 	/**
 	 * Configuration: set the table name for assignments.
@@ -96,18 +139,7 @@ public class DbAssignmentService extends BaseAssignmentService
 	 */
 	public void setAssignmentTableName(String name)
 	{
-		m_assignmentsTableName = name;
-	}
-
-	/**
-	 * Configuration: set the table name for contents.
-	 * 
-	 * @param path
-	 *        The table name for contents.
-	 */
-	public void setContentTableName(String name)
-	{
-		m_contentsTableName = name;
+		m_assignmentTableName = name;
 	}
 
 	/**
@@ -179,14 +211,13 @@ public class DbAssignmentService extends BaseAssignmentService
 
 			super.init();
 
-			M_log.info("init: assignments table: " + m_assignmentsTableName + " contents table: " + m_contentsTableName
-					+ " submissions table: " + m_submissionsTableName + " locks-in-db" + m_locksInDb);
+			M_log.info("init: assignments table: " + m_assignmentTableName + " submissions table: " + m_submissionsTableName + " locks-in-db" + m_locksInDb);
 
 			// convert?
 			if (m_convertToContext)
 			{
 				m_convertToContext = false;
-				convertToContext();
+				//TO-DO: convertToContext();
 			}
 		}
 		catch (Throwable t)
@@ -232,7 +263,7 @@ public class DbAssignmentService extends BaseAssignmentService
 	/**
 	 * Covers for the BaseDbSingleStorage, providing Assignment and AssignmentEdit parameters
 	 */
-	protected class DbCachedAssignmentStorage extends BaseDbSingleStorage implements AssignmentStorage
+	protected class DbCachedAssignmentStorage extends BaseDbFlatStorage implements AssignmentStorage, SqlReader
 	{
 		/**
 		 * Construct.
@@ -242,7 +273,11 @@ public class DbAssignmentService extends BaseAssignmentService
 		 */
 		public DbCachedAssignmentStorage(AssignmentStorageUser assignment)
 		{
-			super(m_assignmentsTableName, "ASSIGNMENT_ID", FIELDS, m_locksInDb, "assignment", assignment, m_sqlService);
+			super(m_assignmentTableName, m_assignmentTableId, m_assignmentFields, m_assignmentPropTableName, m_locksInDb, null, m_sqlService);
+			m_reader = this;
+
+			// no locking
+			setLocking(false);
 
 		} // DbCachedAssignmentStorage
 
@@ -258,7 +293,11 @@ public class DbAssignmentService extends BaseAssignmentService
 
 		public List getAll(String context)
 		{
-			return super.getAllResourcesWhere(FIELDS[0], context);
+			String where = m_assignmentFields[0] + "='" + context + "'";
+			String order = "ASSIGNMENT_ASSIGNMENT_T.DUE_DATE";
+			int first = 1;
+			int last = 20;
+			return super.getSelectedResources(where, order, null, first, last, null);
 		}
 
 		public Assignment put(String id, String context)
@@ -266,7 +305,69 @@ public class DbAssignmentService extends BaseAssignmentService
 			// pack the context in an array
 			Object[] others = new Object[1];
 			others[0] = context;
-			return (Assignment) super.putResource(id, others);
+
+			BaseAssignment rv = (BaseAssignment) super.putResource(id, fields(id, context, null, false));
+			if (rv != null) rv.activate();
+			return rv;
+		}
+		
+		/**
+		 * Get the fields for the database from the edit for this id, and the id again at the end if needed
+		 * 
+		 * @param id
+		 *        The resource id
+		 * @param context
+		 * 	      The context id
+		 * @param edit
+		 *        The edit (may be null in a new)
+		 * @param idAgain
+		 *        If true, include the id field again at the end, else don't.
+		 * @return The fields for the database.
+		 */
+		protected Object[] fields(String id, String context, BaseAssignment edit, boolean idAgain)
+		{
+			Object[] rv = new Object[idAgain ? 24 : 23];
+			rv[0] = caseId(id);
+			if (idAgain)
+			{
+				rv[23] = rv[0];
+			}
+
+
+			String current = m_sessionManager.getCurrentSessionUserId();
+			Time now = m_timeService.newTime();
+			
+			if (edit == null)
+			{
+				rv[1] = context;
+				rv[2] = "1";
+				rv[3] = now;
+				rv[4] = now;
+				rv[5] = now;
+				rv[6] = now;
+				rv[7] = current;
+				rv[8] = now;
+				rv[9] = current;
+				rv[10] = new Integer("1"); // not graded type
+				rv[11] = new Integer("3");	// text and attachment
+				rv[12] = "";
+				rv[13] = new Integer("1");
+				rv[14] = new Integer("0");
+				rv[15] = "";
+				rv[16] = new Integer("0");	// not announced
+				rv[17] = new Integer("0");	// not scheduled
+				rv[18] = new Integer("0");	// no notification
+				rv[19] = "";
+				rv[20] = "";
+				rv[21] = "";
+				rv[22] = new Integer("0");	// honor pledge to be off
+			}
+			else
+			{
+				// TO-DO
+			}
+
+			return rv;
 		}
 
 		public Assignment edit(String id)
@@ -274,9 +375,28 @@ public class DbAssignmentService extends BaseAssignmentService
 			return (Assignment) super.editResource(id);
 		}
 
-		public void commit(Assignment edit)
+		public void commit(final Assignment edit)
 		{
-			super.commitResource(edit);
+			// run our save code in a transaction that will restart on deadlock
+			// if deadlock retry fails, or any other error occurs, a runtime error will be thrown
+			m_sqlService.transact(new Runnable()
+			{
+				public void run()
+				{
+					saveAssignmentTx(edit);
+				}
+			}, "Assignment:" + edit.getId());
+		}
+		
+		/**
+		 * The transaction code to save an assignment.
+		 * 
+		 * @param edit
+		 *        The assignment to save.
+		 */
+		protected void saveAssignmentTx(Assignment edit)
+		{
+			// TO-DO
 		}
 
 		public void cancel(Assignment edit)
@@ -288,6 +408,46 @@ public class DbAssignmentService extends BaseAssignmentService
 		{
 			super.removeResource(edit);
 		}
+		
+		public Object readSqlResultRecord(ResultSet result)
+		{
+			try
+			{
+				String id = result.getString(1);
+				String context = result.getString(2);
+				boolean isSiteRange = "1".equals(result.getString(3))?true:false;
+				java.sql.Date openDate = result.getDate(4, m_sqlService.getCal());
+				java.sql.Date dueDate = result.getDate(5, m_sqlService.getCal());
+				java.sql.Date closeDate = result.getDate(6, m_sqlService.getCal());
+				java.sql.Date createdOn = result.getDate(7, m_sqlService.getCal());
+				String createdBy = result.getString(8);
+				java.sql.Date modifiedOn = result.getDate(9, m_sqlService.getCal());
+				String modifiedBy = result.getString(10);
+				int gradeType = result.getInt(11);
+				int submissionType = result.getInt(12);
+				int maxPoint = result.getInt(13);
+				boolean draft = "1".equals(result.getString(14))?true:false;
+				boolean deleted = "1".equals(result.getString(15))?true:false;
+				String instruction = result.getString(16);
+				boolean announceOpenDate = "1".equals(result.getString(17))?true:false;
+				boolean scheduleDueDate = "1".equals(result.getString(18))?true:false;
+				int emailNotificationOption = result.getInt(19);
+				int resubmissionMaxNumber = result.getInt(20);
+				java.sql.Date resubmissionCloseDate = result.getDate(21, m_sqlService.getCal());
+				String associatedGradebookEntry = result.getString(22);
+				boolean honorPledge = "1".equals(result.getString(23))?true:false;
+
+				// create the Resource from these fields
+				return new BaseAssignment(id, context, isSiteRange, openDate, dueDate, closeDate, createdOn, createdBy, modifiedOn, modifiedBy, gradeType,
+						submissionType, maxPoint, draft, deleted, instruction, announceOpenDate, scheduleDueDate, emailNotificationOption, 
+						resubmissionMaxNumber, resubmissionCloseDate, associatedGradebookEntry, honorPledge);
+			}
+			catch (SQLException e)
+			{
+				M_log.warn("readSqlResultRecord: " + e);
+				return null;
+			}
+		}
 
 	} // DbCachedAssignmentStorage
 
@@ -298,9 +458,11 @@ public class DbAssignmentService extends BaseAssignmentService
 	/**
 	 * Covers for the BaseDbSingleStorage, providing AssignmentSubmission and AssignmentSubmissionEdit parameters
 	 */
-	protected class DbCachedAssignmentSubmissionStorage extends BaseDbSingleStorage implements AssignmentSubmissionStorage
+	protected class DbCachedAssignmentSubmissionStorage extends BaseDbFlatStorage implements AssignmentSubmissionStorage, SqlReader
 	{
-		/*FIELDS: "CONTEXT", "SUBMITTER_ID", "SUBMIT_TIME", "SUBMITTED", "GRADED"*/
+		/*m_assignmentFields: "CONTEXT", "SUBMITTER_ID", "SUBMIT_TIME", "SUBMITTED", "GRADED"*/
+		String m_submissionIdFieldName = "SUBMISSION_ID";
+		
 		
 		/**
 		 * Construct.
@@ -310,7 +472,11 @@ public class DbAssignmentService extends BaseAssignmentService
 		 */
 		public DbCachedAssignmentSubmissionStorage(AssignmentSubmissionStorageUser submission)
 		{
-			super(m_submissionsTableName, "SUBMISSION_ID", SUBMISSION_FIELDS, m_locksInDb, "submission", submission, m_sqlService);
+			super(m_submissionsTableName, m_submissionTableId, m_submissionFields, m_submissionPropTableName, m_locksInDb, null, m_sqlService);
+			m_reader = this;
+
+			// no locking
+			setLocking(false);
 
 		} // DbCachedAssignmentSubmissionStorage
 
@@ -333,12 +499,12 @@ public class DbAssignmentService extends BaseAssignmentService
 
 			// get the user from the db 
 			// need to construct the query here instead of relying on the SingleStorage client
-			String sql = "select XML from " + m_submissionsTableName + " where (" + SUBMISSION_FIELDS[0] + " = ? AND "+  SUBMISSION_FIELDS[1] + " = ?)";
+			String sql = "select * from " + m_submissionsTableName + " where (" + m_submissionFields[0] + " = ? AND "+  m_submissionFields[1] + " = ?)";
 
 			Object fields[] = new Object[2];
 			fields[0] = caseId(assignmentId);
 			fields[1] = caseId(userId);
-			List xml = m_sql.dbRead(sql, fields, null);
+			/*List xml = m_sql.dbRead(sql, fields, null);
 			if (!xml.isEmpty())
 			{
 				// create the Resource from the db xml
@@ -348,7 +514,9 @@ public class DbAssignmentService extends BaseAssignmentService
 			else
 			{
 				return null;
-			}
+			}*/
+			// TO-DO 
+			return null;
 		}
 		
 		/**
@@ -356,7 +524,10 @@ public class DbAssignmentService extends BaseAssignmentService
 		 */
 		public int getSubmittedSubmissionsCount(String assignmentId)
 		{
-			return super.countSelectedResourcesWhere("where context='" + assignmentId + "' AND " + SUBMISSION_FIELDS[2] + " IS NOT NULL AND " + SUBMISSION_FIELDS[3] + "='" + Boolean.TRUE.toString() + "'" );
+			Object[] values = new Object[1];
+			values[0] = assignmentId;
+			String where = "where context=? AND " + m_submissionFields[2] + " IS NOT NULL AND " + m_submissionFields[3] + "='" + Boolean.TRUE.toString() + "'" ;
+			return super.countSelectedResources(where, values);
 		}
 		
 		/**
@@ -364,13 +535,21 @@ public class DbAssignmentService extends BaseAssignmentService
 		 */
 		public int getUngradedSubmissionsCount(String assignmentId)
 		{
-			return super.countSelectedResourcesWhere("where context='" + assignmentId + "' AND " + SUBMISSION_FIELDS[2] + " IS NOT NULL AND " + SUBMISSION_FIELDS[3] + "='" + Boolean.TRUE.toString() + "' AND " + SUBMISSION_FIELDS[4] + "='" + Boolean.FALSE.toString() + "'" );
+			Object[] values = new Object[1];
+			values[0] = assignmentId;
+			String where = "where context=? AND " + m_submissionFields[2] + " IS NOT NULL AND " + m_submissionFields[3] + "='" + Boolean.TRUE.toString() + "' AND " + m_submissionFields[4] + "='" + Boolean.FALSE.toString() + "'"  ;
+			return super.countSelectedResources(where, values);
 		}
 		
 
 		public List getAll(String context)
 		{
-			return super.getAllResourcesWhere(SUBMISSION_FIELDS[0], context);
+			String where = m_submissionFields[0] + "=" + context;
+			String order = "";
+			int first = 0;
+			int last = 20;
+			String join = "";
+			return super.getSelectedResources(where, order, null, first, last, join);
 		}
 
 		public AssignmentSubmission put(String id, String assignmentId, String submitterId, String submitTime, String submitted, String graded)
@@ -391,9 +570,28 @@ public class DbAssignmentService extends BaseAssignmentService
 			return (AssignmentSubmission) super.editResource(id);
 		}
 
-		public void commit(AssignmentSubmission edit)
+		public void commit(final AssignmentSubmission edit)
 		{
-			super.commitResource(edit);
+			// run our save code in a transaction that will restart on deadlock
+			// if deadlock retry fails, or any other error occurs, a runtime error will be thrown
+			m_sqlService.transact(new Runnable()
+			{
+				public void run()
+				{
+					saveSubmissionTx(edit);
+				}
+			}, "Assignment:" + edit.getId());
+		}
+		
+		/**
+		 * The transaction code to save an assignment submission.
+		 * 
+		 * @param edit
+		 *        The assignment to save.
+		 */
+		protected void saveSubmissionTx(AssignmentSubmission edit)
+		{
+			// TO-DO
 		}
 
 		public void cancel(AssignmentSubmission edit)
@@ -404,6 +602,11 @@ public class DbAssignmentService extends BaseAssignmentService
 		public void remove(AssignmentSubmission edit)
 		{
 			super.removeResource(edit);
+		}
+		
+		public Object readSqlResultRecord(ResultSet result)
+		{
+			return null;
 		}
 
 	} // DbCachedAssignmentSubmissionStorage
