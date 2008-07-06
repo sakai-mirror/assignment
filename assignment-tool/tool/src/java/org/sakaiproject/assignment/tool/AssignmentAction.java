@@ -610,6 +610,9 @@ public class AssignmentAction extends PagedResourceActionII
 
 	/** The configuration choice of with grading option or not */
 	private static final String WITH_GRADES = "with_grades";
+	
+	/** The configuration choice of showing or hiding the number of submissions column  */
+	private static final String SHOW_NUMBER_SUBMISSION_COLUMN = "showNumSubmissionColumn";
 
 	/** The alert flag when doing global navigation from improper mode */
 	private static final String ALERT_GLOBAL_NAVIGATION = "alert_global_navigation";
@@ -1276,6 +1279,9 @@ public class AssignmentAction extends PagedResourceActionII
 		// the type int for non-electronic submission
 		context.put("typeNonElectronic", Integer.valueOf(Assignment.NON_ELECTRONIC_ASSIGNMENT_SUBMISSION));
 
+		// show or hide the number of submission column
+		context.put(SHOW_NUMBER_SUBMISSION_COLUMN, state.getAttribute(SHOW_NUMBER_SUBMISSION_COLUMN));
+		
 		String template = (String) getContext(data).get("template");
 		return template + TEMPLATE_LIST_ASSIGNMENTS;
 
@@ -1743,6 +1749,7 @@ public class AssignmentAction extends PagedResourceActionII
 	protected String build_instructor_grade_submission_context(VelocityPortlet portlet, Context context, RunData data,
 			SessionState state)
 	{
+		String submissionId="";
 		int gradeType = -1;
 
 		// need to show the alert for grading drafts?
@@ -1773,6 +1780,7 @@ public class AssignmentAction extends PagedResourceActionII
 			AssignmentSubmission s = AssignmentService.getSubmission((String) state.getAttribute(GRADE_SUBMISSION_SUBMISSION_ID));
 			if (s != null)
 			{
+				submissionId = s.getId();
 				context.put("submission", s);
 				
 				// show alert if student is working on a draft
@@ -1885,10 +1893,75 @@ public class AssignmentAction extends PagedResourceActionII
 		}
 		context.put("alertGradeDraft", Boolean.valueOf(addGradeDraftAlert));
 		
+		// for the navigation purpose
+		List<UserSubmission> userSubmissions = state.getAttribute(USER_SUBMISSIONS) != null ? (List<UserSubmission>) state.getAttribute(USER_SUBMISSIONS):null;
+		if (userSubmissions != null)
+		{
+			for (int i = 0; i < userSubmissions.size(); i++)
+			{
+				if (((UserSubmission) userSubmissions.get(i)).getSubmission().getId().equals(submissionId))
+				{
+					boolean goPT = false;
+					boolean goNT = false;
+					if ((i - 1) >= 0)
+					{
+						goPT = true;
+					}
+					if ((i + 1) < userSubmissions.size())
+					{
+						goNT = true;
+					}
+					context.put("goPTButton", new Boolean(goPT));
+					context.put("goNTButton", new Boolean(goNT));
+					
+					if (i>0)
+					{
+						// retrieve the previous submission id
+						context.put("prevSubmissionId", ((UserSubmission) userSubmissions.get(i-1)).getSubmission().getId());
+					}
+					
+					if (i < userSubmissions.size() - 1)
+					{
+						// retrieve the next submission id
+						context.put("nextSubmissionId", ((UserSubmission) userSubmissions.get(i+1)).getSubmission().getId());
+					}
+				}
+			}
+		}
 		String template = (String) getContext(data).get("template");
 		return template + TEMPLATE_INSTRUCTOR_GRADE_SUBMISSION;
 
 	} // build_instructor_grade_submission_context
+	
+	/**
+	 * Responding to the request of going to next submission
+	 */
+	public void doNext_submission(RunData rundata, Context context)
+	{
+		navigateToSubmission(rundata, "nextSubmissionId");
+
+	} // doNext_submission
+
+
+	private void navigateToSubmission(RunData rundata, String paramString) {
+		ParameterParser params = rundata.getParameters();
+		SessionState state = ((JetspeedRunData) rundata).getPortletSessionState(((JetspeedRunData) rundata).getJs_peid());
+
+		String submissionId = StringUtil.trimToNull(params.getString(paramString));
+		if (submissionId != null)
+		{
+			state.setAttribute(GRADE_SUBMISSION_SUBMISSION_ID, submissionId);
+		}
+	}
+
+	/**
+	 * Responding to the request of going to previous submission
+	 */
+	public void doPrev_submission(RunData rundata, Context context)
+	{
+		navigateToSubmission(rundata, "prevSubmissionId");
+
+	} // doPrev_submission
 
 	/**
 	 * Parse time value and put corresponding values into state
@@ -2123,7 +2196,7 @@ public class AssignmentAction extends PagedResourceActionII
 				updateNonElectronicSubmissions(state, assignment);
 			}
 			
-			List userSubmissions = prepPage(state);
+			List<UserSubmission> userSubmissions = prepPage(state);
 			state.setAttribute(USER_SUBMISSIONS, userSubmissions);
 			context.put("userSubmissions", state.getAttribute(USER_SUBMISSIONS));
 		}
@@ -5834,20 +5907,21 @@ public class AssignmentAction extends PagedResourceActionII
 				
 				// remove related announcement if there is one
 				removeAnnouncement(state, pEdit);
-
-				if (aEdit.getContent().getTypeOfSubmission() == Assignment.NON_ELECTRONIC_ASSIGNMENT_SUBMISSION)
-				{					
-					// remove assignment submissions, assignment content and assignment
-					deleteAssignmentObjects(state, aEdit, true);
-
-				}
-				else
+				
+				if (ServerConfigurationService.getBoolean("assignment.delete.cascade.submission", false))
 				{
-					// for assignment with other type of submission
-					if (!AssignmentService.getSubmissions(aEdit).iterator().hasNext())
-					{
-						// there is no submission to this assignment yet, delete the assignment and assignment content record completely
-						deleteAssignmentObjects(state, aEdit, false);
+					// delete assignment and its submissions altogether
+					deleteAssignmentObjects(state, aEdit, true);
+					
+				} else
+				{
+					if (aEdit.getContent().getTypeOfSubmission() == Assignment.NON_ELECTRONIC_ASSIGNMENT_SUBMISSION 
+							|| !AssignmentService.getSubmissions(aEdit).iterator().hasNext())
+					{					
+						// remove assignment submissions, assignment content and assignment for non electronic assignment
+						// or there is no submission to this assignment yet
+						deleteAssignmentObjects(state, aEdit, true);
+	
 					}
 					else
 					{
@@ -6502,7 +6576,12 @@ public class AssignmentAction extends PagedResourceActionII
 	public void doAssignment_form(RunData data)
 	{
 		ParameterParser params = data.getParameters();
+		//Added by Branden Visser: Grab the submission id from the query string
+		SessionState state = ((JetspeedRunData) data).getPortletSessionState(((JetspeedRunData) data).getJs_peid());
+		String actualGradeSubmissionId = (String) params.getString("submissionId");
 
+		Log.debug("chef", "doAssignment_form(): actualGradeSubmissionId = " + actualGradeSubmissionId);
+		
 		String option = (String) params.getString("option");
 		if (option != null)
 		{
@@ -6553,18 +6632,27 @@ public class AssignmentAction extends PagedResourceActionII
 			}
 			else if (option.equals("returngrade"))
 			{
-				// return grading
-				doReturn_grade_submission(data);
+				//Added by Branden Visser - Check that the state is consistent
+				if (checkSubmissionStateConsistency(state, actualGradeSubmissionId)) {
+					// return grading
+					doReturn_grade_submission(data);
+				}
 			}
 			else if (option.equals("savegrade"))
 			{
-				// save grading
-				doSave_grade_submission(data);
+				//Added by Branden Visser - Check that the state is consistent
+				if (checkSubmissionStateConsistency(state, actualGradeSubmissionId)) {
+					// save grading
+					doSave_grade_submission(data);
+				}
 			}
 			else if (option.equals("previewgrade"))
 			{
-				// preview grading
-				doPreview_grade_submission(data);
+				//Added by Branden Visser - Check that the state is consistent
+				if (checkSubmissionStateConsistency(state, actualGradeSubmissionId)) {
+					// preview grading
+					doPreview_grade_submission(data);
+				}
 			}
 			else if (option.equals("cancelgrade"))
 			{
@@ -6615,6 +6703,18 @@ public class AssignmentAction extends PagedResourceActionII
 
 
 		}
+	}
+	
+	// added by Branden Visser - Check that the state is consistent
+	boolean checkSubmissionStateConsistency(SessionState state, String actualGradeSubmissionId) {
+		String stateGradeSubmissionId = (String)state.getAttribute(GRADE_SUBMISSION_SUBMISSION_ID);
+		Log.debug("chef", "doAssignment_form(): stateGradeSubmissionId = " + stateGradeSubmissionId);
+		boolean is_good = stateGradeSubmissionId.equals(actualGradeSubmissionId);
+		if (!is_good) {
+		    Log.warn("chef", "doAssignment_form(): State is inconsistent! Aborting grade save.");
+		    addAlert(state, rb.getString("grading.alert.multiTab"));
+		}
+		return is_good;
 	}
 
 	/**
@@ -7058,6 +7158,19 @@ public class AssignmentAction extends PagedResourceActionII
 				withGrades = Boolean.FALSE.toString();
 			}
 			state.setAttribute(WITH_GRADES, new Boolean(withGrades));
+		}
+		
+		// whether to display the number of submission/ungraded submission column
+		// default to show
+		if (state.getAttribute(SHOW_NUMBER_SUBMISSION_COLUMN) == null)
+		{
+			PortletConfig config = portlet.getPortletConfig();
+			String value = StringUtil.trimToNull(config.getInitParameter(SHOW_NUMBER_SUBMISSION_COLUMN));
+			if (value == null)
+			{
+				value = Boolean.TRUE.toString();
+			}
+			state.setAttribute(SHOW_NUMBER_SUBMISSION_COLUMN, new Boolean(value));
 		}
 		
 		// whether the choice of emails instructor submission notification is available in the installation
@@ -7669,11 +7782,11 @@ public class AssignmentAction extends PagedResourceActionII
 					
 					if (t1!=null && t2!=null && t1.before(t2))
 					{
-						result = -1;
+						result = 1;
 					}
 					else
 					{
-						result = 1;
+						result = -1;
 					}
 				}				
 				else if ( s1 == 0 && s2 > 0 ) // order has not been set on this object, so put it at the bottom of the list
