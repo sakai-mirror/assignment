@@ -1,5 +1,5 @@
 -----------------------------------------------------------------------------
--- ASSIGNMENT_ASSIGNMENT
+-- ASSIGNMENT_ASSIGNMENT_T
 -----------------------------------------------------------------------------
 
 CREATE TABLE ASSIGNMENT_ASSIGNMENT_T
@@ -49,7 +49,31 @@ CREATE INDEX ASSIGNMENT_ASSIGNMENT_CONTEXT ON ASSIGNMENT_ASSIGNMENT_T
 );
 
 -----------------------------------------------------------------------------
--- ASSIGNMENT_SUBMISSION
+-- ASSIGNMENT_ATTACHMENT_T
+-----------------------------------------------------------------------------
+-- The ASSIGNMENT TABLE FOR ALL ATTACHMENTS, INCLUDING ASSIGNMENT ATTACHMENTS(ATTACH_CATEGORY = 0),
+-- SUBMISSION ATTACHMENTS(ATTACH_CATEGORY = 1), and  FEEDBACK ATTACHMENTS(ATTACH_CATEGORY = 2).
+-----------------------------------------------------------------------------
+
+CREATE TABLE ASSIGNMENT_ATTACHEMTN_T
+(
+	ATTACHMENT_ID								VARCHAR (99)	NOT NULL,
+    ATTACH_TO_ID 								VARCHAR (99) 	NOT NULL,
+    ATTACH_CATEGORY								CHAR(1)			NOT NULL
+    												CHECK (USED_FOR IN (0, 1, 2))
+);
+
+CREATE UNIQUE INDEX ASSIGNMENT_ATTACHMENT_INDEX ON ASSIGNMENT_ATTACHMENT_T
+(
+	ATTACHMENT_ID
+);
+
+CREATE INDEX ASSIGNMENT_TO_ID_CONTEXT ON ASSIGNMENT_ATTACHMENT_T
+(
+	ATTACH_TO_ID
+);
+-----------------------------------------------------------------------------
+-- ASSIGNMENT_SUBMISSION_T
 -----------------------------------------------------------------------------
 
 CREATE TABLE ASSIGNMENT_SUBMISSION_T
