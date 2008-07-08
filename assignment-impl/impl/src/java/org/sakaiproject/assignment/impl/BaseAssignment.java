@@ -1,5 +1,6 @@
 package org.sakaiproject.assignment.impl;
 
+import java.text.DateFormat;
 import java.util.Collection;
 import java.util.Date;
 import java.util.Iterator;
@@ -56,27 +57,29 @@ public class BaseAssignment implements Assignment, AttachmentContainer
 	/** the resource bundle */
 	private static ResourceLoader rb = new ResourceLoader("assignment");
 	
+	DateFormat df = DateFormat.getDateTimeInstance(DateFormat.MEDIUM, DateFormat.SHORT, rb.getLocale());
+	
 	protected ResourcePropertiesEdit m_properties;
 
 	private BaseAssignmentService assignmentService = null;
 	
 	protected String m_id;
 
-	protected String m_assignmentContent;
-
 	protected String m_title;
 
 	protected String m_context;
+	
+	protected boolean m_isSiteRange;
 
 	protected String m_section;
 
-	protected Time m_openTime;
+	protected Date m_openDate;
 
-	protected Time m_dueTime;
+	protected Date m_dueDate;
 
-	protected Time m_closeTime;
+	protected Date m_closeDate;
 
-	protected Time m_dropDeadTime;
+	protected Date m_dropDeadDate;
 
 	protected List m_authors;
 
@@ -116,9 +119,9 @@ public class BaseAssignment implements Assignment, AttachmentContainer
 	
 	protected boolean m_allowStudentViewReport;
 
-	protected Time m_timeCreated;
+	protected Date m_dateCreated;
 
-	protected Time m_timeLastModified;
+	protected Date m_dateLastModified;
 	
 	/******************************************************************************************************************************************************************************************************************************************************
 	 * AttachmentContainer Implementation
@@ -191,7 +194,18 @@ public class BaseAssignment implements Assignment, AttachmentContainer
 						boolean scheduleDueDate, int emailNotificationOption, int resubmissionMaxNumber, Date resubmissionCloseDate, 
 						String associatedGradebookEntry, boolean honorPledge)
 	{
-		// TO-DO
+		// setup for properties
+		m_properties = new BaseResourcePropertiesEdit();
+		// setup for properties, but mark them lazy since we have not yet
+		// established them from data
+		((BaseResourcePropertiesEdit) m_properties).setLazy(true);
+
+		m_id = id;
+		m_context = context;
+		m_isSiteRange = isSiteRange;
+		m_openDate = openDate;
+		
+		
 	}
 	
 	/**
@@ -204,7 +218,6 @@ public class BaseAssignment implements Assignment, AttachmentContainer
 		m_properties = new BaseResourcePropertiesEdit();
 		AssignmentUtil.addLiveProperties(m_properties);
 		m_id = id;
-		m_assignmentContent = "";
 		m_title = "";
 		m_context = context;
 		m_section = "";
@@ -220,8 +233,8 @@ public class BaseAssignment implements Assignment, AttachmentContainer
 		m_typeOfSubmission = AssignmentConstants.ASSIGNMENT_SUBMISSION_TYPE_NOT_SET;
 		m_typeOfGrade = AssignmentConstants.GRADE_TYPE_NOT_SET;
 		m_maxGradePoint = 0;
-		m_timeCreated = TimeService.newTime();
-		m_timeLastModified = TimeService.newTime();
+		m_dateCreated = new Date();
+		m_dateLastModified = new Date();
 	}
 	
 	/**
@@ -267,15 +280,10 @@ public class BaseAssignment implements Assignment, AttachmentContainer
 		
 			M_log.warn(this + " BASE ASSIGNMENT : STORAGE CONSTRUCTOR : READ THROUGH REG ATTS");
 
-		m_assignmentContent = el.getAttribute("assignmentcontent");
-		
-			M_log.warn(this + " BASE ASSIGNMENT : STORAGE CONSTRUCTOR : CONTENT ID : "
-					+ m_assignmentContent);
-
-		m_openTime = AssignmentUtil.getTimeObject(el.getAttribute("opendate"));
-		m_dueTime = AssignmentUtil.getTimeObject(el.getAttribute("duedate"));
-		m_dropDeadTime = AssignmentUtil.getTimeObject(el.getAttribute("dropdeaddate"));
-		m_closeTime = AssignmentUtil.getTimeObject(el.getAttribute("closedate"));
+		m_openDate = AssignmentUtil.getDateObject(el.getAttribute("opendate"));
+		m_dueDate = AssignmentUtil.getDateObject(el.getAttribute("duedate"));
+		m_dropDeadDate = AssignmentUtil.getDateObject(el.getAttribute("dropdeaddate"));
+		m_closeDate = AssignmentUtil.getDateObject(el.getAttribute("closedate"));
 		m_context = el.getAttribute("context");
 		m_position_order = 0; // prevents null pointer if there is no position_order defined as well as helps with the sorting
 		try
@@ -378,8 +386,8 @@ public class BaseAssignment implements Assignment, AttachmentContainer
 		m_allowReviewService = AssignmentUtil.getBool(el.getAttribute("allowreview"));
 		m_allowStudentViewReport = AssignmentUtil.getBool(el.getAttribute("allowstudentview"));
 		
-		m_timeCreated = AssignmentUtil.getTimeObject(el.getAttribute("datecreated"));
-		m_timeLastModified = AssignmentUtil.getTimeObject(el.getAttribute("lastmod"));
+		m_dateCreated = AssignmentUtil.getDateObject(el.getAttribute("datecreated"));
+		m_dateLastModified = AssignmentUtil.getDateObject(el.getAttribute("lastmod"));
 
 		m_instructions = FormattedText.decodeFormattedTextAttribute(el, "instructions");
 
@@ -514,15 +522,10 @@ public class BaseAssignment implements Assignment, AttachmentContainer
 						
 							M_log.warn(this + " getContentHandler: READ THROUGH REG ATTS");
 
-						m_assignmentContent = attributes.getValue("assignmentcontent");
-						
-							M_log.warn(this + " getContentHandler: STORAGE CONSTRUCTOR : CONTENT ID : "
-									+ m_assignmentContent);
-
-						m_openTime = AssignmentUtil.getTimeObject(attributes.getValue("opendate"));
-						m_dueTime = AssignmentUtil.getTimeObject(attributes.getValue("duedate"));
-						m_dropDeadTime = AssignmentUtil.getTimeObject(attributes.getValue("dropdeaddate"));
-						m_closeTime = AssignmentUtil.getTimeObject(attributes.getValue("closedate"));
+						m_openDate = AssignmentUtil.getDateObject(attributes.getValue("opendate"));
+						m_dueDate = AssignmentUtil.getDateObject(attributes.getValue("duedate"));
+						m_dropDeadDate = AssignmentUtil.getDateObject(attributes.getValue("dropdeaddate"));
+						m_closeDate = AssignmentUtil.getDateObject(attributes.getValue("closedate"));
 						m_context = attributes.getValue("context");
 						m_position_order = 0; // prevents null pointer if there is no position_order defined as well as helps with the sorting
 						try
@@ -616,12 +619,11 @@ public class BaseAssignment implements Assignment, AttachmentContainer
 		assignment.setAttribute("title", m_title);
 		assignment.setAttribute("section", m_section);
 		assignment.setAttribute("context", m_context);
-		assignment.setAttribute("assignmentcontent", m_assignmentContent);
 		assignment.setAttribute("draft", AssignmentUtil.getBoolString(m_draft));
-		assignment.setAttribute("opendate", AssignmentUtil.getTimeString(m_openTime));
-		assignment.setAttribute("duedate", AssignmentUtil.getTimeString(m_dueTime));
-		assignment.setAttribute("dropdeaddate", AssignmentUtil.getTimeString(m_dropDeadTime));
-		assignment.setAttribute("closedate", AssignmentUtil.getTimeString(m_closeTime));
+		assignment.setAttribute("opendate", m_openDate.toString());
+		assignment.setAttribute("duedate", m_dueDate.toString());
+		assignment.setAttribute("dropdeaddate", m_dropDeadDate.toString());
+		assignment.setAttribute("closedate", m_closeDate.toString());
 		assignment.setAttribute("position_order", new Long(m_position_order).toString().trim());
 		
 		assignment.setAttribute("groupproject", AssignmentUtil.getBoolString(m_groupProject));
@@ -636,8 +638,8 @@ public class BaseAssignment implements Assignment, AttachmentContainer
 		assignment.setAttribute("submissiontype", String.valueOf(m_typeOfSubmission));
 		assignment.setAttribute("typeofgrade", String.valueOf(m_typeOfGrade));
 		assignment.setAttribute("scaled_maxgradepoint", String.valueOf(m_maxGradePoint));
-		assignment.setAttribute("datecreated", AssignmentUtil.getTimeString(m_timeCreated));
-		assignment.setAttribute("lastmod", AssignmentUtil.getTimeString(m_timeLastModified));
+		assignment.setAttribute("datecreated", m_dateCreated.toString());
+		assignment.setAttribute("lastmod", m_dateLastModified.toString());
 
 		M_log.warn(this + " BASE CONTENT : TOXML : SAVED REGULAR PROPERTIES");
 
@@ -716,15 +718,14 @@ public class BaseAssignment implements Assignment, AttachmentContainer
 		if (assignment != null)
 		{
 			m_id = assignment.getId();
-			m_assignmentContent = assignment.getContentReference();
 			m_authors = assignment.getAuthors();
 			m_title = assignment.getTitle();
 			m_context = assignment.getContext();
 			m_section = assignment.getSection();
-			m_openTime = assignment.getOpenTime();
-			m_dueTime = assignment.getDueTime();
-			m_closeTime = assignment.getCloseTime();
-			m_dropDeadTime = assignment.getDropDeadTime();
+			m_openDate = assignment.getOpenDate();
+			m_dueDate = assignment.getDueDate();
+			m_closeDate = assignment.getCloseDate();
+			m_dropDeadDate = assignment.getDropDeadDate();
 			m_draft = assignment.getDraft();
 			m_position_order = 0;
 			try
@@ -752,8 +753,8 @@ public class BaseAssignment implements Assignment, AttachmentContainer
 			m_allowReviewService = assignment.getAllowReviewService();
 			m_allowStudentViewReport = assignment.getAllowStudentViewReport();
 			
-			m_timeCreated = assignment.getTimeCreated();
-			m_timeLastModified = assignment.getTimeLastModified();
+			m_dateCreated = assignment.getDateCreated();
+			m_dateLastModified = assignment.getDateLastModified();
 			m_properties = new BaseResourcePropertiesEdit();
 			m_properties.addAll(assignment.getProperties());
 		}
@@ -879,62 +880,38 @@ public class BaseAssignment implements Assignment, AttachmentContainer
 	 */
 	public String getStatus()
 	{
-		Time currentTime = TimeService.newTime();
+		Date currentDate = new Date();
 		
 		if (this.getDraft())
 			return rb.getString("gen.dra1");
-		else if (this.getOpenTime().after(currentTime))
+		else if (this.getOpenDate().after(currentDate))
 			return rb.getString("gen.notope");
-		else if (this.getDueTime().after(currentTime))
+		else if (this.getDueDate().after(currentDate))
 			return rb.getString("gen.open");
-		else if ((this.getCloseTime() != null) && (this.getCloseTime().before(currentTime)))
+		else if ((this.getCloseDate() != null) && (this.getCloseDate().before(currentDate)))
 			return rb.getString("gen.closed");
 		else
 			return rb.getString("gen.due1");
 	}
 
 	/**
-	 * Access the time that this object was created.
+	 * Access the date that this object was created.
 	 * 
-	 * @return The Time object representing the time of creation.
+	 * @return The Date object representing the time of creation.
 	 */
-	public Time getTimeCreated()
+	public Date getDateCreated()
 	{
-		try
-		{
-			return m_properties.getTimeProperty(ResourceProperties.PROP_CREATION_DATE);
-		}
-		catch (EntityPropertyNotDefinedException e)
-		{
-			M_log.warn(this + ":getTimeCreated() no time property defined " + e.getMessage());
-		}
-		catch (EntityPropertyTypeException e)
-		{
-			M_log.warn(this + ":getTimeCreated() no time property defined " + e.getMessage());
-		}
-		return null;
+		return m_dateCreated;
 	}
 
 	/**
-	 * Access the time of last modificaiton.
+	 * Access the date of last modification.
 	 * 
-	 * @return The Time of last modification.
+	 * @return The Date of last modification.
 	 */
-	public Time getTimeLastModified()
+	public Date getDateLastModified()
 	{
-		try
-		{
-			return m_properties.getTimeProperty(ResourceProperties.PROP_MODIFIED_DATE);
-		}
-		catch (EntityPropertyNotDefinedException e)
-		{
-			M_log.warn(this + ":getTimeLastModified() no time property defined " + e.getMessage());
-		}
-		catch (EntityPropertyTypeException e)
-		{
-			M_log.warn(this + ":getTimeLastModified() no time property defined " + e.getMessage());
-		}
-		return null;
+		return m_dateLastModified;
 	}
 
 	/**
@@ -982,89 +959,89 @@ public class BaseAssignment implements Assignment, AttachmentContainer
 	/**
 	 * Access the first time at which the assignment can be viewed; may be null.
 	 * 
-	 * @return The Time at which the assignment is due, or null if unspecified.
+	 * @return The Date at which the assignment is due, or null if unspecified.
 	 */
-	public Time getOpenTime()
+	public Date getOpenDate()
 	{
-		return m_openTime;
+		return m_openDate;
 	}
 
   /**
 	* @inheritDoc
 	*/
-	public String getOpenTimeString()
+	public String getOpenDateString()
 	{
-		if ( m_openTime == null )
+		if ( m_openDate == null )
 			return "";
 		else
-			return m_openTime.toStringLocalFull();
+			return df.format(m_openDate);
 	}
 
 	/**
-	 * Access the time at which the assignment is due; may be null.
+	 * Access the date at which the assignment is due; may be null.
 	 * 
-	 * @return The Time at which the Assignment is due, or null if unspecified.
+	 * @return The Date at which the Assignment is due, or null if unspecified.
 	 */
-	public Time getDueTime()
+	public Date getDueDate()
 	{
-		return m_dueTime;
+		return m_dueDate;
 	}
 
   /**
 	* @inheritDoc
 	*/
-	public String getDueTimeString()
+	public String getDueDateString()
 	{
-		if ( m_dueTime == null )
+		if ( m_dueDate == null )
 			return "";
 		else
-			return m_dueTime.toStringLocalFull();
+			return df.format(m_dueDate);
 	}
 
 	/**
 	 * Access the drop dead time after which responses to this assignment are considered late; may be null.
 	 * 
-	 * @return The Time object representing the drop dead time, or null if unspecified.
+	 * @return The Date object representing the drop dead time, or null if unspecified.
 	 */
-	public Time getDropDeadTime()
+	public Date getDropDeadDate()
 	{
-		return m_dropDeadTime;
+		return m_dropDeadDate;
 	}
 
   /**
 	* @inheritDoc
 	*/
-	public String getDropDeadTimeString()
+	public String getDropDeadDateString()
 	{
-		if ( m_dropDeadTime == null )
+		if ( m_dropDeadDate == null )
 			return "";
 		else
-			return m_dropDeadTime.toStringLocalFull();
+			return df.format(m_dropDeadDate);
 	}
 
 	/**
-	 * Access the close time after which this assignment can no longer be viewed, and after which submissions will not be accepted. May be null.
+	 * Access the close date after which this assignment can no longer be viewed, and after which submissions will not be accepted. May be null.
 	 * 
-	 * @return The Time after which the Assignment is closed, or null if unspecified.
+	 * @return The Date after which the Assignment is closed, or null if unspecified.
 	 */
-	public Time getCloseTime()
+	public Date getCloseDate()
 	{
-		if (m_closeTime == null)
+		if (m_closeDate == null)
 		{
-			m_closeTime = m_dueTime;
+			m_closeDate = m_dueDate;
 		}
-		return m_closeTime;
+		return m_closeDate;
 	}
 
   /**
 	* @inheritDoc
 	*/
-	public String getCloseTimeString()
+	public String getCloseDateString()
 	{
-		if ( m_closeTime == null )
+		if ( m_closeDate == null )
 			return "";
 		else
-			return m_closeTime.toStringLocalFull();
+			return df.format(m_closeDate);
 	}
 
 	/**
@@ -1464,11 +1441,11 @@ public class BaseAssignment implements Assignment, AttachmentContainer
 	 * Set the time last modified.
 	 * 
 	 * @param lastmod -
-	 *        The Time at which the Content was last modified.
+	 *        The Date at which the Content was last modified.
 	 */
-	public void setTimeLastModified(Time lastmod)
+	public void setDateLastModified(Date lastmod)
 	{
-		if (lastmod != null) m_timeLastModified = lastmod;
+		if (lastmod != null) m_dateLastModified = lastmod;
 	}
 
 	/**
@@ -1511,6 +1488,7 @@ public class BaseAssignment implements Assignment, AttachmentContainer
 	protected boolean m_active = false;
 
 	/**
+	 * @deprecated
 	 * Set the reference of the AssignmentContent of this Assignment.
 	 * 
 	 * @param String -
@@ -1518,10 +1496,11 @@ public class BaseAssignment implements Assignment, AttachmentContainer
 	 */
 	public void setContentReference(String contentReference)
 	{
-		if (contentReference != null) m_assignmentContent = contentReference;
+		
 	}
 
 	/**
+	 * @deprecated
 	 * Set the AssignmentContent of this Assignment.
 	 * 
 	 * @param content -
@@ -1529,7 +1508,7 @@ public class BaseAssignment implements Assignment, AttachmentContainer
 	 */
 	public void setContent(AssignmentContent content)
 	{
-		if (content != null) m_assignmentContent = content.getReference();
+		
 	}
 
 	/**
@@ -1546,45 +1525,45 @@ public class BaseAssignment implements Assignment, AttachmentContainer
 	/**
 	 * Set the first time at which the assignment can be viewed; may be null.
 	 * 
-	 * @param opentime -
-	 *        The Time at which the Assignment opens.
+	 * @param openDate -
+	 *        The Date at which the Assignment opens.
 	 */
-	public void setOpenTime(Time opentime)
+	public void setOpenDate(Date openDate)
 	{
-		m_openTime = opentime;
+		m_openDate = openDate;
 	}
 
 	/**
 	 * Set the time at which the assignment is due; may be null.
 	 * 
-	 * @param dueTime -
-	 *        The Time at which the Assignment is due.
+	 * @param dueDate -
+	 *        The Date at which the Assignment is due.
 	 */
-	public void setDueTime(Time duetime)
+	public void setDueDate(Date dueDate)
 	{
-		m_dueTime = duetime;
+		m_dueDate = dueDate;
 	}
 
 	/**
 	 * Set the drop dead time after which responses to this assignment are considered late; may be null.
 	 * 
 	 * @param dropdeadtime -
-	 *        The Time object representing the drop dead time.
+	 *        The Date object representing the drop dead time.
 	 */
-	public void setDropDeadTime(Time dropdeadtime)
+	public void setDropDeadDate(Date dropdeadDate)
 	{
-		m_dropDeadTime = dropdeadtime;
+		m_dropDeadDate = dropdeadDate;
 	}
 
 	/**
 	 * Set the time after which this assignment can no longer be viewed, and after which submissions will not be accepted. May be null.
 	 * 
-	 * @param closetime -
-	 *        The Time after which the Assignment is closed, or null if unspecified.
+	 * @param closeDate -
+	 *        The Date after which the Assignment is closed, or null if unspecified.
 	 */
-	public void setCloseTime(Time closetime)
+	public void setCloseDate(Date closeDate)
 	{
-		m_closeTime = closetime;
+		m_closeDate = closeDate;
 	}
 
 	/**

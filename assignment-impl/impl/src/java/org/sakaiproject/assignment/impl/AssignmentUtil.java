@@ -1,5 +1,7 @@
 package org.sakaiproject.assignment.impl;
 
+import java.util.Date;
+
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.sakaiproject.entity.api.ResourceProperties;
@@ -17,6 +19,7 @@ public class AssignmentUtil {
 
 	/** Our logger. */
 	private static Log M_log = LogFactory.getLog(AssignmentUtil.class);
+	
 	/**
 	 * Utility function which converts a string into a chef time object.
 	 * 
@@ -51,19 +54,29 @@ public class AssignmentUtil {
 		return aTime;
 	}
 	
-
 	/**
-	 * Utility function which returns the string representation of the long value of the time object.
+	 * Utility function which converts a string into a Date object.
 	 * 
-	 * @param t -
-	 *        the Time object.
-	 * @return A String representation of the long value of the time object.
+	 * @param dateString -
+	 *        String version of a date in long format, representing the standard ms since the epoch, Jan 1, 1970 00:00:00.
+	 * @return A chef Time object.
 	 */
-	public static String getTimeString(Time t)
+	public static Date getDateObject(String dateString)
 	{
-		String retVal = "";
-		if (t != null) retVal = t.toString();
-		return retVal;
+		Date aDate = null;
+		dateString = StringUtil.trimToNull(dateString);
+		if (dateString != null)
+		{
+			try
+			{
+				aDate = new Date(Long.parseLong(dateString));
+			}
+			catch (Exception e)
+			{
+				M_log.warn("AssignmentUtil:geDateObject " + e.getMessage());
+			}
+		}
+		return aDate;
 	}
 	
 	/**

@@ -68,7 +68,7 @@ public class DbAssignmentService extends BaseAssignmentService
 	protected boolean m_locksInDb = true;
 
 	/** assignment table fields. */
-	protected static final String[] m_assignmentFields = { "CONTEXT", "IS_SITE_RANGE", "OPEN_DATE", "DUE_DATE", "CLOSE_DATE", "CREATED_ON", "CREATED_BY", "MODIFIED_ON", "MODIFIED_BY", "GRADE_TYPE", "SUBMISSION_TYPE", "MAX_POINT", "DRAFT", "DELETED", "INSTRUCTION", "ANNOUNCE_OPEN_DATE", "SCHEDULE_DUE_DATE", "EMAIL_NOTIFICATION_OPTION", "RESUBMISSION_MAX_NUMBER", "RESUBMISSION_CLOSE_DATE", "ASSOCIATED_GRADEBOOK_ENTRY", "HONOR_PLEDGE"};
+	protected static final String[] m_assignmentFields = { "ASSIGNMENT_ID", "CONTEXT", "IS_SITE_RANGE", "OPEN_DATE", "DUE_DATE", "CLOSE_DATE", "CREATED_ON", "CREATED_BY", "MODIFIED_ON", "MODIFIED_BY", "GRADE_TYPE", "SUBMISSION_TYPE", "MAX_POINT", "DRAFT", "DELETED", "INSTRUCTION", "ANNOUNCE_OPEN_DATE", "SCHEDULE_DUE_DATE", "EMAIL_NOTIFICATION_OPTION", "RESUBMISSION_MAX_NUMBER", "RESUBMISSION_CLOSE_DATE", "ASSOCIATED_GRADEBOOK_ENTRY", "HONOR_PLEDGE"};
 	
 	/** assignment property table*/
 	protected static final String m_assignmentPropTableName = "ASSIGNMENT_PROPERTY";

@@ -27,6 +27,7 @@ import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.text.Collator;
+import java.text.DateFormat;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
@@ -138,6 +139,8 @@ import org.sakaiproject.contentreview.service.ContentReviewService;
 public class AssignmentAction extends PagedResourceActionII
 {
 	private static ResourceLoader rb = new ResourceLoader("assignment");
+	
+	DateFormat df = DateFormat.getDateTimeInstance(DateFormat.MEDIUM, DateFormat.SHORT, rb.getLocale());
 	
 	/** Our logger. */
 	private static Log M_log = LogFactory.getLog(AssignmentAction.class);
@@ -467,7 +470,7 @@ public class AssignmentAction extends PagedResourceActionII
 	private static final String NEW_ASSIGNMENT_YEAR_RANGE_FROM = "new_assignment_year_range_from";
 	private static final String NEW_ASSIGNMENT_YEAR_RANGE_TO = "new_assignment_year_range_to";
 	
-	// submission level of resubmit due time
+	// submission level of resubmit due date
 	private static final String ALLOW_RESUBMIT_CLOSEMONTH = "allow_resubmit_closeMonth";
 	private static final String ALLOW_RESUBMIT_CLOSEDAY = "allow_resubmit_closeDay";
 	private static final String ALLOW_RESUBMIT_CLOSEYEAR = "allow_resubmit_closeYear";
@@ -991,9 +994,9 @@ public class AssignmentAction extends PagedResourceActionII
 			{
 				context.put("submitted", Boolean.valueOf(s.getSubmitted()));
 				context.put("submission_id", s.getId());
-				if (s.getTimeSubmitted() != null)
+				if (s.getDateSubmitted() != null)
 				{
-					context.put("submit_time", s.getTimeSubmitted().toStringLocalFull());
+					context.put("submit_time", df.format(s.getDateSubmitted()));
 				}
 				List attachments = s.getSubmittedAttachments();
 				if (attachments != null && attachments.size()>0)
@@ -1360,14 +1363,14 @@ public class AssignmentAction extends PagedResourceActionII
 		context.put("name_order", NEW_ASSIGNMENT_ORDER);
 
 		// set open time context variables
-		putTimePropertiesInContext(context, state, "Open", NEW_ASSIGNMENT_OPENMONTH, NEW_ASSIGNMENT_OPENDAY, NEW_ASSIGNMENT_OPENYEAR, NEW_ASSIGNMENT_OPENHOUR, NEW_ASSIGNMENT_OPENMIN, NEW_ASSIGNMENT_OPENAMPM);
+		putDatePropertiesInContext(context, state, "Open", NEW_ASSIGNMENT_OPENMONTH, NEW_ASSIGNMENT_OPENDAY, NEW_ASSIGNMENT_OPENYEAR, NEW_ASSIGNMENT_OPENHOUR, NEW_ASSIGNMENT_OPENMIN, NEW_ASSIGNMENT_OPENAMPM);
 		
-		// set due time context variables
-		putTimePropertiesInContext(context, state, "Due", NEW_ASSIGNMENT_DUEMONTH, NEW_ASSIGNMENT_DUEDAY, NEW_ASSIGNMENT_DUEYEAR, NEW_ASSIGNMENT_DUEHOUR, NEW_ASSIGNMENT_DUEMIN, NEW_ASSIGNMENT_DUEAMPM);
+		// set due date context variables
+		putDatePropertiesInContext(context, state, "Due", NEW_ASSIGNMENT_DUEMONTH, NEW_ASSIGNMENT_DUEDAY, NEW_ASSIGNMENT_DUEYEAR, NEW_ASSIGNMENT_DUEHOUR, NEW_ASSIGNMENT_DUEMIN, NEW_ASSIGNMENT_DUEAMPM);
 
 		context.put("name_EnableCloseDate", NEW_ASSIGNMENT_ENABLECLOSEDATE);
-		// set close time context variables
-		putTimePropertiesInContext(context, state, "Close", NEW_ASSIGNMENT_CLOSEMONTH, NEW_ASSIGNMENT_CLOSEDAY, NEW_ASSIGNMENT_CLOSEYEAR, NEW_ASSIGNMENT_CLOSEHOUR, NEW_ASSIGNMENT_CLOSEMIN, NEW_ASSIGNMENT_CLOSEAMPM);
+		// set close date context variables
+		putDatePropertiesInContext(context, state, "Close", NEW_ASSIGNMENT_CLOSEMONTH, NEW_ASSIGNMENT_CLOSEDAY, NEW_ASSIGNMENT_CLOSEYEAR, NEW_ASSIGNMENT_CLOSEHOUR, NEW_ASSIGNMENT_CLOSEMIN, NEW_ASSIGNMENT_CLOSEAMPM);
 
 		context.put("name_Section", NEW_ASSIGNMENT_SECTION);
 		context.put("name_SubmissionType", NEW_ASSIGNMENT_SUBMISSION_TYPE);
@@ -1595,10 +1598,10 @@ public class AssignmentAction extends PagedResourceActionII
 		context.put("name_order", NEW_ASSIGNMENT_ORDER);
 		context.put("value_position_order", (String) state.getAttribute(NEW_ASSIGNMENT_ORDER));
 
-		Time openTime = getOpenTime(state);
-		context.put("value_OpenDate", openTime);
+		Date openDate = getOpenDate(state);
+		context.put("value_OpenDate", openDate);
 
-		// due time
+		// due date
 		int dueMonth = ((Integer) state.getAttribute(NEW_ASSIGNMENT_DUEMONTH)).intValue();
 		int dueDay = ((Integer) state.getAttribute(NEW_ASSIGNMENT_DUEDAY)).intValue();
 		int dueYear = ((Integer) state.getAttribute(NEW_ASSIGNMENT_DUEYEAR)).intValue();
@@ -1616,7 +1619,7 @@ public class AssignmentAction extends PagedResourceActionII
 		Time dueTime = TimeService.newTimeLocal(dueYear, dueMonth, dueDay, dueHour, dueMin, 0, 0);
 		context.put("value_DueDate", dueTime);
 
-		// close time
+		// close date
 		Time closeTime = TimeService.newTime();
 		Boolean enableCloseDate = (Boolean) state.getAttribute(NEW_ASSIGNMENT_ENABLECLOSEDATE);
 		context.put("value_EnableCloseDate", enableCloseDate);
@@ -1781,7 +1784,7 @@ public class AssignmentAction extends PagedResourceActionII
 					&& ((s.getSubmittedText() != null && s.getSubmittedText().length()> 0) // has some text
 						|| (s.getSubmittedAttachments() != null && s.getSubmittedAttachments().size() > 0))) // has some attachment
 				{
-					if (s.getCloseTime().after(TimeService.newTime()))	 
+					if (s.getCloseDate().after(new Date()))	 
 					{
 						// not pass the close date yet
 						addGradeDraftAlert = true;
@@ -1812,28 +1815,28 @@ public class AssignmentAction extends PagedResourceActionII
 				if (state.getAttribute(AssignmentConstants.ALLOW_RESUBMIT_NUMBER) != null)
 				{
 					context.put("value_allowResubmitNumber", Integer.valueOf((String) state.getAttribute(AssignmentConstants.ALLOW_RESUBMIT_NUMBER)));
-					String allowResubmitTimeString =p.getProperty(AssignmentConstants.ALLOW_RESUBMIT_CLOSETIME);
-					if (allowResubmitTimeString == null)
+					String allowResubmitDateString =p.getProperty(AssignmentConstants.ALLOW_RESUBMIT_CLOSETIME);
+					if (allowResubmitDateString == null)
 					{
-						allowResubmitTimeString = (String) state.getAttribute(AssignmentConstants.ALLOW_RESUBMIT_CLOSETIME);
+						allowResubmitDateString = (String) state.getAttribute(AssignmentConstants.ALLOW_RESUBMIT_CLOSETIME);
 					}
-					Time allowResubmitTime = null;
-					if (allowResubmitTimeString != null)
+					Date allowResubmitDate = null;
+					if (allowResubmitDateString != null)
 					{
 						// if there is a local setting
-						allowResubmitTime = TimeService.newTime(Long.parseLong(allowResubmitTimeString));
+						allowResubmitDate = new Date(Long.parseLong(allowResubmitDateString));
 					}
 					else if (a != null)
 					{
-						// if there is no local setting, default to assignment close time
-						allowResubmitTime = a.getCloseTime();
+						// if there is no local setting, default to assignment close date
+						allowResubmitDate = a.getCloseDate();
 					}
 					
 					// set up related state variables
-					putTimePropertiesInState(state, allowResubmitTime, ALLOW_RESUBMIT_CLOSEMONTH, ALLOW_RESUBMIT_CLOSEDAY, ALLOW_RESUBMIT_CLOSEYEAR, ALLOW_RESUBMIT_CLOSEHOUR, ALLOW_RESUBMIT_CLOSEMIN, ALLOW_RESUBMIT_CLOSEAMPM);
+					putDatePropertiesInState(state, allowResubmitDate, ALLOW_RESUBMIT_CLOSEMONTH, ALLOW_RESUBMIT_CLOSEDAY, ALLOW_RESUBMIT_CLOSEYEAR, ALLOW_RESUBMIT_CLOSEHOUR, ALLOW_RESUBMIT_CLOSEMIN, ALLOW_RESUBMIT_CLOSEAMPM);
 					
 					// put allow resubmit time information into context
-					putTimePropertiesInContext(context, state, "Resubmit", ALLOW_RESUBMIT_CLOSEMONTH, ALLOW_RESUBMIT_CLOSEDAY, ALLOW_RESUBMIT_CLOSEYEAR, ALLOW_RESUBMIT_CLOSEHOUR, ALLOW_RESUBMIT_CLOSEMIN, ALLOW_RESUBMIT_CLOSEAMPM);
+					putDatePropertiesInContext(context, state, "Resubmit", ALLOW_RESUBMIT_CLOSEMONTH, ALLOW_RESUBMIT_CLOSEDAY, ALLOW_RESUBMIT_CLOSEYEAR, ALLOW_RESUBMIT_CLOSEHOUR, ALLOW_RESUBMIT_CLOSEMIN, ALLOW_RESUBMIT_CLOSEAMPM);
 				}
 			}
 		}
@@ -1957,12 +1960,9 @@ public class AssignmentAction extends PagedResourceActionII
 	} // doPrev_submission
 
 	/**
-	 * Parse time value and put corresponding values into state
-	 * @param context
+	 * Parse date value and put corresponding values into state
 	 * @param state
-	 * @param a
-	 * @param timeValue
-	 * @param timeName
+	 * @param dateValue
 	 * @param month
 	 * @param day
 	 * @param year
@@ -1970,9 +1970,9 @@ public class AssignmentAction extends PagedResourceActionII
 	 * @param min
 	 * @param ampm
 	 */
-	private void putTimePropertiesInState(SessionState state, Time timeValue,
+	private void putDatePropertiesInState(SessionState state, Date dateValue,
 											String month, String day, String year, String hour, String min, String ampm) {
-		TimeBreakdown bTime = timeValue.breakdownLocal();
+		TimeBreakdown bTime = TimeService.newTime(dateValue.getTime()).breakdownLocal();
 		state.setAttribute(month, new Integer(bTime.getMonth()));
 		state.setAttribute(day, new Integer(bTime.getDay()));
 		state.setAttribute(year, new Integer(bTime.getYear()));
@@ -2006,21 +2006,21 @@ public class AssignmentAction extends PagedResourceActionII
 	 * @param min
 	 * @param ampm
 	 */
-	private void putTimePropertiesInContext(Context context, SessionState state, String timeName,
+	private void putDatePropertiesInContext(Context context, SessionState state, String dateName,
 													String month, String day, String year, String hour, String min, String ampm) {
 		// get the submission level of close date setting
-		context.put("name_" + timeName + "Month", month);
-		context.put("name_" + timeName + "Day", day);
-		context.put("name_" + timeName + "Year", year);
-		context.put("name_" + timeName + "Hour", hour);
-		context.put("name_" + timeName + "Min", min);
-		context.put("name_" + timeName + "AMPM", ampm);
-		context.put("value_" + timeName + "Month", (Integer) state.getAttribute(month));
-		context.put("value_" + timeName + "Day", (Integer) state.getAttribute(day));
-		context.put("value_" + timeName + "Year", (Integer) state.getAttribute(year));
-		context.put("value_" + timeName + "AMPM", (String) state.getAttribute(ampm));
-		context.put("value_" + timeName + "Hour", (Integer) state.getAttribute(hour));
-		context.put("value_" + timeName + "Min", (Integer) state.getAttribute(min));
+		context.put("name_" + dateName + "Month", month);
+		context.put("name_" + dateName + "Day", day);
+		context.put("name_" + dateName + "Year", year);
+		context.put("name_" + dateName + "Hour", hour);
+		context.put("name_" + dateName + "Min", min);
+		context.put("name_" + dateName + "AMPM", ampm);
+		context.put("value_" + dateName + "Month", (Integer) state.getAttribute(month));
+		context.put("value_" + dateName + "Day", (Integer) state.getAttribute(day));
+		context.put("value_" + dateName + "Year", (Integer) state.getAttribute(year));
+		context.put("value_" + dateName + "AMPM", (String) state.getAttribute(ampm));
+		context.put("value_" + dateName + "Hour", (Integer) state.getAttribute(hour));
+		context.put("value_" + dateName + "Min", (Integer) state.getAttribute(min));
 	}
 
 	private List getPrevFeedbackAttachments(ResourceProperties p) {
@@ -2103,9 +2103,9 @@ public class AssignmentAction extends PagedResourceActionII
 		String closeTimeString =(String) state.getAttribute(AssignmentConstants.ALLOW_RESUBMIT_CLOSETIME);
 		if (closeTimeString != null)
 		{
-			// close time for resubmit
+			// close date for resubmit
 			Time time = TimeService.newTime(Long.parseLong(closeTimeString));
-			context.put("allowResubmitCloseTime", time.toStringLocalFull());
+			context.put("allowResubmitCloseDate", time.toStringLocalFull());
 		}
 
 		String template = (String) getContext(data).get("template");
@@ -2567,11 +2567,11 @@ public class AssignmentAction extends PagedResourceActionII
 	 * @param oldAssignment_title The original assignment title
 	 * @param newAssignment_title The updated assignment title
 	 * @param newAssignment_maxPoints The maximum point of the assignment
-	 * @param newAssignment_dueTime The due time of the assignment
+	 * @param newAssignment_dueTime The due date of the assignment
 	 * @param submissionRef Any submission grade need to be updated? Do bulk update if null
 	 * @param updateRemoveSubmission "update" for update submission;"remove" for remove submission
 	 */
-	protected void integrateGradebook (SessionState state, String assignmentRef, String associateGradebookAssignment, String addUpdateRemoveAssignment, String oldAssignment_title, String newAssignment_title, int newAssignment_maxPoints, Time newAssignment_dueTime, String submissionRef, String updateRemoveSubmission)
+	protected void integrateGradebook (SessionState state, String assignmentRef, String associateGradebookAssignment, String addUpdateRemoveAssignment, String oldAssignment_title, String newAssignment_title, int newAssignment_maxPoints, Date newAssignment_dueDate, String submissionRef, String updateRemoveSubmission)
 	{
 		associateGradebookAssignment = StringUtil.trimToNull(associateGradebookAssignment);
 
@@ -2600,7 +2600,7 @@ public class AssignmentAction extends PagedResourceActionII
 					{
 						// add assignment to gradebook
 						g.addExternalAssessment(gradebookUid, assignmentRef, null, newAssignment_title,
-								newAssignment_maxPoints/10.0, new Date(newAssignment_dueTime.getTime()), assignmentToolTitle);
+								newAssignment_maxPoints/10.0, newAssignment_dueDate, assignmentToolTitle);
 					}
 					catch (AssignmentHasIllegalPointsException e)
 					{
@@ -2639,7 +2639,7 @@ public class AssignmentAction extends PagedResourceActionII
 						    Assignment a = AssignmentService.getAssignment(associateGradebookAssignment);
 
 						    // update attributes if the GB assignment was created for the assignment
-						    g.updateExternalAssessment(gradebookUid, associateGradebookAssignment, null, newAssignment_title, newAssignment_maxPoints/10.0, new Date(newAssignment_dueTime.getTime()));
+						    g.updateExternalAssessment(gradebookUid, associateGradebookAssignment, null, newAssignment_title, newAssignment_maxPoints/10.0, newAssignment_dueDate);
 						}
 					    catch(Exception e)
 				        {
@@ -3284,21 +3284,21 @@ public class AssignmentAction extends PagedResourceActionII
 				sEdit.setGraded(true);
 				// clear the returned flag
 				sEdit.setReturned(false);
-				sEdit.setTimeReturned(null);
+				sEdit.setDateReturned(null);
 			}
 			else if (gradeOption.equals("return"))
 			{
 				sEdit.setGradeReleased(true);
 				sEdit.setGraded(true);
 				sEdit.setReturned(true);
-				sEdit.setTimeReturned(TimeService.newTime());
+				sEdit.setDateReturned(new Date());
 				sEdit.setHonorPledgeFlag(Boolean.FALSE.booleanValue());
 			}
 			else if (gradeOption.equals("save"))
 			{
 				sEdit.setGradeReleased(false);
 				sEdit.setReturned(false);
-				sEdit.setTimeReturned(null);
+				sEdit.setDateReturned(null);
 			}
 
 			if (state.getAttribute(AssignmentConstants.ALLOW_RESUBMIT_NUMBER) != null)
@@ -3309,9 +3309,9 @@ public class AssignmentAction extends PagedResourceActionII
 			
 				if (state.getAttribute(ALLOW_RESUBMIT_CLOSEYEAR) != null)
 				{
-					// get resubmit time
-					Time closeTime = getAllowSubmitCloseTime(state);
-					pEdit.addProperty(AssignmentConstants.ALLOW_RESUBMIT_CLOSETIME, String.valueOf(closeTime.getTime()));
+					// get resubmit date
+					Date closeDate = getAllowSubmitCloseDate(state);
+					pEdit.addProperty(AssignmentConstants.ALLOW_RESUBMIT_CLOSETIME, String.valueOf(closeDate.getTime()));
 				}
 				else
 				{
@@ -3617,7 +3617,7 @@ public class AssignmentAction extends PagedResourceActionII
 							AssignmentSubmission sEdit = AssignmentService.getSubmission(submission.getReference());
 							sEdit.setSubmittedText(text);
 							sEdit.setHonorPledgeFlag(Boolean.valueOf(honorPledgeYes).booleanValue());
-							sEdit.setTimeSubmitted(TimeService.newTime());
+							sEdit.setDateSubmitted(new Date());
 							sEdit.setSubmitted(true);
 	
 							// for resubmissions
@@ -3772,7 +3772,7 @@ public class AssignmentAction extends PagedResourceActionII
 							AssignmentSubmission edit = AssignmentService.addSubmission(contextString, assignmentId, SessionManager.getCurrentSessionUserId());
 							edit.setSubmittedText(text);
 							edit.setHonorPledgeFlag(Boolean.valueOf(honorPledgeYes).booleanValue());
-							edit.setTimeSubmitted(TimeService.newTime());
+							edit.setDateSubmitted(new Date());
 							edit.setSubmitted(true);
 							edit.setAssignment(a);
 	
@@ -3945,7 +3945,7 @@ public class AssignmentAction extends PagedResourceActionII
 			addAlert(state, rb.getString("date.invalid") + rb.getString("date.opendate") + ".");
 		}
 
-		// due time
+		// due date
 		int dueMonth = (new Integer(params.getString(NEW_ASSIGNMENT_DUEMONTH))).intValue();
 		state.setAttribute(NEW_ASSIGNMENT_DUEMONTH, new Integer(dueMonth));
 		int dueDay = (new Integer(params.getString(NEW_ASSIGNMENT_DUEDAY))).intValue();
@@ -3994,7 +3994,7 @@ public class AssignmentAction extends PagedResourceActionII
 
 		state.setAttribute(NEW_ASSIGNMENT_ENABLECLOSEDATE, new Boolean(true));
 
-		// close time
+		// close date
 		int closeMonth = (new Integer(params.getString(NEW_ASSIGNMENT_CLOSEMONTH))).intValue();
 		state.setAttribute(NEW_ASSIGNMENT_CLOSEMONTH, new Integer(closeMonth));
 		int closeDay = (new Integer(params.getString(NEW_ASSIGNMENT_CLOSEDAY))).intValue();
@@ -4505,18 +4505,18 @@ public class AssignmentAction extends PagedResourceActionII
 				String title = (String) state.getAttribute(NEW_ASSIGNMENT_TITLE);
 				String order = (String) state.getAttribute(NEW_ASSIGNMENT_ORDER);
 	
-				// open time
-				Time openTime = getOpenTime(state);
+				// open date
+				Date openDate = getOpenDate(state);
 	
-				// due time
-				Time dueTime = getDueTime(state);
+				// due date
+				Date dueDate = getDueDate(state);
 	
-				// close time
-				Time closeTime = dueTime;
+				// close date
+				Date closeDate = dueDate;
 				boolean enableCloseDate = ((Boolean) state.getAttribute(NEW_ASSIGNMENT_ENABLECLOSEDATE)).booleanValue();
 				if (enableCloseDate)
 				{
-					closeTime = getCloseTime(state);
+					closeDate = getCloseDate(state);
 				}
 	
 				// sections
@@ -4580,10 +4580,10 @@ public class AssignmentAction extends PagedResourceActionII
 				if ((state.getAttribute(STATE_MESSAGE) == null) && (a != null))
 				{
 					aOldTitle = a.getTitle();
-					// old open time
-					Time oldOpenTime = a.getOpenTime();
-					// old due time
-					Time oldDueTime = a.getDueTime();
+					// old open date
+					Date oldOpenDate = a.getOpenDate();
+					// old due date
+					Date oldDueDate = a.getDueDate();
 					
 					// set the Assignment Properties object
 					ResourcePropertiesEdit aPropertiesEdit = a.getPropertiesEdit();
@@ -4596,7 +4596,7 @@ public class AssignmentAction extends PagedResourceActionII
 					}
 					
 					// comment the changes to Assignment object
-					commitAssignmentEdit(state, post, a, title, submissionType,useReviewService,allowStudentViewReport, gradeType, gradePoints, description, checkAddHonorPledge, attachments1, openTime, dueTime, closeTime, enableCloseDate, section, range, groups);
+					commitAssignmentEdit(state, post, a, title, submissionType,useReviewService,allowStudentViewReport, gradeType, gradePoints, description, checkAddHonorPledge, attachments1, openDate, dueDate, closeDate, enableCloseDate, section, range, groups);
 		
 					if (state.getAttribute(STATE_MESSAGE) == null)
 					{
@@ -4627,7 +4627,7 @@ public class AssignmentAction extends PagedResourceActionII
 									{
 										AssignmentSubmission sEdit = AssignmentService.getSubmission(s.getReference());
 										sEdit.setSubmitted(false);
-										sEdit.setTimeSubmitted(null);
+										sEdit.setDateSubmitted(null);
 										AssignmentService.saveSubmission(sEdit);
 									}
 									catch (Exception e)
@@ -4641,15 +4641,15 @@ public class AssignmentAction extends PagedResourceActionII
 							
 	
 						// add the due date to schedule if the schedule exists
-						integrateWithCalendar(state, a, title, dueTime, checkAddDueTime, oldDueTime, aPropertiesEdit);
+						integrateWithCalendar(state, a, title, dueDate, checkAddDueTime, oldDueDate, aPropertiesEdit);
 	
 						// the open date been announced
-						integrateWithAnnouncement(state, aOldTitle, a, title, openTime, checkAutoAnnounce, oldOpenTime);
+						integrateWithAnnouncement(state, aOldTitle, a, title, openDate, checkAutoAnnounce, oldOpenDate);
 	
 						// integrate with Gradebook
 						try
 						{
-							initIntegrateWithGradebook(state, siteId, aOldTitle, oAssociateGradebookAssignment, a, title, dueTime, gradeType, gradePoints, addtoGradebook, associateGradebookAssignment, range);
+							initIntegrateWithGradebook(state, siteId, aOldTitle, oAssociateGradebookAssignment, a, title, dueDate, gradeType, gradePoints, addtoGradebook, associateGradebookAssignment, range);
 						}
 						catch (AssignmentHasIllegalPointsException e)
 						{
@@ -4755,7 +4755,7 @@ public class AssignmentAction extends PagedResourceActionII
 				{
 					// construct fake submissions for grading purpose
 					AssignmentSubmission submission = AssignmentService.addSubmission(a.getContext(), a.getId(), userId);
-					submission.setTimeSubmitted(TimeService.newTime());
+					submission.setDateSubmitted(new Date());
 					submission.setSubmitted(true);
 					submission.setAssignment(a);
 					AssignmentService.saveSubmission(submission);
@@ -4798,7 +4798,7 @@ public class AssignmentAction extends PagedResourceActionII
 		
 	}
 	
-	private void initIntegrateWithGradebook(SessionState state, String siteId, String aOldTitle, String oAssociateGradebookAssignment, Assignment a, String title, Time dueTime, int gradeType, String gradePoints, String addtoGradebook, String associateGradebookAssignment, String range) {
+	private void initIntegrateWithGradebook(SessionState state, String siteId, String aOldTitle, String oAssociateGradebookAssignment, Assignment a, String title, Date dueDate, int gradeType, String gradePoints, String addtoGradebook, String associateGradebookAssignment, String range) {
 
 		String context = (String) state.getAttribute(STATE_CONTEXT_STRING);
 		boolean gradebookExists = isGradebookDefined();
@@ -4849,7 +4849,7 @@ public class AssignmentAction extends PagedResourceActionII
 					{
 						try
 						{
-							integrateGradebook(state, aReference, associateGradebookAssignment, addUpdateRemoveAssignment, aOldTitle, title, Integer.parseInt (gradePoints), dueTime, null, null);
+							integrateGradebook(state, aReference, associateGradebookAssignment, addUpdateRemoveAssignment, aOldTitle, title, Integer.parseInt (gradePoints), dueDate, null, null);
 	
 							// add all existing grades, if any, into Gradebook
 							integrateGradebook(state, aReference, associateGradebookAssignment, null, null, null, -1, null, null, "update");
@@ -4906,7 +4906,7 @@ public class AssignmentAction extends PagedResourceActionII
 		}
 	}
 
-	private void integrateWithAnnouncement(SessionState state, String aOldTitle, Assignment a, String title, Time openTime, String checkAutoAnnounce, Time oldOpenTime) 
+	private void integrateWithAnnouncement(SessionState state, String aOldTitle, Assignment a, String title, Date openDate, String checkAutoAnnounce, Date oldopenDate) 
 	{
 		if (checkAutoAnnounce.equalsIgnoreCase(Boolean.TRUE.toString()))
 		{
@@ -4928,7 +4928,7 @@ public class AssignmentAction extends PagedResourceActionII
 						{
 							updatedTitle = true;
 						}
-						if (!message.getBody().contains(openTime.toStringLocalFull())) /*whether open date has been changed*/
+						if (!message.getBody().contains(df.format(openDate))) /*whether open date has been changed*/
 						{
 							updatedOpenDate = true;
 						}
@@ -4969,14 +4969,14 @@ public class AssignmentAction extends PagedResourceActionII
 							// revised assignment open date
 							message.setBody(/* body */rb.getString("newope") + " "
 									+ FormattedText.convertPlaintextToFormattedText(title) + " " + rb.getString("is") + " "
-									+ openTime.toStringLocalFull() + ". ");
+									+ df.format(openDate) + ". ");
 						}
 						else
 						{
 							// assignment open date
 							message.setBody(/* body */rb.getString("opedat") + " "
 									+ FormattedText.convertPlaintextToFormattedText(title) + " " + rb.getString("is") + " "
-									+ openTime.toStringLocalFull() + ". ");
+									+ df.format(openDate) + ". ");
 						}
 	
 						// group information
@@ -5045,7 +5045,7 @@ public class AssignmentAction extends PagedResourceActionII
 		} // if
 	}
 
-	private void integrateWithCalendar(SessionState state, Assignment a, String title, Time dueTime, String checkAddDueTime, Time oldDueTime, ResourcePropertiesEdit aPropertiesEdit) 
+	private void integrateWithCalendar(SessionState state, Assignment a, String title, Date dueTime, String checkAddDueTime, Date oldDueTime, ResourcePropertiesEdit aPropertiesEdit) 
 	{
 		Calendar c = (Calendar) state.getAttribute(CALENDAR);
 		if (c != null)
@@ -5077,7 +5077,7 @@ public class AssignmentAction extends PagedResourceActionII
 				}
 				else
 				{
-					TimeBreakdown b = oldDueTime.breakdownLocal();
+					TimeBreakdown b = TimeService.newTime(oldDueTime.getTime()).breakdownLocal();
 					// TODO: check- this was new Time(year...), not local! -ggolden
 					Time startTime = TimeService.newTimeLocal(b.getYear(), b.getMonth(), b.getDay(), 0, 0, 0, 0);
 					Time endTime = TimeService.newTimeLocal(b.getYear(), b.getMonth(), b.getDay(), 23, 59, 59, 999);
@@ -5154,7 +5154,7 @@ public class AssignmentAction extends PagedResourceActionII
 						e = c.addEvent(/* TimeRange */TimeService.newTimeRange(dueTime.getTime(), /* 0 duration */0 * 60 * 1000),
 								/* title */rb.getString("due") + " " + title,
 								/* description */rb.getString("assig1") + " " + title + " " + "is due on "
-										+ dueTime.toStringLocalFull() + ". ",
+										+ df.format(dueTime) + ". ",
 								/* type */rb.getString("deadl"),
 								/* location */"",
 								/* access */ eAccess,
@@ -5201,7 +5201,7 @@ public class AssignmentAction extends PagedResourceActionII
 		}
 	}
 
-	private void commitAssignmentEdit(SessionState state, boolean post, Assignment a, String title, int submissionType,boolean useReviewService, boolean allowStudentViewReport, int gradeType, String gradePoints, String description, String checkAddHonorPledge, List attachments1, Time openTime, Time dueTime, Time closeTime, boolean enableCloseDate, String s, String range, Collection groups) 
+	private void commitAssignmentEdit(SessionState state, boolean post, Assignment a, String title, int submissionType,boolean useReviewService, boolean allowStudentViewReport, int gradeType, String gradePoints, String description, String checkAddHonorPledge, List attachments1, Date openDate, Date dueTime, Date closeTime, boolean enableCloseDate, String s, String range, Collection groups) 
 	{
 		a.setTitle(title);
 		a.setInstructions(description);
@@ -5249,20 +5249,20 @@ public class AssignmentAction extends PagedResourceActionII
 		a.setTitle(title);
 		a.setContext((String) state.getAttribute(STATE_CONTEXT_STRING));
 		a.setSection(s);
-		a.setOpenTime(openTime);
-		a.setDueTime(dueTime);
+		a.setOpenDate(openDate);
+		a.setDueDate(dueTime);
 		// set the drop dead date as the due date
-		a.setDropDeadTime(dueTime);
+		a.setDropDeadDate(dueTime);
 		if (enableCloseDate)
 		{
-			a.setCloseTime(closeTime);
+			a.setCloseDate(closeTime);
 		}
 		else
 		{
 			// if editing an old assignment with close date
-			if (a.getCloseTime() != null)
+			if (a.getCloseDate() != null)
 			{
-				a.setCloseTime(null);
+				a.setCloseDate(null);
 			}
 		}
 
@@ -5385,7 +5385,7 @@ public class AssignmentAction extends PagedResourceActionII
 		}
 	} // reorderAssignments
 
-	private Time getOpenTime(SessionState state) 
+	private Date getOpenDate(SessionState state) 
 	{
 		int openMonth = ((Integer) state.getAttribute(NEW_ASSIGNMENT_OPENMONTH)).intValue();
 		int openDay = ((Integer) state.getAttribute(NEW_ASSIGNMENT_OPENDAY)).intValue();
@@ -5401,13 +5401,11 @@ public class AssignmentAction extends PagedResourceActionII
 		{
 			openHour = 0;
 		}
-		Time openTime = TimeService.newTimeLocal(openYear, openMonth, openDay, openHour, openMin, 0, 0);
-		return openTime;
+		return new Date(TimeService.newTimeLocal(openYear, openMonth, openDay, openHour, openMin, 0, 0).getTime());
 	}
 
-	private Time getCloseTime(SessionState state) 
+	private Date getCloseDate(SessionState state) 
 	{
-		Time closeTime;
 		int closeMonth = ((Integer) state.getAttribute(NEW_ASSIGNMENT_CLOSEMONTH)).intValue();
 		int closeDay = ((Integer) state.getAttribute(NEW_ASSIGNMENT_CLOSEDAY)).intValue();
 		int closeYear = ((Integer) state.getAttribute(NEW_ASSIGNMENT_CLOSEYEAR)).intValue();
@@ -5422,11 +5420,10 @@ public class AssignmentAction extends PagedResourceActionII
 		{
 			closeHour = 0;
 		}
-		closeTime = TimeService.newTimeLocal(closeYear, closeMonth, closeDay, closeHour, closeMin, 0, 0);
-		return closeTime;
+		return new Date(TimeService.newTimeLocal(closeYear, closeMonth, closeDay, closeHour, closeMin, 0, 0).getTime());
 	}
 
-	private Time getDueTime(SessionState state) 
+	private Date getDueDate(SessionState state) 
 	{
 		int dueMonth = ((Integer) state.getAttribute(NEW_ASSIGNMENT_DUEMONTH)).intValue();
 		int dueDay = ((Integer) state.getAttribute(NEW_ASSIGNMENT_DUEDAY)).intValue();
@@ -5442,11 +5439,10 @@ public class AssignmentAction extends PagedResourceActionII
 		{
 			dueHour = 0;
 		}
-		Time dueTime = TimeService.newTimeLocal(dueYear, dueMonth, dueDay, dueHour, dueMin, 0, 0);
-		return dueTime;
+		return new Date(TimeService.newTimeLocal(dueYear, dueMonth, dueDay, dueHour, dueMin, 0, 0).getTime());
 	}
 	
-	private Time getAllowSubmitCloseTime(SessionState state) 
+	private Date getAllowSubmitCloseDate(SessionState state) 
 	{
 		int closeMonth = ((Integer) state.getAttribute(ALLOW_RESUBMIT_CLOSEMONTH)).intValue();
 		int closeDay = ((Integer) state.getAttribute(ALLOW_RESUBMIT_CLOSEDAY)).intValue();
@@ -5462,8 +5458,7 @@ public class AssignmentAction extends PagedResourceActionII
 		{
 			closeHour = 0;
 		}
-		Time closeTime = TimeService.newTimeLocal(closeYear, closeMonth, closeDay, closeHour, closeMin, 0, 0);
-		return closeTime;
+		return new Date(TimeService.newTimeLocal(closeYear, closeMonth, closeDay, closeHour, closeMin, 0, 0).getTime());
 	}
 
 	/**
@@ -5587,7 +5582,7 @@ public class AssignmentAction extends PagedResourceActionII
 					for (;submissions.hasNext() && !anySubmitted;)
 					{
 						AssignmentSubmission s = (AssignmentSubmission) submissions.next();
-						if (s.getSubmitted() && s.getTimeSubmitted() != null)
+						if (s.getSubmitted() && s.getDateSubmitted() != null)
 						{
 							anySubmitted = true;
 						}
@@ -5623,11 +5618,11 @@ public class AssignmentAction extends PagedResourceActionII
 			// put the names and values into vm file
 			state.setAttribute(NEW_ASSIGNMENT_TITLE, a.getTitle());
 			state.setAttribute(NEW_ASSIGNMENT_ORDER, a.getPosition_order());
-			TimeBreakdown openTime = a.getOpenTime().breakdownLocal();
-			state.setAttribute(NEW_ASSIGNMENT_OPENMONTH, new Integer(openTime.getMonth()));
-			state.setAttribute(NEW_ASSIGNMENT_OPENDAY, new Integer(openTime.getDay()));
-			state.setAttribute(NEW_ASSIGNMENT_OPENYEAR, new Integer(openTime.getYear()));
-			int openHour = openTime.getHour();
+			TimeBreakdown openDate = TimeService.newTime(a.getOpenDate().getTime()).breakdownLocal();
+			state.setAttribute(NEW_ASSIGNMENT_OPENMONTH, new Integer(openDate.getMonth()));
+			state.setAttribute(NEW_ASSIGNMENT_OPENDAY, new Integer(openDate.getDay()));
+			state.setAttribute(NEW_ASSIGNMENT_OPENYEAR, new Integer(openDate.getYear()));
+			int openHour = openDate.getHour();
 			if (openHour >= 12)
 			{
 				state.setAttribute(NEW_ASSIGNMENT_OPENAMPM, "PM");
@@ -5642,9 +5637,9 @@ public class AssignmentAction extends PagedResourceActionII
 				openHour = 12;
 			}
 			state.setAttribute(NEW_ASSIGNMENT_OPENHOUR, new Integer((openHour > 12) ? openHour - 12 : openHour));
-			state.setAttribute(NEW_ASSIGNMENT_OPENMIN, new Integer(openTime.getMin()));
+			state.setAttribute(NEW_ASSIGNMENT_OPENMIN, new Integer(openDate.getMin()));
 
-			TimeBreakdown dueTime = a.getDueTime().breakdownLocal();
+			TimeBreakdown dueTime = TimeService.newTime(a.getDueDate().getTime()).breakdownLocal();
 			state.setAttribute(NEW_ASSIGNMENT_DUEMONTH, new Integer(dueTime.getMonth()));
 			state.setAttribute(NEW_ASSIGNMENT_DUEDAY, new Integer(dueTime.getDay()));
 			state.setAttribute(NEW_ASSIGNMENT_DUEYEAR, new Integer(dueTime.getYear()));
@@ -5665,15 +5660,15 @@ public class AssignmentAction extends PagedResourceActionII
 			state.setAttribute(NEW_ASSIGNMENT_DUEHOUR, new Integer((dueHour > 12) ? dueHour - 12 : dueHour));
 			state.setAttribute(NEW_ASSIGNMENT_DUEMIN, new Integer(dueTime.getMin()));
 			// generate alert when editing an assignment past due date
-			if (a.getDueTime().before(TimeService.newTime()))
+			if (a.getDueDate().before(new Date()))
 			{
 				addAlert(state, rb.getString("youarenot17"));
 			}
 
-			if (a.getCloseTime() != null)
+			if (a.getCloseDate() != null)
 			{
 				state.setAttribute(NEW_ASSIGNMENT_ENABLECLOSEDATE, new Boolean(true));
-				TimeBreakdown closeTime = a.getCloseTime().breakdownLocal();
+				TimeBreakdown closeTime = TimeService.newTime(a.getCloseDate().getTime()).breakdownLocal();
 				state.setAttribute(NEW_ASSIGNMENT_CLOSEMONTH, new Integer(closeTime.getMonth()));
 				state.setAttribute(NEW_ASSIGNMENT_CLOSEDAY, new Integer(closeTime.getDay()));
 				state.setAttribute(NEW_ASSIGNMENT_CLOSEYEAR, new Integer(closeTime.getYear()));
@@ -6002,7 +5997,7 @@ public class AssignmentAction extends PagedResourceActionII
 				}
 				else
 				{
-					TimeBreakdown b = aEdit.getDueTime().breakdownLocal();
+					TimeBreakdown b = TimeService.newTime(aEdit.getDueDate().getTime()).breakdownLocal();
 					// TODO: check- this was new Time(year...), not local! -ggolden
 					Time startTime = TimeService.newTimeLocal(b.getYear(), b.getMonth(), b.getDay(), 0, 0, 0, 0);
 					Time endTime = TimeService.newTimeLocal(b.getYear(), b.getMonth(), b.getDay(), 23, 59, 59, 999);
@@ -6291,7 +6286,7 @@ public class AssignmentAction extends PagedResourceActionII
 					
 					// also set the return status
 					sEdit.setReturned(true);
-					sEdit.setTimeReturned(TimeService.newTime());
+					sEdit.setDateReturned(new Date());
 					sEdit.setHonorPledgeFlag(Boolean.FALSE.booleanValue());
 					
 					AssignmentService.saveSubmission(sEdit);
@@ -6775,7 +6770,7 @@ public class AssignmentAction extends PagedResourceActionII
 			M_log.warn(this + ":readGradeForm " + e.getMessage());
 		}
 		
-		// allow resubmit number and due time
+		// allow resubmit number and due date
 		if (params.getString(AssignmentConstants.ALLOW_RESUBMIT_NUMBER) != null)
 		{
 			String allowResubmitNumberString = params.getString(AssignmentConstants.ALLOW_RESUBMIT_NUMBER);
@@ -7147,7 +7142,7 @@ public class AssignmentAction extends PagedResourceActionII
 		int day = tB.getDay();
 		int year = tB.getYear();
 
-		// set the open time to be 12:00 PM
+		// set the open date to be 12:00 PM
 		state.setAttribute(NEW_ASSIGNMENT_OPENMONTH, new Integer(month));
 		state.setAttribute(NEW_ASSIGNMENT_OPENDAY, new Integer(day));
 		state.setAttribute(NEW_ASSIGNMENT_OPENYEAR, new Integer(year));
@@ -7162,7 +7157,7 @@ public class AssignmentAction extends PagedResourceActionII
 		day = tB.getDay();
 		year = tB.getYear();
 
-		// set the due time to be 5:00pm
+		// set the due date to be 5:00pm
 		state.setAttribute(NEW_ASSIGNMENT_DUEMONTH, new Integer(month));
 		state.setAttribute(NEW_ASSIGNMENT_DUEDAY, new Integer(day));
 		state.setAttribute(NEW_ASSIGNMENT_DUEYEAR, new Integer(year));
@@ -7172,7 +7167,7 @@ public class AssignmentAction extends PagedResourceActionII
 
 		// enable the close date by default
 		state.setAttribute(NEW_ASSIGNMENT_ENABLECLOSEDATE, new Boolean(true));
-		// set the close time to be 5:00 pm, same as the due time by default
+		// set the close date to be 5:00 pm, same as the due date by default
 		state.setAttribute(NEW_ASSIGNMENT_CLOSEMONTH, new Integer(month));
 		state.setAttribute(NEW_ASSIGNMENT_CLOSEDAY, new Integer(day));
 		state.setAttribute(NEW_ASSIGNMENT_CLOSEYEAR, new Integer(year));
@@ -7664,8 +7659,8 @@ public class AssignmentAction extends PagedResourceActionII
 				if ( s1 == s2 ) // we either have 2 assignments with no existing postion_order or a numbering error, so sort by duedate
 				{
 					// sorted by the assignment due date
-					Time t1 = ((Assignment) o1).getDueTime();
-					Time t2 = ((Assignment) o2).getDueTime();
+					Date t1 = ((Assignment) o1).getDueDate();
+					Date t2 = ((Assignment) o2).getDueDate();
 
 					if (t1 == null)
 					{
@@ -7677,8 +7672,8 @@ public class AssignmentAction extends PagedResourceActionII
 					}
 					else if (t1.equals(t2))
 					{
-						t1 = ((Assignment) o1).getTimeCreated();
-						t2 = ((Assignment) o2).getTimeCreated();
+						t1 = ((Assignment) o1).getDateCreated();
+						t2 = ((Assignment) o2).getDateCreated();
 					}
 					
 					if (t1!=null && t2!=null && t1.before(t2))
@@ -7720,8 +7715,8 @@ public class AssignmentAction extends PagedResourceActionII
 			else if (m_criteria.equals(SORTED_BY_DUEDATE))
 			{
 				// sorted by the assignment due date
-				Time t1 = ((Assignment) o1).getDueTime();
-				Time t2 = ((Assignment) o2).getDueTime();
+				Date t1 = ((Assignment) o1).getDueDate();
+				Date t2 = ((Assignment) o2).getDueDate();
 
 				if (t1 == null)
 				{
@@ -7743,8 +7738,8 @@ public class AssignmentAction extends PagedResourceActionII
 			else if (m_criteria.equals(SORTED_BY_OPENDATE))
 			{
 				// sorted by the assignment open
-				Time t1 = ((Assignment) o1).getOpenTime();
-				Time t2 = ((Assignment) o2).getOpenTime();
+				Date t1 = ((Assignment) o1).getOpenDate();
+				Date t2 = ((Assignment) o2).getOpenDate();
 
 				if (t1 == null)
 				{
@@ -7981,15 +7976,15 @@ public class AssignmentAction extends PagedResourceActionII
 					AssignmentSubmission s2 = u2.getSubmission();
 
 
-					if (s1 == null || s1.getTimeSubmitted() == null)
+					if (s1 == null || s1.getDateSubmitted() == null)
 					{
 						result = -1;
 					}
-					else if (s2 == null || s2.getTimeSubmitted() == null)
+					else if (s2 == null || s2.getDateSubmitted() == null)
 					{
 						result = 1;
 					}
-					else if (s1.getTimeSubmitted().before(s2.getTimeSubmitted()))
+					else if (s1.getDateSubmitted().before(s2.getDateSubmitted()))
 					{
 						result = -1;
 					}
@@ -8183,8 +8178,8 @@ public class AssignmentAction extends PagedResourceActionII
 			else if (m_criteria.equals(SORTED_SUBMISSION_BY_SUBMIT_TIME))
 			{
 				// sorted by submission time
-				Time t1 = ((AssignmentSubmission) o1).getTimeSubmitted();
-				Time t2 = ((AssignmentSubmission) o2).getTimeSubmitted();
+				Date t1 = ((AssignmentSubmission) o1).getDateSubmitted();
+				Date t2 = ((AssignmentSubmission) o2).getDateSubmitted();
 
 				if (t1 == null)
 				{
@@ -8383,11 +8378,11 @@ public class AssignmentAction extends PagedResourceActionII
 					if (submission.getGraded() && submission.getGradeReleased())
 						status = rb.getString("grad3");
 					else if (submission.getReturned())
-						status = rb.getString("return") + " " + submission.getTimeReturned().toStringLocalFull();
+						status = rb.getString("return") + " " + df.format(submission.getDateReturned());
 					else
 					{
-						status = rb.getString("submitt") + submission.getTimeSubmitted().toStringLocalFull();
-						if (submission.getTimeSubmitted().after(assignment.getDueTime())) status = status + rb.getString("late");
+						status = rb.getString("submitt") + df.format(submission.getDateSubmitted());
+						if (submission.getDateSubmitted().after(assignment.getDueDate())) status = status + rb.getString("late");
 					}
 				else
 					status = rb.getString("inpro");
@@ -8560,7 +8555,7 @@ public class AssignmentAction extends PagedResourceActionII
 				// in the student list view of assignments
 				Iterator assignments = AssignmentService
 						.getAssignmentsForContext(contextString);
-				Time currentTime = TimeService.newTime();
+				Date currentDate = new Date();
 				while (assignments.hasNext())
 				{
 					Assignment a = (Assignment) assignments.next();
@@ -8570,8 +8565,8 @@ public class AssignmentAction extends PagedResourceActionII
 						if (deleted == null || deleted.equals(""))
 						{
 							// show not deleted assignments
-							Time openTime = a.getOpenTime();
-							if (openTime != null && currentTime.after(openTime) && !a.getDraft())
+							Date openDate = a.getOpenDate();
+							if (openDate != null && currentDate.after(openDate) && !a.getDraft())
 							{
 								returnResources.add(a);
 							}
@@ -8636,8 +8631,8 @@ public class AssignmentAction extends PagedResourceActionII
 						for (int k = 0; k < assignmentSubmissions.size(); k++)
 						{
 							AssignmentSubmission s = (AssignmentSubmission) assignmentSubmissions.get(k);
-							if (s != null && (s.getSubmitted() || (s.getReturned() && (s.getTimeLastModified().before(s
-												.getTimeReturned())))))
+							if (s != null && (s.getSubmitted() || (s.getReturned() && (s.getDateLastModified().before(s
+												.getDateReturned())))))
 							{
 								// has been subitted or has been returned and not work on it yet
 								User[] submitters = s.getSubmitters();
@@ -9709,7 +9704,7 @@ public class AssignmentAction extends PagedResourceActionII
 						User[] users = s.getSubmitters();
 						if (users.length > 0 && users[0] != null)
 						{
-							submissionTable.put(users[0].getDisplayId(), new UploadGradeWrapper(s.getGrade(), s.getSubmittedText(), s.getFeedbackComment(), s.getSubmittedAttachments(), s.getFeedbackAttachments(), (s.getSubmitted() && s.getTimeSubmitted() != null)?s.getTimeSubmitted().toString():"", s.getFeedbackText()));
+							submissionTable.put(users[0].getDisplayId(), new UploadGradeWrapper(s.getGrade(), s.getSubmittedText(), s.getFeedbackComment(), s.getSubmittedAttachments(), s.getFeedbackAttachments(), (s.getSubmitted() && s.getDateSubmitted() != null)?s.getDateSubmitted().toString():"", s.getFeedbackText()));
 						}
 					}
 				}
@@ -10011,13 +10006,13 @@ public class AssignmentAction extends PagedResourceActionII
 									
 									if (releaseGrades && sEdit.getGraded())
 									{
-										sEdit.setTimeReturned(TimeService.newTime());
+										sEdit.setDateReturned(new Date());
 									}
 									
 									// if the current submission lacks timestamp while the timestamp exists inside the zip file
-									if (StringUtil.trimToNull(w.getSubmissionTimeStamp()) != null && sEdit.getTimeSubmitted() == null)
+									if (StringUtil.trimToNull(w.getSubmissionTimeStamp()) != null && sEdit.getDateSubmitted() == null)
 									{
-										sEdit.setTimeSubmitted(TimeService.newTimeGmt(w.getSubmissionTimeStamp()));
+										sEdit.setDateSubmitted(new Date(Long.parseLong(w.getSubmissionTimeStamp())));
 										sEdit.setSubmitted(true);
 									}
 									

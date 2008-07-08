@@ -25,6 +25,7 @@ import java.io.BufferedInputStream;
 import java.io.InputStream;
 import java.io.IOException;
 import java.io.OutputStream;
+import java.text.DateFormat;
 import java.util.Collection;
 import java.util.Comparator;
 import java.util.HashMap;
@@ -38,6 +39,7 @@ import java.util.Stack;
 import java.util.Vector;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipOutputStream;
+import java.util.Date;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
@@ -166,6 +168,8 @@ public abstract class BaseAssignmentService implements AssignmentService, Entity
 
 	/** the resource bundle */
 	private static ResourceLoader rb = new ResourceLoader("assignment");
+	
+	DateFormat df = DateFormat.getDateTimeInstance(DateFormat.MEDIUM, DateFormat.SHORT, rb.getLocale());
 
 	/** A Storage object for persistent storage of Assignments. */
 	protected AssignmentStorage m_assignmentStorage = null;
@@ -853,10 +857,10 @@ public abstract class BaseAssignmentService implements AssignmentService, Entity
 				retVal = addAssignment(context);
 				retVal.setTitle(existingAssignment.getTitle() + " - Copy");
 				retVal.setSection(existingAssignment.getSection());
-				retVal.setOpenTime(existingAssignment.getOpenTime());
-				retVal.setDueTime(existingAssignment.getDueTime());
-				retVal.setDropDeadTime(existingAssignment.getDropDeadTime());
-				retVal.setCloseTime(existingAssignment.getCloseTime());
+				retVal.setOpenDate(existingAssignment.getOpenDate());
+				retVal.setDueDate(existingAssignment.getDueDate());
+				retVal.setDropDeadDate(existingAssignment.getDropDeadDate());
+				retVal.setCloseDate(existingAssignment.getCloseDate());
 				retVal.setDraft(true);
 				ResourcePropertiesEdit pEdit = (BaseResourcePropertiesEdit) retVal.getProperties();
 				pEdit.addAll(existingAssignment.getProperties());
@@ -1531,7 +1535,7 @@ public abstract class BaseAssignmentService implements AssignmentService, Entity
 		AssignmentSubmission submission = m_submissionStorage.put(	submissionFromXml.getId(), 
 																		submissionFromXml.getAssignmentId(),
 																		submissionFromXml.getSubmitterIdString(),
-																		(submissionFromXml.getTimeSubmitted() != null)?String.valueOf(submissionFromXml.getTimeSubmitted().getTime()):null,
+																		(submissionFromXml.getDateSubmitted() != null)?String.valueOf(submissionFromXml.getDateSubmitted().getTime()):null,
 																		Boolean.valueOf(submissionFromXml.getSubmitted()).toString(),
 																		Boolean.valueOf(submissionFromXml.getGraded()).toString());
 		if (submission == null)
@@ -1581,7 +1585,7 @@ public abstract class BaseAssignmentService implements AssignmentService, Entity
 		// update the properties
 		AssignmentUtil.addLiveUpdateProperties(submission.getPropertiesEdit());
 
-		submission.setTimeLastModified(TimeService.newTime());
+		submission.setDateLastModified(new Date());
 
 		// complete the edit
 		m_submissionStorage.commit(submission);
@@ -1592,8 +1596,8 @@ public abstract class BaseAssignmentService implements AssignmentService, Entity
 			
 			Assignment a = s.getAssignment();
 			
-			Time returnedTime = s.getTimeReturned();
-			Time submittedTime = s.getTimeSubmitted();
+			Date returnedTime = s.getDateReturned();
+			Date submittedTime = s.getDateSubmitted();
 			
 			// track it
 			if (!s.getSubmitted())
@@ -1602,14 +1606,14 @@ public abstract class BaseAssignmentService implements AssignmentService, Entity
 				EventTrackingService.post(EventTrackingService.newEvent(EVENT_SAVE_ASSIGNMENT_SUBMISSION, submissionRef, true));
 			}
 			else if (returnedTime == null && !s.getReturned() && (submittedTime == null /*grading non-submissions*/
-																|| (submittedTime != null && (s.getTimeLastModified().getTime() - submittedTime.getTime()) > 1000*60 /*make sure the last modified time is at least one minute after the submit time*/)))
+																|| (submittedTime != null && (s.getDateLastModified().getTime() - submittedTime.getTime()) > 1000*60 /*make sure the last modified time is at least one minute after the submit time*/)))
 			{
 				// graded and saved before releasing it
 				EventTrackingService.post(EventTrackingService.newEvent(EVENT_GRADE_ASSIGNMENT_SUBMISSION, submissionRef, true));
 			}
 			else if (returnedTime != null && s.getGraded() && (submittedTime == null/*returning non-submissions*/ 
 											|| (submittedTime != null && returnedTime.after(submittedTime))/*returning normal submissions*/ 
-											|| (submittedTime != null && submittedTime.after(returnedTime) && s.getTimeLastModified().after(submittedTime))/*grading the resubmitted assignment*/))
+											|| (submittedTime != null && submittedTime.after(returnedTime) && s.getDateLastModified().after(submittedTime))/*grading the resubmitted assignment*/))
 			{
 				// releasing a submitted assignment or releasing grade to an unsubmitted assignment
 				EventTrackingService.post(EventTrackingService.newEvent(EVENT_GRADE_ASSIGNMENT_SUBMISSION, submissionRef, true));
@@ -1872,7 +1876,7 @@ public abstract class BaseAssignmentService implements AssignmentService, Entity
 		buffer.append(rb.getString("noti.site.id") + " " + siteId +newline + newline);
 		// assignment title and due date
 		buffer.append(rb.getString("noti.assignment") + " " + a.getTitle()+newline);
-		buffer.append(rb.getString("noti.assignment.duedate") + " " + a.getDueTime().toStringLocalFull()+newline + newline);
+		buffer.append(rb.getString("noti.assignment.duedate") + " " + df.format(a.getDueDate()) +newline + newline);
 		// submitter name and id
 		User[] submitters = s.getSubmitters();
 		String submitterNames = "";
@@ -1899,7 +1903,7 @@ public abstract class BaseAssignmentService implements AssignmentService, Entity
 		buffer.append(rb.getString("noti.submit.id") + " " + s.getId() + newline);
 		
 		// submit time 
-		buffer.append(rb.getString("noti.submit.time") + " " + s.getTimeSubmitted().toStringLocalFull() + newline + newline);
+		buffer.append(rb.getString("noti.submit.time") + " " + df.format(s.getDateSubmitted()) + newline + newline);
 		
 		// submit text
 		String text = StringUtil.trimToNull(s.getSubmittedText());
@@ -3465,11 +3469,11 @@ public abstract class BaseAssignmentService implements AssignmentService, Entity
 										}
 										
 										// record submission timestamp
-										if (s.getSubmitted() && s.getTimeSubmitted() != null)
+										if (s.getSubmitted() && s.getDateSubmitted() != null)
 										{
 											ZipEntry textEntry = new ZipEntry(submittersName + "timestamp.txt");
 											out.putNextEntry(textEntry);
-											byte[] b = (s.getTimeSubmitted().toString()).getBytes();
+											byte[] b = (s.getDateSubmitted().toString()).getBytes();
 											out.write(b);
 											textEntry.setSize(b.length);
 											out.closeEntry();
@@ -4461,7 +4465,7 @@ public abstract class BaseAssignmentService implements AssignmentService, Entity
 						nAssignment.setInstructions(oAssignment.getInstructions());
 						nAssignment.setMaxGradePoint(oAssignment.getMaxGradePoint());
 						nAssignment.setReleaseGrades(oAssignment.releaseGrades());
-						nAssignment.setTimeLastModified(oAssignment.getTimeLastModified());
+						nAssignment.setDateLastModified(oAssignment.getDateLastModified());
 						nAssignment.setTypeOfGrade(oAssignment.getTypeOfGrade());
 						nAssignment.setTypeOfSubmission(oAssignment.getTypeOfSubmission());
 						// attachment
@@ -4483,7 +4487,7 @@ public abstract class BaseAssignmentService implements AssignmentService, Entity
 						}
 						nAssignment.replaceAttachments(nAttachments);
 						
-						nAssignment.setCloseTime(oAssignment.getCloseTime());
+						nAssignment.setCloseDate(oAssignment.getCloseDate());
 						nAssignment.setContext(toContext);
 						
 						// when importing, refer to property to determine draft status
@@ -4496,9 +4500,9 @@ public abstract class BaseAssignmentService implements AssignmentService, Entity
 							nAssignment.setDraft(true);
 						}
 						
-						nAssignment.setDropDeadTime(oAssignment.getDropDeadTime());
-						nAssignment.setDueTime(oAssignment.getDueTime());
-						nAssignment.setOpenTime(oAssignment.getOpenTime());
+						nAssignment.setDropDeadDate(oAssignment.getDropDeadDate());
+						nAssignment.setDueDate(oAssignment.getDueDate());
+						nAssignment.setOpenDate(oAssignment.getOpenDate());
 						nAssignment.setSection(oAssignment.getSection());
 						nAssignment.setTitle(oAssignment.getTitle());
 						// properties
@@ -4738,17 +4742,17 @@ public abstract class BaseAssignmentService implements AssignmentService, Entity
 			// get user
 			User u = UserDirectoryService.getUser(userId);
 			
-			Time currentTime = TimeService.newTime();
+			Date currentDate = new Date();
 			
 			// return false if the assignment is draft or is not open yet
-			Time openTime = a.getOpenTime();
-			if (a.getDraft() || (openTime != null && openTime.after(currentTime)))
+			Date openTime = a.getOpenDate();
+			if (a.getDraft() || (openTime != null && openTime.after(currentDate)))
 			{
 				return false;
 			}
 			
 			// return false if the current time has passed the assignment close time
-			Time closeTime = a.getCloseTime();
+			Date closeDate = a.getCloseDate();
 			
 			// get user's submission
 			AssignmentSubmission submission = null;
@@ -4756,13 +4760,13 @@ public abstract class BaseAssignmentService implements AssignmentService, Entity
 			submission = getSubmission(a.getReference(), u);
 			if (submission != null)
 			{
-				closeTime = submission.getCloseTime();
+				closeDate = submission.getCloseDate();
 			}
 			
-			if (submission == null || (submission != null && submission.getTimeSubmitted() == null))
+			if (submission == null || (submission != null && submission.getDateSubmitted() == null))
 			{
 				// if there is no submission yet
-				if (closeTime != null && currentTime.after(closeTime))
+				if (closeDate != null && currentDate.after(closeDate))
 				{
 					return false;
 				}
@@ -4773,7 +4777,7 @@ public abstract class BaseAssignmentService implements AssignmentService, Entity
 			}
 			else
 			{
-				if (!submission.getSubmitted() && !(closeTime != null && currentTime.after(closeTime)))
+				if (!submission.getSubmitted() && !(closeDate != null && currentDate.after(closeDate)))
 				{
 					// return true for drafted submissions
 					return true;
@@ -4781,7 +4785,7 @@ public abstract class BaseAssignmentService implements AssignmentService, Entity
 				else
 				{
 					// returned 
-					if (submission.getResubmissionNum()!=0 && currentTime.before(closeTime))
+					if (submission.getResubmissionNum()!=0 && currentDate.before(closeDate))
 					{
 						// return true for returned submission but allow for resubmit and before the close time
 						return true;
@@ -5511,8 +5515,8 @@ public abstract class BaseAssignmentService implements AssignmentService, Entity
 				M_log.error(new Exception(this + " AssignmentSubmissionStorageUser storageFields Unique constraint is in force -- submitter[0] cannot be null"));
  			}
 			
-			Time submitTime = ((AssignmentSubmission) r).getTimeSubmitted();
-			rv[2] = (submitTime != null)?String.valueOf(submitTime.getTime()):null;
+			Date submitDate = ((AssignmentSubmission) r).getDateSubmitted();
+			rv[2] = (submitDate != null)?String.valueOf(submitDate.getTime()):null;
 			
 			rv[3] = Boolean.valueOf(((AssignmentSubmission) r).getSubmitted()).toString();
 			
@@ -5733,8 +5737,8 @@ public abstract class BaseAssignmentService implements AssignmentService, Entity
 			if (m_criteria.equals("duedate"))
 			{
 				// sorted by the assignment due date
-				Time t1 = ((Assignment) o1).getDueTime();
-				Time t2 = ((Assignment) o2).getDueTime();
+				Date t1 = ((Assignment) o1).getDueDate();
+				Date t2 = ((Assignment) o2).getDueDate();
 
 				if (t1 == null)
 				{

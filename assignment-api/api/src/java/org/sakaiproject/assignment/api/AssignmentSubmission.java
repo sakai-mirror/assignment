@@ -22,11 +22,11 @@
 package org.sakaiproject.assignment.api;
 
 import java.util.List;
+import java.util.Date;
 
 import org.sakaiproject.entity.api.Entity;
 import org.sakaiproject.entity.api.Edit;
 import org.sakaiproject.entity.api.Reference;
-import org.sakaiproject.time.api.Time;
 import org.sakaiproject.user.api.User;
 
 /**
@@ -94,18 +94,18 @@ public interface AssignmentSubmission extends Entity, Edit
 	 * See AssignmentSubmissionVersion api
 	 * Set the time at which this response was submitted; null signifies the response is unsubmitted.
 	 * 
-	 * @return Time of submission.
+	 * @return Date of submission.
 	 */
-	public Time getTimeSubmitted();
+	public Date getDateSubmitted();
 
 	/**
 	 * @deprecated
 	 * See AssignmentSubmissionVersion api
 	 * Set the time at which this response was submitted; "" signifies the response is unsubmitted.
 	 * 
-	 * @return Time of submission (String)
+	 * @return Date of submission (String)
 	 */
-	public String getTimeSubmittedString();
+	public String getDateSubmittedString();
 
 	/**
 	 * @deprecated
@@ -213,7 +213,7 @@ public interface AssignmentSubmission extends Entity, Edit
 	 * 
 	 * @return The time of last modification.
 	 */
-	public Time getTimeLastModified();
+	public Date getDateLastModified();
 
 	/**
 	 * @deprecated
@@ -222,7 +222,7 @@ public interface AssignmentSubmission extends Entity, Edit
 	 * 
 	 * @return the time (may be null)
 	 */
-	public Time getTimeReturned();
+	public Date getDateReturned();
 
 	/**
 	 * @deprecated
@@ -250,7 +250,7 @@ public interface AssignmentSubmission extends Entity, Edit
 	/**
 	 * Method to return the close time for the submission
 	 */
-	public Time getCloseTime();
+	public Date getCloseDate();
 
 	/**
 	 * @deprecated
@@ -336,9 +336,9 @@ public interface AssignmentSubmission extends Entity, Edit
 	 * Set the time at which this response was submitted; setting it to null signifies the response is unsubmitted.
 	 * 
 	 * @param timeSubmitted -
-	 *        Time of submission.
+	 *        Date of submission.
 	 */
-	public void setTimeSubmitted(Time timeSubmitted);
+	public void setDateSubmitted(Date timeSubmitted);
 
 	/**
 	 * @deprecated
@@ -472,7 +472,7 @@ public interface AssignmentSubmission extends Entity, Edit
 	 * @param timeReturned -
 	 *        The time at which the graded Submission was returned.
 	 */
-	public void setTimeReturned(Time timeReturned);
+	public void setDateReturned(Date timeReturned);
 
 	/**
 	 * @deprecated
@@ -490,9 +490,9 @@ public interface AssignmentSubmission extends Entity, Edit
 	 * Set the time last modified.
 	 * 
 	 * @param lastmod -
-	 *        The Time at which the Submission was last modified.
+	 *        The Date at which the Submission was last modified.
 	 */
-	public void setTimeLastModified(Time lastmod);
+	public void setDateLastModified(Date lastmod);
 	
 	/**
 	 * @deprecated

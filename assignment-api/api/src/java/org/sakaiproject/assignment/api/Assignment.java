@@ -24,6 +24,7 @@ package org.sakaiproject.assignment.api;
 import java.io.Serializable;
 import java.util.Collection;
 import java.util.List;
+import java.util.Date;
 
 import org.sakaiproject.entity.api.AttachmentContainerEdit;
 import org.sakaiproject.entity.api.Edit;
@@ -55,60 +56,60 @@ public interface Assignment extends Edit, Comparable, Serializable, AttachmentCo
 	public String getContentReference();
 
 	/**
-	 * Access the first time at which the assignment can be viewed; may be null.
+	 * Access the first date at which the assignment can be viewed; may be null.
 	 * 
-	 * @return The Time at which the assignment is due, or null if unspecified.
+	 * @return The Date at which the assignment is due, or null if unspecified.
 	 */
-	public Time getOpenTime();
+	public Date getOpenDate();
 
 	/**
-	 * Access the first time at which the assignment can be viewed; (String)
+	 * Access the first date at which the assignment can be viewed; (String)
 	 * 
-	 * @return The Time at which the assignment is due, or "" if unspecified.
+	 * @return The Date at which the assignment is due, or "" if unspecified.
 	 */
-	public String getOpenTimeString();
+	public String getOpenDateString();
 
 	/**
-	 * Access the time at which the assignment is due; may be null.
+	 * Access the date at which the assignment is due; may be null.
 	 * 
-	 * @return The Time at which the Assignment is due, or null if unspecified.
+	 * @return The Date at which the Assignment is due, or null if unspecified.
 	 */
-	public Time getDueTime();
+	public Date getDueDate();
 
 	/**
-	 * Access the time at which the assignment is due; (String)
+	 * Access the date at which the assignment is due; (String)
 	 * 
-	 * @return The Time at which the Assignment is due,or "" if unspecified
+	 * @return The Date at which the Assignment is due,or "" if unspecified
 	 */
-	public String getDueTimeString();
+	public String getDueDateString();
 
 	/**
-	 * Access the drop dead time after which responses to this assignment are considered late; may be null.
+	 * Access the drop dead date after which responses to this assignment are considered late; may be null.
 	 * 
-	 * @return The Time object representing the drop dead time, or null if unspecified.
+	 * @return The Date object representing the drop dead date, or null if unspecified.
 	 */
-	public Time getDropDeadTime();
+	public Date getDropDeadDate();
 
 	/**
-	 * Access the drop dead time after which responses to this assignment are considered late; (String)
+	 * Access the drop dead date after which responses to this assignment are considered late; (String)
 	 * 
-	 * @return The Time object representing the drop dead time, or "" if unspecified.
+	 * @return The Date object representing the drop dead date, or "" if unspecified.
 	 */
-	public String getDropDeadTimeString();
+	public String getDropDeadDateString();
 
 	/**
-	 * Access the close time after which this assignment can no longer be viewed, and after which submissions will not be accepted. May be null.
+	 * Access the close date after which this assignment can no longer be viewed, and after which submissions will not be accepted. May be null.
 	 * 
-	 * @return The Time after which the Assignment is closed, or null if unspecified.
+	 * @return The Date after which the Assignment is closed, or null if unspecified.
 	 */
-	public Time getCloseTime();
+	public Date getCloseDate();
 
 	/**
-	 * Access the close time after which this assignment can no longer be viewed, and after which submissions will not be accepted. (String)
+	 * Access the close date after which this assignment can no longer be viewed, and after which submissions will not be accepted. (String)
 	 * 
-	 * @return The Time after which the Assignment is closed, or "" if unspecified.
+	 * @return The Date after which the Assignment is closed, or "" if unspecified.
 	 */
-	public String getCloseTimeString();
+	public String getCloseDateString();
 
 	/**
 	 * Access the section info.
@@ -118,7 +119,7 @@ public interface Assignment extends Edit, Comparable, Serializable, AttachmentCo
 	public String getSection();
 
 	/**
-	 * Access the context at the time of creation.
+	 * Access the context at the date of creation.
 	 * 
 	 * @return String - the context string.
 	 */
@@ -139,11 +140,11 @@ public interface Assignment extends Edit, Comparable, Serializable, AttachmentCo
 	public String getCreator();
 
 	/**
-	 * Access the time that this object was created.
+	 * Access the date that this object was created.
 	 * 
-	 * @return The Time object representing the time of creation.
+	 * @return The Date object representing the date of creation.
 	 */
-	public Time getTimeCreated();
+	public Date getDateCreated();
 
 	/**
 	 * Access the list of authors.
@@ -153,11 +154,11 @@ public interface Assignment extends Edit, Comparable, Serializable, AttachmentCo
 	public List getAuthors();
 
 	/**
-	 * Access the time of last modificaiton.
+	 * Access the date of last modificaiton.
 	 * 
-	 * @return The Time of last modification.
+	 * @return The Date of last modification.
 	 */
-	public Time getTimeLastModified();
+	public Date getDateLastModified();
 
 	/**
 	 * Access the author of last modification
@@ -252,36 +253,36 @@ public interface Assignment extends Edit, Comparable, Serializable, AttachmentCo
 	public void setContent(AssignmentContent content);
 
 	/**
-	 * Set the first time at which the assignment can be viewed; may be null.
+	 * Set the first date at which the assignment can be viewed; may be null.
 	 * 
-	 * @param openTime -
-	 *        The Time at which the Assignment opens.
+	 * @param openDate -
+	 *        The Date at which the Assignment opens.
 	 */
-	public void setOpenTime(Time openTime);
+	public void setOpenDate(Date openDate);
 
 	/**
-	 * Set the time at which the assignment is due; may be null.
+	 * Set the date at which the assignment is due; may be null.
 	 * 
-	 * @param dueTime -
-	 *        The Time at which the Assignment is due.
+	 * @param dueDate -
+	 *        The Date at which the Assignment is due.
 	 */
-	public void setDueTime(Time dueTime);
+	public void setDueDate(Date dueDate);
 
 	/**
-	 * Set the drop dead time after which responses to this assignment are considered late; may be null.
+	 * Set the drop dead date after which responses to this assignment are considered late; may be null.
 	 * 
-	 * @param dropDeadTime -
-	 *        The Time object representing the drop dead time.
+	 * @param dropDeadDate -
+	 *        The Date object representing the drop dead date.
 	 */
-	public void setDropDeadTime(Time dropDeadTime);
+	public void setDropDeadDate(Date dropDeadDate);
 
 	/**
-	 * Set the time after which this assignment can no longer be viewed, and after which submissions will not be accepted. May be null.
+	 * Set the date after which this assignment can no longer be viewed, and after which submissions will not be accepted. May be null.
 	 * 
-	 * @param closeTime -
-	 *        The Time after which the Assignment is closed, or null if unspecified.
+	 * @param closeDate -
+	 *        The Date after which the Assignment is closed, or null if unspecified.
 	 */
-	public void setCloseTime(Time closeTime);
+	public void setCloseDate(Date closeDate);
 
 	/**
 	 * Set the section info
@@ -292,7 +293,7 @@ public interface Assignment extends Edit, Comparable, Serializable, AttachmentCo
 	public void setSection(String sectionId);
 
 	/**
-	 * Set the Assignment's context at the time of creation.
+	 * Set the Assignment's context at the date of creation.
 	 * 
 	 * @param context -
 	 *        The context string.
@@ -553,10 +554,10 @@ public interface Assignment extends Edit, Comparable, Serializable, AttachmentCo
 	public void setAllowStudentViewReport(boolean allow);
 
 	/**
-	 * Set the time last modified.
+	 * Set the date last modified.
 	 * 
 	 * @param lastmod -
-	 *        The Time at which the Content was last modified.
+	 *        The Date at which the Content was last modified.
 	 */
-	public void setTimeLastModified(Time lastmod);
+	public void setDateLastModified(Date lastmod);
 }

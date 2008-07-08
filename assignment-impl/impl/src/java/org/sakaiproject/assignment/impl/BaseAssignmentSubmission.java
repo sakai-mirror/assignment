@@ -1,5 +1,7 @@
 package org.sakaiproject.assignment.impl;
 
+import java.text.DateFormat;
+import java.util.Date;
 import java.util.List;
 import java.util.Map;
 import java.util.Stack;
@@ -54,6 +56,8 @@ public class BaseAssignmentSubmission implements AssignmentSubmission
 	/** the resource bundle */
 	private static ResourceLoader rb = new ResourceLoader("assignment");
 	
+	DateFormat df = DateFormat.getDateTimeInstance(DateFormat.MEDIUM, DateFormat.SHORT, rb.getLocale());
+	
 	ContentReviewService contentReviewService = (ContentReviewService) ComponentManager.get(ContentReviewService.class.getName());
 	
 	private BaseAssignmentService assignmentService = null;
@@ -79,11 +83,11 @@ public class BaseAssignmentSubmission implements AssignmentSubmission
 
 	protected List m_submitters;
 
-	protected Time m_timeSubmitted;
+	protected Date m_dateSubmitted;
 
-	protected Time m_timeReturned;
+	protected Date m_timeReturned;
 
-	protected Time m_timeLastModified;
+	protected Date m_timeLastModified;
 
 	protected List m_submittedAttachments;
 
@@ -264,7 +268,7 @@ public class BaseAssignmentSubmission implements AssignmentSubmission
 	/**
 	 * Constructor used by addSubmission.
 	 */
-	public BaseAssignmentSubmission(String id, String assignId, String submitterId, String submitTime, String submitted, String graded)
+	public BaseAssignmentSubmission(String id, String assignId, String submitterId, String submitDate, String submitted, String graded)
 	{
 		
 		// must set initial review status
@@ -287,7 +291,7 @@ public class BaseAssignmentSubmission implements AssignmentSubmission
 		m_feedbackComment = "";
 		m_feedbackText = "";
 		m_grade = "";
-		m_timeLastModified = TimeService.newTime();
+		m_timeLastModified = new Date();
 
 		if (submitterId == null)
 		{
@@ -356,10 +360,10 @@ public class BaseAssignmentSubmission implements AssignmentSubmission
 
 		m_assignment = el.getAttribute("assignment");
 
-		m_timeSubmitted = AssignmentUtil.getTimeObject(el.getAttribute("datesubmitted"));
-		m_timeReturned = AssignmentUtil.getTimeObject(el.getAttribute("datereturned"));
+		m_dateSubmitted = AssignmentUtil.getDateObject(el.getAttribute("datesubmitted"));
+		m_timeReturned = AssignmentUtil.getDateObject(el.getAttribute("datereturned"));
 		m_assignment = el.getAttribute("assignment");
-		m_timeLastModified = AssignmentUtil.getTimeObject(el.getAttribute("lastmod"));
+		m_timeLastModified = AssignmentUtil.getDateObject(el.getAttribute("lastmod"));
 
 		m_submitted = AssignmentUtil.getBool(el.getAttribute("submitted"));
 		m_returned = AssignmentUtil.getBool(el.getAttribute("returned"));
@@ -633,10 +637,10 @@ public class BaseAssignmentSubmission implements AssignmentSubmission
 
 						m_assignment = attributes.getValue("assignment");
 
-						m_timeSubmitted = AssignmentUtil.getTimeObject(attributes.getValue("datesubmitted"));
-						m_timeReturned = AssignmentUtil.getTimeObject(attributes.getValue("datereturned"));
+						m_dateSubmitted = AssignmentUtil.getDateObject(attributes.getValue("datesubmitted"));
+						m_timeReturned = AssignmentUtil.getDateObject(attributes.getValue("datereturned"));
 						m_assignment = attributes.getValue("assignment");
-						m_timeLastModified = AssignmentUtil.getTimeObject(attributes.getValue("lastmod"));
+						m_timeLastModified = AssignmentUtil.getDateObject(attributes.getValue("lastmod"));
 
 						m_submitted = AssignmentUtil.getBool(attributes.getValue("submitted"));
 						m_returned = AssignmentUtil.getBool(attributes.getValue("returned"));
@@ -761,9 +765,9 @@ public class BaseAssignmentSubmission implements AssignmentSubmission
 		submission.setAttribute("context", m_context);
 		submission.setAttribute("scaled_grade", m_grade);
 		submission.setAttribute("assignment", m_assignment);
-		submission.setAttribute("datesubmitted", AssignmentUtil.getTimeString(m_timeSubmitted));
-		submission.setAttribute("datereturned", AssignmentUtil.getTimeString(m_timeReturned));
-		submission.setAttribute("lastmod", AssignmentUtil.getTimeString(m_timeLastModified));
+		submission.setAttribute("datesubmitted", m_dateSubmitted.toString());
+		submission.setAttribute("datereturned", m_timeReturned.toString());
+		submission.setAttribute("lastmod", m_timeLastModified.toString());
 		submission.setAttribute("submitted", AssignmentUtil.getBoolString(m_submitted));
 		submission.setAttribute("returned", AssignmentUtil.getBoolString(m_returned));
 		submission.setAttribute("graded", AssignmentUtil.getBoolString(m_graded));
@@ -845,9 +849,9 @@ public class BaseAssignmentSubmission implements AssignmentSubmission
 		m_grade = submission.getGrade();
 		m_submitters = submission.getSubmitterIds();
 		m_submitted = submission.getSubmitted();
-		m_timeSubmitted = submission.getTimeSubmitted();
-		m_timeReturned = submission.getTimeReturned();
-		m_timeLastModified = submission.getTimeLastModified();
+		m_dateSubmitted = submission.getDateSubmitted();
+		m_timeReturned = submission.getDateReturned();
+		m_timeLastModified = submission.getDateLastModified();
 		m_submittedAttachments = submission.getSubmittedAttachments();
 		m_feedbackAttachments = submission.getFeedbackAttachments();
 		m_submittedText = submission.getSubmittedText();
@@ -1040,22 +1044,22 @@ public class BaseAssignmentSubmission implements AssignmentSubmission
 	/**
 	 * Set the time at which this response was submitted; null signifies the response is unsubmitted.
 	 * 
-	 * @return Time of submission.
+	 * @return Date of submission.
 	 */
-	public Time getTimeSubmitted()
+	public Date getDateSubmitted()
 	{
-		return m_timeSubmitted;
+		return m_dateSubmitted;
 	}
 
 	/**
 	 * @inheritDoc
 	 */
-	public String getTimeSubmittedString()
+	public String getDateSubmittedString()
 	{
-		if ( m_timeSubmitted == null )
+		if ( m_dateSubmitted == null )
 			return "";
 		else
-			return m_timeSubmitted.toStringLocalFull();
+			return df.format(m_dateSubmitted);
 	}
 
 	/**
@@ -1117,7 +1121,7 @@ public class BaseAssignmentSubmission implements AssignmentSubmission
 	 * 
 	 * @return The time of last modification.
 	 */
-	public Time getTimeLastModified()
+	public Date getDateLastModified()
 	{
 		return m_timeLastModified;
 	}
@@ -1267,7 +1271,7 @@ public class BaseAssignmentSubmission implements AssignmentSubmission
 	 * 
 	 * @return the time (may be null)
 	 */
-	public Time getTimeReturned()
+	public Date getDateReturned()
 	{
 		return m_timeReturned;
 	}
@@ -1292,22 +1296,22 @@ public class BaseAssignmentSubmission implements AssignmentSubmission
 		boolean allowGrade = assignmentService.allowGradeSubmission(getReference());
 		String retVal = "";
 		
-		Time submitTime = getTimeSubmitted();
-		Time returnTime = getTimeReturned();
-		Time lastModTime = getTimeLastModified();
+		Date submitDate = getDateSubmitted();
+		Date returnDate = getDateReturned();
+		Date lastModDate = getDateLastModified();
 	
 		if (getSubmitted() || (!getSubmitted() && allowGrade))
 		{
-			if (submitTime != null)
+			if (submitDate != null)
 			{
 				if (getReturned())
 				{
-					if (returnTime != null && returnTime.before(submitTime))
+					if (returnDate != null && returnDate.before(submitDate))
 					{
 						if (!getGraded())
 						{
-							retVal = rb.getString("listsub.resubmi") + " " + submitTime.toStringLocalFull();
-							if (submitTime.after(getAssignment().getDueTime()))
+							retVal = rb.getString("listsub.resubmi") + " " + df.format(submitDate);
+							if (submitDate.after(getAssignment().getDueDate()))
 								retVal = retVal + rb.getString("gen.late2");
 						}
 								
@@ -1333,9 +1337,9 @@ public class BaseAssignmentSubmission implements AssignmentSubmission
 						// submitted
 						retVal = rb.getString("gen.subm4");
 						
-						if(submitTime != null)
+						if(submitDate != null)
 						{
-							retVal = rb.getString("gen.subm4") + " " + submitTime.toStringLocalFull();
+							retVal = rb.getString("gen.subm4") + " " + df.format(submitDate);
 						}
 					}
 				}
@@ -1373,7 +1377,7 @@ public class BaseAssignmentSubmission implements AssignmentSubmission
 			{
 				if (getReturned())
 				{
-					if (lastModTime != null && returnTime != null && lastModTime.after(TimeService.newTime(returnTime.getTime() + 1000 * 10)) && !allowGrade)
+					if (lastModDate != null && returnDate != null && lastModDate.after(new Date(returnDate.getTime() + 1000 * 10)) && !allowGrade)
 					{
 						// working on a returned submission now
 						retVal = rb.getString("gen.dra2") + " " + rb.getString("gen.inpro");
@@ -1444,7 +1448,7 @@ public class BaseAssignmentSubmission implements AssignmentSubmission
 		if (obj == this) return 0;
 
 		// start the compare by comparing their sort names
-		int compare = getTimeSubmitted().toString().compareTo(((AssignmentSubmission) obj).getTimeSubmitted().toString());
+		int compare = getDateSubmitted().toString().compareTo(((AssignmentSubmission) obj).getDateSubmitted().toString());
 
 		// if these are the same
 		if (compare == 0)
@@ -1469,19 +1473,19 @@ public class BaseAssignmentSubmission implements AssignmentSubmission
 	/**
 	 * {@inheritDoc}
 	 */
-	public Time getCloseTime()
+	public Date getCloseDate()
 	{
-		String closeTimeString = StringUtil.trimToNull(m_properties.getProperty(AssignmentConstants.ALLOW_RESUBMIT_CLOSETIME));
-		if (closeTimeString != null && getResubmissionNum() != 0)
+		String closeDateString = StringUtil.trimToNull(m_properties.getProperty(AssignmentConstants.ALLOW_RESUBMIT_CLOSETIME));
+		if (closeDateString != null && getResubmissionNum() != 0)
 		{
 			// return the close time if it is set
-			return TimeService.newTime(Long.parseLong(closeTimeString));
+			return new Date(Long.parseLong(closeDateString));
 		}
 		else
 		{
 			// else use the assignment close time setting
 			Assignment a = getAssignment();
-			return a!=null?a.getCloseTime():null;	
+			return a!=null?a.getCloseDate():null;	
 		}
 	}
 	
@@ -1557,11 +1561,11 @@ public class BaseAssignmentSubmission implements AssignmentSubmission
 	 * Set the time at which this response was submitted; setting it to null signifies the response is unsubmitted.
 	 * 
 	 * @param timeSubmitted -
-	 *        Time of submission.
+	 *        Date of submission.
 	 */
-	public void setTimeSubmitted(Time value)
+	public void setDateSubmitted(Date value)
 	{
-		m_timeSubmitted = value;
+		m_dateSubmitted = value;
 	}
 
 	/**
@@ -1707,7 +1711,7 @@ public class BaseAssignmentSubmission implements AssignmentSubmission
 	 * @param timeReturned -
 	 *        The time at which the graded Submission was returned.
 	 */
-	public void setTimeReturned(Time timeReturned)
+	public void setDateReturned(Date timeReturned)
 	{
 		m_timeReturned = timeReturned;
 	}
@@ -1727,9 +1731,9 @@ public class BaseAssignmentSubmission implements AssignmentSubmission
 	 * Set the time last modified.
 	 * 
 	 * @param lastmod -
-	 *        The Time at which the Assignment was last modified.
+	 *        The Date at which the Assignment was last modified.
 	 */
-	public void setTimeLastModified(Time lastmod)
+	public void setDateLastModified(Date lastmod)
 	{
 		if (lastmod != null) m_timeLastModified = lastmod;
 	}
