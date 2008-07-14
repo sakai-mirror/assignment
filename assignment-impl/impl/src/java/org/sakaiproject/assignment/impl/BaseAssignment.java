@@ -204,6 +204,10 @@ public class BaseAssignment implements Assignment, AttachmentContainer
 		m_context = context;
 		m_isSiteRange = isSiteRange;
 		m_openDate = openDate;
+		m_dueDate = dueDate;
+		m_closeDate = closeDate;
+		m_dateCreated = createdOn;
+		
 		
 		
 	}
