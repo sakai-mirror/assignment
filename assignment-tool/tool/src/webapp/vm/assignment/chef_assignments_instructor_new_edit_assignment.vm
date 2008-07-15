@@ -1,6 +1,58 @@
 ##<!-- $Header: Exp $ -->
 ## Assignments - Instructor new Assignment view
+<script type="text/javascript" src="/library/js/jquery.js"></script>
+<script language="JavaScript" type="text/JavaScript">
+$(document).ready(function(){ 
+  $('.extraNode').hide();
+
+    $("#selectExtra").change(function() 
+    { 
+        boxes_index = $("#selectExtra").val(); 
+			  $('.extraNode').hide();
+			  $('#' + boxes_index).fadeIn('slow');
+				resizeFrame('grow');
+    }); 
+}); 
+</script>	
+<style type="text/css">
+	.extraNode {
+		border:1px solid #69d;
+		padding: 0  1.5em 1em 1.5em;
+		width:50%;
+
+
+	}
+	.extraNode legend{
+		padding:0 .5em;
+		color:#555
+	}
+
+</style>
 <script type="text/javascript">
+//this function needs jquery 1.1.2 or later - it resizes the parent iframe without bringing the scroll to the top
+	function resizeFrame(updown) 
+	{
+		if (top.location != self.location) 	 {
+			var frame = parent.document.getElementById(window.name);
+		}	
+			if( frame ) 
+		{
+			if(updown=='shrink')
+			{
+				var clientH = document.body.clientHeight - 30;
+			}
+			else
+			{
+				var clientH = document.body.clientHeight + 30;
+			}
+			$( frame ).height( clientH );
+		} 
+		else 
+		{
+			throw( "resizeFrame did not get the frame (using name=" + window.name + ")" );
+		}
+	}
+
 <!--
     function SetMaxPoint(obj_option, obj_textfield)
     {
@@ -346,7 +398,7 @@
 				</label>
 				<table border="0" style="margin:0"><tr><td>
 					<textarea name="$name_Description" id="$name_Description" cols="80" rows="30" wrap="virtual">$validator.escapeHtmlFormattedTextarea($value_Description)</textarea>
-					#chef_setupformattedtextarea($name_Description)
+						#chef_setupformattedtextarea($name_Description)
 					</td></tr></table>
 			</div>
 		#if ($!name_CheckAddDueDate)
@@ -604,6 +656,517 @@
 					<input type="button" name="attach" value="$tlang.getString('gen.adddroatt2')" onclick="javascript:document.newAssignmentForm.onsubmit();document.getElementById('option').value='attach';document.newAssignmentForm.submit();return false;" />
 				</div>
 			#end	
+		<h3 style="margin-bottom:0">Additional information</h3>
+		
+
+	<table class="listHier lines nolines" style="width:auto;" >
+		<caption style="border-bottom:1px solid #ccc;text-align:left; margin-top:1em;padding-bottom:.3em">Existing items</caption>
+		<tr>
+			<td style="padding-right:5em">
+				Model Answer
+			</td>
+			<td class="itemAction" style="white-space:nowrap">
+				<a href="#">Edit</a> | <a href="#">Delete</a>
+			</td>
+		</tr>
+		<tr>
+			<td style="padding-right:5em">
+				Private notes
+			</td>
+			<td class="itemAction" style="white-space:nowrap">
+				<a href="#">Edit</a> | <a href="#">Delete</a>
+			</td>
+		</tr>
+	</table>
+</div>		
+		
+		<p class="shorttext">
+			<label for="selectExtra">
+				Add item
+			</label>
+			<select id="selectExtra">
+					<option value="1default"> --select one-- </option>
+					<option value="modelanswer">Model Answer</option>
+					<option value="gradingguidelines">Grading guidelines</option>
+					<option value="assignotes">Private notes</option>
+					<option value="otherextranodes">All purpose item</option>
+			</select>
+		</p>
+		<fieldset class="extraNode" id="modelanswer">
+			<legend><span>Model Answer</span></legend>
+			<div class="longtext" style="margin:.2em">
+				<label for="modeltext" class="block">
+					<span class="reqStar">*</span>
+					Provide a model answer or a solution to the assignment.
+				</label>
+					<textarea name="modeltext" id="modeltext" cols="60" rows="10" wrap="virtual">A rich text editor</textarea>
+			</div>
+				<div class="act">
+					<input type="button" name="attach" value="$tlang.getString('gen.addatt')" onclick="javascript:document.newAssignmentForm.onsubmit();document.getElementById('option').value='attach';document.newAssignmentForm.submit();return false;"/>
+				</div>
+
+			<p class="longtext"  style="margin:.2em">
+			<span class="reqStar">*</span>
+				<label for="modelwhen" class="block">
+					Show to students
+				</label>
+				<select id="modelwhen">
+					<option value="modelwhendefault"> --select one-- </option>
+					<option value="modelwhen1">Before student starts assignment</option>
+					<option value="modelwhen1">After student submits</option>
+					<option value="modelwhen2">After submission is graded and returned</option>
+					<option value="modelwhen3">After accept-until date</option>
+				</select>
+			</p>
+			<p class="act">
+				<input type="button" value="Save" class="active"/><input type="button" value="Cancel" />
+			</p>
+		</fieldset>				
+		<fieldset class="extraNode" id="gradingguidelines">
+			<legend>Grading guidelines</legend>
+			<div class="longtext" style="margin:.2em">
+				<span class="reqStar">*</span>
+				<label for="ggtext" class="block">
+					Provide grading rationale. You can choose to whom and when this will display.
+				</label>
+					<textarea name="ggtext" id="ggtext" cols="60" rows="10" wrap="virtual">A rich text editor</textarea>
+			</div>
+			<div class="act">
+					<input type="button" name="attach" value="$tlang.getString('gen.addatt')" onclick="javascript:document.newAssignmentForm.onsubmit();document.getElementById('option').value='attach';document.newAssignmentForm.submit();return false;"/>
+				</div>
+
+			<p class="longtext"  style="margin:.2em">
+				<span class="reqStar">*</span>
+				<label for="ggwho" class="block">
+					Show
+				</label>
+				<select id="ggwho">
+					<option value="ggwhodefault"> --select one-- </option>
+					<option value="ggwho1">Only to instructors</option>
+					<option value="ggwho2">also to students (after grading)</option>
+					<option value="ggwho3">also to students (after accept until date)</option>
+				</select>
+			</p>
+			<p class="act">
+				<input type="button" value="Save" class="active"/><input type="button" value="Cancel" />
+			</p>
+		</fieldset>				
+		<fieldset class="extraNode" id="assignotes">
+			<legend>Assignment notes</legend>
+			<div class="longtext" style="margin:.2em">
+				<span class="reqStar">*</span>				
+				<label for="assigntext" class="block">
+					Notes you can edit at any point to track of assignment issues, thoughts, etc. <br /> Available to you while you are grading. 
+				</label>
+					<textarea name="assigntext" id="assigntext" cols="60" rows="10" wrap="virtual">A rich text editor</textarea>
+			</div>
+			<p class="longtext"  style="margin:.2em">
+				<span class="reqStar">*</span>				
+				<label for="assignoteswho" class="block">
+					Share
+				</label>
+				<select id="assignoteswho">
+					<option value="assignotesdefault"> --select one-- </option>
+					<option value="assignotes1">Keep private to myself</option>
+					<option value="assignotes1">Allow other intructors to read</option>
+					<option value="assignotes2">Allow other intructors to read and edit</option>
+
+				</select>
+			</p>
+			<p class="act">
+				<input type="button" value="Save" class="active"/><input type="button" value="Cancel" />
+			</p>
+		</fieldset>						
+		<fieldset class="extraNode" id="otherextranodes">
+			<legend>Extra information</legend>
+			<div class="shorttext" style="margin:.2em">
+				<span class="reqStar">*</span>				
+				<label  for="extranodestitle">Title</label>
+				<input type="text" value="Item title" size="20" maxlength="30" id="extranodestitle"/>
+			</div>	
+			<div class="longtext" style="margin:.2em">
+				<span class="reqStar">*</span>
+				<label for="otherextranodestext" class="block">
+					Information displayed at a specific time to whomever you choose.
+				</label>
+					<textarea name="otherextranodestext" id="otherextranodestext" cols="60" rows="10" wrap="virtual">A rich text editor</textarea>
+			</div>
+       <table>
+            <tr>
+                <td>
+                    <input name="hidden_0" id="hidden_false_0" value="false" checked="checked" type="radio">
+                </td>
+                <td colspan="4">
+                    <label for="hidden_false_0">
+                        Show this item
+                    </label>
+                </td>
+            </tr>
+            <tr>
+                <td>
+                </td>
+                <td>
+                    <input name="use_start_date_0" id="use_start_date_0" value="true" type="checkbox">
+                </td>
+                <td colspan="3">
+                    <label for="use_start_date_0">
+                        From
+                    </label>
+                </td>
+            </tr>
+            <tr>
+                <td>
+                </td>
+                <td>
+                </td>
+                <td>
+                </td>
+                <td>
+                    <label for="release_year_0">
+                        Date: 
+                    </label>
+                </td>
+                <td>
+                    <label for="release_hour_0">
+                        Time: 
+                    </label>
+                </td>
+            </tr>
+            <tr>
+                <td>
+                </td>
+                <td>
+                </td>
+                <td>
+                </td>
+                <td>
+                    <select name="release_month_0" id="release_month_0">
+                        <option value="1">JAN</option>
+                        <option value="2">FEB</option>
+                        <option value="3" selected="selected">MAR</option>
+                        <option value="4">APR</option>
+                        <option value="5">MAY</option>
+                        <option value="6">JUN</option>
+                        <option value="7">JUL</option>
+                        <option value="8">AUG</option>
+                        <option value="9">SEP</option>
+                        <option value="10">OCT</option>
+                        <option value="11">NOV</option>
+                        <option value="12">DEC</option>
+                    </select>
+                    <select name="release_day_0" id="release_day_0">
+                        <option value="1">1</option>
+                        <option value="2">2</option>
+                        <option value="3">3</option>
+                        <option value="4">4</option>
+                        <option value="5">5</option>
+                        <option value="6">6</option>
+                        <option value="7">7</option>
+                        <option value="8">8</option>
+                        <option value="9">9</option>
+                        <option value="10" selected="selected">10</option>
+                        <option value="11">11</option>
+                        <option value="12">12</option>
+                        <option value="13">13</option>
+                        <option value="14">14</option>
+                        <option value="15">15</option>
+                        <option value="16">16</option>
+                        <option value="17">17</option>
+                        <option value="18">18</option>
+                        <option value="19">19</option>
+                        <option value="20">20</option>
+                        <option value="21">21</option>
+                        <option value="22">22</option>
+                        <option value="23">23</option>
+                        <option value="24">24</option>
+                        <option value="25">25</option>
+                        <option value="26">26</option>
+                        <option value="27">27</option>
+                        <option value="28">28</option>
+                        <option value="29">29</option>
+                        <option value="30">30</option>
+                        <option value="31">31</option>
+                    </select>
+                    <select name="release_year_0" id="release_year_0">
+                        <option value="2004">2004</option>
+                        <option value="2005">2005</option>
+                        <option value="2006">2006</option>
+                        <option value="2007">2007</option>
+                        <option value="2008" selected="selected">2008</option>
+                        <option value="2009">2009</option>
+                        <option value="2010">2010</option>
+                        <option value="2011">2011</option>
+                        <option value="2012">2012</option>
+                    </select>
+                    <img id="release_calendar_0" src="/library/calendar/images/calendar/cal.gif" alt="" style="cursor: pointer;" title="Popup date selector"><input name="chef_calendarhiddenfield0" id="chef_calendarhiddenfield0" type="hidden">
+                </td>
+                <td>
+                    <select name="release_hour_0" id="release_hour_0">
+                        <option value="1">1</option>
+                        <option value="2">2</option>
+                        <option value="3">3</option>
+                        <option value="4">4</option>
+                        <option value="5">5</option>
+                        <option value="6">6</option>
+                        <option value="7">7</option>
+                        <option value="8">8</option>
+                        <option value="9">9</option>
+                        <option value="10">10</option>
+                        <option selected="selected" value="11">11</option>
+                        <option value="12">12</option>
+                    </select>
+                    <select name="release_minute_0" id="release_minute_0">
+                        <option value="0">00</option>
+                        <option value="5">05</option>
+                        <option value="10">10</option>
+                        <option value="15">15</option>
+                        <option value="20">20</option>
+                        <option value="25">25</option>
+                        <option value="30">30</option>
+                        <option value="35">35</option>
+                        <option value="40">40</option>
+                        <option value="45">45</option>
+                        <option value="50">50</option>
+                        <option value="55">55</option>
+                    </select>
+                    <select name="release_ampm_0" id="release_ampm_0">
+                        <option selected="selected">am</option>
+                        <option>pm</option>
+                    </select>
+                </td>
+            </tr>
+            <tr>
+                <td>
+                </td>
+                <td>
+                    <input name="use_end_date_0" id="use_end_date_0" value="true" type="checkbox">
+                </td>
+                <td colspan="4">
+                    <label for="use_end_date_0">
+                        Until
+                    </label>
+                </td>
+            </tr>
+            <tr>
+                <td>
+                </td>
+                <td>
+                </td>
+                <td>
+                </td>
+                <td>
+                    <label for="retract_year_0">
+                        Date:
+                    </label>
+                </td>
+                <td>
+                    <label for="retract_time_0">
+                        Time:
+                    </label>
+                </td>
+            </tr>
+            <tr>
+                <td>
+                </td>
+                <td>
+                </td>
+                <td>
+                </td>
+                <td>
+                    <select name="retract_month_0" id="retract_month_0">
+                        <option value="1">JAN</option>
+                        <option value="2">FEB</option>
+                        <option value="3" selected="selected">MAR</option>
+                        <option value="4">APR</option>
+                        <option value="5">MAY</option>
+                        <option value="6">JUN</option>
+                        <option value="7">JUL</option>
+                        <option value="8">AUG</option>
+                        <option value="9">SEP</option>
+                        <option value="10">OCT</option>
+                        <option value="11">NOV</option>
+                        <option value="12">DEC</option>
+                    </select>
+                    <select name="retract_day_0" id="retract_day_0">
+                        <option value="1">1</option>
+                        <option value="2">2</option>
+                        <option value="3">3</option>
+                        <option value="4">4</option>
+                        <option value="5">5</option>
+                        <option value="6">6</option>
+                        <option value="7">7</option>
+                        <option value="8">8</option>
+                        <option value="9">9</option>
+                        <option value="10">10</option>
+                        <option value="11">11</option>
+                        <option value="12">12</option>
+                        <option value="13">13</option>
+                        <option value="14">14</option>
+                        <option value="15">15</option>
+                        <option value="16">16</option>
+                        <option value="17" selected="selected">17</option>
+                        <option value="18">18</option>
+                        <option value="19">19</option>
+                        <option value="20">20</option>
+                        <option value="21">21</option>
+                        <option value="22">22</option>
+                        <option value="23">23</option>
+                        <option value="24">24</option>
+                        <option value="25">25</option>
+                        <option value="26">26</option>
+                        <option value="27">27</option>
+                        <option value="28">28</option>
+                        <option value="29">29</option>
+                        <option value="30">30</option>
+                        <option value="31">31</option>
+                    </select>
+                    <select name="retract_year_0" id="retract_year_0">
+                        <option value="2004">2004</option>
+                        <option value="2005">2005</option>
+                        <option value="2006">2006</option>
+                        <option value="2007">2007</option>
+                        <option value="2008" selected="selected">2008</option>
+                        <option value="2009">2009</option>
+                        <option value="2010">2010</option>
+                        <option value="2011">2011</option>
+                        <option value="2012">2012</option>
+                    </select>
+                    <img id="retract_calendar_0" src="/library/calendar/images/calendar/cal.gif" alt="" style="cursor: pointer;" title="Popup date selector"><input name="chef_calendarhiddenfield1" id="chef_calendarhiddenfield1" type="hidden">
+                </td>
+                <td>
+                    <select name="retract_hour_0" id="retract_hour_0">
+                        <option value="1">1</option>
+                        <option value="2">2</option>
+                        <option value="3">3</option>
+                        <option value="4">4</option>
+                        <option value="5">5</option>
+                        <option value="6">6</option>
+                        <option value="7">7</option>
+                        <option value="8">8</option>
+                        <option value="9">9</option>
+                        <option value="10">10</option>
+                        <option selected="selected" value="11">11</option>
+                        <option value="12">12</option>
+                    </select>
+                    <select name="retract_minute_0" id="retract_minute_0">
+                        <option value="0">00</option>
+                        <option value="5">05</option>
+                        <option value="10">10</option>
+                        <option value="15">15</option>
+                        <option value="20">20</option>
+                        <option value="25">25</option>
+                        <option value="30">30</option>
+                        <option value="35">35</option>
+                        <option value="40">40</option>
+                        <option value="45">45</option>
+                        <option value="50">50</option>
+                        <option value="55">55</option>
+                    </select>
+                    <select name="retract_ampm_0" id="retract_ampm_0">
+                        <option selected="selected">am</option>
+                        <option>pm</option>
+                    </select>
+                </td>
+            </tr>
+            <tr>
+                <td>
+                    <input name="hidden_0" id="hidden_true_0" value="true" type="radio">
+                </td>
+                <td colspan="4">
+                    <label for="hidden_true_0">
+                        Hide this item 
+                    </label>
+                </td>
+            </tr>
+        </table>
+			</p>
+			<h4>Show to</h4>
+			<table border="0" cellpadding="0" cellspacing="0" style="margin:1em 0;width:100%">
+			    <tbody>
+			        <tr>
+			            <td>
+			                <input id="mainForm:selectByTree:_id81:0:selectAllCheckbox" type="checkbox" name="mainForm:selectByTree:_id81:0:selectAllCheckbox"/>
+			                <label for="mainForm:selectByTree:_id81:0:selectAllCheckbox">
+			                    All students
+			                </label>
+			                - <a href="#" style="text-decoration: underline" onclick="document.forms['mainForm']['mainForm:_idcl'].value='mainForm:selectByTree:_id81:0:_id88'; document.forms['mainForm'].submit(); return false;">Expand student list </a>
+#*			                <table class="listHier nolines hierItemBlockWrapper" cellpadding="0" cellspacing="0" style="margin-left:2em;width:auto;font-weight:normal">
+			                    <tbody>
+			                        <tr>
+			                            <td class="attach">
+			                                <input id="mainForm:selectByTree:_id81:0:_id90:0:indCol1Checkbox1" type="checkbox" name="mainForm:selectByTree:_id81:0:_id90:0:indCol1Checkbox1"/>
+			                            </td>
+			                            <td class="">
+			                                <label for="mainForm:selectByTree:_id81:0:_id90:0:indCol1Checkbox1" style="white-space:nowrap">
+			                                    stud1, stud1
+			                                </label>
+			                            </td>
+			                            <td class="attach">
+			                                <input id="mainForm:selectByTree:_id81:0:_id90:0:indCol2Checkbox2" type="checkbox" name="mainForm:selectByTree:_id81:0:_id90:0:indCol2Checkbox2" style="margin-left:2em;"/>
+			                            </td>
+			                            <td class="attach">
+			                                <label for="mainForm:selectByTree:_id81:0:_id90:0:indCol2Checkbox2" style="white-space:nowrap">
+			                                    test, test
+			                                </label>
+			                            </td>
+			                        </tr>
+			                        <tr>
+			                            <td class="attach">
+			                                <input id="mainForm:selectByTree:_id81:0:_id90:1:indCol1Checkbox1" type="checkbox" name="mainForm:selectByTree:_id81:0:_id90:1:indCol1Checkbox1"/>
+			                            </td>
+			                            <td class="">
+			                                <label for="mainForm:selectByTree:_id81:0:_id90:1:indCol1Checkbox1" style="white-space:nowrap">
+			                                    stud2, stud2
+			                                </label>
+			                            </td>
+			                            <td class="attach">
+			                            </td>
+			                            <td class="attach">
+			                            </td>
+			                        </tr>
+			                    </tbody>
+			                </table>
+			            </td>
+	*#
+			        </tr>
+			        <tr>
+			            <td>
+			                <input id="mainForm:selectByTree:_id81:1:selectAllCheckbox" type="checkbox" name="mainForm:selectByTree:_id81:1:selectAllCheckbox"/>
+			                <label for="mainForm:selectByTree:_id81:1:selectAllCheckbox">
+			                    All instructors 
+			                </label>
+			                - <a href="#" style="text-decoration: underline" onclick="document.forms['mainForm']['mainForm:_idcl'].value='mainForm:selectByTree:_id81:1:_id88'; document.forms['mainForm'].submit(); return false;">Collapse instructor list</a>
+			                <table class="listHier nolines hierItemBlockWrapper" cellpadding="0" cellspacing="0" style="margin-left:2em;width:auto;font-weight:normal">
+			                    <tbody>
+			                        <tr>
+			                            <td class="attach">
+			                                <input id="mainForm:selectByTree:_id81:1:_id90:0:indCol1Checkbox1" type="checkbox" name="mainForm:selectByTree:_id81:1:_id90:0:indCol1Checkbox1"/>
+			                            </td>
+			                            <td class="">
+			                                <label for="mainForm:selectByTree:_id81:1:_id90:0:indCol1Checkbox1" style="white-space:nowrap">
+			                                    Instruct 1
+			                                </label>
+			                            </td>
+			                            <td class="attach">
+																			<input id="mainForm:selectByTree:_id81:1:_id90:0:indCol1Checkbox2" type="checkbox" name="mainForm:selectByTree:_id81:1:_id90:0:indCol1Checkbox1"/>
+			                            </td>
+			                            <td class="attach">
+			                                <label for="mainForm:selectByTree:_id81:1:_id90:0:indCol1Checkbox2" style="white-space:nowrap">
+			                                    Instruct 2
+			                                </label>
+
+			                            </td>
+			                        </tr>
+			                    </tbody>
+			                </table>
+			            </td>
+			        </tr>
+			    </tbody>
+			</table>
+			<p class="act">
+				<input type="button" value="Save" class="active"/><input type="button" value="Cancel" />
+			</p>
+		</fieldset>
 			<div class="act">
 				<input accesskey ="s" type="button" class="active" name="post" value="$tlang.getString("gen.pos")" 
 						onclick="javascript:document.newAssignmentForm.onsubmit();showNotif('submitnotif','post','newAssignmentForm');document.getElementById('option').value='post';document.newAssignmentForm.submit();return false;" />

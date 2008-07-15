@@ -1,11 +1,11 @@
 ##<!-- $Header: /cvs/sakai2/legacy/tools/src/webapp/vm/assignment/chef_assignments_instructor_grading_submission.vm,v 1.10 2005/06/03 15:32:15 zqian.umich.edu Exp $ -->
-## no focus_path
 <style type="text/css">
 	.toggleAnchor{
 		border:1px solid #cef;
 		background:#cef url(/library/image/sakai/expand.gif) 5px no-repeat !important;
 		padding:5px 5px 5px 25px !important;
-		cursor:pointer
+		cursor:pointer;
+		margin:.5em 0 0 0;
 	}
 	.toggleAnchor:hover,	.toggleAnchorOpen:hover{
 		border:1px solid #9cf;
@@ -15,18 +15,19 @@
 		border:1px solid #cef;
 		background:#cef url(/library/image/sakai/collapse.gif) 5px no-repeat !important;
 		padding:5px 5px 5px 25px !important;
-		cursor:pointer
+		cursor:pointer;
+		margin:.5em 0 0 0;
 	}
 	.toggledContent{
-		margin:0;
+		margin:0 0 .5em 0;
 		border:2px solid #cef;
-		border-top:none;
+		border-top:1px solid #cef;
 		padding: 1em
 	}
 	.toggledContent h4{
 		color:#000 !important;
 		width:40em;
-		margin:.5em 0 !important;
+		margin:. 0 0  5em 0 !important;
 		padding:.3em 0;
 		border-bottom:2px solid #ccc
 	}
@@ -55,6 +56,8 @@ $('.inlinecoms').hide();
 $('.gencoms').hide();
 $('.attachcoms').hide();
 $('.gradecoms').hide();
+$('.model').hide();
+$('.notes').hide();
 
 $('#toggleInline').click(function(){
 	$('.inlinecoms').fadeToggle();
@@ -108,6 +111,33 @@ $('#toggleGrade').click(function(){
 	else {
 		$('#toggleGrade').removeClass('toggleAnchorOpen')
 			$('#toggleGrade').addClass('toggleAnchor')
+	}	
+  resizeFrame('grow');
+	return false;
+});
+$('#toggleModel').click(function(){
+	$('.model').fadeToggle();
+	if ($('#toggleModel').is('.toggleAnchor')){
+		$('#toggleModel').removeClass('toggleAnchor')
+		$('#toggleModel').addClass('toggleAnchorOpen')
+		}
+	else {
+		$('#toggleModel').removeClass('toggleAnchorOpen')
+			$('#toggleModel').addClass('toggleAnchor')
+	}	
+
+  resizeFrame('grow');
+	return false;
+});
+$('#toggleNotes').click(function(){
+	$('.notes').fadeToggle();
+	if ($('#toggleNotes').is('.toggleAnchor')){
+		$('#toggleNotes').removeClass('toggleAnchor')
+		$('#toggleNotes').addClass('toggleAnchorOpen')
+		}
+	else {
+		$('#toggleNotes').removeClass('toggleAnchorOpen')
+			$('#toggleNotes').addClass('toggleAnchor')
 	}	
   resizeFrame('grow');
 	return false;
@@ -174,7 +204,7 @@ $('#toggleGrade').click(function(){
 			</li>	
 		#end
 	</ul>
-		<form name="topNav" action="#toolForm("$action")" method="post">
+	<form name="topNav" action="#toolForm("$action")" method="post">
 		<div class="navPanel">
 			<div class="itemNav">
 				#if ($!prevSubmissionId)
@@ -339,6 +369,28 @@ $('#toggleGrade').click(function(){
 					$tlang.getString("gen.assinf")
 				</p>	
 			#end
+			
+			
+				<h4  id="toggleModel" class="toggleAnchor specialLink">Model Answer (or Grading guidelines)</h4>
+				<div class="model toggledContent">
+						<p>Model answer text. Model answer text. Model answer text. Model answer text. Model answer text. Model answer text. Model answer text. Model answer text. Model answer text. Model answer text. Model answer text. Model answer text. Model answer text. Model answer text. Model answer text. Model answer text. Model answer text. </p>
+						<ul class="attachList">
+							<li>
+								<img src="/library/image/sakai/word.gif?panel=Main" alt="File attachment" border="0">
+								<a href="#" target="_blank">model1.doc</a>(11 KB)
+							</li>
+							<li>
+								<img src="/library/image/sakai/word.gif?panel=Main" alt="File attachment" border="0">
+								<a href="#" target="_blank">model2.doc</a>(11 KB)
+							</li>
+						</ul>
+						
+				</div>
+			<h4  id="toggleNotes" class="toggleAnchor specialLink">Assignment notes</h4>
+			<div class="notes toggledContent">
+				<textarea cols="70" rows="10">Assignment notes. Assignment notes. Assignment notes. Assignment notes. Assignment notes. Assignment notes. Assignment notes. Assignment notes. Assignment notes. Assignment notes. Assignment notes. </textarea>
+				
+			</div>
 
 			#if ($assignment_expand_flag)
 				#if ($assignment.getContent().getInstructions().length()>0)
@@ -389,13 +441,13 @@ $('#toggleGrade').click(function(){
 					## if there is a text
 ## redundant
 ##					<p class="instruction">
-##						$tlang.getString("gen.submittedtext")aaaaa
+##						$tlang.getString("gen.submittedtext")
 ##					</p>
 					#if(($submission.submitted || !$alertGradeDraft) && $!value_feedback_text.length() >0 )
 						<p class="instruction">$tlang.getString("gradingsub.belisthe")</p>
 						<table border="0" summary="layout"><tr><td>
 						<textarea name="$name_feedback_text" id="$name_feedback_text" rows="30" wrap="virtual" cols="80">$!value_feedback_text</textarea>		
-						#chef_setupformattedtextarea($name_feedback_text)
+## hide for now						#chef_setupformattedtextarea($name_feedback_text)
 						</td></tr></table>
 					#else
 						<p class="instruction">$tlang.getString("gradingsub.nosubmittedtext")</p>
@@ -458,7 +510,7 @@ $('#toggleGrade').click(function(){
 						</p>
 						<table border="0" summary="layout"><tr><td>
 						<textarea name="$name_feedback_comment" id="$name_feedback_comment" rows="30" wrap="virtual" cols="80">#if($!value_feedback_comment)$validator.escapeHtmlFormattedTextarea($!value_feedback_comment)#end</textarea>
-						#chef_setupformattedtextarea($name_feedback_comment)
+## hide for now						#chef_setupformattedtextarea($name_feedback_comment)
 						</td></tr></table>
 						## for returned (not resubmitted ) submission, show the instructor feedback
 						#if ($!prevFeedbackComment)
@@ -672,8 +724,10 @@ $('#toggleGrade').click(function(){
 					</p>	
 			#end
 			<p class="act">
-				<input type="button" accesskey="d" class="active"  name="save" value="$tlang.getString('gen.savdragra')" onclick="javascript:document.gradeForm.action=document.gradeForm.action+'&submissionId=$validator.escapeUrl($submission.Reference)';document.gradeForm.onsubmit();document.getElementById('option').value='savegrade';document.gradeForm.submit();return false;" title="$tlang.getString("gen.savdratit")" />
-				<input type="button" accesskey="s" name="return" value="$tlang.getString('gen.retustud')" onclick="javascript:document.gradeForm.action=document.gradeForm.action+'&submissionId=$validator.escapeUrl($submission.Reference)';document.gradeForm.onsubmit();document.getElementById('option').value='returngrade';document.gradeForm.submit();return false;" title="$tlang.getString("gen.retustudtit")" />	
+				<input type="button" accesskey="d" class="active"  name="save" value="$tlang.getString('gen.savdragra')" onclick="javascript:document.gradeForm.onsubmit();document.getElementById('option').value='savegrade';document.gradeForm.submit();return false;" title="$tlang.getString("gen.savdratit")" />
+				<input type="button" accesskey="s" name="return" value="$tlang.getString('gen.retustud')" onclick="javascript:document.gradeForm.onsubmit();document.getElementById('option').value='returngrade';document.gradeForm.submit();return false;" title="$tlang.getString("gen.retustudtit")" />
+				##<input type="button" accesskey="d" class="active"  name="save" value="$tlang.getString('gen.savdragra')" onclick="javascript:document.gradeForm.action=document.gradeForm.action+'&submissionId=$validator.escapeUrl($submission.Reference)';document.gradeForm.onsubmit();document.getElementById('option').value='savegrade';document.gradeForm.submit();return false;" title="$tlang.getString("gen.savdratit")" />
+				##<input type="button" accesskey="s" name="return" value="$tlang.getString('gen.retustud')" onclick="javascript:document.gradeForm.action=document.gradeForm.action+'&submissionId=$validator.escapeUrl($submission.Reference)';document.gradeForm.onsubmit();document.getElementById('option').value='returngrade';document.gradeForm.submit();return false;" title="$tlang.getString("gen.retustudtit")" />	
 				<input type="button" accesskey="v" name="preview" value="$tlang.getString('gen.pre')" onclick="javascript:document.gradeForm.onsubmit();document.getElementById('option').value='previewgrade';document.gradeForm.submit();return false;" />
 				<input type="button" accesskey="x" name="cancel" value="$tlang.getString('gen.can')" onclick="javascript:document.gradeForm.onsubmit();document.getElementById('option').value='cancelgrade';document.gradeForm.submit();return false;" />
 			</p>
