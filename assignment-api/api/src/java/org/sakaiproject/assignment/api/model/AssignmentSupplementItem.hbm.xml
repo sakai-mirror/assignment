@@ -1,0 +1,63 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE hibernate-mapping PUBLIC "-//Hibernate/Hibernate Mapping DTD 3.0//EN"
+          "http://hibernate.sourceforge.net/hibernate-mapping-3.0.dtd">
+
+<hibernate-mapping>
+    <class name="org.sakaiproject.assignment.api.model.AssignmentSupplementItem" table="ASSIGNMENT_SUPPLEMENT_T" discriminator-value="0">
+       
+        <id name="Id" column="SUPPLEMENT_ID" type="long">
+					<generator class="native">
+						<param name="sequence">ASSIGNMENT_SUPPLEMENT_S</param>
+					</generator>
+		</id>
+		
+		<discriminator>
+	      <column name="TYPE" length="1" index="ASS_SUPP_TYPE_I"/>
+	    </discriminator>
+	    
+		<property name="assignmentId" type="string" not-null="true">
+            <column name="ASSIGNMENT_ID"/>
+        </property>
+        
+        <property name="title" type="string" not-null="false">
+            <column name="TITLE"/>
+        </property>
+        
+        <property name="instruction" type="text" not-null="false">
+            <column name="INSTRUCTION"/>
+        </property>
+        
+        <!-- item viewable open time  -->        
+        <property name="showStartDate" type="java.util.Date" not-null="true" >
+            <column name="SHOW_START_DATE" />
+        </property>
+        
+        <!-- item viewable end time  -->
+        <property name="showEndDate" type="java.util.Date" not-null="true" >
+            <column name="SHOW_END_DATE" />
+        </property>
+        
+        <property name="hide" type="java.lang.Boolean" not-null="true">
+            <column name="HIDE" />
+        </property>
+		
+      	<!--<subclass name="org.sakaiproject.assignment.api.model.AssignmentModelAnswerItem" 
+      			discriminator-value="1">
+        </subclass>
+        
+      	<subclass name="org.sakaiproject.assignment.api.model.AssignmentNoteItem"
+        		discriminator-value="2">
+        </subclass>-->
+        
+       <set name="attachmentSet" lazy="true" inverse="true" cascade="none">
+	        <key column="ASN_SUPP_ITEM_ID"/>                        
+	        <one-to-many class="org.sakaiproject.assignment.api.model.AssignmentSupplementItemAttachment"/>            
+    		</set>
+              
+        <set name="roleSet" lazy="true" inverse="true" cascade="none">
+	        <key column="ASN_SUPP_ITEM_ID"/>                        
+	        <one-to-many class="org.sakaiproject.assignment.api.model.AssignmentSupplementItemRole"/>            
+    		</set>
+    </class>
+    
+</hibernate-mapping>

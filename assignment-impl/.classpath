@@ -2,6 +2,7 @@
 <classpath>
 	<classpathentry excluding="**/.DS_Store" kind="src" path="impl/src/java"/>
 	<classpathentry kind="src" path="impl/src/test"/>
+	<classpathentry kind="src" path="impl/src/hbm"/>
 	<classpathentry kind="var" path="M2_REPO/commons-logging/commons-logging/1.0.4/commons-logging-1.0.4.jar"/>
 	<classpathentry combineaccessrules="false" kind="src" path="/assignment-api"/>
 	<classpathentry kind="var" path="M2_REPO/javax/servlet/servlet-api/2.4/servlet-api-2.4.jar"/>

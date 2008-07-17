@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE hibernate-mapping PUBLIC "-//Hibernate/Hibernate Mapping DTD 3.0//EN"
+          "http://hibernate.sourceforge.net/hibernate-mapping-3.0.dtd">
+	
+<hibernate-mapping default-lazy="false">
+	<class name="org.sakaiproject.assignment.api.model.AssignmentSupplementItemAttachment" table="ASSIGNMENT_SUPPLEMENT_ATTACHMENT_T">
+		
+		<comment>This table is for supplement attachment. </comment>
+        
+        <id name="id" length="99" column="ID">
+			<generator class="org.sakaiproject.id.hbm.IdGenerator"/>
+		</id>
+       <property name="attachmentId" type="java.lang.String" not-null="true">
+            <column name="ATTACHMENT_ID" />
+        </property>
+        
+         <!--  This maps to the ASSIGNMENT_SUPPLEMENT_ITEM_T table -->
+        <many-to-one name="assignmentSupplementItem" column="ASN_SUPP_ITEM_ID"
+        	class="org.sakaiproject.assignment.api.model.AssignmentSupplementItem"
+        	not-null="true" index="ASSIGN_SUPP_ATTACH_I" />
+    </class>
+    
+</hibernate-mapping>

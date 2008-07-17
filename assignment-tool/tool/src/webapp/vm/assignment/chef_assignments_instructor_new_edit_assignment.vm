@@ -699,7 +699,8 @@ $(document).ready(function(){
 					<span class="reqStar">*</span>
 					Provide a model answer or a solution to the assignment.
 				</label>
-					<textarea name="modeltext" id="modeltext" cols="60" rows="10" wrap="virtual">A rich text editor</textarea>
+					<textarea name="modeltext" id="modeltext" cols="60" rows="10" wrap="virtual"></textarea>
+					#chef_setupformattedtextarea("modeltext")
 			</div>
 				<div class="act">
 					<input type="button" name="attach" value="$tlang.getString('gen.addatt')" onclick="javascript:document.newAssignmentForm.onsubmit();document.getElementById('option').value='attach';document.newAssignmentForm.submit();return false;"/>
@@ -729,7 +730,8 @@ $(document).ready(function(){
 				<label for="ggtext" class="block">
 					Provide grading rationale. You can choose to whom and when this will display.
 				</label>
-					<textarea name="ggtext" id="ggtext" cols="60" rows="10" wrap="virtual">A rich text editor</textarea>
+					<textarea name="ggtext" id="ggtext" cols="60" rows="10" wrap="virtual"></textarea>
+					#chef_setupformattedtextarea("ggtext")
 			</div>
 			<div class="act">
 					<input type="button" name="attach" value="$tlang.getString('gen.addatt')" onclick="javascript:document.newAssignmentForm.onsubmit();document.getElementById('option').value='attach';document.newAssignmentForm.submit();return false;"/>
@@ -758,7 +760,8 @@ $(document).ready(function(){
 				<label for="assigntext" class="block">
 					Notes you can edit at any point to track of assignment issues, thoughts, etc. <br /> Available to you while you are grading. 
 				</label>
-					<textarea name="assigntext" id="assigntext" cols="60" rows="10" wrap="virtual">A rich text editor</textarea>
+					<textarea name="assigntext" id="assigntext" cols="60" rows="10" wrap="virtual"></textarea>
+					#chef_setupformattedtextarea("assigntext")
 			</div>
 			<p class="longtext"  style="margin:.2em">
 				<span class="reqStar">*</span>				
@@ -789,7 +792,8 @@ $(document).ready(function(){
 				<label for="otherextranodestext" class="block">
 					Information displayed at a specific time to whomever you choose.
 				</label>
-					<textarea name="otherextranodestext" id="otherextranodestext" cols="60" rows="10" wrap="virtual">A rich text editor</textarea>
+					<textarea name="otherextranodestext" id="otherextranodestext" cols="60" rows="10" wrap="virtual"></textarea>
+					#chef_setupformattedtextarea("otherextranodestext")
 			</div>
        <table>
             <tr>
