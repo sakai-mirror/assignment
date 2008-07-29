@@ -36,6 +36,17 @@ public class AssignmentModelAnswerItem extends AssignmentSupplementItem {
 		// TODO Auto-generated constructor stub
 	}
 	
+	private int showToStudent;
+
+	public int getShowToStudent() {
+		return showToStudent;
+	}
+
+	public void setShowToStudent(int showToStudent) {
+		this.showToStudent = showToStudent;
+	}
+	
+	
 	
 	
 }

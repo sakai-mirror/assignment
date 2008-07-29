@@ -3,17 +3,13 @@
           "http://hibernate.sourceforge.net/hibernate-mapping-3.0.dtd">
 
 <hibernate-mapping>
-    <class name="org.sakaiproject.assignment.api.model.AssignmentSupplementItem" table="ASSIGNMENT_SUPPLEMENT_T" discriminator-value="0">
+    <class name="org.sakaiproject.assignment.api.model.AssignmentSupplementItem" table="ASSIGN_SUPPLEMENT_T" >
        
         <id name="Id" column="SUPPLEMENT_ID" type="long">
 					<generator class="native">
 						<param name="sequence">ASSIGNMENT_SUPPLEMENT_S</param>
 					</generator>
 		</id>
-		
-		<discriminator>
-	      <column name="TYPE" length="1" index="ASS_SUPP_TYPE_I"/>
-	    </discriminator>
 	    
 		<property name="assignmentId" type="string" not-null="true">
             <column name="ASSIGNMENT_ID"/>
@@ -40,14 +36,6 @@
         <property name="hide" type="java.lang.Boolean" not-null="true">
             <column name="HIDE" />
         </property>
-		
-      	<!--<subclass name="org.sakaiproject.assignment.api.model.AssignmentModelAnswerItem" 
-      			discriminator-value="1">
-        </subclass>
-        
-      	<subclass name="org.sakaiproject.assignment.api.model.AssignmentNoteItem"
-        		discriminator-value="2">
-        </subclass>-->
         
        <set name="attachmentSet" lazy="true" inverse="true" cascade="none">
 	        <key column="ASN_SUPP_ITEM_ID"/>                        
@@ -59,5 +47,18 @@
 	        <one-to-many class="org.sakaiproject.assignment.api.model.AssignmentSupplementItemRole"/>            
     		</set>
     </class>
+        
+    <joined-subclass name="org.sakaiproject.assignment.api.model.AssignmentModelAnswerItem" table="ASSIGN_MODEL_ANSWER_T"
+    	extends="org.sakaiproject.assignment.api.model.AssignmentSupplementItem">
+    	<key column="SUPPLEMENT_ID" />
+    	<property name="showToStudent" type="integer">
+    		 <column name="SHOW_TO_STUDENT" />
+    	</property>
+    </joined-subclass>
+        
+    <joined-subclass name="org.sakaiproject.assignment.api.model.AssignmentNoteItem" table="ASSIGN_NOTE_ITEM_T" 
+    	extends="org.sakaiproject.assignment.api.model.AssignmentSupplementItem">
+    	<key column="SUPPLEMENT_ID" />
+    </joined-subclass>
     
 </hibernate-mapping>

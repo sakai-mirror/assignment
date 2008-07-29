@@ -468,6 +468,12 @@ public class AssignmentAction extends PagedResourceActionII
 	
 	private static final String NEW_ASSIGNMENT_PAST_CLOSE_DATE = "new_assignment_past_close_date";
 	
+	/*************************** assignment model answer attributes *************************/
+	private static final String NEW_ASSIGNMENT_MODEL_ANSWER = "new_assignment_model_answer";
+	private static final String NEW_ASSIGNMENT_MODEL_ANSWER_TEXT = "new_assignment_model_answer_text";
+	private static final String NEW_ASSIGNMENT_MODEL_SHOW_TO_STUDENT = "new_assignment_model_answer_show_to_student";
+	private static final String NEW_ASSIGNMENT_MODEL_ANSWER_ATTACHMENT = "new_assignment_model_answer_attachment";
+	
 	/**************************** assignment year range *************************/
 	private static final String NEW_ASSIGNMENT_YEAR_RANGE_FROM = "new_assignment_year_range_from";
 	private static final String NEW_ASSIGNMENT_YEAR_RANGE_TO = "new_assignment_year_range_to";
@@ -10549,6 +10555,38 @@ public class AssignmentAction extends PagedResourceActionII
 		if (contentReviewService == null)
 		{
 			contentReviewService = (ContentReviewService) ComponentManager.get(ContentReviewService.class.getName());
+		}
+	}
+	
+	/******************* model answer *********/
+	/**
+	 * add model answer input into state variables
+	 */
+	public void doModel_answer(RunData data)
+	{
+		SessionState state = ((JetspeedRunData) data).getPortletSessionState(((JetspeedRunData) data).getJs_peid());
+		ParameterParser params = data.getParameters();
+		
+		String text = StringUtil.trimToNull(params.get("modelanswer_text"));
+		if (text == null)
+		{
+			// no text entered for model answer
+			addAlert(state, rb.getString("modelAnswer.show_to_student.alert.noText"));
+		}
+		
+		int showTo = params.getInt("modelanswer_when");
+		if (showTo == 0)
+		{
+			// no show to criteria specifided for model answer
+			addAlert(state, rb.getString("modelAnswer.show_to_student.alert.noShowTo"));
+		}
+		
+		if (state.getAttribute(STATE_MESSAGE) == null)
+		{
+			state.setAttribute(NEW_ASSIGNMENT_MODEL_ANSWER, Boolean.TRUE);
+			state.setAttribute(NEW_ASSIGNMENT_MODEL_ANSWER_TEXT, text);
+			state.setAttribute(NEW_ASSIGNMENT_MODEL_SHOW_TO_STUDENT, showTo);
+			//state.setAttribute(NEW_ASSIGNMENT_MODEL_ANSWER_ATTACHMENT);
 		}
 	}
 }	

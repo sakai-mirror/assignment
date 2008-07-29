@@ -3,7 +3,7 @@
           "http://hibernate.sourceforge.net/hibernate-mapping-3.0.dtd">
 	
 <hibernate-mapping default-lazy="false">
-	<class name="org.sakaiproject.assignment.api.model.AssignmentSupplementItemAttachment" table="ASSIGNMENT_SUPPLEMENT_ATTACHMENT_T">
+	<class name="org.sakaiproject.assignment.api.model.AssignmentSupplementItemAttachment" table="ASSIGN_SUPPLEMENT_ATTACHMENT_T">
 		
 		<comment>This table is for supplement attachment. </comment>
         

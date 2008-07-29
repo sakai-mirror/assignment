@@ -3,7 +3,7 @@
           "http://hibernate.sourceforge.net/hibernate-mapping-3.0.dtd">
 
 <hibernate-mapping>
-    <class name="org.sakaiproject.assignment.api.model.AssignmentSupplementItemRole" table="ASSIGNMENT_SUPPLEMENT_ROLE_T">
+    <class name="org.sakaiproject.assignment.api.model.AssignmentSupplementItemRole" table="ASSIGN_SUPPLEMENT_ROLE_T">
     	 
         <id name="id" length="99" column="ID">
 			<generator class="org.sakaiproject.id.hbm.IdGenerator"/>

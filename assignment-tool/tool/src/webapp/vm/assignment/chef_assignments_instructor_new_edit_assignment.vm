@@ -1,6 +1,7 @@
 ##<!-- $Header: Exp $ -->
 ## Assignments - Instructor new Assignment view
 <script type="text/javascript" src="/library/js/jquery.js"></script>
+<script type="text/javascript" src="/library/js/form.js"></script>
 <script language="JavaScript" type="text/JavaScript">
 $(document).ready(function(){ 
   $('.extraNode').hide();
@@ -11,7 +12,56 @@ $(document).ready(function(){
 			  $('.extraNode').hide();
 			  $('#' + boxes_index).fadeIn('slow');
 				resizeFrame('grow');
-    }); 
+    });
+  $("#modelanswer_add").click(function() 
+  {
+  		$('.extraNode').hide();
+			 $('#modelanswer').fadeIn('slow');
+				resizeFrame('grow');
+  });
+ 	$("#modelanswer_edit").click(function() 
+  {
+  		$('.extraNode').hide();
+			 $('#modelanswer').fadeIn('slow');
+				resizeFrame('grow');
+  });
+  $("#modelanswer_save").click(function() 
+  {
+  	if ($('#modelanswer_text').val() == "")
+  	{
+  		alert('$tlang.getString("modelAnswer.show_to_student.alert.noText")');
+  		return false;
+  	}
+  	else if ($('#modelanswer_when').val() == 0)
+  	{
+  		alert('$tlang.getString("modelAnswer.show_to_student.alert.noShowTo")');
+  		return false;
+  	}
+  	else
+  	{
+  		$('.extraNode').hide();
+				$('#modelanswer').hide();
+				$("#selectExtra").val('1default');
+				$("#hasModelAnswer").css('display', 'block');
+				$("#noModelAnswer").css('display', 'none');
+  		return true;
+  	}
+  });
+  ## after the Cancel button for Model Answer is clicked, close the Model Answer panel 
+  $('#modelanswer_cancel').click(function()
+  {
+  		$('.extraNode').hide();
+				$('#modelanswer').hide();
+				$("#selectExtra").val('1default');
+  });
+  
+  ## after the Cancel button for other objects is clicked, close the Other object panel 
+  $('#otherextranodes_cancel').click(function()
+  {
+  		$('.extraNode').hide();
+				$('#otherextranodes').hide();
+				$("#selectExtra").val('1default');
+  });
 }); 
 </script>	
 <style type="text/css">
@@ -666,7 +716,12 @@ $(document).ready(function(){
 				Model Answer
 			</td>
 			<td class="itemAction" style="white-space:nowrap">
-				<a href="#">Edit</a> | <a href="#">Delete</a>
+				<div id="noModelAnswer" style="display:block">
+					<a id="modelanswer_add" href="#">Add</a>
+				</div>
+				<div id="hasModelAnswer" style="display:none">
+					<a id="modelanswer_edit" href="#">Edit</a> | <a href="#">Delete</a>
+				</div>
 			</td>
 		</tr>
 		<tr>
@@ -693,36 +748,38 @@ $(document).ready(function(){
 			</select>
 		</p>
 		<fieldset class="extraNode" id="modelanswer">
-			<legend><span>Model Answer</span></legend>
-			<div class="longtext" style="margin:.2em">
-				<label for="modeltext" class="block">
-					<span class="reqStar">*</span>
-					Provide a model answer or a solution to the assignment.
-				</label>
-					<textarea name="modeltext" id="modeltext" cols="60" rows="10" wrap="virtual"></textarea>
-					#chef_setupformattedtextarea("modeltext")
-			</div>
+				<legend><span>Model Answer</span></legend>
+				<div class="longtext" style="margin:.2em">
+					<label for="modeltext" class="block">
+						<span class="reqStar">*</span>$tlang.getString("modelAnswer.instruction")
+					</label>
+					<textarea name="modelanswer_text" id="modelanswer_text" cols="60" rows="10" wrap="virtual"></textarea>
+					###chef_setupformattedtextareaparams("modeltext" "200" "365" "small") 
+				</div>
 				<div class="act">
-					<input type="button" name="attach" value="$tlang.getString('gen.addatt')" onclick="javascript:document.newAssignmentForm.onsubmit();document.getElementById('option').value='attach';document.newAssignmentForm.submit();return false;"/>
+					<input type="button" name="attach" value="$tlang.getString('gen.addatt')" onclick="javascript:document.modelAnswerForm.onsubmit();document.getElementById('option').value='attach';document.modelAnswerForm.submit();return false;"/>
 				</div>
 
 			<p class="longtext"  style="margin:.2em">
 			<span class="reqStar">*</span>
-				<label for="modelwhen" class="block">
-					Show to students
+				<label for="modelanswer_when" class="block">
+					$tlang.getString("modelAnswer.show_to_student.prompt")
 				</label>
-				<select id="modelwhen">
-					<option value="modelwhendefault"> --select one-- </option>
-					<option value="modelwhen1">Before student starts assignment</option>
-					<option value="modelwhen1">After student submits</option>
-					<option value="modelwhen2">After submission is graded and returned</option>
-					<option value="modelwhen3">After accept-until date</option>
+				## show to student time option
+				<select id="modelanswer_when">
+					#foreach ($k in ["0", "1", "2", "3", "4"])
+						#set($string = "modelAnswer.show_to_student.")
+						#set($string = $string.concat($k))
+						<option value="$k"> $tlang.getString($string) </option>
+					#end
 				</select>
 			</p>
 			<p class="act">
-				<input type="button" value="Save" class="active"/><input type="button" value="Cancel" />
+			<input type="button" id="modelanswer_save" value="$tlang.getString('gen.sav')" class="active" />
+				<input type="button" id="modelanswer_cancel" value="$tlang.getString('gen.can')" />
 			</p>
-		</fieldset>				
+		</fieldset>
+		## the panel for grading guideline				
 		<fieldset class="extraNode" id="gradingguidelines">
 			<legend>Grading guidelines</legend>
 			<div class="longtext" style="margin:.2em">
@@ -731,7 +788,7 @@ $(document).ready(function(){
 					Provide grading rationale. You can choose to whom and when this will display.
 				</label>
 					<textarea name="ggtext" id="ggtext" cols="60" rows="10" wrap="virtual"></textarea>
-					#chef_setupformattedtextarea("ggtext")
+					###chef_setupformattedtextareaparams("ggtext" "200" "365" "small")					
 			</div>
 			<div class="act">
 					<input type="button" name="attach" value="$tlang.getString('gen.addatt')" onclick="javascript:document.newAssignmentForm.onsubmit();document.getElementById('option').value='attach';document.newAssignmentForm.submit();return false;"/>
@@ -752,7 +809,8 @@ $(document).ready(function(){
 			<p class="act">
 				<input type="button" value="Save" class="active"/><input type="button" value="Cancel" />
 			</p>
-		</fieldset>				
+		</fieldset>	
+		## the panel for private note			
 		<fieldset class="extraNode" id="assignotes">
 			<legend>Assignment notes</legend>
 			<div class="longtext" style="margin:.2em">
@@ -761,7 +819,7 @@ $(document).ready(function(){
 					Notes you can edit at any point to track of assignment issues, thoughts, etc. <br /> Available to you while you are grading. 
 				</label>
 					<textarea name="assigntext" id="assigntext" cols="60" rows="10" wrap="virtual"></textarea>
-					#chef_setupformattedtextarea("assigntext")
+					###chef_setupformattedtextareaparams("assigntext" "200" "365" "small")
 			</div>
 			<p class="longtext"  style="margin:.2em">
 				<span class="reqStar">*</span>				
@@ -779,13 +837,14 @@ $(document).ready(function(){
 			<p class="act">
 				<input type="button" value="Save" class="active"/><input type="button" value="Cancel" />
 			</p>
-		</fieldset>						
+		</fieldset>			
+		## the panel for other type of object			
 		<fieldset class="extraNode" id="otherextranodes">
 			<legend>Extra information</legend>
 			<div class="shorttext" style="margin:.2em">
 				<span class="reqStar">*</span>				
 				<label  for="extranodestitle">Title</label>
-				<input type="text" value="Item title" size="20" maxlength="30" id="extranodestitle"/>
+				<input type="text" value="" size="20" maxlength="30" id="extranodestitle"/>
 			</div>	
 			<div class="longtext" style="margin:.2em">
 				<span class="reqStar">*</span>
@@ -793,7 +852,7 @@ $(document).ready(function(){
 					Information displayed at a specific time to whomever you choose.
 				</label>
 					<textarea name="otherextranodestext" id="otherextranodestext" cols="60" rows="10" wrap="virtual"></textarea>
-					#chef_setupformattedtextarea("otherextranodestext")
+					###chef_setupformattedtextareaparams("otherextranodestext" "200" "365" "small")
 			</div>
        <table>
             <tr>
@@ -1168,7 +1227,8 @@ $(document).ready(function(){
 			    </tbody>
 			</table>
 			<p class="act">
-				<input type="button" value="Save" class="active"/><input type="button" value="Cancel" />
+				<input type="button" id="otherextranodes_save" value="Save" class="active"/>
+				<input type="button" id ="otherextranodes_cancel" value="Cancel" />
 			</p>
 		</fieldset>
 			<div class="act">
