@@ -59,6 +59,10 @@ import org.sakaiproject.assignment.api.AssignmentContentEdit;
 import org.sakaiproject.assignment.api.AssignmentEdit;
 import org.sakaiproject.assignment.api.AssignmentSubmission;
 import org.sakaiproject.assignment.api.AssignmentSubmissionEdit;
+import org.sakaiproject.assignment.api.model.AssignmentModelAnswerItem;
+import org.sakaiproject.assignment.api.model.AssignmentNoteItem;
+import org.sakaiproject.assignment.api.model.AssignmentAllPurposeItem;
+import org.sakaiproject.assignment.api.model.AssignmentSupplementItemService;
 import org.sakaiproject.assignment.cover.AssignmentService;
 import org.sakaiproject.assignment.taggable.api.AssignmentActivityProducer;
 import org.sakaiproject.taggable.api.TaggingHelperInfo;
@@ -670,6 +674,8 @@ public class AssignmentAction extends PagedResourceActionII
 	private static final String VIEW_SUBMISSION_LIST_OPTION = "view_submission_list_option";
 	
 	private ContentHostingService m_contentHostingService = null;
+	
+	private AssignmentSupplementItemService m_assignmentSupplementItemService = null;
 	
 	/**
 	 * central place for dispatching the build routines based on the state name
@@ -4691,6 +4697,18 @@ public class AssignmentAction extends PagedResourceActionII
 					}
 	
 				} //if
+				
+				// assignment supplement items
+				if (StringUtil.trimToNull(params.getString("modelanswer_text")) != null)
+				{
+					// add model answer
+					AssignmentModelAnswerItem mAnswer = m_assignmentSupplementItemService.newModelAnswer();
+					mAnswer.setAssignmentId(a.getId());
+					mAnswer.setText(StringUtil.trimToNull(params.getString("modelanswer_text")));
+					String when = params.getString("modelanswer_when");
+					mAnswer.setShowTo(params.getInt("modelanswer_when"));
+					m_assignmentSupplementItemService.saveModelAnswer(mAnswer);
+				}
 
 			} // if
 
@@ -6961,6 +6979,11 @@ public class AssignmentAction extends PagedResourceActionII
 		if (m_contentHostingService == null)
 		{
 			m_contentHostingService = (ContentHostingService) ComponentManager.get("org.sakaiproject.content.api.ContentHostingService");
+		}
+		
+		if (m_assignmentSupplementItemService == null)
+		{
+			m_assignmentSupplementItemService = (AssignmentSupplementItemService) ComponentManager.get("org.sakaiproject.assignment.api.model.AssignmentSupplementItemService");
 		}
 
 		String siteId = ToolManager.getCurrentPlacement().getContext();

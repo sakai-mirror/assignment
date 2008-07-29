@@ -65,7 +65,6 @@
 		<property name="mappingResources">
 			<list>
 				<value>org/sakaiproject/assignment/api/model/AssignmentSupplementItemAttachment.hbm.xml</value>
-				<value>org/sakaiproject/assignment/api/model/AssignmentSupplementItemRole.hbm.xml</value>
 				<value>org/sakaiproject/assignment/api/model/AssignmentSupplementItem.hbm.xml</value>
 			</list>
 		</property>

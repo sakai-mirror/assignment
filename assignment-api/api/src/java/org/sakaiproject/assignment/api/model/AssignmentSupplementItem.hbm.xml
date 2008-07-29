@@ -2,12 +2,59 @@
 <!DOCTYPE hibernate-mapping PUBLIC "-//Hibernate/Hibernate Mapping DTD 3.0//EN"
           "http://hibernate.sourceforge.net/hibernate-mapping-3.0.dtd">
 
-<hibernate-mapping>
-    <class name="org.sakaiproject.assignment.api.model.AssignmentSupplementItem" table="ASSIGN_SUPPLEMENT_T" >
+<hibernate-mapping package="org.sakaiproject.assignment.api.model" default-lazy="false">
+	<class name="AssignmentModelAnswerItem" table="ASSIGN_MODEL_ANS_ITEM_T" >
        
-        <id name="Id" column="SUPPLEMENT_ID" type="long">
+        <id name="Id" column="ID" type="long">
 					<generator class="native">
-						<param name="sequence">ASSIGNMENT_SUPPLEMENT_S</param>
+						<param name="sequence">ASSIGN_MODEL_ANSWER_S</param>
+					</generator>
+		</id>
+	    
+		<property name="assignmentId" type="string" not-null="true">
+            <column name="ASSIGNMENT_ID"/>
+        </property>
+        
+        <property name="text" type="string" not-null="false">
+            <column name="TEXT"/>
+        </property>
+        
+        <property name="showTo" type="integer" not-null="false">
+            <column name="SHOW_TO"/>
+        </property>
+ 
+       <set name="attachmentSet" lazy="true" inverse="true" cascade="none">
+	        <key column="ASN_MODEL_ANSWER_ID"/>                        
+	        <one-to-many class="org.sakaiproject.assignment.api.model.AssignmentModelAnswerAttachment"/>            
+    	</set>
+    </class>
+    
+    <class name="AssignmentNoteItem" table="ASSIGN_NOTE_ITEM_T" >
+       
+        <id name="Id" column="ID" type="long">
+					<generator class="native">
+						<param name="sequence">ASSIGN_NOTE_S</param>
+					</generator>
+		</id>
+	    
+		<property name="assignmentId" type="string" not-null="true">
+            <column name="ASSIGNMENT_ID"/>
+        </property>
+        
+        <property name="note" type="string" not-null="false">
+            <column name="NOTE"/>
+        </property>
+        
+        <property name="shareWith" type="integer" not-null="false">
+            <column name="SHARE_WITH"/>
+        </property>
+    </class>
+    
+    <class name="AssignmentAllPurposeItem" table="ASSIGN_ALL_PURPOSE_ITEM_T" >
+       
+        <id name="Id" column="ID" type="long">
+					<generator class="native">
+						<param name="sequence">ASSIGN_ALL_PURPOSE_S</param>
 					</generator>
 		</id>
 	    
@@ -36,29 +83,13 @@
         <property name="hide" type="java.lang.Boolean" not-null="true">
             <column name="HIDE" />
         </property>
-        
-       <set name="attachmentSet" lazy="true" inverse="true" cascade="none">
-	        <key column="ASN_SUPP_ITEM_ID"/>                        
-	        <one-to-many class="org.sakaiproject.assignment.api.model.AssignmentSupplementItemAttachment"/>            
-    		</set>
-              
-        <set name="roleSet" lazy="true" inverse="true" cascade="none">
-	        <key column="ASN_SUPP_ITEM_ID"/>                        
-	        <one-to-many class="org.sakaiproject.assignment.api.model.AssignmentSupplementItemRole"/>            
-    		</set>
     </class>
-        
-    <joined-subclass name="org.sakaiproject.assignment.api.model.AssignmentModelAnswerItem" table="ASSIGN_MODEL_ANSWER_T"
-    	extends="org.sakaiproject.assignment.api.model.AssignmentSupplementItem">
-    	<key column="SUPPLEMENT_ID" />
-    	<property name="showToStudent" type="integer">
-    		 <column name="SHOW_TO_STUDENT" />
-    	</property>
-    </joined-subclass>
-        
-    <joined-subclass name="org.sakaiproject.assignment.api.model.AssignmentNoteItem" table="ASSIGN_NOTE_ITEM_T" 
-    	extends="org.sakaiproject.assignment.api.model.AssignmentSupplementItem">
-    	<key column="SUPPLEMENT_ID" />
-    </joined-subclass>
+    
+    <query name = "findModelAnswerByAssignmentId">
+			<![CDATA[
+			from AssignmentModelAnswerItem m
+			where m.assignmentId = :id
+		]]>
+	</query>
     
 </hibernate-mapping>

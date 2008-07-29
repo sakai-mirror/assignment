@@ -27,4 +27,34 @@ import java.util.Set ;
  */
 public interface AssignmentSupplementItemService {
 	
+	/**
+	 * New AssignmentModelAnswerItem object
+	 * @param assignmentId
+	 * @param text
+	 * @param showTo
+	 * @return
+	 */
+	public AssignmentModelAnswerItem newModelAnswer();
+	
+	/**
+	 * Save the ModelAnswer object
+	 * @param mItem
+	 * @return
+	 */
+	public boolean saveModelAnswer(AssignmentModelAnswerItem mItem);
+	
+	/**
+	 * Remove the ModelAnswer object
+	 * @param mItem
+	 * @return
+	 */
+	public boolean removeModelAnswer(AssignmentModelAnswerItem mItem);
+	
+	/**
+	 * Get the ModelAnswer object
+	 * @param assignmentId
+	 * @return
+	 */
+	public AssignmentModelAnswerItem getModelAnswer(String assignmentId);
+
 }

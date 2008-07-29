@@ -1,16 +1,14 @@
 package org.sakaiproject.assignment.api.model;
 
-import org.sakaiproject.assignment.api.model.AssignmentSupplementItem;
-
 /**
  * the attachment for the AssigmentSupplementItem object
  * @author zqian
  *
  */
-public class AssignmentSupplementItemAttachment {
+public class AssignmentModelAnswerAttachment {
 	private Long id;
 	private String attachmentId;
-	private AssignmentSupplementItem assignmentSupplementItem;
+	private AssignmentModelAnswerItem assignmentModelAnswerItem;
 	
 	public Long getId() {
 		return id;
@@ -24,13 +22,13 @@ public class AssignmentSupplementItemAttachment {
 	public void setAttachmentId(String attachmentId) {
 		this.attachmentId = attachmentId;
 	}
-	public AssignmentSupplementItem getAssignmentSupplementItem()
+	public AssignmentModelAnswerItem getAssignmentModelAnswerItem()
 	{
-		return this.assignmentSupplementItem;
+		return this.assignmentModelAnswerItem;
 	}
-	public void setAssignmentSupplementItem(AssignmentSupplementItem assignmentSupplementItem)
+	public void setAssignmentModelAnswerItem(AssignmentModelAnswerItem assignmentModelAnswerItem)
 	{
-		this.assignmentSupplementItem = assignmentSupplementItem;
+		this.assignmentModelAnswerItem = assignmentModelAnswerItem;
 	}
 	
 

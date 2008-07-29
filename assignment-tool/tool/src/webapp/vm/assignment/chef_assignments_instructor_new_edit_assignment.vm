@@ -13,6 +13,7 @@ $(document).ready(function(){
 			  $('#' + boxes_index).fadeIn('slow');
 				resizeFrame('grow');
     });
+  ####################### for model answer panel ##############################
   $("#modelanswer_add").click(function() 
   {
   		$('.extraNode').hide();
@@ -25,23 +26,33 @@ $(document).ready(function(){
 			 $('#modelanswer').fadeIn('slow');
 				resizeFrame('grow');
   });
+  $("#modelanswer_delete").click(function() 
+  {
+  		$('#modelanswer_text').val("");
+  		$('#modelanswer_when').val("0");
+  		$('.extraNode').hide();
+				$('#modelanswer').hide();
+				$("#selectExtra").val('1default');
+				$("#hasModelAnswer").css('display', 'none');
+				$("#noModelAnswer").css('display', 'block');
+  		return true;
+  });
   $("#modelanswer_save").click(function() 
   {
   	if ($('#modelanswer_text').val() == "")
   	{
-  		alert('$tlang.getString("modelAnswer.show_to_student.alert.noText")');
+  		alert('$tlang.getString("modelAnswer.alert.noText")');
   		return false;
   	}
   	else if ($('#modelanswer_when').val() == 0)
   	{
-  		alert('$tlang.getString("modelAnswer.show_to_student.alert.noShowTo")');
+  		alert('$tlang.getString("modelAnswer.alert.noShowTo")');
   		return false;
   	}
   	else
   	{
   		$('.extraNode').hide();
 				$('#modelanswer').hide();
-				$("#selectExtra").val('1default');
 				$("#hasModelAnswer").css('display', 'block');
 				$("#noModelAnswer").css('display', 'none');
   		return true;
@@ -54,13 +65,83 @@ $(document).ready(function(){
 				$('#modelanswer').hide();
 				$("#selectExtra").val('1default');
   });
-  
-  ## after the Cancel button for other objects is clicked, close the Other object panel 
-  $('#otherextranodes_cancel').click(function()
+  ######################### for private notes panel ######################
+  $("#note_add").click(function() 
   {
   		$('.extraNode').hide();
-				$('#otherextranodes').hide();
-				$("#selectExtra").val('1default');
+			 $('#note').fadeIn('slow');
+				resizeFrame('grow');
+  });
+ 	$("#note_edit").click(function() 
+  {
+  		$('.extraNode').hide();
+			 $('#note').fadeIn('slow');
+				resizeFrame('grow');
+  });
+  $("#note_save").click(function() 
+  {
+  	if ($('#note_text').val() == "")
+  	{
+  		alert('$tlang.getString("note.alert.noText")');
+  		return false;
+  	}
+  	else if ($('#note_to').val() == 0)
+  	{
+  		alert('$tlang.getString("note.alert.noTo")');
+  		return false;
+  	}
+  	else
+  	{
+  		$('.extraNode').hide();
+				$('#note').hide();
+				$("#hasNote").css('display', 'block');
+				$("#noNote").css('display', 'none');
+  		return true;
+  	}
+  });
+  $('#note_cancel').click(function()
+  {
+  		$('.extraNode').hide();
+				$('#note').hide();
+  });
+  ######################### for all purpose item panel ######################
+  $("#other_add").click(function() 
+  {
+  		$('.extraNode').hide();
+			 $('#other').fadeIn('slow');
+				resizeFrame('grow');
+  });
+ 	$("#other_edit").click(function() 
+  {
+  		$('.extraNode').hide();
+			 $('#other').fadeIn('slow');
+				resizeFrame('grow');
+  });
+  $("#other_save").click(function() 
+  {
+  	if ($('#other_title').val() == "")
+  	{
+  		alert('$tlang.getString("other.alert.noTitle")');
+  		return false;
+  	}
+  	else if ($('#other_text').val() == 0)
+  	{
+  		alert('$tlang.getString("other.alert.noText")');
+  		return false;
+  	}
+  	else
+  	{
+  		$('.extraNode').hide();
+				$('#other').hide();
+				$("#hasOther").css('display', 'block');
+				$("#noOther").css('display', 'none');
+  		return true;
+  	}
+  });
+  $('#other_cancel').click(function()
+  {
+  		$('.extraNode').hide();
+				$('#other').hide();
   });
 }); 
 </script>	
@@ -713,29 +794,47 @@ $(document).ready(function(){
 		<caption style="border-bottom:1px solid #ccc;text-align:left; margin-top:1em;padding-bottom:.3em">Existing items</caption>
 		<tr>
 			<td style="padding-right:5em">
-				Model Answer
+				$tlang.getString("modelAnswer")
 			</td>
 			<td class="itemAction" style="white-space:nowrap">
 				<div id="noModelAnswer" style="display:block">
-					<a id="modelanswer_add" href="#">Add</a>
+					<a id="modelanswer_add" href="#">$tlang.getString("new")</a>
 				</div>
 				<div id="hasModelAnswer" style="display:none">
-					<a id="modelanswer_edit" href="#">Edit</a> | <a href="#">Delete</a>
+					<a id="modelanswer_edit" href="#">$tlang.getString("gen.revi")</a> | <a id="modelanswer_delete" href="#">$tlang.getString("delet")</a>
 				</div>
 			</td>
 		</tr>
 		<tr>
 			<td style="padding-right:5em">
-				Private notes
+				$tlang.getString("note")
 			</td>
 			<td class="itemAction" style="white-space:nowrap">
-				<a href="#">Edit</a> | <a href="#">Delete</a>
+				<div id="noNote" style="display:block">
+					<a id="note_add" href="#">$tlang.getString("new")</a>
+				</div>
+				<div id="hasNote" style="display:none">
+					<a id="note_edit" href="#">$tlang.getString("gen.revi")</a> | <a id="note_delete" href="#">$tlang.getString("delet")</a>
+				</div>
+			</td>
+		</tr>
+		<tr>
+			<td style="padding-right:5em">
+				$tlang.getString("other")
+			</td>
+			<td class="itemAction" style="white-space:nowrap">
+				<div id="noOther" style="display:block">
+					<a id="other_add" href="#">$tlang.getString("new")</a>
+				</div>
+				<div id="hasOther" style="display:none">
+					<a id="other_edit" href="#">$tlang.getString("gen.revi")</a> | <a id="other_delete" href="#">$tlang.getString("delet")</a>
+				</div>
 			</td>
 		</tr>
 	</table>
 </div>		
 		
-		<p class="shorttext">
+	#*	<p class="shorttext">
 			<label for="selectExtra">
 				Add item
 			</label>
@@ -746,9 +845,9 @@ $(document).ready(function(){
 					<option value="assignotes">Private notes</option>
 					<option value="otherextranodes">All purpose item</option>
 			</select>
-		</p>
+		</p>*#
 		<fieldset class="extraNode" id="modelanswer">
-				<legend><span>Model Answer</span></legend>
+				<legend>$tlang.getString("modelAnswer")</legend>
 				<div class="longtext" style="margin:.2em">
 					<label for="modeltext" class="block">
 						<span class="reqStar">*</span>$tlang.getString("modelAnswer.instruction")
@@ -766,7 +865,7 @@ $(document).ready(function(){
 					$tlang.getString("modelAnswer.show_to_student.prompt")
 				</label>
 				## show to student time option
-				<select id="modelanswer_when">
+				<select id="modelanswer_when" name="modelanswer_when">
 					#foreach ($k in ["0", "1", "2", "3", "4"])
 						#set($string = "modelAnswer.show_to_student.")
 						#set($string = $string.concat($k))
@@ -775,12 +874,12 @@ $(document).ready(function(){
 				</select>
 			</p>
 			<p class="act">
-			<input type="button" id="modelanswer_save" value="$tlang.getString('gen.sav')" class="active" />
+				<input type="button" id="modelanswer_save" value="$tlang.getString('gen.sav')" class="active" />
 				<input type="button" id="modelanswer_cancel" value="$tlang.getString('gen.can')" />
 			</p>
 		</fieldset>
 		## the panel for grading guideline				
-		<fieldset class="extraNode" id="gradingguidelines">
+		#*<fieldset class="extraNode" id="gradingguidelines">
 			<legend>Grading guidelines</legend>
 			<div class="longtext" style="margin:.2em">
 				<span class="reqStar">*</span>
@@ -793,7 +892,6 @@ $(document).ready(function(){
 			<div class="act">
 					<input type="button" name="attach" value="$tlang.getString('gen.addatt')" onclick="javascript:document.newAssignmentForm.onsubmit();document.getElementById('option').value='attach';document.newAssignmentForm.submit();return false;"/>
 				</div>
-
 			<p class="longtext"  style="margin:.2em">
 				<span class="reqStar">*</span>
 				<label for="ggwho" class="block">
@@ -810,48 +908,50 @@ $(document).ready(function(){
 				<input type="button" value="Save" class="active"/><input type="button" value="Cancel" />
 			</p>
 		</fieldset>	
+		*#
 		## the panel for private note			
-		<fieldset class="extraNode" id="assignotes">
-			<legend>Assignment notes</legend>
+		<fieldset class="extraNode" id="note">
+			<legend>$tlang.getString("note")</legend>
 			<div class="longtext" style="margin:.2em">
 				<span class="reqStar">*</span>				
-				<label for="assigntext" class="block">
-					Notes you can edit at any point to track of assignment issues, thoughts, etc. <br /> Available to you while you are grading. 
+				<label for="note_text" class="block">
+					$tlang.getString("note.instruction1")<br />$tlang.getString("note.instruction2") 
 				</label>
-					<textarea name="assigntext" id="assigntext" cols="60" rows="10" wrap="virtual"></textarea>
+					<textarea name="note_text" id="note_text" cols="60" rows="10" wrap="virtual"></textarea>
 					###chef_setupformattedtextareaparams("assigntext" "200" "365" "small")
 			</div>
 			<p class="longtext"  style="margin:.2em">
 				<span class="reqStar">*</span>				
-				<label for="assignoteswho" class="block">
+				<label for="noteTo" class="block">
 					Share
 				</label>
-				<select id="assignoteswho">
-					<option value="assignotesdefault"> --select one-- </option>
-					<option value="assignotes1">Keep private to myself</option>
-					<option value="assignotes1">Allow other intructors to read</option>
-					<option value="assignotes2">Allow other intructors to read and edit</option>
-
+				<select id="note_to">
+					#foreach ($k in ["0", "1", "2", "3"])
+						#set($string = "note.to.")
+						#set($string = $string.concat($k))
+						<option value="$k"> $tlang.getString($string) </option>
+					#end
 				</select>
 			</p>
 			<p class="act">
-				<input type="button" value="Save" class="active"/><input type="button" value="Cancel" />
+				<input type="button" id="note_save" value="$tlang.getString('gen.sav')" class="active" />
+				<input type="button" id="note_cancel" value="$tlang.getString('gen.can')" />
 			</p>
 		</fieldset>			
 		## the panel for other type of object			
-		<fieldset class="extraNode" id="otherextranodes">
-			<legend>Extra information</legend>
+		<fieldset class="extraNode" id="other">
+			<legend>$tlang.getString('other')</legend>
 			<div class="shorttext" style="margin:.2em">
 				<span class="reqStar">*</span>				
-				<label  for="extranodestitle">Title</label>
-				<input type="text" value="" size="20" maxlength="30" id="extranodestitle"/>
+				<label  for="other_title">$tlang.getString("other.title")</label>
+				<input type="text" value="" size="20" maxlength="30" id="other_title"/>
 			</div>	
 			<div class="longtext" style="margin:.2em">
 				<span class="reqStar">*</span>
-				<label for="otherextranodestext" class="block">
-					Information displayed at a specific time to whomever you choose.
+				<label for="other_text" class="block">
+					$tlang.getString("other.instruction")
 				</label>
-					<textarea name="otherextranodestext" id="otherextranodestext" cols="60" rows="10" wrap="virtual"></textarea>
+					<textarea name="other_text" id="other_text" cols="60" rows="10" wrap="virtual"></textarea>
 					###chef_setupformattedtextareaparams("otherextranodestext" "200" "365" "small")
 			</div>
        <table>
@@ -861,7 +961,7 @@ $(document).ready(function(){
                 </td>
                 <td colspan="4">
                     <label for="hidden_false_0">
-                        Show this item
+                        $tlang.getString("other.show")
                     </label>
                 </td>
             </tr>
@@ -873,7 +973,7 @@ $(document).ready(function(){
                 </td>
                 <td colspan="3">
                     <label for="use_start_date_0">
-                        From
+                        $tlang.getString("other.show.from")
                     </label>
                 </td>
             </tr>
@@ -886,12 +986,12 @@ $(document).ready(function(){
                 </td>
                 <td>
                     <label for="release_year_0">
-                        Date: 
+                        $tlang.getString("other.show.date")
                     </label>
                 </td>
                 <td>
                     <label for="release_hour_0">
-                        Time: 
+                        $tlang.getString("other.show.time")
                     </label>
                 </td>
             </tr>
@@ -1006,7 +1106,7 @@ $(document).ready(function(){
                 </td>
                 <td colspan="4">
                     <label for="use_end_date_0">
-                        Until
+                        $tlang.getString("other.show.util")
                     </label>
                 </td>
             </tr>
@@ -1019,12 +1119,12 @@ $(document).ready(function(){
                 </td>
                 <td>
                     <label for="retract_year_0">
-                        Date:
+                        $tlang.getString("other.show.date")
                     </label>
                 </td>
                 <td>
                     <label for="retract_time_0">
-                        Time:
+                        $tlang.getString("other.show.time")
                     </label>
                 </td>
             </tr>
@@ -1137,22 +1237,22 @@ $(document).ready(function(){
                 </td>
                 <td colspan="4">
                     <label for="hidden_true_0">
-                        Hide this item 
+                        $tlang.getString("other.show.hide")
                     </label>
                 </td>
             </tr>
         </table>
 			</p>
-			<h4>Show to</h4>
+			<h4>$tlang.getString("other.show.to")</h4>
 			<table border="0" cellpadding="0" cellspacing="0" style="margin:1em 0;width:100%">
 			    <tbody>
 			        <tr>
 			            <td>
 			                <input id="mainForm:selectByTree:_id81:0:selectAllCheckbox" type="checkbox" name="mainForm:selectByTree:_id81:0:selectAllCheckbox"/>
 			                <label for="mainForm:selectByTree:_id81:0:selectAllCheckbox">
-			                    All students
+			                    $tlang.getString("other.show.all")
 			                </label>
-			                - <a href="#" style="text-decoration: underline" onclick="document.forms['mainForm']['mainForm:_idcl'].value='mainForm:selectByTree:_id81:0:_id88'; document.forms['mainForm'].submit(); return false;">Expand student list </a>
+			                - <a href="#" style="text-decoration: underline" onclick="document.forms['mainForm']['mainForm:_idcl'].value='mainForm:selectByTree:_id81:0:_id88'; document.forms['mainForm'].submit(); return false;">$tlang.getString("other.show.expand") student list </a>
 #*			                <table class="listHier nolines hierItemBlockWrapper" cellpadding="0" cellspacing="0" style="margin-left:2em;width:auto;font-weight:normal">
 			                    <tbody>
 			                        <tr>
@@ -1196,7 +1296,7 @@ $(document).ready(function(){
 			            <td>
 			                <input id="mainForm:selectByTree:_id81:1:selectAllCheckbox" type="checkbox" name="mainForm:selectByTree:_id81:1:selectAllCheckbox"/>
 			                <label for="mainForm:selectByTree:_id81:1:selectAllCheckbox">
-			                    All instructors 
+			                    $tlang.getString("other.show.all") instructors 
 			                </label>
 			                - <a href="#" style="text-decoration: underline" onclick="document.forms['mainForm']['mainForm:_idcl'].value='mainForm:selectByTree:_id81:1:_id88'; document.forms['mainForm'].submit(); return false;">Collapse instructor list</a>
 			                <table class="listHier nolines hierItemBlockWrapper" cellpadding="0" cellspacing="0" style="margin-left:2em;width:auto;font-weight:normal">
@@ -1227,8 +1327,8 @@ $(document).ready(function(){
 			    </tbody>
 			</table>
 			<p class="act">
-				<input type="button" id="otherextranodes_save" value="Save" class="active"/>
-				<input type="button" id ="otherextranodes_cancel" value="Cancel" />
+				<input type="button" id="other_save" value="Save" class="active"/>
+				<input type="button" id ="other_cancel" value="Cancel" />
 			</p>
 		</fieldset>
 			<div class="act">

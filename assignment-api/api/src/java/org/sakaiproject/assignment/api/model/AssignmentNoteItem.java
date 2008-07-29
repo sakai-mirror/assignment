@@ -29,12 +29,64 @@ import java.util.Set;
  * @author zqian
  *
  */
-public class AssignmentNoteItem extends AssignmentSupplementItem {
+public class AssignmentNoteItem {
 
+	/*********** constructors ******************/
 	public AssignmentNoteItem() {
 		super();
 		// TODO Auto-generated constructor stub
 	}
 	
+	public AssignmentNoteItem(Long id, String assignmentId, String note,
+			int shareWith) {
+		super();
+		this.id = id;
+		this.assignmentId = assignmentId;
+		this.note = note;
+		this.shareWith = shareWith;
+	}
+	
+	/************** attributes and methods ****************/
+	/** id in db **/
+	private Long id;
+	public Long getId() {
+		return id;
+	}
+	public void setId(Long id) {
+		this.id = id;
+	}
+	
+	/** assignment id **/
+	private String assignmentId;
+
+	public String getAssignmentId()
+	{
+		return assignmentId;
+	}
+	public void setAssignmentId(String assignmentId)
+	{
+		this.assignmentId = assignmentId;
+	}
+	
+	/** note **/
+	public String note;
+	public String getNote()
+	{
+		return note;
+	}
+	public void setNote(String note)
+	{
+		this.note = note;
+	}
+	
+	/** when to show the model answer to student **/
+	private int shareWith;
+
+	public int getShareWith() {
+		return shareWith;
+	}
+	public void setShareWith(int shareWith) {
+		this.shareWith = shareWith;
+	}
 	
 }

@@ -29,24 +29,73 @@ import java.util.Set;
  * @author zqian
  *
  */
-public class AssignmentModelAnswerItem extends AssignmentSupplementItem {
+public class AssignmentModelAnswerItem {
 
+	/************* constructors ***********************/
 	public AssignmentModelAnswerItem() {
 		super();
 		// TODO Auto-generated constructor stub
 	}
 	
-	private int showToStudent;
-
-	public int getShowToStudent() {
-		return showToStudent;
+	public AssignmentModelAnswerItem(Long id, String assignmentId, String text,
+			int showTo) {
+		super();
+		this.id = id;
+		this.assignmentId = assignmentId;
+		this.text = text;
+		this.showTo = showTo;
 	}
-
-	public void setShowToStudent(int showToStudent) {
-		this.showToStudent = showToStudent;
+	
+	/*************** attributes and methods *************/
+	/** id in db **/
+	private Long id;
+	public Long getId() {
+		return id;
+	}
+	public void setId(Long id) {
+		this.id = id;
 	}
 	
+	/** assignment id **/
+	private String assignmentId;
+
+	public String getAssignmentId()
+	{
+		return assignmentId;
+	}
+	public void setAssignmentId(String assignmentId)
+	{
+		this.assignmentId = assignmentId;
+	}
 	
+	/** text **/
+	public String text;
+	public String getText()
+	{
+		return text;
+	}
+	public void setText(String text)
+	{
+		this.text = text;
+	}
 	
+	/** when to show the model answer to student **/
+	private int showTo;
+
+	public int getShowTo() {
+		return showTo;
+	}
+	public void setShowTo(int showTo) {
+		this.showTo = showTo;
+	}
 	
+	/** attachments **/
+	private Set<AssignmentModelAnswerAttachment> attachmentSet;	// the attachment set
+	public Set<AssignmentModelAnswerAttachment> getAttachmentSet() {
+		return attachmentSet;
+	}
+	public void setAttachmentSet(
+			Set<AssignmentModelAnswerAttachment> attachmentSet) {
+		this.attachmentSet = attachmentSet;
+	}
 }

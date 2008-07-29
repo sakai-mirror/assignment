@@ -29,7 +29,7 @@ import java.util.Set;
  * @author zqian
  *
  */
-public abstract class AssignmentSupplementItem {
+public abstract class AssignmentAllPurposeItem {
 	
 	private Long id;
 	private String assignmentId;
@@ -38,8 +38,6 @@ public abstract class AssignmentSupplementItem {
 	private Date showStartDate;	// the start showing date
 	private Date showEndDate; // the end showing date
 	private boolean hide;
-	private Set<AssignmentSupplementItemAttachment> attachmentSet;	// the attachment set
-	private Set<AssignmentSupplementItemRole> roleSet;	// show to those roles
 	
 	public Long getId() {
 		return id;
@@ -83,19 +81,5 @@ public abstract class AssignmentSupplementItem {
 	public void setHide(boolean hide) {
 		this.hide = hide;
 	}
-	public Set<AssignmentSupplementItemAttachment> getAttachmentSet() {
-		return attachmentSet;
-	}
-	public void setAttachmentSet(
-			Set<AssignmentSupplementItemAttachment> attachmentSet) {
-		this.attachmentSet = attachmentSet;
-	}
-	public Set<AssignmentSupplementItemRole> getRoleSet() {
-		return roleSet;
-	}
-	public void setRoleSet(Set<AssignmentSupplementItemRole> roleSet) {
-		this.roleSet = roleSet;
-	}
-	
 	
 }
