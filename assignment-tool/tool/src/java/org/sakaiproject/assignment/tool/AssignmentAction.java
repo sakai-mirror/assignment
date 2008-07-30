@@ -1403,6 +1403,17 @@ public class AssignmentAction extends PagedResourceActionII
 		context.put("name_allowResubmitNumber", AssignmentSubmission.ALLOW_RESUBMIT_NUMBER);
 		
 		// set the values
+		String assignmentId = "";
+		Assignment a = null;
+		try
+		{
+			a = AssignmentService.getAssignment((String) state.getAttribute(EDIT_ASSIGNMENT_ID));
+			assignmentId = a.getId();
+		}
+		catch (Exception ee)
+		{
+			M_log.warn(this + ":setAssignmentFormContext " + ee.getMessage());
+		}
 		context.put("value_year_from", state.getAttribute(NEW_ASSIGNMENT_YEAR_RANGE_FROM));
 		context.put("value_year_to", state.getAttribute(NEW_ASSIGNMENT_YEAR_RANGE_TO));
 		context.put("value_title", state.getAttribute(NEW_ASSIGNMENT_TITLE));
@@ -1492,18 +1503,9 @@ public class AssignmentAction extends PagedResourceActionII
 				if (associateGradebookAssignment != null)
 				{
 					context.put("associateGradebookAssignment", associateGradebookAssignment);
-					String assignmentId = (String) state.getAttribute(EDIT_ASSIGNMENT_ID);
-					if (assignmentId != null)
+					if (a != null)
 					{
-						try
-						{
-							Assignment a = AssignmentService.getAssignment(assignmentId);
-							context.put("noAddToGradebookChoice", Boolean.valueOf(associateGradebookAssignment.equals(a.getReference())));
-						}
-						catch (Exception ee)
-						{
-							M_log.warn(this + ":setAssignmentFormContext " + ee.getMessage());
-						}
+						context.put("noAddToGradebookChoice", Boolean.valueOf(associateGradebookAssignment.equals(a.getReference())));
 					}
 				}
 			}
@@ -1596,6 +1598,45 @@ public class AssignmentAction extends PagedResourceActionII
 			context.put("value_assignment_instructor_notifications_each", Assignment.ASSIGNMENT_INSTRUCTOR_NOTIFICATIONS_EACH);
 			context.put("value_assignment_instructor_notifications_digest", Assignment.ASSIGNMENT_INSTRUCTOR_NOTIFICATIONS_DIGEST);
 		}
+		
+		// the supplement information
+		// model answers
+		AssignmentModelAnswerItem mAnswer = m_assignmentSupplementItemService.getModelAnswer(assignmentId);
+		if (mAnswer != null)
+		{
+			context.put("modelanswer", Boolean.TRUE);
+			context.put("modelanswer_text", mAnswer.getText());
+			context.put("modelanswer_when", String.valueOf(mAnswer.getShowTo()));
+		}
+		else
+		{
+			context.put("modelanswer", Boolean.FALSE);
+			context.put("modelanswer_when", String.valueOf(0));
+		}
+		// private notes
+		AssignmentNoteItem mNote = m_assignmentSupplementItemService.getNoteItem(assignmentId);
+		if (mNote != null)
+		{
+			context.put("note", Boolean.TRUE);
+			context.put("note_text", mNote.getNote());
+			context.put("note_to", String.valueOf(mNote.getShareWith()));
+		}
+		else
+		{
+			context.put("note", Boolean.FALSE);
+			context.put("note_to", String.valueOf(0));
+		}
+		// all purpose item
+		context.put("name_allPurposeReleaseYear", "allPurposeReleaseYear");
+		context.put("name_allPurposeReleaseMonth", "allPurposeReleaseMonth");
+		context.put("name_allPurposeReleaseDay", "allPurposeReleaseDay");
+		AssignmentAllPurposeItem aItem = m_assignmentSupplementItemService.getAllPurposeItem(assignmentId);
+		if (aItem != null)
+		{
+			Date releaseDate = aItem.getReleaseDate();
+		}
+		
+		
 	} // setAssignmentFormContext
 
 	/**
@@ -4699,15 +4740,28 @@ public class AssignmentAction extends PagedResourceActionII
 				} //if
 				
 				// assignment supplement items
+				String aId = a.getId();
 				if (StringUtil.trimToNull(params.getString("modelanswer_text")) != null)
 				{
-					// add model answer
-					AssignmentModelAnswerItem mAnswer = m_assignmentSupplementItemService.newModelAnswer();
+					// edit/add model answer
+					AssignmentModelAnswerItem mAnswer = m_assignmentSupplementItemService.getModelAnswer(aId);
+					if (mAnswer == null)
+						mAnswer = m_assignmentSupplementItemService.newModelAnswer();
 					mAnswer.setAssignmentId(a.getId());
 					mAnswer.setText(StringUtil.trimToNull(params.getString("modelanswer_text")));
-					String when = params.getString("modelanswer_when");
 					mAnswer.setShowTo(params.getInt("modelanswer_when"));
 					m_assignmentSupplementItemService.saveModelAnswer(mAnswer);
+				}
+				if (StringUtil.trimToNull(params.getString("note_text")) != null)
+				{
+					// edit/add private note
+					AssignmentNoteItem nNote = m_assignmentSupplementItemService.getNoteItem(aId);
+					if (nNote == null)
+						nNote = m_assignmentSupplementItemService.newNoteItem();
+					nNote.setAssignmentId(a.getId());
+					nNote.setNote(StringUtil.trimToNull(params.getString("note_text")));
+					nNote.setShareWith(params.getInt("note_to"));
+					m_assignmentSupplementItemService.saveNoteItem(nNote);
 				}
 
 			} // if

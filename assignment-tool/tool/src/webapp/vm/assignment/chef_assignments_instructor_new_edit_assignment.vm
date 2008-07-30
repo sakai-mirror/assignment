@@ -791,16 +791,16 @@ $(document).ready(function(){
 		
 
 	<table class="listHier lines nolines" style="width:auto;" >
-		<caption style="border-bottom:1px solid #ccc;text-align:left; margin-top:1em;padding-bottom:.3em">Existing items</caption>
+		<caption style="border-bottom:1px solid #ccc;text-align:left; margin-top:1em;padding-bottom:.3em">$tlang.getString("supplement")</caption>
 		<tr>
 			<td style="padding-right:5em">
 				$tlang.getString("modelAnswer")
 			</td>
 			<td class="itemAction" style="white-space:nowrap">
-				<div id="noModelAnswer" style="display:block">
+				<div id="noModelAnswer" #if(!$!modelanswer) style="display:block"#else style="display:none" #end>
 					<a id="modelanswer_add" href="#">$tlang.getString("new")</a>
 				</div>
-				<div id="hasModelAnswer" style="display:none">
+				<div id="hasModelAnswer" #if($!modelanswer) style="display:block"#else style="display:none" #end>
 					<a id="modelanswer_edit" href="#">$tlang.getString("gen.revi")</a> | <a id="modelanswer_delete" href="#">$tlang.getString("delet")</a>
 				</div>
 			</td>
@@ -810,10 +810,10 @@ $(document).ready(function(){
 				$tlang.getString("note")
 			</td>
 			<td class="itemAction" style="white-space:nowrap">
-				<div id="noNote" style="display:block">
+				<div id="noNote" #if(!$!note) style="display:block"#else style="display:none" #end>
 					<a id="note_add" href="#">$tlang.getString("new")</a>
 				</div>
-				<div id="hasNote" style="display:none">
+				<div id="hasNote" #if($!note) style="display:block"#else style="display:none" #end>
 					<a id="note_edit" href="#">$tlang.getString("gen.revi")</a> | <a id="note_delete" href="#">$tlang.getString("delet")</a>
 				</div>
 			</td>
@@ -823,10 +823,10 @@ $(document).ready(function(){
 				$tlang.getString("other")
 			</td>
 			<td class="itemAction" style="white-space:nowrap">
-				<div id="noOther" style="display:block">
+				<div id="noOther" #if(!$!other) style="display:block"#else style="display:none" #end>
 					<a id="other_add" href="#">$tlang.getString("new")</a>
 				</div>
-				<div id="hasOther" style="display:none">
+				<div id="hasOther" #if($!other) style="display:block"#else style="display:none" #end>
 					<a id="other_edit" href="#">$tlang.getString("gen.revi")</a> | <a id="other_delete" href="#">$tlang.getString("delet")</a>
 				</div>
 			</td>
@@ -852,7 +852,7 @@ $(document).ready(function(){
 					<label for="modeltext" class="block">
 						<span class="reqStar">*</span>$tlang.getString("modelAnswer.instruction")
 					</label>
-					<textarea name="modelanswer_text" id="modelanswer_text" cols="60" rows="10" wrap="virtual"></textarea>
+					<textarea name="modelanswer_text" id="modelanswer_text" cols="60" rows="10" wrap="virtual">$!modelanswer_text</textarea>
 					###chef_setupformattedtextareaparams("modeltext" "200" "365" "small") 
 				</div>
 				<div class="act">
@@ -869,7 +869,7 @@ $(document).ready(function(){
 					#foreach ($k in ["0", "1", "2", "3", "4"])
 						#set($string = "modelAnswer.show_to_student.")
 						#set($string = $string.concat($k))
-						<option value="$k"> $tlang.getString($string) </option>
+						<option value="$k" #if($k.equals($!modelanswer_when))selected="selected"#end> $tlang.getString($string) </option>
 					#end
 				</select>
 			</p>
@@ -917,7 +917,7 @@ $(document).ready(function(){
 				<label for="note_text" class="block">
 					$tlang.getString("note.instruction1")<br />$tlang.getString("note.instruction2") 
 				</label>
-					<textarea name="note_text" id="note_text" cols="60" rows="10" wrap="virtual"></textarea>
+					<textarea name="note_text" id="note_text" cols="60" rows="10" wrap="virtual">$!note_text</textarea>
 					###chef_setupformattedtextareaparams("assigntext" "200" "365" "small")
 			</div>
 			<p class="longtext"  style="margin:.2em">
@@ -925,11 +925,11 @@ $(document).ready(function(){
 				<label for="noteTo" class="block">
 					Share
 				</label>
-				<select id="note_to">
+				<select id="note_to" name="note_to">
 					#foreach ($k in ["0", "1", "2", "3"])
 						#set($string = "note.to.")
 						#set($string = $string.concat($k))
-						<option value="$k"> $tlang.getString($string) </option>
+						<option value="$k" #if($k.equals($!note_to)) selected="selected" #end> $tlang.getString($string) </option>
 					#end
 				</select>
 			</p>
@@ -944,7 +944,7 @@ $(document).ready(function(){
 			<div class="shorttext" style="margin:.2em">
 				<span class="reqStar">*</span>				
 				<label  for="other_title">$tlang.getString("other.title")</label>
-				<input type="text" value="" size="20" maxlength="30" id="other_title"/>
+				<input id="other_title" name="other_title" type="text" value="" size="20" maxlength="30" />
 			</div>	
 			<div class="longtext" style="margin:.2em">
 				<span class="reqStar">*</span>
@@ -1003,65 +1003,7 @@ $(document).ready(function(){
                 <td>
                 </td>
                 <td>
-                    <select name="release_month_0" id="release_month_0">
-                        <option value="1">JAN</option>
-                        <option value="2">FEB</option>
-                        <option value="3" selected="selected">MAR</option>
-                        <option value="4">APR</option>
-                        <option value="5">MAY</option>
-                        <option value="6">JUN</option>
-                        <option value="7">JUL</option>
-                        <option value="8">AUG</option>
-                        <option value="9">SEP</option>
-                        <option value="10">OCT</option>
-                        <option value="11">NOV</option>
-                        <option value="12">DEC</option>
-                    </select>
-                    <select name="release_day_0" id="release_day_0">
-                        <option value="1">1</option>
-                        <option value="2">2</option>
-                        <option value="3">3</option>
-                        <option value="4">4</option>
-                        <option value="5">5</option>
-                        <option value="6">6</option>
-                        <option value="7">7</option>
-                        <option value="8">8</option>
-                        <option value="9">9</option>
-                        <option value="10" selected="selected">10</option>
-                        <option value="11">11</option>
-                        <option value="12">12</option>
-                        <option value="13">13</option>
-                        <option value="14">14</option>
-                        <option value="15">15</option>
-                        <option value="16">16</option>
-                        <option value="17">17</option>
-                        <option value="18">18</option>
-                        <option value="19">19</option>
-                        <option value="20">20</option>
-                        <option value="21">21</option>
-                        <option value="22">22</option>
-                        <option value="23">23</option>
-                        <option value="24">24</option>
-                        <option value="25">25</option>
-                        <option value="26">26</option>
-                        <option value="27">27</option>
-                        <option value="28">28</option>
-                        <option value="29">29</option>
-                        <option value="30">30</option>
-                        <option value="31">31</option>
-                    </select>
-                    <select name="release_year_0" id="release_year_0">
-                        <option value="2004">2004</option>
-                        <option value="2005">2005</option>
-                        <option value="2006">2006</option>
-                        <option value="2007">2007</option>
-                        <option value="2008" selected="selected">2008</option>
-                        <option value="2009">2009</option>
-                        <option value="2010">2010</option>
-                        <option value="2011">2011</option>
-                        <option value="2012">2012</option>
-                    </select>
-                    <img id="release_calendar_0" src="/library/calendar/images/calendar/cal.gif" alt="" style="cursor: pointer;" title="Popup date selector"><input name="chef_calendarhiddenfield0" id="chef_calendarhiddenfield0" type="hidden">
+                    #chef_dateselectionwidget($name_allPurposeReleaseYear $name_allPurposeReleaseMonth $name_allPurposeReleaseDay $!value_year_from $!value_year_to $value_allPurposeReleaseYear $value_allPurposeReleaseMonth $value_allPurposeReleaseDay)
                 </td>
                 <td>
                     <select name="release_hour_0" id="release_hour_0">
@@ -1136,65 +1078,7 @@ $(document).ready(function(){
                 <td>
                 </td>
                 <td>
-                    <select name="retract_month_0" id="retract_month_0">
-                        <option value="1">JAN</option>
-                        <option value="2">FEB</option>
-                        <option value="3" selected="selected">MAR</option>
-                        <option value="4">APR</option>
-                        <option value="5">MAY</option>
-                        <option value="6">JUN</option>
-                        <option value="7">JUL</option>
-                        <option value="8">AUG</option>
-                        <option value="9">SEP</option>
-                        <option value="10">OCT</option>
-                        <option value="11">NOV</option>
-                        <option value="12">DEC</option>
-                    </select>
-                    <select name="retract_day_0" id="retract_day_0">
-                        <option value="1">1</option>
-                        <option value="2">2</option>
-                        <option value="3">3</option>
-                        <option value="4">4</option>
-                        <option value="5">5</option>
-                        <option value="6">6</option>
-                        <option value="7">7</option>
-                        <option value="8">8</option>
-                        <option value="9">9</option>
-                        <option value="10">10</option>
-                        <option value="11">11</option>
-                        <option value="12">12</option>
-                        <option value="13">13</option>
-                        <option value="14">14</option>
-                        <option value="15">15</option>
-                        <option value="16">16</option>
-                        <option value="17" selected="selected">17</option>
-                        <option value="18">18</option>
-                        <option value="19">19</option>
-                        <option value="20">20</option>
-                        <option value="21">21</option>
-                        <option value="22">22</option>
-                        <option value="23">23</option>
-                        <option value="24">24</option>
-                        <option value="25">25</option>
-                        <option value="26">26</option>
-                        <option value="27">27</option>
-                        <option value="28">28</option>
-                        <option value="29">29</option>
-                        <option value="30">30</option>
-                        <option value="31">31</option>
-                    </select>
-                    <select name="retract_year_0" id="retract_year_0">
-                        <option value="2004">2004</option>
-                        <option value="2005">2005</option>
-                        <option value="2006">2006</option>
-                        <option value="2007">2007</option>
-                        <option value="2008" selected="selected">2008</option>
-                        <option value="2009">2009</option>
-                        <option value="2010">2010</option>
-                        <option value="2011">2011</option>
-                        <option value="2012">2012</option>
-                    </select>
-                    <img id="retract_calendar_0" src="/library/calendar/images/calendar/cal.gif" alt="" style="cursor: pointer;" title="Popup date selector"><input name="chef_calendarhiddenfield1" id="chef_calendarhiddenfield1" type="hidden">
+                	#chef_dateselectionwidget(name_allPurposeRetractYear $name_allPurposeRetractMonth $name_allPurposeRetractDay $!value_year_from $!value_year_to $value_allPurposeRetractYear $value_allPurposeRetractMonth $value_allPurposeRetractDay)    
                 </td>
                 <td>
                     <select name="retract_hour_0" id="retract_hour_0">

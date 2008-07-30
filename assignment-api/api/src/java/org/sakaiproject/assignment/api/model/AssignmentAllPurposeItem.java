@@ -29,14 +29,14 @@ import java.util.Set;
  * @author zqian
  *
  */
-public abstract class AssignmentAllPurposeItem {
+public class AssignmentAllPurposeItem {
 	
 	private Long id;
 	private String assignmentId;
 	private String title;
 	private String instruction;
-	private Date showStartDate;	// the start showing date
-	private Date showEndDate; // the end showing date
+	private Date releaseDate;	// the start showing date
+	private Date retractDate; // the end showing date
 	private boolean hide;
 	
 	public Long getId() {
@@ -63,23 +63,27 @@ public abstract class AssignmentAllPurposeItem {
 	public void setInstruction(String instruction) {
 		this.instruction = instruction;
 	}
-	public Date getShowStartDate() {
-		return showStartDate;
+	public Date getReleaseDate() {
+		return releaseDate;
 	}
-	public void setShowStartDate(Date showStartDate) {
-		this.showStartDate = showStartDate;
+	public void setReleaseDate(Date releaseDate) {
+		this.releaseDate = releaseDate;
 	}
-	public Date getShowEndDate() {
-		return showEndDate;
+	public Date getRetractDate() {
+		return retractDate;
 	}
-	public void setShowEndDate(Date showEndDate) {
-		this.showEndDate = showEndDate;
+	public void setRetractDate(Date retractDate) {
+		this.retractDate = retractDate;
 	}
 	public boolean isHide() {
 		return hide;
 	}
 	public void setHide(boolean hide) {
 		this.hide = hide;
+	}
+	
+	public AssignmentAllPurposeItem() {
+		super();
 	}
 	
 }

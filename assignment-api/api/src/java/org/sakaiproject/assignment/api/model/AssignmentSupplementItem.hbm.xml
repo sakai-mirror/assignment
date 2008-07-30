@@ -91,5 +91,19 @@
 			where m.assignmentId = :id
 		]]>
 	</query>
+	
+	<query name = "findNoteItemByAssignmentId">
+			<![CDATA[
+			from AssignmentNoteItem m
+			where m.assignmentId = :id
+		]]>
+	</query>
+	
+	<query name = "findAllPurposeItemByAssignmentId">
+			<![CDATA[
+			from AssignmentAllPurposeItem m
+			where m.assignmentId = :id
+		]]>
+	</query>
     
 </hibernate-mapping>

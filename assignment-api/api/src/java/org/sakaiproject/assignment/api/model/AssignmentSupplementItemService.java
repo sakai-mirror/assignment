@@ -27,12 +27,11 @@ import java.util.Set ;
  */
 public interface AssignmentSupplementItemService {
 	
+	/*************** model answer ******************/
+	
 	/**
-	 * New AssignmentModelAnswerItem object
-	 * @param assignmentId
-	 * @param text
-	 * @param showTo
-	 * @return
+	 * new ModelAnswer object
+	 * @return 
 	 */
 	public AssignmentModelAnswerItem newModelAnswer();
 	
@@ -56,5 +55,61 @@ public interface AssignmentSupplementItemService {
 	 * @return
 	 */
 	public AssignmentModelAnswerItem getModelAnswer(String assignmentId);
+	
+	/******************* private note *******************/
+	
+	/**
+	 * new AssignmentNoteItem object
+	 */
+	public AssignmentNoteItem newNoteItem();
+	
+	/**
+	 * Save the AssignmentNoteItem object
+	 * @param nItem
+	 * @return
+	 */
+	public boolean saveNoteItem(AssignmentNoteItem nItem);
+	
+	/**
+	 * Remove the AssignmentNoteItem object
+	 * @param nItem
+	 * @return
+	 */
+	public boolean removeNoteItem(AssignmentNoteItem nItem);
+	
+	/**
+	 * Get the AssignmentNoteItem object
+	 * @param assignmentId
+	 * @return
+	 */
+	public AssignmentNoteItem getNoteItem(String assignmentId);
+	
+	/******************* all purpose *******************/
+	
+	/**
+	 * new AssignmentAllPurposeItem object
+	 */
+	public AssignmentAllPurposeItem newAllPurposeItem();
+	
+	/**
+	 * Save the AssignmentAllPurposeItem object
+	 * @param nItem
+	 * @return
+	 */
+	public boolean saveAllPurposeItem(AssignmentAllPurposeItem nItem);
+	
+	/**
+	 * Remove the AssignmentAllPurposeItem object
+	 * @param nItem
+	 * @return
+	 */
+	public boolean removeAllPurposeItem(AssignmentAllPurposeItem nItem);
+	
+	/**
+	 * Get the AssignmentAllPurposeItem object
+	 * @param assignmentId
+	 * @return
+	 */
+	public AssignmentAllPurposeItem getAllPurposeItem(String assignmentId);
 
 }
