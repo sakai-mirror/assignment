@@ -105,43 +105,43 @@ $(document).ready(function(){
 				$('#note').hide();
   });
   ######################### for all purpose item panel ######################
-  $("#other_add").click(function() 
+  $("#allPurpose_add").click(function() 
   {
   		$('.extraNode').hide();
-			 $('#other').fadeIn('slow');
+			 $('#allPurpose').fadeIn('slow');
 				resizeFrame('grow');
   });
- 	$("#other_edit").click(function() 
+ 	$("#allPurpose_edit").click(function() 
   {
   		$('.extraNode').hide();
-			 $('#other').fadeIn('slow');
+			 $('#allPurpose').fadeIn('slow');
 				resizeFrame('grow');
   });
-  $("#other_save").click(function() 
+  $("#allPurpose_save").click(function() 
   {
-  	if ($('#other_title').val() == "")
+  	if ($('#allPurposeTitle').val() == "")
   	{
-  		alert('$tlang.getString("other.alert.noTitle")');
+  		alert('$tlang.getString("allPurpose.alert.noTitle")');
   		return false;
   	}
-  	else if ($('#other_text').val() == 0)
+  	else if ($('#allPurposeText').val() == 0)
   	{
-  		alert('$tlang.getString("other.alert.noText")');
+  		alert('$tlang.getString("allPurpose.alert.noText")');
   		return false;
   	}
   	else
   	{
   		$('.extraNode').hide();
-				$('#other').hide();
-				$("#hasOther").css('display', 'block');
-				$("#noOther").css('display', 'none');
+				$('#allPurpose').hide();
+				$("#hasAllPurpose").css('display', 'block');
+				$("#noAllPurpose").css('display', 'none');
   		return true;
   	}
   });
-  $('#other_cancel').click(function()
+  $('#allPurpose_cancel').click(function()
   {
   		$('.extraNode').hide();
-				$('#other').hide();
+				$('#allPurpose').hide();
   });
 }); 
 </script>	
@@ -820,14 +820,14 @@ $(document).ready(function(){
 		</tr>
 		<tr>
 			<td style="padding-right:5em">
-				$tlang.getString("other")
+				$tlang.getString("allPurpose")
 			</td>
 			<td class="itemAction" style="white-space:nowrap">
-				<div id="noOther" #if(!$!other) style="display:block"#else style="display:none" #end>
-					<a id="other_add" href="#">$tlang.getString("new")</a>
+				<div id="noAllPurpose" #if(!$!allPurpose) style="display:block"#else style="display:none" #end>
+					<a id="allPurpose_add" href="#">$tlang.getString("new")</a>
 				</div>
-				<div id="hasOther" #if($!other) style="display:block"#else style="display:none" #end>
-					<a id="other_edit" href="#">$tlang.getString("gen.revi")</a> | <a id="other_delete" href="#">$tlang.getString("delet")</a>
+				<div id="hasAllPurpose" #if($!allPurpose) style="display:block"#else style="display:none" #end>
+					<a id="allPurpose_edit" href="#">$tlang.getString("gen.revi")</a> | <a id="allPurpose_delete" href="#">$tlang.getString("delet")</a>
 				</div>
 			</td>
 		</tr>
@@ -938,30 +938,30 @@ $(document).ready(function(){
 				<input type="button" id="note_cancel" value="$tlang.getString('gen.can')" />
 			</p>
 		</fieldset>			
-		## the panel for other type of object			
-		<fieldset class="extraNode" id="other">
-			<legend>$tlang.getString('other')</legend>
+		## the panel for allPurpose type of object			
+		<fieldset class="extraNode" id="allPurpose">
+			<legend>$tlang.getString('allPurpose')</legend>
 			<div class="shorttext" style="margin:.2em">
 				<span class="reqStar">*</span>				
-				<label  for="other_title">$tlang.getString("other.title")</label>
-				<input id="other_title" name="other_title" type="text" value="" size="20" maxlength="30" />
+				<label  for="allPurposeTitle">$tlang.getString("allPurpose.title")</label>
+				<input id="allPurposeTitle" name="allPurposeTitle" type="text" size="20" maxlength="30" value="$!value_allPurposeTitle" />
 			</div>	
 			<div class="longtext" style="margin:.2em">
 				<span class="reqStar">*</span>
-				<label for="other_text" class="block">
-					$tlang.getString("other.instruction")
+				<label for="allPurposeText" class="block">
+					$tlang.getString("allPurpose.instruction")
 				</label>
-					<textarea name="other_text" id="other_text" cols="60" rows="10" wrap="virtual"></textarea>
+					<textarea name="allPurposeText" id="allPurposeText" cols="60" rows="10" wrap="virtual">$!value_allPurposeText</textarea>
 					###chef_setupformattedtextareaparams("otherextranodestext" "200" "365" "small")
 			</div>
        <table>
             <tr>
                 <td>
-                    <input name="hidden_0" id="hidden_false_0" value="false" checked="checked" type="radio">
+                    <input name="allPurposeHide" id="allPurposeHide" value="false" #if(!$!value_allPurposeHide)checked="checked"#end type="radio" />
                 </td>
                 <td colspan="4">
                     <label for="hidden_false_0">
-                        $tlang.getString("other.show")
+                        $tlang.getString("allPurpose.show")
                     </label>
                 </td>
             </tr>
@@ -969,11 +969,11 @@ $(document).ready(function(){
                 <td>
                 </td>
                 <td>
-                    <input name="use_start_date_0" id="use_start_date_0" value="true" type="checkbox">
+                    <input name="allPurposeReleaseDate" id="allPurposeReleaseDate" value="true" type="checkbox">
                 </td>
                 <td colspan="3">
                     <label for="use_start_date_0">
-                        $tlang.getString("other.show.from")
+                        $tlang.getString("allPurpose.show.from")
                     </label>
                 </td>
             </tr>
@@ -985,13 +985,13 @@ $(document).ready(function(){
                 <td>
                 </td>
                 <td>
-                    <label for="release_year_0">
-                        $tlang.getString("other.show.date")
+                    <label for="allPurposeReleaseYear">
+                        $tlang.getString("allPurpose.show.date")
                     </label>
                 </td>
                 <td>
-                    <label for="release_hour_0">
-                        $tlang.getString("other.show.time")
+                    <label for="allPurposeReleaseHour">
+                        $tlang.getString("allPurpose.show.time")
                     </label>
                 </td>
             </tr>
@@ -1003,40 +1003,23 @@ $(document).ready(function(){
                 <td>
                 </td>
                 <td>
-                    #chef_dateselectionwidget($name_allPurposeReleaseYear $name_allPurposeReleaseMonth $name_allPurposeReleaseDay $!value_year_from $!value_year_to $value_allPurposeReleaseYear $value_allPurposeReleaseMonth $value_allPurposeReleaseDay)
+                    #chef_dateselectionwidget("allPurposeReleaseYear" "allPurposeReleaseMonth" "allPurposeReleaseDay" $!value_year_from $!value_year_to $value_allPurposeReleaseYear $value_allPurposeReleaseMonth $value_allPurposeReleaseDay)
                 </td>
                 <td>
-                    <select name="release_hour_0" id="release_hour_0">
-                        <option value="1">1</option>
-                        <option value="2">2</option>
-                        <option value="3">3</option>
-                        <option value="4">4</option>
-                        <option value="5">5</option>
-                        <option value="6">6</option>
-                        <option value="7">7</option>
-                        <option value="8">8</option>
-                        <option value="9">9</option>
-                        <option value="10">10</option>
-                        <option selected="selected" value="11">11</option>
-                        <option value="12">12</option>
+                    <select name="allPurposeReleaseHour" id="allPurposeReleaseHour">
+                    	#foreach ($i in [1..12])
+																						<option value="$i" #if ($value_allPurposeReleaseHour==$i)selected="selected"#end>$i</option>
+																					#end
                     </select>
-                    <select name="release_minute_0" id="release_minute_0">
-                        <option value="0">00</option>
-                        <option value="5">05</option>
-                        <option value="10">10</option>
-                        <option value="15">15</option>
-                        <option value="20">20</option>
-                        <option value="25">25</option>
-                        <option value="30">30</option>
-                        <option value="35">35</option>
-                        <option value="40">40</option>
-                        <option value="45">45</option>
-                        <option value="50">50</option>
-                        <option value="55">55</option>
+                    <select name="allPurposeReleaseMin" id="allPurposeReleaseMin">
+                    			#foreach ($i in [0, 5, 10, 15, 20, 25, 30, 35, 40, 45, 50, 55])
+																								<option value="$i" #if($i == $value_allPurposeReleaseMin)selected="selected"#end>#if($i ==0)00#elseif($i == 5)05#else$i#end</option>
+																							#end
                     </select>
-                    <select name="release_ampm_0" id="release_ampm_0">
-                        <option selected="selected">am</option>
-                        <option>pm</option>
+                    <select name="allPurposeReleaseAMPM" id="allPurposeReleaseHourAMPM">
+                    	#foreach ($i in [0, 1])
+																						<option value="$i" #if($i == $value_allPurposeReleaseAMPM)selected="selected"#end>#if($i==0) AM #else PM #end</option>
+																					#end
                     </select>
                 </td>
             </tr>
@@ -1044,11 +1027,11 @@ $(document).ready(function(){
                 <td>
                 </td>
                 <td>
-                    <input name="use_end_date_0" id="use_end_date_0" value="true" type="checkbox">
+                    <input name="allPurposeRetractDate" id="allPurposeRetractDate" value="true" type="checkbox">
                 </td>
                 <td colspan="4">
-                    <label for="use_end_date_0">
-                        $tlang.getString("other.show.util")
+                    <label for="allPurposeRetractDate">
+                        $tlang.getString("allPurpose.show.util")
                     </label>
                 </td>
             </tr>
@@ -1060,13 +1043,13 @@ $(document).ready(function(){
                 <td>
                 </td>
                 <td>
-                    <label for="retract_year_0">
-                        $tlang.getString("other.show.date")
+                    <label for="allPurposeRetractYear">
+                        $tlang.getString("allPurpose.show.date")
                     </label>
                 </td>
                 <td>
-                    <label for="retract_time_0">
-                        $tlang.getString("other.show.time")
+                    <label for="allPurposeRetractHour">
+                        $tlang.getString("allPurpose.show.time")
                     </label>
                 </td>
             </tr>
@@ -1078,65 +1061,48 @@ $(document).ready(function(){
                 <td>
                 </td>
                 <td>
-                	#chef_dateselectionwidget(name_allPurposeRetractYear $name_allPurposeRetractMonth $name_allPurposeRetractDay $!value_year_from $!value_year_to $value_allPurposeRetractYear $value_allPurposeRetractMonth $value_allPurposeRetractDay)    
+                	#chef_dateselectionwidget("allPurposeRetractYear" "allPurposeRetractMonth" "allPurposeRetractDay" $!value_year_from $!value_year_to $value_allPurposeRetractYear $value_allPurposeRetractMonth $value_allPurposeRetractDay)    
                 </td>
                 <td>
-                    <select name="retract_hour_0" id="retract_hour_0">
-                        <option value="1">1</option>
-                        <option value="2">2</option>
-                        <option value="3">3</option>
-                        <option value="4">4</option>
-                        <option value="5">5</option>
-                        <option value="6">6</option>
-                        <option value="7">7</option>
-                        <option value="8">8</option>
-                        <option value="9">9</option>
-                        <option value="10">10</option>
-                        <option selected="selected" value="11">11</option>
-                        <option value="12">12</option>
+                    <select name="allPurposeRetractHour" id="allPurposeRetractHour">
+                     #foreach ($i in [1..12])
+																						<option value="$i" #if ($value_allPurposeRetractHour==$i)selected="selected"#end>$i</option>
+																					#end
                     </select>
-                    <select name="retract_minute_0" id="retract_minute_0">
-                        <option value="0">00</option>
-                        <option value="5">05</option>
-                        <option value="10">10</option>
-                        <option value="15">15</option>
-                        <option value="20">20</option>
-                        <option value="25">25</option>
-                        <option value="30">30</option>
-                        <option value="35">35</option>
-                        <option value="40">40</option>
-                        <option value="45">45</option>
-                        <option value="50">50</option>
-                        <option value="55">55</option>
+                    <select name="allPurposeRetractMin" id="allPurposeRetractMin">
+                    			#foreach ($i in [0, 5, 10, 15, 20, 25, 30, 35, 40, 45, 50, 55])
+																								<option value="$i" #if($i == $value_allPurposeRetractMin)selected="selected"#end>#if($i ==0)00#elseif($i == 5)05#else$i#end</option>
+																							#end
                     </select>
-                    <select name="retract_ampm_0" id="retract_ampm_0">
-                        <option selected="selected">am</option>
-                        <option>pm</option>
+                    <select name="allPurposeRetractAMPM" id="allPurposeRetractHourAMPM">
+                    	#foreach ($i in [0, 1])
+																						<option value="$i" #if($i == $value_allPurposeRetractAMPM)selected="selected"#end>#if($i==0) AM #else PM #end </option>
+																					#end
                     </select>
                 </td>
             </tr>
             <tr>
                 <td>
-                    <input name="hidden_0" id="hidden_true_0" value="true" type="radio">
+                    <input name="allPurposeHide" id="allPurposeHide" value="true" #if($!value_allPurposeHide)checked="checked"#end type="radio" />
                 </td>
                 <td colspan="4">
                     <label for="hidden_true_0">
-                        $tlang.getString("other.show.hide")
+                        $tlang.getString("allPurpose.show.hide")
                     </label>
                 </td>
             </tr>
         </table>
 			</p>
-			<h4>$tlang.getString("other.show.to")</h4>
+			<h4>$tlang.getString("allPurpose.show.to")</h4>
 			<table border="0" cellpadding="0" cellspacing="0" style="margin:1em 0;width:100%">
 			    <tbody>
 			        <tr>
 			            <td>
 			                <input id="mainForm:selectByTree:_id81:0:selectAllCheckbox" type="checkbox" name="mainForm:selectByTree:_id81:0:selectAllCheckbox"/>
 			                <label for="mainForm:selectByTree:_id81:0:selectAllCheckbox">
-			                    $tlang.getString("other.show.all")
+			                    $tlang.getString("allPurpose.show.all")
 			                </label>
-			                - <a href="#" style="text-decoration: underline" onclick="document.forms['mainForm']['mainForm:_idcl'].value='mainForm:selectByTree:_id81:0:_id88'; document.forms['mainForm'].submit(); return false;">$tlang.getString("other.show.expand") student list </a>
+			                - <a href="#" style="text-decoration: underline" onclick="document.forms['mainForm']['mainForm:_idcl'].value='mainForm:selectByTree:_id81:0:_id88'; document.forms['mainForm'].submit(); return false;">$tlang.getString("allPurpose.show.expand") student list </a>
 #*			                <table class="listHier nolines hierItemBlockWrapper" cellpadding="0" cellspacing="0" style="margin-left:2em;width:auto;font-weight:normal">
 			                    <tbody>
 			                        <tr>
@@ -1180,7 +1146,7 @@ $(document).ready(function(){
 			            <td>
 			                <input id="mainForm:selectByTree:_id81:1:selectAllCheckbox" type="checkbox" name="mainForm:selectByTree:_id81:1:selectAllCheckbox"/>
 			                <label for="mainForm:selectByTree:_id81:1:selectAllCheckbox">
-			                    $tlang.getString("other.show.all") instructors 
+			                    $tlang.getString("allPurpose.show.all") instructors 
 			                </label>
 			                - <a href="#" style="text-decoration: underline" onclick="document.forms['mainForm']['mainForm:_idcl'].value='mainForm:selectByTree:_id81:1:_id88'; document.forms['mainForm'].submit(); return false;">Collapse instructor list</a>
 			                <table class="listHier nolines hierItemBlockWrapper" cellpadding="0" cellspacing="0" style="margin-left:2em;width:auto;font-weight:normal">
@@ -1211,8 +1177,8 @@ $(document).ready(function(){
 			    </tbody>
 			</table>
 			<p class="act">
-				<input type="button" id="other_save" value="Save" class="active"/>
-				<input type="button" id ="other_cancel" value="Cancel" />
+				<input type="button" id="allPurpose_save" value="Save" class="active"/>
+				<input type="button" id ="allPurpose_cancel" value="Cancel" />
 			</p>
 		</fieldset>
 			<div class="act">

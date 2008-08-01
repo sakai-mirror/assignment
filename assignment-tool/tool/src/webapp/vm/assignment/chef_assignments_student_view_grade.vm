@@ -214,10 +214,10 @@ $('#toggleModel').click(function(){
 			<div class="textPanel">$validator.escapeHtmlFormattedText($!assignment.getContent().getInstructions())</div>
 		#else
 		#end
-		
+		#if($allowViewModelAnswer)
 			<h4  id="toggleModel" class="toggleAnchor specialLink">Model Answer</h4>
 			<div class="model toggledContent">
-					<p>Model answer text. Model answer text. Model answer text. Model answer text. Model answer text. Model answer text. Model answer text. Model answer text. Model answer text. Model answer text. Model answer text. Model answer text. Model answer text. Model answer text. Model answer text. Model answer text. Model answer text. </p>
+					<p>$modelAnswer.getText()</p>
 					<ul class="attachList">
 						<li>
 							<img src="/library/image/sakai/word.gif?panel=Main" alt="File attachment" border="0">
@@ -228,9 +228,8 @@ $('#toggleModel').click(function(){
 							<a href="#" target="_blank">model2.doc</a>(11 KB)
 						</li>
 					</ul>
-					
 			</div>
-			
+		#end
 		#set ($attachments = $assignment.getContent().Attachments)
 		#set ($size = 0)
 		#set ($size = 0)

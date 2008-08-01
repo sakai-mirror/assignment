@@ -19,6 +19,8 @@
 package org.sakaiproject.assignment.api.model;
 
 import java.util.Set ;
+import org.sakaiproject.assignment.api.Assignment;
+import org.sakaiproject.assignment.api.AssignmentSubmission;
 
 /**
  * This is the interface for accessing assignment supplement item
@@ -111,5 +113,13 @@ public interface AssignmentSupplementItemService {
 	 * @return
 	 */
 	public AssignmentAllPurposeItem getAllPurposeItem(String assignmentId);
+	
+	/**
+	 * Can the current user see the model answer or not
+	 * @param a
+	 * @param s
+	 * @return
+	 */
+	public boolean canViewModelAnswer(Assignment a, AssignmentSubmission s);
 
 }

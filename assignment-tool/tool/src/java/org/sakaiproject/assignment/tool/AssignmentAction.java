@@ -926,6 +926,9 @@ public class AssignmentAction extends PagedResourceActionII
 					context.put("prevFeedbackAttachments", getPrevFeedbackAttachments(p));
 				}
 			}
+			
+			// can the student view model answer or not
+			canViewAssignmentIntoContext(context, assignment, s);
 		}
 		catch (IdUnusedException e)
 		{
@@ -1045,14 +1048,21 @@ public class AssignmentAction extends PagedResourceActionII
 	{
 		context.put("context", state.getAttribute(STATE_CONTEXT_STRING));
 
-		String aId = (String) state.getAttribute(VIEW_ASSIGNMENT_ID);
+		String aReference = (String) state.getAttribute(VIEW_ASSIGNMENT_ID);
+		User user = (User) state.getAttribute(STATE_USER);
 
 		Assignment assignment = null;
 		
 		try
 		{
-			assignment = AssignmentService.getAssignment(aId);
+			assignment = AssignmentService.getAssignment(aReference);
 			context.put("assignment", assignment);
+			
+			AssignmentSubmission submission = AssignmentService.getSubmission(aReference, user);
+			context.put("submission", submission);
+			
+			// can the student view model answer or not
+			canViewAssignmentIntoContext(context, assignment, submission);
 		}
 		catch (IdUnusedException e)
 		{
@@ -1093,8 +1103,14 @@ public class AssignmentAction extends PagedResourceActionII
 
 		try
 		{
-			context.put("assignment", AssignmentService.getAssignment(aReference));
-			context.put("submission", AssignmentService.getSubmission(aReference, user));
+			Assignment assignment = AssignmentService.getAssignment(aReference);
+			context.put("assignment", assignment);
+			
+			AssignmentSubmission submission = AssignmentService.getSubmission(aReference, user);
+			context.put("submission", submission);
+			
+			// can the student view model answer or not
+			canViewAssignmentIntoContext(context, assignment, submission);
 		}
 		catch (IdUnusedException e)
 		{
@@ -1117,6 +1133,17 @@ public class AssignmentAction extends PagedResourceActionII
 
 	} // build_student_preview_submission_context
 
+
+	private void canViewAssignmentIntoContext(Context context,
+			Assignment assignment, AssignmentSubmission submission) {
+		boolean canViewModelAnswer = m_assignmentSupplementItemService.canViewModelAnswer(assignment, submission);
+		context.put("allowViewModelAnswer", Boolean.valueOf(canViewModelAnswer));
+		if (canViewModelAnswer)
+		{
+			context.put("modelAnswer", m_assignmentSupplementItemService.getModelAnswer(assignment.getId()));
+		}
+	}
+
 	/**
 	 * build the student view of showing a graded submission
 	 */
@@ -1135,6 +1162,9 @@ public class AssignmentAction extends PagedResourceActionII
 				context.put("nonElectronicType", Boolean.TRUE);
 			}
 			context.put("submission", submission);
+			
+			// can the student view model answer or not
+			canViewAssignmentIntoContext(context, assignment, submission);
 		}
 		catch (IdUnusedException e)
 		{
@@ -1627,17 +1657,42 @@ public class AssignmentAction extends PagedResourceActionII
 			context.put("note_to", String.valueOf(0));
 		}
 		// all purpose item
-		context.put("name_allPurposeReleaseYear", "allPurposeReleaseYear");
-		context.put("name_allPurposeReleaseMonth", "allPurposeReleaseMonth");
-		context.put("name_allPurposeReleaseDay", "allPurposeReleaseDay");
 		AssignmentAllPurposeItem aItem = m_assignmentSupplementItemService.getAllPurposeItem(assignmentId);
 		if (aItem != null)
 		{
-			Date releaseDate = aItem.getReleaseDate();
+			context.put("allPurpose", Boolean.TRUE);
+			context.put("value_allPurposeTitle", aItem.getTitle());
+			context.put("value_allPurposeText", aItem.getText());
+			context.put("value_allPurposeHide", Boolean.valueOf(aItem.getHide()));
+			java.util.Calendar cal = java.util.Calendar.getInstance();
+			// put release date information into context
+			cal.setTime(aItem.getReleaseDate());
+			dateIntoContext(context, cal, "value_allPurposeReleaseYear", "value_allPurposeReleaseMonth", "value_allPurposeReleaseDay", "value_allPurposeReleaseHour", "value_allPurposeReleaseMin", "value_allPurposeReleaseAMPM");
+			// put retract date information into context
+			cal.setTime(aItem.getRetractDate());
+			dateIntoContext(context, cal, "value_allPurposeRetractYear", "value_allPurposeRetractMonth", "value_allPurposeRetractDay", "value_allPurposeRetractHour", "value_allPurposeRetractMin", "value_allPurposeRetractAMPM");
+			
+		}
+		else
+		{
+			context.put("allPurpose", Boolean.FALSE);
 		}
 		
 		
 	} // setAssignmentFormContext
+
+
+	private void dateIntoContext(Context context, java.util.Calendar cal, String yearValue, String monthValue, String dayValue, String hourValue, String minValue, String ampmValue) {
+		context.put(yearValue, cal.get(java.util.Calendar.YEAR));
+		context.put(monthValue, cal.get(java.util.Calendar.MONTH));
+		context.put(dayValue, cal.get(java.util.Calendar.DAY_OF_MONTH));
+		int hour = cal.get(java.util.Calendar.HOUR_OF_DAY);
+		hour = hour > 12?hour-12:hour;
+		context.put(hourValue, hour);
+		context.put(minValue, cal.get(java.util.Calendar.MINUTE));
+		int ampm = cal.get(java.util.Calendar.AM_PM);
+		context.put(ampmValue, cal.get(java.util.Calendar.AM_PM));
+	}
 
 	/**
 	 * build the instructor view of create a new assignment
@@ -4763,6 +4818,30 @@ public class AssignmentAction extends PagedResourceActionII
 					nNote.setShareWith(params.getInt("note_to"));
 					m_assignmentSupplementItemService.saveNoteItem(nNote);
 				}
+				if (StringUtil.trimToNull(params.getString("allPurposeTitle")) != null)
+				{
+					// edit/add private note
+					AssignmentAllPurposeItem nAllPurpose = m_assignmentSupplementItemService.getAllPurposeItem(aId);
+					if (nAllPurpose == null)
+						nAllPurpose = m_assignmentSupplementItemService.newAllPurposeItem();
+					nAllPurpose.setAssignmentId(a.getId());
+					nAllPurpose.setTitle(StringUtil.trimToNull(params.getString("allPurposeTitle")));
+					nAllPurpose.setText(StringUtil.trimToNull(params.getString("allPurposeText")));
+					nAllPurpose.setHide(params.getBoolean("allPurposeHide"));
+					// save the release and retract dates
+					java.util.Calendar cal = java.util.Calendar.getInstance();
+					// save release date
+					int hour = params.getInt("allPurposeReleaseAMPM")==0?0:12;
+					hour +=params.getInt("allPurposeReleaseHour");
+					cal.set(params.getInt("allPurposeReleaseYear"), params.getInt("allPurposeReleaseMonth"), params.getInt("allPurposeReleaseDay"), hour, params.getInt("allPurposeReleaseMin"));
+					nAllPurpose.setReleaseDate(cal.getTime());
+					// save retract date
+					hour = params.getInt("allPurposeRetractAMPM")==0?0:12;
+					hour += params.getInt("allPurposeRetractHour");
+					cal.set(params.getInt("allPurposeRetractYear"), params.getInt("allPurposeRetractMonth"), params.getInt("allPurposeRetractDay"), hour, params.getInt("allPurposeRetractMin"));
+					nAllPurpose.setRetractDate(cal.getTime());
+					m_assignmentSupplementItemService.saveAllPurposeItem(nAllPurpose);
+				}
 
 			} // if
 
@@ -4771,7 +4850,7 @@ public class AssignmentAction extends PagedResourceActionII
 		// set default sorting
 		setDefaultSort(state);
 		
-	} // doPost_assignment
+	} // postOrSaveAssignment
 
 	/**
 	 * 

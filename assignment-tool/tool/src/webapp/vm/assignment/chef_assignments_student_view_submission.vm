@@ -334,8 +334,24 @@ $('#toggleGrade').click(function(){
 		
 		#if ($!assignment.getContent().getInstructions().length()>0)
 			<div class="textPanel">$validator.escapeHtmlFormattedText($!assignment.getContent().getInstructions())</div>
-		#else
 		#end
+		## model answer
+		#if($allowViewModelAnswer)
+					<h4  id="toggleModel" class="toggleAnchor specialLink">Model Answer</h4>
+						<div class="model toggledContent">
+								<p>$modelAnswer.getText()</p>
+							<ul class="attachList">
+								<li>
+									<img src="/library/image/sakai/word.gif?panel=Main" alt="File attachment" border="0">
+									<a href="#" target="_blank">model1.doc</a>(11 KB)
+								</li>
+								<li>
+									<img src="/library/image/sakai/word.gif?panel=Main" alt="File attachment" border="0">
+										<a href="#" target="_blank">model2.doc</a>(11 KB)
+								</li>
+							</ul>
+						</div>
+					#end
 
 		#set ($size = 0)
 		#set ($props = false)

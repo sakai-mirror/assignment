@@ -34,7 +34,7 @@ public class AssignmentAllPurposeItem {
 	private Long id;
 	private String assignmentId;
 	private String title;
-	private String instruction;
+	private String text;
 	private Date releaseDate;	// the start showing date
 	private Date retractDate; // the end showing date
 	private boolean hide;
@@ -57,11 +57,11 @@ public class AssignmentAllPurposeItem {
 	public void setTitle(String title) {
 		this.title = title;
 	}
-	public String getInstruction() {
-		return instruction;
+	public String getText() {
+		return text;
 	}
-	public void setInstruction(String instruction) {
-		this.instruction = instruction;
+	public void setText(String text) {
+		this.text = text;
 	}
 	public Date getReleaseDate() {
 		return releaseDate;
@@ -75,7 +75,8 @@ public class AssignmentAllPurposeItem {
 	public void setRetractDate(Date retractDate) {
 		this.retractDate = retractDate;
 	}
-	public boolean isHide() {
+	public boolean getHide()
+	{
 		return hide;
 	}
 	public void setHide(boolean hide) {

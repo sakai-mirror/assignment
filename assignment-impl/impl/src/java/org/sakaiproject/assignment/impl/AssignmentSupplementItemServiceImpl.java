@@ -1,9 +1,15 @@
 package org.sakaiproject.assignment.impl;
 
 import java.util.List;
+import java.util.Date;
+import org.sakaiproject.time.api.Time;
+import org.sakaiproject.time.cover.TimeService;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
+import org.sakaiproject.assignment.api.AssignmentConstants;
+import org.sakaiproject.assignment.api.AssignmentSubmission;
+import org.sakaiproject.assignment.api.Assignment;
 import org.sakaiproject.assignment.api.model.AssignmentModelAnswerItem;
 import org.sakaiproject.assignment.api.model.AssignmentNoteItem;
 import org.sakaiproject.assignment.api.model.AssignmentAllPurposeItem;
@@ -213,4 +219,32 @@ public class AssignmentSupplementItemServiceImpl extends HibernateDaoSupport imp
 		return null;
 	}
 
+	public boolean canViewModelAnswer(Assignment a, AssignmentSubmission s)
+	{
+		if (a != null)
+		{
+			AssignmentModelAnswerItem m = getModelAnswer(a.getId());
+			if (m != null)
+			{
+				int show = m.getShowTo();
+				if (show == AssignmentConstants.MODEL_ANSWER_SHOW_TO_STUDENT_BEFORE_STARTS)
+				{
+					return true;
+				}
+				else if (show == AssignmentConstants.MODEL_ANSWER_SHOW_TO_STUDENT_AFTER_SUBMIT && s != null && s.getSubmitted())
+				{
+					return true;
+				}
+				else if (show == AssignmentConstants.MODEL_ANSWER_SHOW_TO_STUDENT_AFTER_GRADE_RETURN && s!= null && s.getGradeReleased())
+				{
+					return true;
+				}
+				else if (show == AssignmentConstants.MODEL_ANSWER_SHOW_TO_STUDENT_AFTER_ACCEPT_UTIL && (a.getCloseTime().before(TimeService.newTime())))
+				{
+					return true;
+				}
+			}
+		}
+		return false;
+	}
 }

@@ -66,18 +66,18 @@
             <column name="TITLE"/>
         </property>
         
-        <property name="instruction" type="text" not-null="false">
-            <column name="INSTRUCTION"/>
+        <property name="text" type="text" not-null="false">
+            <column name="TEXT"/>
         </property>
         
         <!-- item viewable open time  -->        
-        <property name="showStartDate" type="java.util.Date" not-null="true" >
-            <column name="SHOW_START_DATE" />
+        <property name="releaseDate" type="java.util.Date" not-null="true" >
+            <column name="RELEASE_DATE" />
         </property>
         
         <!-- item viewable end time  -->
-        <property name="showEndDate" type="java.util.Date" not-null="true" >
-            <column name="SHOW_END_DATE" />
+        <property name="retractDate" type="java.util.Date" not-null="true" >
+            <column name="RETRACT_DATE" />
         </property>
         
         <property name="hide" type="java.lang.Boolean" not-null="true">
