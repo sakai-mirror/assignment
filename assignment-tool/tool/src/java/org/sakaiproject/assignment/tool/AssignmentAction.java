@@ -75,6 +75,7 @@ import org.sakaiproject.authz.api.SecurityAdvisor;
 import org.sakaiproject.authz.cover.SecurityService;
 import org.sakaiproject.authz.api.AuthzGroup;
 import org.sakaiproject.authz.api.GroupNotDefinedException;
+import org.sakaiproject.authz.api.Role;
 import org.sakaiproject.authz.api.PermissionsHelper;
 import org.sakaiproject.authz.cover.AuthzGroupService;
 import org.sakaiproject.calendar.api.Calendar;
@@ -1671,13 +1672,46 @@ public class AssignmentAction extends PagedResourceActionII
 			// put retract date information into context
 			cal.setTime(aItem.getRetractDate());
 			dateIntoContext(context, cal, "value_allPurposeRetractYear", "value_allPurposeRetractMonth", "value_allPurposeRetractDay", "value_allPurposeRetractHour", "value_allPurposeRetractMin", "value_allPurposeRetractAMPM");
-			
 		}
 		else
 		{
 			context.put("allPurpose", Boolean.FALSE);
 		}
-		
+		// put role information into context
+		Hashtable<String, List> roleUsers = new Hashtable<String, List>();
+		try
+		{
+			AuthzGroup realm = AuthzGroupService.getAuthzGroup(SiteService.siteReference(a.getContext()));
+			Set<Role> roles = realm.getRoles();
+			for(Iterator iRoles = roles.iterator(); iRoles.hasNext();)
+			{
+				Role r = (Role) iRoles.next();
+				Set<String> users = realm.getUsersHasRole(r.getId());
+				if (users!=null && users.size() > 0)
+				{
+					List<User> usersList = new Vector();
+					for (Iterator<String> iUsers = users.iterator(); iUsers.hasNext();)
+					{
+						String userId = iUsers.next();
+						try
+						{
+							User u = UserDirectoryService.getUser(userId);
+							usersList.add(u);
+						}
+						catch (Exception e)
+						{
+							M_log.warn(this + ":setAssignmentFormContext cannot get user " +  e.getMessage() + " user id=" + userId);
+						}
+					}
+					roleUsers.put(r.getId(), usersList);
+				}
+			}
+			context.put("roleUsers", roleUsers);
+		}
+		catch (Exception e)
+		{
+			M_log.warn(this + ":setAssignmentFormContext role cast problem " +  e.getMessage() + " assignment id=" + a.getId());
+		}
 		
 	} // setAssignmentFormContext
 
@@ -2349,6 +2383,14 @@ public class AssignmentAction extends PagedResourceActionII
 		add2ndToolbarFields(data, context);
 
 		pagingInfoToContext(state, context);
+		
+		boolean allowReadAssignmentNoteItem = m_assignmentSupplementItemService.canReadNoteItem(assignment);
+		context.put("allowReadAssignmentNoteItem", allowReadAssignmentNoteItem);
+		if (allowReadAssignmentNoteItem)
+		{
+			context.put("assignmentNoteItem", m_assignmentSupplementItemService.getNoteItem(assignment.getId()));
+		}
+		
 		
 		String template = (String) getContext(data).get("template");
 		
@@ -4816,6 +4858,7 @@ public class AssignmentAction extends PagedResourceActionII
 					nNote.setAssignmentId(a.getId());
 					nNote.setNote(StringUtil.trimToNull(params.getString("note_text")));
 					nNote.setShareWith(params.getInt("note_to"));
+					nNote.setCreatorId(UserDirectoryService.getCurrentUser().getId());
 					m_assignmentSupplementItemService.saveNoteItem(nNote);
 				}
 				if (StringUtil.trimToNull(params.getString("allPurposeTitle")) != null)

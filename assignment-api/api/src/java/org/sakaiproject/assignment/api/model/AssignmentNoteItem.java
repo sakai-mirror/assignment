@@ -38,11 +38,12 @@ public class AssignmentNoteItem {
 	}
 	
 	public AssignmentNoteItem(Long id, String assignmentId, String note,
-			int shareWith) {
+			String creatorId, int shareWith) {
 		super();
 		this.id = id;
 		this.assignmentId = assignmentId;
 		this.note = note;
+		this.creatorId = creatorId;
 		this.shareWith = shareWith;
 	}
 	
@@ -88,5 +89,17 @@ public class AssignmentNoteItem {
 	public void setShareWith(int shareWith) {
 		this.shareWith = shareWith;
 	}
+	
+	/** who created this note item **/
+	private String creatorId;
+	
+	public String getCreatorId() {
+		return creatorId;
+	}
+
+	public void setCreatorId(String creatorId) {
+		this.creatorId = creatorId;
+	}
+	
 	
 }

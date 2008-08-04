@@ -17,6 +17,10 @@ public class AssignmentConstants {
 	
 	public final static int MODEL_ANSWER_SHOW_TO_STUDENT_AFTER_ACCEPT_UTIL = 4;
 	
+	public final static int NOTE_KEEP_PRIVATE = 1;
 	
+	public final static int NOTE_READ_BY_OTHER = 2;
+	
+	public final static int NOTE_READ_AND_WRITE_BY_OTHER = 3;
 
 }

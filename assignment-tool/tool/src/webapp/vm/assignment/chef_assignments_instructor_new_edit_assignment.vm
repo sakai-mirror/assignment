@@ -143,6 +143,17 @@ $(document).ready(function(){
   		$('.extraNode').hide();
 				$('#allPurpose').hide();
   });
+  $("#allPurpose_showList").click(function() 
+  {
+  			$('.roleList').hide();
+				resizeFrame('grow');
+  });
+  $("#allPurpose_hideList").click(function() 
+  {
+  			$('.roleList').hide();
+				resizeFrame('grow');
+  });
+  
 }); 
 </script>	
 <style type="text/css">
@@ -156,6 +167,9 @@ $(document).ready(function(){
 	.extraNode legend{
 		padding:0 .5em;
 		color:#555
+	}
+	.roleList {
+		listHier nolines hierItemBlockWrapper;
 	}
 
 </style>
@@ -1096,84 +1110,36 @@ $(document).ready(function(){
 			<h4>$tlang.getString("allPurpose.show.to")</h4>
 			<table border="0" cellpadding="0" cellspacing="0" style="margin:1em 0;width:100%">
 			    <tbody>
+			    			#foreach ($role in $!roleUsers.keys())
+			    				#set($allString=$tlang.getString("allPurpose.show.all").concat(" ").concat($role))
+			    				#set($expandString=$tlang.getString("allPurpose.show.expand").concat(" ").concat($role).concat($tlang.getString("allPurpose.show.list")))
+			    				#set($collapseString=$tlang.getString("allPurpose.show.collapse").concat(" ").concat($role).concat($tlang.getString("allPurpose.show.list")))
 			        <tr>
 			            <td>
-			                <input id="mainForm:selectByTree:_id81:0:selectAllCheckbox" type="checkbox" name="mainForm:selectByTree:_id81:0:selectAllCheckbox"/>
-			                <label for="mainForm:selectByTree:_id81:0:selectAllCheckbox">
-			                    $tlang.getString("allPurpose.show.all")
+			                <input id="$role" type="checkbox" name="$role"/>
+			                <label for="$allString">
+			                    $allString
 			                </label>
-			                - <a href="#" style="text-decoration: underline" onclick="document.forms['mainForm']['mainForm:_idcl'].value='mainForm:selectByTree:_id81:0:_id88'; document.forms['mainForm'].submit(); return false;">$tlang.getString("allPurpose.show.expand") student list </a>
-#*			                <table class="listHier nolines hierItemBlockWrapper" cellpadding="0" cellspacing="0" style="margin-left:2em;width:auto;font-weight:normal">
+			                <a href="#" id="$expandString" style="display:block;clear:both;text-decoration: underline">$expandString</a><a href="#" id="$collapseString" style="display:none;clear:both;text-decoration: underline">$collapseString</a>
+																					<table class=".roleList" cellpadding="0" cellspacing="0" style="margin-left:2em;width:auto;font-weight:normal">
 			                    <tbody>
+			                        #foreach($user in $!roleUsers.get($role))
 			                        <tr>
 			                            <td class="attach">
-			                                <input id="mainForm:selectByTree:_id81:0:_id90:0:indCol1Checkbox1" type="checkbox" name="mainForm:selectByTree:_id81:0:_id90:0:indCol1Checkbox1"/>
+			                                <input id="allPursposeUser" type="checkbox" name="allPurposeUser" value="$user.Id"/>
 			                            </td>
 			                            <td class="">
-			                                <label for="mainForm:selectByTree:_id81:0:_id90:0:indCol1Checkbox1" style="white-space:nowrap">
-			                                    stud1, stud1
-			                                </label>
-			                            </td>
-			                            <td class="attach">
-			                                <input id="mainForm:selectByTree:_id81:0:_id90:0:indCol2Checkbox2" type="checkbox" name="mainForm:selectByTree:_id81:0:_id90:0:indCol2Checkbox2" style="margin-left:2em;"/>
-			                            </td>
-			                            <td class="attach">
-			                                <label for="mainForm:selectByTree:_id81:0:_id90:0:indCol2Checkbox2" style="white-space:nowrap">
-			                                    test, test
+			                                <label for="allPurposeUser" style="white-space:nowrap">
+			                                   $user.getDisplayName()
 			                                </label>
 			                            </td>
 			                        </tr>
-			                        <tr>
-			                            <td class="attach">
-			                                <input id="mainForm:selectByTree:_id81:0:_id90:1:indCol1Checkbox1" type="checkbox" name="mainForm:selectByTree:_id81:0:_id90:1:indCol1Checkbox1"/>
-			                            </td>
-			                            <td class="">
-			                                <label for="mainForm:selectByTree:_id81:0:_id90:1:indCol1Checkbox1" style="white-space:nowrap">
-			                                    stud2, stud2
-			                                </label>
-			                            </td>
-			                            <td class="attach">
-			                            </td>
-			                            <td class="attach">
-			                            </td>
-			                        </tr>
-			                    </tbody>
-			                </table>
-			            </td>
-	*#
-			        </tr>
-			        <tr>
-			            <td>
-			                <input id="mainForm:selectByTree:_id81:1:selectAllCheckbox" type="checkbox" name="mainForm:selectByTree:_id81:1:selectAllCheckbox"/>
-			                <label for="mainForm:selectByTree:_id81:1:selectAllCheckbox">
-			                    $tlang.getString("allPurpose.show.all") instructors 
-			                </label>
-			                - <a href="#" style="text-decoration: underline" onclick="document.forms['mainForm']['mainForm:_idcl'].value='mainForm:selectByTree:_id81:1:_id88'; document.forms['mainForm'].submit(); return false;">Collapse instructor list</a>
-			                <table class="listHier nolines hierItemBlockWrapper" cellpadding="0" cellspacing="0" style="margin-left:2em;width:auto;font-weight:normal">
-			                    <tbody>
-			                        <tr>
-			                            <td class="attach">
-			                                <input id="mainForm:selectByTree:_id81:1:_id90:0:indCol1Checkbox1" type="checkbox" name="mainForm:selectByTree:_id81:1:_id90:0:indCol1Checkbox1"/>
-			                            </td>
-			                            <td class="">
-			                                <label for="mainForm:selectByTree:_id81:1:_id90:0:indCol1Checkbox1" style="white-space:nowrap">
-			                                    Instruct 1
-			                                </label>
-			                            </td>
-			                            <td class="attach">
-																			<input id="mainForm:selectByTree:_id81:1:_id90:0:indCol1Checkbox2" type="checkbox" name="mainForm:selectByTree:_id81:1:_id90:0:indCol1Checkbox1"/>
-			                            </td>
-			                            <td class="attach">
-			                                <label for="mainForm:selectByTree:_id81:1:_id90:0:indCol1Checkbox2" style="white-space:nowrap">
-			                                    Instruct 2
-			                                </label>
-
-			                            </td>
-			                        </tr>
+			                        #end
 			                    </tbody>
 			                </table>
 			            </td>
 			        </tr>
+			        #end
 			    </tbody>
 			</table>
 			<p class="act">

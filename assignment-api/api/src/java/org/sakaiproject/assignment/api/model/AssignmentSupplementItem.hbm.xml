@@ -45,6 +45,10 @@
             <column name="NOTE"/>
         </property>
         
+        <property name="creatorId" type="string" not-null="false">
+            <column name="CREATOR_ID"/>
+        </property>
+        
         <property name="shareWith" type="integer" not-null="false">
             <column name="SHARE_WITH"/>
         </property>

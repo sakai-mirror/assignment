@@ -10,10 +10,13 @@ import org.apache.commons.logging.LogFactory;
 import org.sakaiproject.assignment.api.AssignmentConstants;
 import org.sakaiproject.assignment.api.AssignmentSubmission;
 import org.sakaiproject.assignment.api.Assignment;
+import org.sakaiproject.assignment.api.AssignmentService;
 import org.sakaiproject.assignment.api.model.AssignmentModelAnswerItem;
 import org.sakaiproject.assignment.api.model.AssignmentNoteItem;
 import org.sakaiproject.assignment.api.model.AssignmentAllPurposeItem;
 import org.sakaiproject.assignment.api.model.AssignmentSupplementItemService;
+import org.sakaiproject.user.api.User;
+import org.sakaiproject.user.api.UserDirectoryService;
 import org.springframework.dao.DataAccessException;
 import org.springframework.orm.hibernate3.support.HibernateDaoSupport;
 
@@ -38,6 +41,34 @@ public class AssignmentSupplementItemServiceImpl extends HibernateDaoSupport imp
       Log.info("destroy()");
    }
    
+   /** Dependency: UserDirectoryService */
+	protected UserDirectoryService m_userDirectoryService = null;
+
+	/**
+	 * Dependency: UserDirectoryService.
+	 * 
+	 * @param service
+	 *        The UserDirectoryService.
+	 */
+	public void setUserDirectoryService(UserDirectoryService service)
+	{
+		m_userDirectoryService = service;
+	}
+	
+	   /** Dependency: AssignmentService */
+	protected AssignmentService m_assignmentService = null;
+
+	/**
+	 * Dependency: AssignmentService.
+	 * 
+	 * @param service
+	 *        The AssignmentService.
+	 */
+	public void setAssignmentService(AssignmentService service)
+	{
+		m_assignmentService = service;
+	}
+	
    /*********************** model answer ************************/
 	/**
 	 * {@inheritDoc}}
@@ -219,6 +250,9 @@ public class AssignmentSupplementItemServiceImpl extends HibernateDaoSupport imp
 		return null;
 	}
 
+	/**
+	 * {@inheritDoc}
+	 */
 	public boolean canViewModelAnswer(Assignment a, AssignmentSubmission s)
 	{
 		if (a != null)
@@ -245,6 +279,57 @@ public class AssignmentSupplementItemServiceImpl extends HibernateDaoSupport imp
 				}
 			}
 		}
+		return false;
+	}
+	
+	/**
+	 * {@inheritDoc}
+	 */
+	public boolean canReadNoteItem(Assignment a)
+	{
+		if (a != null)
+		{
+			AssignmentNoteItem note = getNoteItem(a.getId());
+			if (note != null)
+			{
+				User u = m_userDirectoryService.getCurrentUser();
+				String noteCreatorId = note.getCreatorId();
+				if (noteCreatorId.equals(u.getId()))
+				{
+					return true;
+				}
+				else if (m_assignmentService.allowAddSubmission(a.getContext()))
+				{
+					// check whether the instructor type can view the note
+					int share = note.getShareWith();
+					if (share == AssignmentConstants.NOTE_READ_BY_OTHER || share == AssignmentConstants.NOTE_READ_AND_WRITE_BY_OTHER)
+					{
+						return true;
+					}	
+				}
+			}
+		}
+		
+		return false;
+	}
+	
+	/**
+	 * {@inheritDoc}
+	 */
+	public boolean canEditNoteItem(Assignment a)
+	{
+		if (a != null)
+		{
+			AssignmentNoteItem note = getNoteItem(a.getId());
+			if (note != null)
+			{
+				if (note.getShareWith() == AssignmentConstants.NOTE_READ_AND_WRITE_BY_OTHER)
+				{
+					return true;
+				}	
+			}
+		}
+		
 		return false;
 	}
 }

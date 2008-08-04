@@ -121,5 +121,19 @@ public interface AssignmentSupplementItemService {
 	 * @return
 	 */
 	public boolean canViewModelAnswer(Assignment a, AssignmentSubmission s);
+	
+	/**
+	 * Can current user read the AssignmentNoteItem?
+	 * @param a
+	 * @return
+	 */
+	public boolean canReadNoteItem(Assignment a);
+	
+	/**
+	 * Can the current user modify the AssignmentNoteItem?
+	 * @param a
+	 * @return
+	 */
+	public boolean canEditNoteItem(Assignment a);
 
 }

@@ -92,6 +92,12 @@
     		<ref
     			bean="org.sakaiproject.springframework.orm.hibernate.GlobalSessionFactory" />
     	</property>
+    	<property name="userDirectoryService">
+			<ref bean="org.sakaiproject.user.api.UserDirectoryService" />
+		</property>
+		<property name="assignmentService">
+			<ref bean="org.sakaiproject.assignment.api.AssignmentService" />
+		</property>
     </bean>
   
 </beans>

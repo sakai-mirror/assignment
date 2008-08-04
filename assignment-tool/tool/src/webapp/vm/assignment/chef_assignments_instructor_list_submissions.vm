@@ -315,11 +315,12 @@ $('#toggleNotes').click(function(){
 						</li>
 					</ul>
 				</div>
-			<h4  id="toggleNotes" class="toggleAnchor specialLink">Assignment notes</h4>
-			<div class="notes toggledContent">
-				<textarea cols="70" rows="10">Assignment notes. Assignment notes. Assignment notes. Assignment notes. Assignment notes. Assignment notes. Assignment notes. Assignment notes. Assignment notes. Assignment notes. Assignment notes. </textarea>
-				
-			</div>
+			#if ($!allowReadAssignmentNoteItem)
+				<h4  id="toggleNotes" class="toggleAnchor specialLink">$tlang.getString('note.label')</h4>
+				<div class="notes toggledContent">
+					$!assignmentNoteItem.getNote()
+				</div>
+			#end
 	
 
 			<table class="listHier lines nolines" cellpadding="0" cellspacing="0" summary="$tlang.getString("gen.viewassliststudentsummary")">
