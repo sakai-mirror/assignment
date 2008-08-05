@@ -29,22 +29,15 @@ import java.util.Set;
  * @author zqian
  *
  */
-public class AssignmentAllPurposeItem {
+public class AssignmentAllPurposeItem extends AssignmentSupplementItemWithAttachment{
 	
-	private Long id;
 	private String assignmentId;
 	private String title;
 	private String text;
 	private Date releaseDate;	// the start showing date
 	private Date retractDate; // the end showing date
 	private boolean hide;
-	
-	public Long getId() {
-		return id;
-	}
-	public void setId(Long id) {
-		this.id = id;
-	}
+
 	public String getAssignmentId() {
 		return assignmentId;
 	}
@@ -87,4 +80,13 @@ public class AssignmentAllPurposeItem {
 		super();
 	}
 	
+	/** access **/
+	private Set<AssignmentAllPurposeItemAccess> accessSet;	// the access set
+	public Set<AssignmentAllPurposeItemAccess> getAccessSet() {
+		return accessSet;
+	}
+	public void setAccessSet(
+			Set<AssignmentAllPurposeItemAccess> accessSet) {
+		this.accessSet = accessSet;
+	}
 }

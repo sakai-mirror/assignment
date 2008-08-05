@@ -2,6 +2,7 @@ package org.sakaiproject.assignment.impl;
 
 import java.util.List;
 import java.util.Date;
+import java.util.Set;
 import org.sakaiproject.time.api.Time;
 import org.sakaiproject.time.cover.TimeService;
 
@@ -14,7 +15,11 @@ import org.sakaiproject.assignment.api.AssignmentService;
 import org.sakaiproject.assignment.api.model.AssignmentModelAnswerItem;
 import org.sakaiproject.assignment.api.model.AssignmentNoteItem;
 import org.sakaiproject.assignment.api.model.AssignmentAllPurposeItem;
+import org.sakaiproject.assignment.api.model.AssignmentAllPurposeItemAccess;
+import org.sakaiproject.assignment.api.model.AssignmentSupplementItemAttachment;
 import org.sakaiproject.assignment.api.model.AssignmentSupplementItemService;
+import org.sakaiproject.authz.api.AuthzGroupService;
+import org.sakaiproject.site.api.SiteService;
 import org.sakaiproject.user.api.User;
 import org.sakaiproject.user.api.UserDirectoryService;
 import org.springframework.dao.DataAccessException;
@@ -67,6 +72,58 @@ public class AssignmentSupplementItemServiceImpl extends HibernateDaoSupport imp
 	public void setAssignmentService(AssignmentService service)
 	{
 		m_assignmentService = service;
+	}
+	
+	/** Dependency: AuthzGroupService */
+	protected AuthzGroupService m_authzGroupService = null;
+
+	/**
+	 * Dependency: AuthzGroupService.
+	 * 
+	 * @param service
+	 *        The AuthzGroupService.
+	 */
+	public void setAuthzGroupService(AuthzGroupService authzService)
+	{
+		m_authzGroupService = authzService;
+	}
+	
+	/** Dependency: SiteService */
+	protected SiteService m_siteService = null;
+
+	/**
+	 * Dependency: SiteService.
+	 * 
+	 * @param service
+	 *        The SiteService.
+	 */
+	public void setSiteService(SiteService siteService)
+	{
+		m_siteService = siteService;
+	}
+	
+	/********************** attachment   ************************/
+	/**
+	 * {@inheritDoc}
+	 */
+	public AssignmentSupplementItemAttachment newAttachment()
+	{
+		return new AssignmentSupplementItemAttachment();
+	}
+	
+	public boolean saveAttachment(AssignmentSupplementItemAttachment attachment)
+	{
+		try 
+		{
+			getHibernateTemplate().saveOrUpdate(attachment);
+			return true;
+		}
+		catch (DataAccessException e)
+		{
+			e.printStackTrace();
+			Log.warn(this + ".saveModelAnswerQuestion() Hibernate could not save attachment " + attachment.getId());
+			return false;
+		}
 	}
 	
    /*********************** model answer ************************/
@@ -331,5 +388,82 @@ public class AssignmentSupplementItemServiceImpl extends HibernateDaoSupport imp
 		}
 		
 		return false;
+	}
+	
+	/**
+	 * {@inheritDoc}
+	 */
+	public boolean canViewAllPurposeItem(Assignment a)
+	{
+		boolean rv = false;
+		
+		if (a != null)
+		{
+			AssignmentAllPurposeItem aItem = getAllPurposeItem(a.getId());
+			if (aItem != null)
+			{
+				if (!aItem.getHide())
+				{
+					Time now = TimeService.newTime();
+					Date releaseDate = aItem.getReleaseDate();
+					Date retractDate = aItem.getRetractDate();
+					
+					if (releaseDate == null && retractDate == null)
+					{
+						// no time limitation on showing the item
+						rv = true;
+					}
+					else if (releaseDate != null && retractDate == null)
+					{
+						// has relase date but not retract date
+						rv = now.getTime() > releaseDate.getTime();
+					}
+					else if (releaseDate == null && retractDate != null)
+					{
+						// has retract date but not release date
+						rv = now.getTime() < retractDate.getTime();
+					}
+					else
+					{
+						// has both release and retract dates
+						rv = now.getTime() > releaseDate.getTime() && now.getTime() < retractDate.getTime();
+					}
+				}
+				else
+				{
+					rv = false;
+				}
+			}
+			
+			if (rv)
+			{
+				// need to check role/user permission only if the above time test returns true
+				Set<AssignmentAllPurposeItemAccess> access = aItem.getAccessSet();
+				User u = m_userDirectoryService.getCurrentUser();
+				if ( u != null)
+				{
+					if (access.contains(u.getId()))
+						rv = true;
+					else 
+					{
+						try
+						{
+							String role = m_authzGroupService.getUserRole(u.getId(), m_siteService.siteReference(a.getContext()));
+							if (access.contains(role))
+								rv = true;
+						}
+						catch (Exception e)
+						{
+							Log.warn(this + ".callViewAllPurposeItem() Hibernate cannot access user role for user id= " + u.getId());
+							return rv;
+						}
+						
+					}
+						
+				}
+			}
+		}
+		
+		return rv;
 	}
 }

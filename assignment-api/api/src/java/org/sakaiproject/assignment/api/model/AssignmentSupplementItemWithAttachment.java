@@ -25,50 +25,35 @@ import java.util.List;
 import java.util.Set;
 
 /**
- * To provide sample answers to student
+ * The base class for SupplementItem which has attachment(s)
  * @author zqian
  *
  */
-public class AssignmentModelAnswerItem extends AssignmentSupplementItemWithAttachment {
+public class AssignmentSupplementItemWithAttachment {
 
 	/************* constructors ***********************/
-	public AssignmentModelAnswerItem() {
+	public AssignmentSupplementItemWithAttachment() {
 		super();
 		// TODO Auto-generated constructor stub
 	}
 	
 	/*************** attributes and methods *************/
-	
-	/** assignment id **/
-	private String assignmentId;
-
-	public String getAssignmentId()
-	{
-		return assignmentId;
+	/** id in db **/
+	private Long id;
+	public Long getId() {
+		return id;
 	}
-	public void setAssignmentId(String assignmentId)
-	{
-		this.assignmentId = assignmentId;
+	public void setId(Long id) {
+		this.id = id;
 	}
 	
-	/** text **/
-	public String text;
-	public String getText()
-	{
-		return text;
+	/** attachments **/
+	private Set<AssignmentSupplementItemAttachment> attachmentSet;	// the attachment set
+	public Set<AssignmentSupplementItemAttachment> getAttachmentSet() {
+		return attachmentSet;
 	}
-	public void setText(String text)
-	{
-		this.text = text;
-	}
-	
-	/** when to show the model answer to student **/
-	private int showTo;
-
-	public int getShowTo() {
-		return showTo;
-	}
-	public void setShowTo(int showTo) {
-		this.showTo = showTo;
+	public void setAttachmentSet(
+			Set<AssignmentSupplementItemAttachment> attachmentSet) {
+		this.attachmentSet = attachmentSet;
 	}
 }

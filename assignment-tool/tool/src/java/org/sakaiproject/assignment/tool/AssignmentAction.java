@@ -62,7 +62,9 @@ import org.sakaiproject.assignment.api.AssignmentSubmissionEdit;
 import org.sakaiproject.assignment.api.model.AssignmentModelAnswerItem;
 import org.sakaiproject.assignment.api.model.AssignmentNoteItem;
 import org.sakaiproject.assignment.api.model.AssignmentAllPurposeItem;
+import org.sakaiproject.assignment.api.model.AssignmentSupplementItemAttachment;
 import org.sakaiproject.assignment.api.model.AssignmentSupplementItemService;
+import org.sakaiproject.assignment.api.model.AssignmentSupplementItemWithAttachment;
 import org.sakaiproject.assignment.cover.AssignmentService;
 import org.sakaiproject.assignment.taggable.api.AssignmentActivityProducer;
 import org.sakaiproject.taggable.api.TaggingHelperInfo;
@@ -165,6 +167,10 @@ public class AssignmentAction extends PagedResourceActionII
 	
 	/** The attachments */
 	private static final String ATTACHMENTS = "Assignment.attachments";
+	private static final String ATTACHMENTS_FOR = "Assignment.attachments_for";
+	private static final String MODELANSWER_ATTACHMENTS = "Assignment.modelanswer_attachments";
+	private static final String ALLPURPOSE_ATTACHMENTS = "Assignment.allpurpose_attachments";
+	
 
 	/** The content type image lookup service in the State. */
 	private static final String STATE_CONTENT_TYPE_IMAGE_SERVICE = "Assignment.content_type_image_service";
@@ -1644,6 +1650,7 @@ public class AssignmentAction extends PagedResourceActionII
 			context.put("modelanswer", Boolean.FALSE);
 			context.put("modelanswer_when", String.valueOf(0));
 		}
+		context.put("modelanswer_attachments", getSupplementItemAttachments(state, mAnswer, MODELANSWER_ATTACHMENTS));
 		// private notes
 		AssignmentNoteItem mNote = m_assignmentSupplementItemService.getNoteItem(assignmentId);
 		if (mNote != null)
@@ -1672,6 +1679,8 @@ public class AssignmentAction extends PagedResourceActionII
 			// put retract date information into context
 			cal.setTime(aItem.getRetractDate());
 			dateIntoContext(context, cal, "value_allPurposeRetractYear", "value_allPurposeRetractMonth", "value_allPurposeRetractDay", "value_allPurposeRetractHour", "value_allPurposeRetractMin", "value_allPurposeRetractAMPM");
+			
+			context.put("allPurpose_attachments", state.getAttribute(ALLPURPOSE_ATTACHMENTS));
 		}
 		else
 		{
@@ -1681,7 +1690,7 @@ public class AssignmentAction extends PagedResourceActionII
 		Hashtable<String, List> roleUsers = new Hashtable<String, List>();
 		try
 		{
-			AuthzGroup realm = AuthzGroupService.getAuthzGroup(SiteService.siteReference(a.getContext()));
+			AuthzGroup realm = AuthzGroupService.getAuthzGroup(SiteService.siteReference(contextString));
 			Set<Role> roles = realm.getRoles();
 			for(Iterator iRoles = roles.iterator(); iRoles.hasNext();)
 			{
@@ -1710,7 +1719,7 @@ public class AssignmentAction extends PagedResourceActionII
 		}
 		catch (Exception e)
 		{
-			M_log.warn(this + ":setAssignmentFormContext role cast problem " +  e.getMessage() + " assignment id=" + a.getId());
+			M_log.warn(this + ":setAssignmentFormContext role cast problem " +  e.getMessage() + " site =" + contextString);
 		}
 		
 	} // setAssignmentFormContext
@@ -3191,6 +3200,9 @@ public class AssignmentAction extends PagedResourceActionII
 	{
 		SessionState state = ((JetspeedRunData) data).getPortletSessionState(((JetspeedRunData) data).getJs_peid());
 
+		// reset the assignment object
+		resetAssignment(state);
+		
 		// back to the student list view of assignments
 		state.setAttribute(STATE_MODE, MODE_LIST_ASSIGNMENTS);
 		
@@ -4774,13 +4786,6 @@ public class AssignmentAction extends PagedResourceActionII
 				
 				// comment the changes to Assignment object
 				commitAssignmentEdit(state, post, ac, a, title, openTime, dueTime, closeTime, enableCloseDate, section, range, groups);
-	
-				if (state.getAttribute(STATE_MESSAGE) == null)
-				{
-					state.setAttribute(STATE_MODE, MODE_LIST_ASSIGNMENTS);
-					state.setAttribute(ATTACHMENTS, EntityManager.newReferenceList());
-					resetAssignment(state);
-				}
 
 				if (post)
 				{
@@ -4843,10 +4848,14 @@ public class AssignmentAction extends PagedResourceActionII
 					// edit/add model answer
 					AssignmentModelAnswerItem mAnswer = m_assignmentSupplementItemService.getModelAnswer(aId);
 					if (mAnswer == null)
+					{
 						mAnswer = m_assignmentSupplementItemService.newModelAnswer();
+						m_assignmentSupplementItemService.saveModelAnswer(mAnswer);
+					}
 					mAnswer.setAssignmentId(a.getId());
 					mAnswer.setText(StringUtil.trimToNull(params.getString("modelanswer_text")));
 					mAnswer.setShowTo(params.getInt("modelanswer_when"));
+					mAnswer.setAttachmentSet(getAssignmentSupplementItemAttachment(state, mAnswer, MODELANSWER_ATTACHMENTS));
 					m_assignmentSupplementItemService.saveModelAnswer(mAnswer);
 				}
 				if (StringUtil.trimToNull(params.getString("note_text")) != null)
@@ -4866,7 +4875,10 @@ public class AssignmentAction extends PagedResourceActionII
 					// edit/add private note
 					AssignmentAllPurposeItem nAllPurpose = m_assignmentSupplementItemService.getAllPurposeItem(aId);
 					if (nAllPurpose == null)
+					{
 						nAllPurpose = m_assignmentSupplementItemService.newAllPurposeItem();
+						m_assignmentSupplementItemService.saveAllPurposeItem(nAllPurpose);
+					}
 					nAllPurpose.setAssignmentId(a.getId());
 					nAllPurpose.setTitle(StringUtil.trimToNull(params.getString("allPurposeTitle")));
 					nAllPurpose.setText(StringUtil.trimToNull(params.getString("allPurposeText")));
@@ -4883,6 +4895,7 @@ public class AssignmentAction extends PagedResourceActionII
 					hour += params.getInt("allPurposeRetractHour");
 					cal.set(params.getInt("allPurposeRetractYear"), params.getInt("allPurposeRetractMonth"), params.getInt("allPurposeRetractDay"), hour, params.getInt("allPurposeRetractMin"));
 					nAllPurpose.setRetractDate(cal.getTime());
+					nAllPurpose.setAttachmentSet(getAssignmentSupplementItemAttachment(state, nAllPurpose, ALLPURPOSE_ATTACHMENTS));
 					m_assignmentSupplementItemService.saveAllPurposeItem(nAllPurpose);
 				}
 
@@ -4893,7 +4906,33 @@ public class AssignmentAction extends PagedResourceActionII
 		// set default sorting
 		setDefaultSort(state);
 		
+		if (state.getAttribute(STATE_MESSAGE) == null)
+		{
+			state.setAttribute(STATE_MODE, MODE_LIST_ASSIGNMENTS);
+			state.setAttribute(ATTACHMENTS, EntityManager.newReferenceList());
+			resetAssignment(state);
+		}
+		
 	} // postOrSaveAssignment
+
+
+	private Set<AssignmentSupplementItemAttachment> getAssignmentSupplementItemAttachment(SessionState state, AssignmentSupplementItemWithAttachment mItem, String attachmentString) {
+		Set<AssignmentSupplementItemAttachment> sAttachments = new HashSet<AssignmentSupplementItemAttachment>();
+		if (state.getAttribute(attachmentString) != null)
+		{
+			List currentAttachments = (List) state.getAttribute(attachmentString);
+			for (Iterator aIterator = currentAttachments.iterator(); aIterator.hasNext();)
+			{
+				Reference attRef = (Reference) aIterator.next();
+				AssignmentSupplementItemAttachment mAttach = m_assignmentSupplementItemService.newAttachment();
+				mAttach.setAssignmentSupplementItemWithAttachment(mItem);
+				mAttach.setAttachmentId(attRef.getReference());
+				m_assignmentSupplementItemService.saveAttachment(mAttach);
+				sAttachments.add(mAttach);
+			}
+		}
+		return sAttachments;
+	}
 
 	/**
 	 * 
@@ -6819,7 +6858,15 @@ public class AssignmentAction extends PagedResourceActionII
 			else if (option.equals("attach"))
 			{
 				// attachments
-				doAttachments(data);
+				doAttachmentsFrom(data, null);
+			}
+			else if (option.equals("modelAnswerAttach"))
+			{
+				doAttachmentsFrom(data, "modelAnswer");
+			}
+			else if (option.equals("allPurposeAttach"))
+			{
+				doAttachmentsFrom(data, "allPurpose");
 			}
 			else if (option.equals("view"))
 			{
@@ -6918,6 +6965,70 @@ public class AssignmentAction extends PagedResourceActionII
 		return is_good;
 	}
 
+	/**
+	 * Action is to use when doAattchmentsadding requested, corresponding to chef_Assignments-new "eventSubmit_doAattchmentsadding" when "add attachments" is clicked
+	 */
+	public void doAttachmentsFrom(RunData data, String from)
+	{
+		SessionState state = ((JetspeedRunData) data).getPortletSessionState(((JetspeedRunData) data).getJs_peid());
+		doAttachments(data);
+		
+		// use the real attachment list
+		if (state.getAttribute(STATE_MESSAGE) == null)
+		{
+			if (from != null && from.equals("modelAnswer"))
+			{
+				state.setAttribute(ATTACHMENTS_FOR, MODELANSWER_ATTACHMENTS);
+				state.setAttribute(FilePickerHelper.FILE_PICKER_ATTACHMENTS, state.getAttribute(MODELANSWER_ATTACHMENTS));
+			}
+			else if (from != null && from.equals("allPurpose"))
+			{
+				state.setAttribute(ATTACHMENTS_FOR, ALLPURPOSE_ATTACHMENTS);
+				state.setAttribute(FilePickerHelper.FILE_PICKER_ATTACHMENTS, state.getAttribute(ALLPURPOSE_ATTACHMENTS));
+			}
+		}
+	}
+	
+
+	private List getSupplementItemAttachments(SessionState state, AssignmentSupplementItemWithAttachment item, String attachmentsKind)
+	{
+		List refs = new Vector();
+		
+		if (item != null)
+		{
+			// get reference list
+			Set<AssignmentSupplementItemAttachment> aSet = item.getAttachmentSet();
+			if (aSet != null && aSet.size() > 0)
+			{
+				for(Iterator<AssignmentSupplementItemAttachment> aIterator = aSet.iterator(); aIterator.hasNext();)
+				{
+					AssignmentSupplementItemAttachment att = aIterator.next();
+					// add reference
+					refs.add(EntityManager.newReference(att.getAttachmentId()));
+				}
+			}
+		}
+		
+		ToolSession session = SessionManager.getCurrentToolSession();
+	    if (session.getAttribute(FilePickerHelper.FILE_PICKER_CANCEL) == null &&
+	        session.getAttribute(FilePickerHelper.FILE_PICKER_ATTACHMENTS) != null) 
+	    {
+	      refs = (List)session.getAttribute(FilePickerHelper.FILE_PICKER_ATTACHMENTS);
+	      
+	      String attachmentFor = (String) state.getAttribute(ATTACHMENTS_FOR);
+	      if (attachmentFor != null && attachmentFor.equals(attachmentsKind))
+	      {
+	    	  // set the correct state variable
+	    	  state.setAttribute(attachmentsKind, refs);
+	      }
+	    }
+	    session.removeAttribute(FilePickerHelper.FILE_PICKER_ATTACHMENTS);
+	    session.removeAttribute(FilePickerHelper.FILE_PICKER_CANCEL);
+	    state.removeAttribute(ATTACHMENTS_FOR);
+	    
+	    return refs;
+	}
+	
 	/**
 	 * Action is to use when doAattchmentsadding requested, corresponding to chef_Assignments-new "eventSubmit_doAattchmentsadding" when "add attachments" is clicked
 	 */
@@ -7519,6 +7630,10 @@ public class AssignmentAction extends PagedResourceActionII
 		
 		// remove the resubmit number
 		state.removeAttribute(AssignmentSubmission.ALLOW_RESUBMIT_NUMBER);
+		
+		// remove the supplement attachment
+		state.removeAttribute(MODELANSWER_ATTACHMENTS);
+		state.removeAttribute(ALLPURPOSE_ATTACHMENTS);
 
 	} // resetNewAssignment
 

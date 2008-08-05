@@ -29,6 +29,19 @@ import org.sakaiproject.assignment.api.AssignmentSubmission;
  */
 public interface AssignmentSupplementItemService {
 	
+	/*************** attachment ********************/
+	/**
+	 * new AssignmentSupplementItemAttachment object
+	 */
+	public AssignmentSupplementItemAttachment newAttachment();
+	
+	/**
+	 * Save AssignmentSupplementItemAttachment object
+	 * @param attachment
+	 * @return
+	 */
+	public boolean saveAttachment(AssignmentSupplementItemAttachment attachment);
+	
 	/*************** model answer ******************/
 	
 	/**
@@ -135,5 +148,13 @@ public interface AssignmentSupplementItemService {
 	 * @return
 	 */
 	public boolean canEditNoteItem(Assignment a);
+	
+	
+	/**
+	 * Can the current user view the all purpose item?
+	 * @param a
+	 * @return
+	 */
+	public boolean canViewAllPurposeItem(Assignment a);
 
 }
