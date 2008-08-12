@@ -4,7 +4,7 @@
   <parent>
     <artifactId>assignment-base</artifactId>
     <groupId>org.sakaiproject</groupId>
-    <version>SNAPSHOT</version>
+    <version>2.6.0RC1-SNAPSHOT</version>
     <relativePath>../../pom.xml</relativePath>
   </parent>
   <name>sakai-assignment-pack</name>
@@ -23,8 +23,7 @@
     <dependency>
       <groupId>org.sakaiproject</groupId>
       <artifactId>sakai-assignment-impl</artifactId>
-      <version>${sakai.version}</version>
-      <exclusions>
+       <exclusions>
 <!-- the model is not part of the api, and so, although it is in shared
              we perform an exclusion here. If it is part of the API, then it MUST
              go into the dependencymanagement block of the master/pom.xml. Please
@@ -40,4 +39,3 @@
     <resources/>
   </build>
 </project>
-
