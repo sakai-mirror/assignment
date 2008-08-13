@@ -8471,6 +8471,10 @@ public class AssignmentAction extends PagedResourceActionII
 			for (int j = 0; j < assignments.size(); j++)
 			{
 				Assignment a = (Assignment) assignments.get(j);
+				
+				//get the list of users which are allowed to grade this assignment
+				List allowGradeAssignmentUsers = AssignmentService.allowGradeAssignmentUsers(a.getReference());
+				
 				String deleted = a.getProperties().getProperty(ResourceProperties.PROP_ASSIGNMENT_DELETED);
 				if ((deleted == null || deleted.equals("")) && (!a.getDraft()) && AssignmentService.allowGradeSubmission(a.getReference()))
 				{
@@ -8484,7 +8488,12 @@ public class AssignmentAction extends PagedResourceActionII
 												.getTimeReturned())))))
 							{
 								// has been subitted or has been returned and not work on it yet
-								submissions.add(s);
+								User[] submitters = s.getSubmitters();
+								if (!allowGradeAssignmentUsers.contains(submitters[0]))
+								{
+									// only include the student submission
+									submissions.add(s);
+								}
 							} // if-else
 						}
 					}
