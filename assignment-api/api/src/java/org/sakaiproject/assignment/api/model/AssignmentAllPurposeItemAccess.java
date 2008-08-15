@@ -31,5 +31,10 @@ public class AssignmentAllPurposeItemAccess {
 		this.assignmentAllPurposeItem = assignmentAllPurposeItem;
 	}
 	
+	public AssignmentAllPurposeItemAccess() {
+		super();
+		// TODO Auto-generated constructor stub
+	}
+	
 
 }

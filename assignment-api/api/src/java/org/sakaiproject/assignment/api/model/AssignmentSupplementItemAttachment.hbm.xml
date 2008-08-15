@@ -12,14 +12,21 @@
 						<param name="sequence">ASSIGN_SUPP_ITEM_ATT_S</param>
 					</generator>
 		</id>
-       <property name="attachmentId" type="java.lang.String" not-null="true">
+       <property name="attachmentId" type="java.lang.String" not-null="true" unique-key="uniqueAttachmentItem">
             <column name="ATTACHMENT_ID" />
         </property>
         
          <!--  This maps to the ASSIGNMENT_SUPPL_ITEM_ATTACHMENT_T table -->
-        <many-to-one name="assignmentSupplementItemWithAttachment" column="ASN_SUPP_ITEM_WITH_ATTACH_ID"
+        <many-to-one name="assignmentSupplementItemWithAttachment" column="ASN_SUPP_ITEM_WITH_ATTACH_ID" unique-key="uniqueAttachmentItem"
         	class="org.sakaiproject.assignment.api.model.AssignmentSupplementItemWithAttachment"
         	not-null="true" index="ASSIGN_SUPP_ITEM_WITH_ATT_I" />
     </class>
+    <query name = "findAttachmentBySupplementItem">
+			<![CDATA[
+			select attachmentId
+			from AssignmentSupplementItemAttachment a
+			where a.assignmentSupplementItemWithAttachment = :item
+		]]>
+	</query>
     
 </hibernate-mapping>

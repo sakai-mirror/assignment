@@ -43,6 +43,7 @@
 }; 
 $('.model').hide();
 $('.notes').hide();
+$('.allPurpose').hide();
 $('#toggleModel').click(function(){
 	$('.model').fadeToggle();
 	if ($('#toggleModel').is('.toggleAnchor')){
@@ -73,6 +74,20 @@ $('#toggleNotes').click(function(){
 	return false;
 });
 
+$('#toggleAllPurpose').click(function(){
+	$('.allPurpose').fadeToggle();
+	if ($('#toggleAllPurpose').is('.toggleAnchor')){
+		$('#toggleAllPurpose').removeClass('toggleAnchor')
+		$('#toggleAllPurpose').addClass('toggleAnchorOpen')
+		}
+	else {
+		$('#toggleAllPurpose').removeClass('toggleAnchorOpen')
+			$('#toggleAllPurpose').addClass('toggleAnchor')
+	}	
+
+  resizeFrame('grow');
+	return false;
+});
 
 });
 //this function needs jquery 1.1.2 or later - it resizes the parent iframe without bringing the scroll to the top
@@ -300,19 +315,41 @@ $('#toggleNotes').click(function(){
 		</div>
 		<form name= "listSubmissionsForm" action="#toolForm("AssignmentAction")" method="post">
 			<input type="hidden" name="assignmentId" value="$assignment.Reference" />
-			## show all submissions
-			<h4  id="toggleModel" class="toggleAnchor specialLink">Model Answer (or grading guidelines)</h4>
+			## model answer
+			<h4  id="toggleModel" class="toggleAnchor specialLink">$tlang.getString('allPurpose')</h4>
 			<div class="model toggledContent">
-					<p>Model answer text. Model answer text. Model answer text. Model answer text. Model answer text. Model answer text. Model answer text. Model answer text. Model answer text. Model answer text. Model answer text. Model answer text. Model answer text. Model answer text. Model answer text. Model answer text. Model answer text. </p>
-					<ul class="attachList">
-						<li>
-							<img src="/library/image/sakai/word.gif?panel=Main" alt="File attachment" border="0">
-							<a href="#" target="_blank">model1.doc</a>(11 KB)
-						</li>
-						<li>
-							<img src="/library/image/sakai/word.gif?panel=Main" alt="File attachment" border="0">
-							<a href="#" target="_blank">model2.doc</a>(11 KB)
-						</li>
+					<p>$!assignmentModelAnswerItem.getText()</p>
+					#set ($attachments = $!assignmentModelAnswerItem.getAttachmentObjectSet())
+						<ul class="attachList">
+							#set ($size = 0)
+							#set ($props = false)
+							#foreach ($attachment in $!attachments) 
+								#set ($props = $attachment.Properties) 
+								#if ($!props)
+									#set ($size = $size + 1)
+								#end
+							#end
+							#if ($size == 0)
+								<p class="instruction">$tlang.getString("gen.noatt")</p>
+							#else
+								#foreach ($attachment in $attachments)
+									#set ($props = false)
+									#set ($props = $attachment.Properties) 
+									#if ($!props)
+									<li>
+										#if ($props.getBooleanProperty($props.NamePropIsCollection))
+											<img src = "#imageLink($contentTypeImageService.getContentTypeImage("folder"))" border="0" alt="$tlang.getString("gen.folatt")" />
+										#else
+											<img src = "#imageLink($contentTypeImageService.getContentTypeImage($props.getProperty($props.NamePropContentType)))" border="0" alt="$tlang.getString("gen.filatt")" />
+										#end
+										<a href="$attachment.Url" target="_blank">$validator.escapeHtml($props.getPropertyFormatted($props.NamePropDisplayName))</a>						
+										#if (!$props.getBooleanProperty($props.NamePropIsCollection))
+											($props.getPropertyFormatted($props.NamePropContentLength))
+										#end
+									</li>
+									#end
+							#end
+					#end
 					</ul>
 				</div>
 			#if ($!allowReadAssignmentNoteItem)
@@ -321,8 +358,47 @@ $('#toggleNotes').click(function(){
 					$!assignmentNoteItem.getNote()
 				</div>
 			#end
-	
-
+			##all purpose
+			#if ($!allowViewAllPurposeItem)
+			<h4  id="toggleAllPurpose" class="toggleAnchor specialLink">$tlang.getString('allPurpose')</h4>
+			<div class="allPurpose toggledContent">
+					<p>$!assignmentAllPurposeItem.getTitle()</p>
+					<p>$!assignmentAllPurposeItem.getText()</p>
+					#set ($attachments = $!assignmentAllPurposeItem.getAttachmentObjectSet())
+						<ul class="attachList">
+							#set ($size = 0)
+							#set ($props = false)
+							#foreach ($attachment in $!attachments) 
+								#set ($props = $attachment.Properties) 
+								#if ($!props)
+									#set ($size = $size + 1)
+								#end
+							#end
+							#if ($size == 0)
+								<p class="instruction">$tlang.getString("gen.noatt")</p>
+							#else
+								#foreach ($attachment in $attachments)
+									#set ($props = false)
+									#set ($props = $attachment.Properties) 
+									#if ($!props)
+									<li>
+										#if ($props.getBooleanProperty($props.NamePropIsCollection))
+											<img src = "#imageLink($contentTypeImageService.getContentTypeImage("folder"))" border="0" alt="$tlang.getString("gen.folatt")" />
+										#else
+											<img src = "#imageLink($contentTypeImageService.getContentTypeImage($props.getProperty($props.NamePropContentType)))" border="0" alt="$tlang.getString("gen.filatt")" />
+										#end
+										<a href="$attachment.Url" target="_blank">$validator.escapeHtml($props.getPropertyFormatted($props.NamePropDisplayName))</a>						
+										#if (!$props.getBooleanProperty($props.NamePropIsCollection))
+											($props.getPropertyFormatted($props.NamePropContentLength))
+										#end
+									</li>
+									#end
+							#end
+					#end
+					</ul>
+				</div>
+			#end
+			## show all submissions
 			<table class="listHier lines nolines" cellpadding="0" cellspacing="0" summary="$tlang.getString("gen.viewassliststudentsummary")">
 				<tr> 
 					<th id="attachment" class="attach">

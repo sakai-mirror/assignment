@@ -5,6 +5,7 @@ import java.util.Date;
 import java.util.Set;
 import org.sakaiproject.time.api.Time;
 import org.sakaiproject.time.cover.TimeService;
+import java.sql.SQLException;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
@@ -17,6 +18,7 @@ import org.sakaiproject.assignment.api.model.AssignmentNoteItem;
 import org.sakaiproject.assignment.api.model.AssignmentAllPurposeItem;
 import org.sakaiproject.assignment.api.model.AssignmentAllPurposeItemAccess;
 import org.sakaiproject.assignment.api.model.AssignmentSupplementItemAttachment;
+import org.sakaiproject.assignment.api.model.AssignmentSupplementItemWithAttachment;
 import org.sakaiproject.assignment.api.model.AssignmentSupplementItemService;
 import org.sakaiproject.authz.api.AuthzGroupService;
 import org.sakaiproject.site.api.SiteService;
@@ -24,6 +26,11 @@ import org.sakaiproject.user.api.User;
 import org.sakaiproject.user.api.UserDirectoryService;
 import org.springframework.dao.DataAccessException;
 import org.springframework.orm.hibernate3.support.HibernateDaoSupport;
+import org.springframework.orm.hibernate3.HibernateCallback;
+import org.hibernate.Hibernate;
+import org.hibernate.HibernateException;
+import org.hibernate.Query;
+import org.hibernate.Session;
 
 public class AssignmentSupplementItemServiceImpl extends HibernateDaoSupport implements AssignmentSupplementItemService {
 	
@@ -124,6 +131,25 @@ public class AssignmentSupplementItemServiceImpl extends HibernateDaoSupport imp
 			Log.warn(this + ".saveModelAnswerQuestion() Hibernate could not save attachment " + attachment.getId());
 			return false;
 		}
+	}
+	
+	/**
+	 * {@inheritDoc}}
+	 */
+	public List<String> getAttachmentListForSupplementItem(final AssignmentSupplementItemWithAttachment item)
+	{	
+		HibernateCallback hcb = new HibernateCallback()
+	    {
+	      public Object doInHibernate(Session session) throws HibernateException,
+	          SQLException
+	      {
+	        Query q = session.getNamedQuery("findAttachmentBySupplementItem");        
+	        q.setParameter("item", item);
+	        return q.list();
+	      }
+	    };
+	        
+	    return (List) getHibernateTemplate().execute(hcb);
 	}
 	
    /*********************** model answer ************************/
@@ -305,6 +331,51 @@ public class AssignmentSupplementItemServiceImpl extends HibernateDaoSupport imp
 			return rvList.get(0);
 		}
 		return null;
+	}
+	
+	/**
+	 * {@inheritDoc}}
+	 */
+	public AssignmentAllPurposeItemAccess newAllPurposeItemAccess()
+	{
+		return new AssignmentAllPurposeItemAccess();
+	}
+	
+	/**
+	 * {@inheritDoc}}
+	 */
+	public boolean saveAllPurposeItemAccess(AssignmentAllPurposeItemAccess access)
+	{
+		try 
+		{
+			getHibernateTemplate().saveOrUpdate(access);
+			return true;
+		}
+		catch (DataAccessException e)
+		{
+			e.printStackTrace();
+			Log.warn(this + ".saveAllPurposeItemAccess() Hibernate could not save access " + access.getAccess() + " for " + access.getAssignmentAllPurposeItem().getTitle());
+			return false;
+		}
+	}
+	
+	/**
+	 * {@inheritDoc}}
+	 */
+	public List<String> getAccessListForAllPurposeItem(final AssignmentAllPurposeItem item)
+	{	
+		HibernateCallback hcb = new HibernateCallback()
+	    {
+	      public Object doInHibernate(Session session) throws HibernateException,
+	          SQLException
+	      {
+	        Query q = session.getNamedQuery("findAccessByAllPurposeItem");        
+	        q.setParameter("item", item);
+	        return q.list();
+	      }
+	    };
+	        
+	    return (List) getHibernateTemplate().execute(hcb);
 	}
 
 	/**

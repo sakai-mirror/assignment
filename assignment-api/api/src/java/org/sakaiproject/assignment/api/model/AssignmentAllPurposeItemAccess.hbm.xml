@@ -5,17 +5,27 @@
 <hibernate-mapping default-lazy="false">
 	<class name="org.sakaiproject.assignment.api.model.AssignmentAllPurposeItemAccess" table="ASSIGN_ALL_PURPOSE_ITEM_ACCESS_T">
        
-        <id name="id" length="99" column="ID">
-			<generator class="org.sakaiproject.id.hbm.IdGenerator"/>
+       <id name="id" column="ID" type="long">
+					<generator class="native">
+						<param name="sequence">ASSIGN_AP_ACCESS_S</param>
+					</generator>
 		</id>
-       <property name="access" type="java.lang.String" not-null="true">
+       <property name="access" type="java.lang.String" not-null="true" unique-key="uniqueAccessItem">
             <column name="access" />
         </property>
         
          <!--  This maps to the ASSIGNMENT_MODEL_ANSWER_ITEM_T table -->
-        <many-to-one name="assignmentAllPurposeItem" column="ASN_ALL_PURPOSE_ITEM_ID"
+        <many-to-one name="assignmentAllPurposeItem" column="ASN_ALL_PURPOSE_ITEM_ID" unique-key="uniqueAccessItem"
         	class="org.sakaiproject.assignment.api.model.AssignmentAllPurposeItem"
         	not-null="true" index="ASSIGN_ALL_PURPOSE_ITEM_ACCESS_I" />
     </class>
+    
+    <query name = "findAccessByAllPurposeItem">
+			<![CDATA[
+			select access
+			from AssignmentAllPurposeItemAccess a
+			where a.assignmentAllPurposeItem = :item
+		]]>
+	</query>
     
 </hibernate-mapping>

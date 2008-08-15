@@ -18,6 +18,7 @@
 
 package org.sakaiproject.assignment.api.model;
 
+import java.util.List;
 import java.util.Set ;
 import org.sakaiproject.assignment.api.Assignment;
 import org.sakaiproject.assignment.api.AssignmentSubmission;
@@ -41,6 +42,13 @@ public interface AssignmentSupplementItemService {
 	 * @return
 	 */
 	public boolean saveAttachment(AssignmentSupplementItemAttachment attachment);
+	
+	/**
+	 * get the list of attachment ids for a AssignmentSupplementItemWithAttachment
+	 * @param item
+	 * @return
+	 */
+	public List<String> getAttachmentListForSupplementItem(AssignmentSupplementItemWithAttachment item);
 	
 	/*************** model answer ******************/
 	
@@ -126,6 +134,24 @@ public interface AssignmentSupplementItemService {
 	 * @return
 	 */
 	public AssignmentAllPurposeItem getAllPurposeItem(String assignmentId);
+	
+	/**
+	 * new AssignmentAllPurposeItemAccess object
+	 */
+	public AssignmentAllPurposeItemAccess newAllPurposeItemAccess();
+	
+	/**
+	 * save AssignmentAllPurposeItemAccess object
+	 */
+	public boolean saveAllPurposeItemAccess(AssignmentAllPurposeItemAccess access);
+	
+	/**
+	 * get the access list for this AllPurposeItem
+	 * @param item
+	 * @return
+	 */
+	public List<String> getAccessListForAllPurposeItem(AssignmentAllPurposeItem item);
+	
 	
 	/**
 	 * Can the current user see the model answer or not

@@ -21,8 +21,13 @@
 package org.sakaiproject.assignment.api.model;
 
 import java.util.Date;
+import java.util.HashSet;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Set;
+import org.sakaiproject.entity.api.Reference;
+import org.sakaiproject.entity.cover.EntityManager;
+
 
 /**
  * The base class for SupplementItem which has attachment(s)
@@ -55,5 +60,21 @@ public class AssignmentSupplementItemWithAttachment {
 	public void setAttachmentSet(
 			Set<AssignmentSupplementItemAttachment> attachmentSet) {
 		this.attachmentSet = attachmentSet;
+	}
+	
+	/**
+	 * return the set of Reference objects for attachments
+	 * @return
+	 */
+	public Set<Reference> getAttachmentObjectSet()
+	{
+		Set<Reference> rv = new HashSet<Reference>();
+		Set<AssignmentSupplementItemAttachment> attachmentSet = getAttachmentSet();
+		for (Iterator<AssignmentSupplementItemAttachment> iAttachmentSet = attachmentSet.iterator(); iAttachmentSet.hasNext();)
+		{
+			AssignmentSupplementItemAttachment attachment = iAttachmentSet.next();
+			rv.add(EntityManager.newReference(attachment.getAttachmentId()));
+		}
+		return rv;
 	}
 }

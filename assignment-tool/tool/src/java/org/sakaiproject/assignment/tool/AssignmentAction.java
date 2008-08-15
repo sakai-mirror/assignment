@@ -59,6 +59,7 @@ import org.sakaiproject.assignment.api.AssignmentContentEdit;
 import org.sakaiproject.assignment.api.AssignmentEdit;
 import org.sakaiproject.assignment.api.AssignmentSubmission;
 import org.sakaiproject.assignment.api.AssignmentSubmissionEdit;
+import org.sakaiproject.assignment.api.model.AssignmentAllPurposeItemAccess;
 import org.sakaiproject.assignment.api.model.AssignmentModelAnswerItem;
 import org.sakaiproject.assignment.api.model.AssignmentNoteItem;
 import org.sakaiproject.assignment.api.model.AssignmentAllPurposeItem;
@@ -168,8 +169,6 @@ public class AssignmentAction extends PagedResourceActionII
 	/** The attachments */
 	private static final String ATTACHMENTS = "Assignment.attachments";
 	private static final String ATTACHMENTS_FOR = "Assignment.attachments_for";
-	private static final String MODELANSWER_ATTACHMENTS = "Assignment.modelanswer_attachments";
-	private static final String ALLPURPOSE_ATTACHMENTS = "Assignment.allpurpose_attachments";
 	
 
 	/** The content type image lookup service in the State. */
@@ -682,7 +681,38 @@ public class AssignmentAction extends PagedResourceActionII
 	
 	private ContentHostingService m_contentHostingService = null;
 	
+	/********************** Supplement item ************************/
 	private AssignmentSupplementItemService m_assignmentSupplementItemService = null;
+	/******** Model Answer ************/
+	private static final String MODELANSWER = "modelAnswer";
+	private static final String MODELANSWER_TEXT = "modelAnswer.text";
+	private static final String MODELANSWER_SHOWTO = "modelAnswer.showTo";
+	private static final String MODELANSWER_ATTACHMENTS = "Assignment.modelanswer_attachments";
+	/******** Note ***********/
+	private static final String NOTE = "note";
+	private static final String NOTE_TEXT = "note.text";
+	private static final String NOTE_SHAREWITH = "note.shareWith";
+	/******** AllPurpose *******/
+	private static final String ALLPURPOSE = "allPurpose";
+	private static final String ALLPURPOSE_TITLE = "allPurpose.title";
+	private static final String ALLPURPOSE_TEXT = "allPurpose.text";
+	private static final String ALLPURPOSE_HIDE = "allPurpose.HIDE";
+	private static final String ALLPURPOSE_RELEASE_DATE = "allPurpose.releaseDate";
+	private static final String ALLPURPOSE_RETRACT_DATE= "allPurpose.retractDate";
+	private static final String ALLPURPOSE_ACCESS = "allPurpose.access";
+	private static final String ALLPURPOSE_ATTACHMENTS = "Assignment.allpurpose_attachments";
+	private static final String ALLPURPOSE_RELEASE_YEAR = "allPurpose.releaseYear";
+	private static final String ALLPURPOSE_RELEASE_MONTH = "allPurpose.releaseMonth";
+	private static final String ALLPURPOSE_RELEASE_DAY = "allPurpose.releaseDAY";
+	private static final String ALLPURPOSE_RELEASE_HOUR = "allPurpose.releaseHour";
+	private static final String ALLPURPOSE_RELEASE_MIN = "allPurpose.releaseMin";
+	private static final String ALLPURPOSE_RELEASE_AMPM = "allPurpose.releaseAMPM";
+	private static final String ALLPURPOSE_RETRACT_YEAR = "allPurpose.retractYear";
+	private static final String ALLPURPOSE_RETRACT_MONTH = "allPurpose.retractMonth";
+	private static final String ALLPURPOSE_RETRACT_DAY = "allPurpose.retractDAY";
+	private static final String ALLPURPOSE_RETRACT_HOUR = "allPurpose.retractHour";
+	private static final String ALLPURPOSE_RETRACT_MIN = "allPurpose.retractMin";
+	private static final String ALLPURPOSE_RETRACT_AMPM = "allPurpose.retractAMPM";
 	
 	/**
 	 * central place for dispatching the build routines based on the state name
@@ -1641,51 +1671,97 @@ public class AssignmentAction extends PagedResourceActionII
 		AssignmentModelAnswerItem mAnswer = m_assignmentSupplementItemService.getModelAnswer(assignmentId);
 		if (mAnswer != null)
 		{
-			context.put("modelanswer", Boolean.TRUE);
-			context.put("modelanswer_text", mAnswer.getText());
-			context.put("modelanswer_when", String.valueOf(mAnswer.getShowTo()));
+			if (state.getAttribute(MODELANSWER_TEXT) == null)
+			{
+				state.setAttribute(MODELANSWER_TEXT, mAnswer.getText());
+			}
+			if (state.getAttribute(MODELANSWER_SHOWTO) == null)
+			{
+				state.setAttribute(MODELANSWER_SHOWTO, String.valueOf(mAnswer.getShowTo()));
+			}
+			if (state.getAttribute(MODELANSWER) == null)
+			{
+				state.setAttribute(MODELANSWER, Boolean.TRUE);
+			}
 		}
-		else
-		{
-			context.put("modelanswer", Boolean.FALSE);
-			context.put("modelanswer_when", String.valueOf(0));
-		}
-		context.put("modelanswer_attachments", getSupplementItemAttachments(state, mAnswer, MODELANSWER_ATTACHMENTS));
+		context.put("modelanswer", state.getAttribute(MODELANSWER) != null?Boolean.TRUE:Boolean.FALSE);
+		context.put("modelanswer_text", state.getAttribute(MODELANSWER_TEXT));
+		context.put("modelanswer_showto", state.getAttribute(MODELANSWER_SHOWTO));
+		// get attachments for model answer object
+		getSupplementItemAttachments(state, context, mAnswer, MODELANSWER_ATTACHMENTS);
+		
 		// private notes
 		AssignmentNoteItem mNote = m_assignmentSupplementItemService.getNoteItem(assignmentId);
 		if (mNote != null)
 		{
-			context.put("note", Boolean.TRUE);
-			context.put("note_text", mNote.getNote());
-			context.put("note_to", String.valueOf(mNote.getShareWith()));
+			if (state.getAttribute(NOTE) == null)
+			{
+				state.setAttribute(NOTE, Boolean.TRUE);
+			}
+			if (state.getAttribute(NOTE_TEXT) == null)
+			{
+				state.setAttribute(NOTE_TEXT, mNote.getNote());
+			}
+			if (state.getAttribute(NOTE_SHAREWITH) == null)
+			{
+				state.setAttribute(NOTE_SHAREWITH, mNote.getShareWith());
+			}
 		}
-		else
-		{
-			context.put("note", Boolean.FALSE);
-			context.put("note_to", String.valueOf(0));
-		}
+		context.put("note", state.getAttribute(NOTE) != null?Boolean.TRUE:Boolean.FALSE);
+		context.put("note_text", state.getAttribute(NOTE_TEXT));
+		context.put("note_to", state.getAttribute(NOTE_SHAREWITH) != null?state.getAttribute(NOTE_SHAREWITH):String.valueOf(0));
+		
 		// all purpose item
 		AssignmentAllPurposeItem aItem = m_assignmentSupplementItemService.getAllPurposeItem(assignmentId);
 		if (aItem != null)
 		{
-			context.put("allPurpose", Boolean.TRUE);
-			context.put("value_allPurposeTitle", aItem.getTitle());
-			context.put("value_allPurposeText", aItem.getText());
-			context.put("value_allPurposeHide", Boolean.valueOf(aItem.getHide()));
-			java.util.Calendar cal = java.util.Calendar.getInstance();
+			if (state.getAttribute(ALLPURPOSE) == null)
+			{
+				state.setAttribute(ALLPURPOSE, Boolean.TRUE);
+			}
+			if (state.getAttribute(ALLPURPOSE_TITLE) == null)
+			{
+				state.setAttribute(ALLPURPOSE_TITLE, aItem.getTitle());
+			}
+			if (state.getAttribute(ALLPURPOSE_TEXT) == null)
+			{
+				state.setAttribute(ALLPURPOSE_TEXT, aItem.getText());
+			}
+			if (state.getAttribute(ALLPURPOSE_HIDE) == null)
+			{
+				state.setAttribute(ALLPURPOSE_HIDE, Boolean.valueOf(aItem.getHide()));
+			}
+			if (state.getAttribute(ALLPURPOSE_ACCESS) == null)
+			{
+				Set<AssignmentAllPurposeItemAccess> aSet = aItem.getAccessSet();
+				List<String> aList = new Vector<String>();
+				for(Iterator<AssignmentAllPurposeItemAccess> aIterator = aSet.iterator(); aIterator.hasNext();)
+				{
+					AssignmentAllPurposeItemAccess access = aIterator.next();
+					aList.add(access.getAccess());
+				}
+				state.setAttribute(ALLPURPOSE_ACCESS, aList);
+			}
 			// put release date information into context
+			java.util.Calendar cal = java.util.Calendar.getInstance();
 			cal.setTime(aItem.getReleaseDate());
-			dateIntoContext(context, cal, "value_allPurposeReleaseYear", "value_allPurposeReleaseMonth", "value_allPurposeReleaseDay", "value_allPurposeReleaseHour", "value_allPurposeReleaseMin", "value_allPurposeReleaseAMPM");
+			dateIntoState(state, context, cal, ALLPURPOSE_RELEASE_YEAR, ALLPURPOSE_RELEASE_MONTH, ALLPURPOSE_RELEASE_DAY, ALLPURPOSE_RELEASE_HOUR, ALLPURPOSE_RELEASE_MIN, ALLPURPOSE_RELEASE_AMPM);
 			// put retract date information into context
 			cal.setTime(aItem.getRetractDate());
-			dateIntoContext(context, cal, "value_allPurposeRetractYear", "value_allPurposeRetractMonth", "value_allPurposeRetractDay", "value_allPurposeRetractHour", "value_allPurposeRetractMin", "value_allPurposeRetractAMPM");
-			
-			context.put("allPurpose_attachments", state.getAttribute(ALLPURPOSE_ATTACHMENTS));
+			dateIntoState(state, context, cal, ALLPURPOSE_RETRACT_YEAR, ALLPURPOSE_RETRACT_MONTH, ALLPURPOSE_RETRACT_DAY, ALLPURPOSE_RETRACT_HOUR, ALLPURPOSE_RETRACT_MIN, ALLPURPOSE_RETRACT_AMPM);
 		}
-		else
-		{
-			context.put("allPurpose", Boolean.FALSE);
-		}
+		context.put("allPurpose", state.getAttribute(ALLPURPOSE) != null?Boolean.TRUE:Boolean.FALSE);
+		context.put("value_allPurposeTitle", state.getAttribute(ALLPURPOSE_TITLE));
+		context.put("value_allPurposeText", state.getAttribute(ALLPURPOSE_TEXT));
+		context.put("value_allPurposeHide", state.getAttribute(ALLPURPOSE_HIDE) != null?state.getAttribute(ALLPURPOSE_HIDE):Boolean.FALSE);
+		context.put("value_allPurposeAccessList", state.getAttribute(ALLPURPOSE_ACCESS));
+		dateIntoContext(state, context, ALLPURPOSE_RELEASE_YEAR, ALLPURPOSE_RELEASE_MONTH, ALLPURPOSE_RELEASE_DAY, ALLPURPOSE_RELEASE_HOUR, ALLPURPOSE_RELEASE_MIN, ALLPURPOSE_RELEASE_AMPM, "value_allPurposeReleaseYear", "value_allPurposeReleaseMonth", "value_allPurposeReleaseDay", "value_allPurposeReleaseHour", "value_allPurposeReleaseMin", "value_allPurposeReleaseAMPM");
+		dateIntoContext(state, context, ALLPURPOSE_RETRACT_YEAR, ALLPURPOSE_RETRACT_MONTH, ALLPURPOSE_RETRACT_DAY, ALLPURPOSE_RETRACT_HOUR, ALLPURPOSE_RETRACT_MIN, ALLPURPOSE_RETRACT_AMPM, "value_allPurposeRetractYear", "value_allPurposeRetractMonth", "value_allPurposeRetractDay", "value_allPurposeRetractHour", "value_allPurposeRetractMin", "value_allPurposeRetractAMPM");
+	
+		
+		// get attachment for all purpose object
+		getSupplementItemAttachments(state, context, aItem, ALLPURPOSE_ATTACHMENTS);
+		
 		// put role information into context
 		Hashtable<String, List> roleUsers = new Hashtable<String, List>();
 		try
@@ -1725,16 +1801,56 @@ public class AssignmentAction extends PagedResourceActionII
 	} // setAssignmentFormContext
 
 
-	private void dateIntoContext(Context context, java.util.Calendar cal, String yearValue, String monthValue, String dayValue, String hourValue, String minValue, String ampmValue) {
-		context.put(yearValue, cal.get(java.util.Calendar.YEAR));
-		context.put(monthValue, cal.get(java.util.Calendar.MONTH));
-		context.put(dayValue, cal.get(java.util.Calendar.DAY_OF_MONTH));
-		int hour = cal.get(java.util.Calendar.HOUR_OF_DAY);
-		hour = hour > 12?hour-12:hour;
-		context.put(hourValue, hour);
-		context.put(minValue, cal.get(java.util.Calendar.MINUTE));
-		int ampm = cal.get(java.util.Calendar.AM_PM);
-		context.put(ampmValue, cal.get(java.util.Calendar.AM_PM));
+	private void dateIntoState(SessionState state, Context context, java.util.Calendar cal, 
+									String yearAttribute, String monthAttribute, String dayAttribute, String hourAttribute, String minAttribute, String ampmAttribute) {
+		if (cal != null)
+		{
+			// year
+			if (state.getAttribute(yearAttribute) == null)
+			{
+				state.setAttribute(yearAttribute, Integer.valueOf(cal.get(java.util.Calendar.YEAR)));
+			}
+			// month
+			if (state.getAttribute(monthAttribute) == null)
+			{
+				state.setAttribute(monthAttribute, Integer.valueOf(cal.get(java.util.Calendar.MONTH)));
+			}
+			// day
+			if (state.getAttribute(dayAttribute) == null)
+			{
+				state.setAttribute(dayAttribute, Integer.valueOf(cal.get(java.util.Calendar.DAY_OF_MONTH)));
+			}
+			// hour
+			if (state.getAttribute(hourAttribute) == null)
+			{
+				int hour = cal.get(java.util.Calendar.HOUR_OF_DAY);
+				hour = hour > 12?hour-12:hour;
+				state.setAttribute(hourAttribute,Integer.valueOf(hour));
+			}
+			// min
+			if (state.getAttribute(minAttribute) == null)
+			{
+				state.setAttribute(minAttribute, Integer.valueOf(cal.get(java.util.Calendar.MINUTE)));
+			}
+			// ampm
+			if (state.getAttribute(ampmAttribute) == null)
+			{
+				state.setAttribute(ampmAttribute, Integer.valueOf(cal.get(java.util.Calendar.AM_PM)));
+			}
+		}
+	}
+	
+	private void dateIntoContext(SessionState state, Context context,  
+				String yearAttribute, String monthAttribute, String dayAttribute, String hourAttribute, String minAttribute, String ampmAttribute,
+				String yearValue, String monthValue, String dayValue, String hourValue, String minValue, String ampmValue) {
+
+		// to context
+		context.put(yearValue, state.getAttribute(yearAttribute));
+		context.put(monthValue, state.getAttribute(monthAttribute));
+		context.put(dayValue, state.getAttribute(dayAttribute));
+		context.put(hourValue, state.getAttribute(hourAttribute));
+		context.put(minValue, state.getAttribute(minAttribute));
+		context.put(ampmValue, state.getAttribute(ampmAttribute));
 	}
 
 	/**
@@ -2079,6 +2195,10 @@ public class AssignmentAction extends PagedResourceActionII
 				}
 			}
 		}
+
+		// put supplement item into context
+		supplementItemIntoContext(context, a);
+		
 		String template = (String) getContext(data).get("template");
 		return template + TEMPLATE_INSTRUCTOR_GRADE_SUBMISSION;
 
@@ -2377,10 +2497,6 @@ public class AssignmentAction extends PagedResourceActionII
 		context.put("attachments", state.getAttribute(ATTACHMENTS));
 		
 		
-		// Get turnitin results for instructors
-		
-		
-		
 		context.put("contentTypeImageService", state.getAttribute(STATE_CONTENT_TYPE_IMAGE_SERVICE));
 		context.put("service", AssignmentService.getInstance());
 
@@ -2393,12 +2509,8 @@ public class AssignmentAction extends PagedResourceActionII
 
 		pagingInfoToContext(state, context);
 		
-		boolean allowReadAssignmentNoteItem = m_assignmentSupplementItemService.canReadNoteItem(assignment);
-		context.put("allowReadAssignmentNoteItem", allowReadAssignmentNoteItem);
-		if (allowReadAssignmentNoteItem)
-		{
-			context.put("assignmentNoteItem", m_assignmentSupplementItemService.getNoteItem(assignment.getId()));
-		}
+		// put supplement item into context
+		supplementItemIntoContext(context, assignment);
 		
 		
 		String template = (String) getContext(data).get("template");
@@ -2407,7 +2519,31 @@ public class AssignmentAction extends PagedResourceActionII
 
 	} // build_instructor_grade_assignment_context
 
-
+	/**
+	 * put the supplement item information into context
+	 * @param context
+	 * @param assignment
+	 */
+	private void supplementItemIntoContext(Context context, Assignment assignment) {
+		// instructor is always allows to see model answer
+		context.put("assignmentModelAnswerItem", m_assignmentSupplementItemService.getModelAnswer(assignment.getId()));
+		
+		// for note item
+		boolean allowReadAssignmentNoteItem = m_assignmentSupplementItemService.canReadNoteItem(assignment);
+		context.put("allowReadAssignmentNoteItem", allowReadAssignmentNoteItem);
+		if (allowReadAssignmentNoteItem)
+		{
+			context.put("assignmentNoteItem", m_assignmentSupplementItemService.getNoteItem(assignment.getId()));
+		}
+		// for all purpose item
+		boolean allowViewAllPurposeItem = m_assignmentSupplementItemService.canViewAllPurposeItem(assignment);
+		context.put("allowViewAllPurposeItem", allowViewAllPurposeItem);
+		if (allowViewAllPurposeItem)
+		{
+			context.put("assignmentAllPurposeItem", m_assignmentSupplementItemService.getAllPurposeItem(assignment.getId()));
+		}
+	}
+	
 	/**
 	 * Synchronize the submissions for non electronic assignment with the current user set
 	 * @param state
@@ -4412,6 +4548,85 @@ public class AssignmentAction extends PagedResourceActionII
 		{
 			state.setAttribute(Assignment.ASSIGNMENT_INSTRUCTOR_NOTIFICATIONS_VALUE, notiOption);
 		}
+		
+		if (StringUtil.trimToNull(params.getString("modelanswer_text")) != null)
+		{
+			state.setAttribute(MODELANSWER_TEXT, params.getString("modelanswer_text"));
+		}
+		if (StringUtil.trimToNull(params.getString("modelanswer_showto")) != null)
+		{
+			state.setAttribute(MODELANSWER_SHOWTO, params.getString("modelanswer_showto"));
+		}
+		
+		if (StringUtil.trimToNull(params.getString("note_text")) != null)
+		{
+			state.setAttribute(NOTE_TEXT, StringUtil.trimToNull(params.getString("note_text")));
+		}
+		if (StringUtil.trimToNull(params.getString("note_to")) != null)
+		{
+			state.setAttribute(NOTE_SHAREWITH, StringUtil.trimToNull(params.getString("note_to")));
+		}
+		
+		if (StringUtil.trimToNull(params.getString("allPurposeTitle")) != null)
+		{
+			state.setAttribute(ALLPURPOSE_TITLE, StringUtil.trimToNull(params.getString("allPurposeTitle")));
+		}
+		if (StringUtil.trimToNull(params.getString("allPurposeText")) != null)
+		{
+			state.setAttribute(ALLPURPOSE_TEXT, StringUtil.trimToNull(params.getString("allPurposeText")));
+		}
+		if (StringUtil.trimToNull(params.getString("allPurposeHide")) != null)
+		{
+			state.setAttribute(ALLPURPOSE_HIDE, params.getString("allPurposeHide"));
+		}
+		state.setAttribute(ALLPURPOSE_RELEASE_YEAR, Integer.valueOf(params.getString("allPurposeReleaseYear")));
+		state.setAttribute(ALLPURPOSE_RELEASE_MONTH, Integer.valueOf(params.getString("allPurposeReleaseMonth")));
+		state.setAttribute(ALLPURPOSE_RELEASE_DAY, Integer.valueOf(params.getString("allPurposeReleaseDay")));
+		state.setAttribute(ALLPURPOSE_RELEASE_HOUR, Integer.valueOf(params.getString("allPurposeReleaseHour")));
+		state.setAttribute(ALLPURPOSE_RELEASE_MIN, Integer.valueOf(params.getString("allPurposeReleaseMin")));
+		state.setAttribute(ALLPURPOSE_RELEASE_AMPM, Integer.valueOf(params.getString("allPurposeReleaseAMPM")));
+		state.setAttribute(ALLPURPOSE_RETRACT_YEAR, Integer.valueOf(params.getString("allPurposeRetractYear")));
+		state.setAttribute(ALLPURPOSE_RETRACT_MONTH, Integer.valueOf(params.getString("allPurposeRetractMonth")));
+		state.setAttribute(ALLPURPOSE_RETRACT_DAY, Integer.valueOf(params.getString("allPurposeRetractDay")));
+		state.setAttribute(ALLPURPOSE_RETRACT_HOUR, Integer.valueOf(params.getString("allPurposeRetractHour")));
+		state.setAttribute(ALLPURPOSE_RETRACT_MIN, Integer.valueOf(params.getString("allPurposeRetractMin")));
+		state.setAttribute(ALLPURPOSE_RETRACT_AMPM, Integer.valueOf(params.getString("allPurposeRetractAMPM")));
+		
+		String siteId = (String)state.getAttribute(STATE_CONTEXT_STRING);
+		List<String> accessList = new Vector<String>();
+		try
+		{
+			AuthzGroup realm = AuthzGroupService.getAuthzGroup(SiteService.siteReference(siteId));
+			Set<Role> roles = realm.getRoles();
+			for(Iterator iRoles = roles.iterator(); iRoles.hasNext();)
+			{
+				// iterator through roles first
+				Role role = (Role) iRoles.next();
+				if (params.getString("allPurpose_" + role.getId()) != null)
+				{
+					accessList.add(role.getId());
+				}
+				else
+				{
+					// if the role is not selected, iterate through the users with this role
+					Set userIds = realm.getUsersHasRole(role.getId());
+					for(Iterator iUserIds = userIds.iterator(); iUserIds.hasNext();)
+					{
+						String userId = (String) iUserIds.next();
+						if (params.getString("allPurpose_" + userId) != null)
+						{
+							accessList.add(userId);
+						}
+					}
+				}
+			}
+		}
+		catch (Exception e)
+		{
+			M_log.warn(this + ":postOrSaveAssignment " + e.toString() + "error finding authzGroup for = " + siteId);
+		}
+		state.setAttribute(ALLPURPOSE_ACCESS, accessList);
+		
 	} // setNewAssignmentParameters
 
 	/**
@@ -4854,7 +5069,7 @@ public class AssignmentAction extends PagedResourceActionII
 					}
 					mAnswer.setAssignmentId(a.getId());
 					mAnswer.setText(StringUtil.trimToNull(params.getString("modelanswer_text")));
-					mAnswer.setShowTo(params.getInt("modelanswer_when"));
+					mAnswer.setShowTo(params.getInt("modelanswer_showto"));
 					mAnswer.setAttachmentSet(getAssignmentSupplementItemAttachment(state, mAnswer, MODELANSWER_ATTACHMENTS));
 					m_assignmentSupplementItemService.saveModelAnswer(mAnswer);
 				}
@@ -4883,19 +5098,89 @@ public class AssignmentAction extends PagedResourceActionII
 					nAllPurpose.setTitle(StringUtil.trimToNull(params.getString("allPurposeTitle")));
 					nAllPurpose.setText(StringUtil.trimToNull(params.getString("allPurposeText")));
 					nAllPurpose.setHide(params.getBoolean("allPurposeHide"));
+					
 					// save the release and retract dates
 					java.util.Calendar cal = java.util.Calendar.getInstance();
-					// save release date
-					int hour = params.getInt("allPurposeReleaseAMPM")==0?0:12;
-					hour +=params.getInt("allPurposeReleaseHour");
-					cal.set(params.getInt("allPurposeReleaseYear"), params.getInt("allPurposeReleaseMonth"), params.getInt("allPurposeReleaseDay"), hour, params.getInt("allPurposeReleaseMin"));
-					nAllPurpose.setReleaseDate(cal.getTime());
-					// save retract date
-					hour = params.getInt("allPurposeRetractAMPM")==0?0:12;
-					hour += params.getInt("allPurposeRetractHour");
-					cal.set(params.getInt("allPurposeRetractYear"), params.getInt("allPurposeRetractMonth"), params.getInt("allPurposeRetractDay"), hour, params.getInt("allPurposeRetractMin"));
-					nAllPurpose.setRetractDate(cal.getTime());
+					if (params.getBoolean("hasAllPurposeReleaseDate") && !params.getBoolean("allPurposeHide"))
+					{
+						// save release date
+						int hour = params.getInt("allPurposeReleaseAMPM")==0?0:12;
+						hour +=params.getInt("allPurposeReleaseHour");
+						cal.set(params.getInt("allPurposeReleaseYear"), params.getInt("allPurposeReleaseMonth"), params.getInt("allPurposeReleaseDay"), hour, params.getInt("allPurposeReleaseMin"));
+						nAllPurpose.setReleaseDate(cal.getTime());
+					}
+					else
+					{
+						nAllPurpose.setReleaseDate(null);
+					}
+					if (params.getBoolean("hasAllPurposeRetractDate") && !params.getBoolean("allPurposeHide"))
+					{
+						// save retract date
+						int hour = params.getInt("allPurposeRetractAMPM")==0?0:12;
+						hour += params.getInt("allPurposeRetractHour");
+						cal.set(params.getInt("allPurposeRetractYear"), params.getInt("allPurposeRetractMonth"), params.getInt("allPurposeRetractDay"), hour, params.getInt("allPurposeRetractMin"));
+						nAllPurpose.setRetractDate(cal.getTime());
+					}
+					else
+					{
+						nAllPurpose.setRetractDate(null);
+					}
 					nAllPurpose.setAttachmentSet(getAssignmentSupplementItemAttachment(state, nAllPurpose, ALLPURPOSE_ATTACHMENTS));
+					
+					Set<AssignmentAllPurposeItemAccess> accessSet = nAllPurpose.getAccessSet();
+					if (accessSet == null || accessSet.size() == 0)
+					{
+						accessSet = new HashSet<AssignmentAllPurposeItemAccess>();
+					}
+					
+					List<String> accessList = m_assignmentSupplementItemService.getAccessListForAllPurposeItem(nAllPurpose);
+					
+					try
+					{
+						AuthzGroup realm = AuthzGroupService.getAuthzGroup(SiteService.siteReference(siteId));
+						Set<Role> roles = realm.getRoles();
+						for(Iterator iRoles = roles.iterator(); iRoles.hasNext();)
+						{
+							// iterator through roles first
+							Role r = (Role) iRoles.next();
+							if (params.getString("allPurpose_" + r.getId()) != null)
+							{
+								if (accessList == null || !accessList.contains(r.getId()))
+								{
+									AssignmentAllPurposeItemAccess access = m_assignmentSupplementItemService.newAllPurposeItemAccess();
+									access.setAccess(r.getId());
+									access.setAssignmentAllPurposeItem(nAllPurpose);
+									m_assignmentSupplementItemService.saveAllPurposeItemAccess(access);
+									accessSet.add(access);
+								}
+							}
+							else
+							{
+								// if the role is not selected, iterate through the users with this role
+								Set userIds = realm.getUsersHasRole(r.getId());
+								for(Iterator iUserIds = userIds.iterator(); iUserIds.hasNext();)
+								{
+									String userId = (String) iUserIds.next();
+									if (params.getString("allPurpose_" + userId) != null)
+									{
+										if (accessList == null || !accessList.contains(userId))
+										{
+											AssignmentAllPurposeItemAccess access = m_assignmentSupplementItemService.newAllPurposeItemAccess();
+											access.setAccess(userId);
+											access.setAssignmentAllPurposeItem(nAllPurpose);
+											m_assignmentSupplementItemService.saveAllPurposeItemAccess(access);
+											accessSet.add(access);
+										}
+									}
+								}
+							}
+						}
+					}
+					catch (Exception e)
+					{
+						M_log.warn(this + ":postOrSaveAssignment " + e.toString() + "error finding authzGroup for = " + siteId);
+					}
+					nAllPurpose.setAccessSet(accessSet);
 					m_assignmentSupplementItemService.saveAllPurposeItem(nAllPurpose);
 				}
 
@@ -4918,17 +5203,23 @@ public class AssignmentAction extends PagedResourceActionII
 
 	private Set<AssignmentSupplementItemAttachment> getAssignmentSupplementItemAttachment(SessionState state, AssignmentSupplementItemWithAttachment mItem, String attachmentString) {
 		Set<AssignmentSupplementItemAttachment> sAttachments = new HashSet<AssignmentSupplementItemAttachment>();
+		List<String> attIdList = m_assignmentSupplementItemService.getAttachmentListForSupplementItem(mItem);
 		if (state.getAttribute(attachmentString) != null)
 		{
 			List currentAttachments = (List) state.getAttribute(attachmentString);
 			for (Iterator aIterator = currentAttachments.iterator(); aIterator.hasNext();)
 			{
 				Reference attRef = (Reference) aIterator.next();
-				AssignmentSupplementItemAttachment mAttach = m_assignmentSupplementItemService.newAttachment();
-				mAttach.setAssignmentSupplementItemWithAttachment(mItem);
-				mAttach.setAttachmentId(attRef.getReference());
-				m_assignmentSupplementItemService.saveAttachment(mAttach);
-				sAttachments.add(mAttach);
+				String attRefId = attRef.getReference();
+				// if the attachment is not exist, add it into db
+				if (!attIdList.contains(attRefId))
+				{
+					AssignmentSupplementItemAttachment mAttach = m_assignmentSupplementItemService.newAttachment();
+					mAttach.setAssignmentSupplementItemWithAttachment(mItem);
+					mAttach.setAttachmentId(attRefId);
+					m_assignmentSupplementItemService.saveAttachment(mAttach);
+					sAttachments.add(mAttach);
+				}
 			}
 		}
 		return sAttachments;
@@ -6980,17 +7271,19 @@ public class AssignmentAction extends PagedResourceActionII
 			{
 				state.setAttribute(ATTACHMENTS_FOR, MODELANSWER_ATTACHMENTS);
 				state.setAttribute(FilePickerHelper.FILE_PICKER_ATTACHMENTS, state.getAttribute(MODELANSWER_ATTACHMENTS));
+				state.setAttribute(MODELANSWER, Boolean.TRUE);
 			}
 			else if (from != null && from.equals("allPurpose"))
 			{
 				state.setAttribute(ATTACHMENTS_FOR, ALLPURPOSE_ATTACHMENTS);
 				state.setAttribute(FilePickerHelper.FILE_PICKER_ATTACHMENTS, state.getAttribute(ALLPURPOSE_ATTACHMENTS));
+				state.setAttribute(ALLPURPOSE, Boolean.TRUE);
 			}
 		}
 	}
 	
 
-	private List getSupplementItemAttachments(SessionState state, AssignmentSupplementItemWithAttachment item, String attachmentsKind)
+	private List getSupplementItemAttachments(SessionState state, Context context, AssignmentSupplementItemWithAttachment item, String attachmentsKind)
 	{
 		List refs = new Vector();
 		
@@ -7006,25 +7299,44 @@ public class AssignmentAction extends PagedResourceActionII
 					// add reference
 					refs.add(EntityManager.newReference(att.getAttachmentId()));
 				}
+				state.setAttribute(attachmentsKind, refs);
 			}
 		}
 		
-		ToolSession session = SessionManager.getCurrentToolSession();
-	    if (session.getAttribute(FilePickerHelper.FILE_PICKER_CANCEL) == null &&
-	        session.getAttribute(FilePickerHelper.FILE_PICKER_ATTACHMENTS) != null) 
-	    {
-	      refs = (List)session.getAttribute(FilePickerHelper.FILE_PICKER_ATTACHMENTS);
-	      
-	      String attachmentFor = (String) state.getAttribute(ATTACHMENTS_FOR);
-	      if (attachmentFor != null && attachmentFor.equals(attachmentsKind))
-	      {
-	    	  // set the correct state variable
-	    	  state.setAttribute(attachmentsKind, refs);
-	      }
-	    }
-	    session.removeAttribute(FilePickerHelper.FILE_PICKER_ATTACHMENTS);
-	    session.removeAttribute(FilePickerHelper.FILE_PICKER_CANCEL);
-	    state.removeAttribute(ATTACHMENTS_FOR);
+		String attachmentsFor = (String) state.getAttribute(ATTACHMENTS_FOR);
+		if (attachmentsFor != null && attachmentsFor.equals(attachmentsKind))
+		{
+			ToolSession session = SessionManager.getCurrentToolSession();
+		    if (session.getAttribute(FilePickerHelper.FILE_PICKER_CANCEL) == null &&
+		        session.getAttribute(FilePickerHelper.FILE_PICKER_ATTACHMENTS) != null) 
+		    {
+		    	refs = (List)session.getAttribute(FilePickerHelper.FILE_PICKER_ATTACHMENTS);
+		    	// set the correct state variable
+		    	state.setAttribute(attachmentsKind, refs);
+		    }
+		    session.removeAttribute(FilePickerHelper.FILE_PICKER_ATTACHMENTS);
+		    session.removeAttribute(FilePickerHelper.FILE_PICKER_CANCEL);
+		    
+		    if  (attachmentsFor.equals(MODELANSWER_ATTACHMENTS))
+	    	{
+	    		context.put("attachments_for", "modelanswer");
+		    	state.removeAttribute(ATTACHMENTS_FOR);
+	    	}
+	    	else if (attachmentsFor.equals(ALLPURPOSE_ATTACHMENTS)) 
+	    	{
+	    		context.put("attachments_for", "allPurpose");
+		    	state.removeAttribute(ATTACHMENTS_FOR);
+	    	}
+		}
+	    
+	    if (attachmentsKind.equals(MODELANSWER_ATTACHMENTS))
+    	{
+    		context.put("modelanswer_attachments", state.getAttribute(MODELANSWER_ATTACHMENTS));
+    	}
+	    else if (attachmentsKind.equals(ALLPURPOSE_ATTACHMENTS)) 
+    	{
+    		context.put("allPurpose_attachments", state.getAttribute(ALLPURPOSE_ATTACHMENTS));
+    	}
 	    
 	    return refs;
 	}
@@ -7631,9 +7943,34 @@ public class AssignmentAction extends PagedResourceActionII
 		// remove the resubmit number
 		state.removeAttribute(AssignmentSubmission.ALLOW_RESUBMIT_NUMBER);
 		
-		// remove the supplement attachment
+		// remove the supplement attributes
+		state.removeAttribute(MODELANSWER);
+		state.removeAttribute(MODELANSWER_TEXT);
+		state.removeAttribute(MODELANSWER_SHOWTO);
 		state.removeAttribute(MODELANSWER_ATTACHMENTS);
+		state.removeAttribute(NOTE);
+		state.removeAttribute(NOTE_TEXT);
+		state.removeAttribute(NOTE_SHAREWITH);
+		state.removeAttribute(ALLPURPOSE);
+		state.removeAttribute(ALLPURPOSE_TITLE);
+		state.removeAttribute(ALLPURPOSE_TEXT);
+		state.removeAttribute(ALLPURPOSE_HIDE);
+		state.removeAttribute(ALLPURPOSE_RELEASE_DATE);
+		state.removeAttribute(ALLPURPOSE_RETRACT_DATE);
+		state.removeAttribute(ALLPURPOSE_ACCESS);
 		state.removeAttribute(ALLPURPOSE_ATTACHMENTS);
+		state.removeAttribute(ALLPURPOSE_RELEASE_YEAR);
+		state.removeAttribute(ALLPURPOSE_RELEASE_MONTH);
+		state.removeAttribute(ALLPURPOSE_RELEASE_DAY);
+		state.removeAttribute(ALLPURPOSE_RELEASE_HOUR);
+		state.removeAttribute(ALLPURPOSE_RELEASE_MIN);
+		state.removeAttribute(ALLPURPOSE_RELEASE_AMPM);
+		state.removeAttribute(ALLPURPOSE_RETRACT_YEAR);
+		state.removeAttribute(ALLPURPOSE_RETRACT_MONTH);
+		state.removeAttribute(ALLPURPOSE_RETRACT_DAY);
+		state.removeAttribute(ALLPURPOSE_RETRACT_HOUR);
+		state.removeAttribute(ALLPURPOSE_RETRACT_MIN);
+		state.removeAttribute(ALLPURPOSE_RETRACT_AMPM);
 
 	} // resetNewAssignment
 
@@ -10888,7 +11225,7 @@ public class AssignmentAction extends PagedResourceActionII
 			addAlert(state, rb.getString("modelAnswer.show_to_student.alert.noText"));
 		}
 		
-		int showTo = params.getInt("modelanswer_when");
+		int showTo = params.getInt("modelanswer_showto");
 		if (showTo == 0)
 		{
 			// no show to criteria specifided for model answer
