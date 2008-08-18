@@ -17,6 +17,25 @@ $(document).ready(function(){
 	   }
     resizeFrame('grow');
     
+    $(".toggleRoleLink").click(function(){
+    	var actionType;
+    	var roleType;
+    	actionType = this.id.substring(0, this.id.indexOf('_'));
+     roleType = this.id.substring(this.id.indexOf('_') + 1);
+     if (actionType == "expand")
+     {
+     	$('#' + roleType + "Div").show('');
+     	$('#collapse_' + roleType).show('');
+     	$('#expand_' + roleType).hide('');
+     }
+     else
+     {
+     	$('#' + roleType + "Div").hide('');
+     	$('#expand_' + roleType).show('');
+     	$('#collapse_' + roleType).hide('');
+     }
+    });
+    
     $(".extraNodeLink").click(function(){
 	    $('.validationError').hide();			
         nodeType = this.id.substring(0, this.id.indexOf('_'));
@@ -26,6 +45,7 @@ $(document).ready(function(){
                 $('#' + nodeType + '_title').val('');
                 $('#' + nodeType + '_title_holder').val('');
             }
+            $('#' + nodeType + '_to_delete').val('true');
             $('#' + nodeType + '_text').val('');
             $('#' + nodeType + '_text_holder').val('');
             $('#' + nodeType + '_to').val('0');
@@ -783,9 +803,12 @@ $(document).ready(function(){
 				</div>
 				<div id="hasmodelanswer"  #if($!modelanswer) style="display:block"#else style="display:none" #end>
 					<a id="modelanswer_edit" class="extraNodeLink">$tlang.getString("gen.revi")</a> | <a id="modelanswer_delete" class="extraNodeLink">$tlang.getString("delet")</a>
+					<input id = "modelanswer_to_delete" name = "modelanswer_to_delete" type= "hidden" value = "false" />
 				</div>
 			</td>
 		</tr>
+		## show the private note section if only the user can view or edit the item
+		#if ($!allowEditAssignmentNoteItem || $!allowReadAssignmentNoteItem)
 		<tr>
 			<td style="padding-right:5em">
 				$tlang.getString("note")
@@ -795,10 +818,18 @@ $(document).ready(function(){
 					<a id="note_add" class="extraNodeLink">$tlang.getString("new")</a>
 				</div>
 				<div id="hasnote"  #if($!note) style="display:block"#else style="display:none" #end>
-					<a id="note_edit" class="extraNodeLink">$tlang.getString("gen.revi")</a> | <a id="note_delete" class="extraNodeLink">$tlang.getString("delet")</a>
+					#if ($!allowEditAssignmentNoteItem)
+						<a id="note_edit" class="extraNodeLink">$tlang.getString("gen.revi")</a> | <a id="note_delete" class="extraNodeLink">$tlang.getString("delet")</a>
+					#else
+						#if ($!allowReadAssignmentNoteItem)
+							<a id="note_edit" class="extraNodeLink">$tlang.getString("gen.view2")</a>
+						#end
+					#end
 				</div>
+				<input id = "note_to_delete" name = "note_to_delete" type= "hidden" value = "false" />
 			</td>
 		</tr>
+	 #end
 		<tr>
 			<td style="padding-right:5em">
 				$tlang.getString("allPurpose")
@@ -811,6 +842,7 @@ $(document).ready(function(){
 					<a id="allPurpose_edit" class="extraNodeLink">$tlang.getString("gen.revi")</a> | <a id="allPurpose_delete" class="extraNodeLink">$tlang.getString("delet")</a>
 				</div>
 				<input type="hidden" name="value_allPurpose" #if($!allPurpose) value="true" #else value="false" #end />
+				<input id = "allPurpose_to_delete" name = "allPurpose_to_delete" type= "hidden" value = "false" />
 #*
 				<div id="noAllPurpose" #if(!$!allPurpose) style="display:block"#else style="display:none" #end>
 					<a id="allPurpose_add" class="extraNodeLink">$tlang.getString("new")</a>
@@ -960,10 +992,16 @@ $(document).ready(function(){
 			<div class="longtext" style="margin:.2em">
 				<span class="reqStar">*</span>				
 				<label for="note_text" class="block">
-					$tlang.getString("note.instruction1")<br />$tlang.getString("note.instruction2") 
+					$tlang.getString("note.instruction") 
 				</label>
+				#if ($!note && $!allowEditAssignmentNoteItem || !$!note)
 					<textarea name="note_text" id="note_text" cols="60" rows="10" wrap="virtual">$!note_text</textarea>
 					<textarea name="note_text_holder" id="note_text_holder"  style="display:none"  cols="60" rows="2" wrap="virtual">$!note_text</textarea>
+				#else
+					#if ($!allowReadAssignmentNoteItem)
+					 <div class="notes">$!note_text</div>
+				 #end
+				#end
 					###chef_setupformattedtextareaparams("assigntext" "200" "365" "small")
 			</div>
 			<p class="longtext"  style="margin:.2em">
@@ -971,6 +1009,7 @@ $(document).ready(function(){
 				<label for="note_to" class="block">
 					Share
 				</label>
+				#if ($!note && $!allowEditAssignmentNoteItem || !$!note)
 				<select id="note_to" name="note_to">
 					#foreach ($k in ["0", "1", "2", "3"])
 						#set($string = "note.to.")
@@ -978,15 +1017,29 @@ $(document).ready(function(){
 						<option value="$k" #if($k.equals($!note_to)) selected="selected" #set ($note_to_val=$k) #end> $tlang.getString($string) </option>
 					#end
 				</select>
+				#else
+					#if ($!allowReadAssignmentNoteItem)
+						#foreach ($k in ["0", "1", "2", "3"])
+							#set($string = "note.to.")
+							#set($string = $string.concat($k))
+							#if($k.equals($!note_to))
+								$tlang.getString($string)
+							#end
+						#end
+					#end
+				#end
 				<span class="validationError alertMessageInline" id="note_to_message">
 					$tlang.getString("extraNodesRequired")
 				</span>	
 				<input type="text" id="note_to_holder"  style="display:none"  value="$note_to_val" />
 			</p>
-			<p class="act">
-				<input class="extraNodeInput" type="button" id="note_save" value="$tlang.getString('gen.sav')" class="active" />
-				<input class="extraNodeInput" type="button" id="note_cancel" value="$tlang.getString('gen.can')" />
-			</p>
+			#if ($!note && $!allowEditAssignmentNoteItem || !$!note)
+				<p class="act">
+				## can only edit if there is no note item, or if there is a note item and the current user can edit it.
+					<input class="extraNodeInput" type="button" id="note_save" value="$tlang.getString('gen.sav')" class="active" />
+					<input class="extraNodeInput" type="button" id="note_cancel" value="$tlang.getString('gen.can')" />
+				</p>
+			#end
 		</fieldset>			
 		## the panel for allPurpose type of object			
 		<fieldset class="extraNode" id="allPurpose-node" >
@@ -1053,7 +1106,7 @@ $(document).ready(function(){
        <table>
             <tr>
                 <td>
-                    <input name="allPurposeHide" id="allPurposeHide" value="false" #if(!$!value_allPurposeHide)checked="checked"#end type="radio" />
+                   <input name="allPurposeHide" id="allPurposeHide" value="false" #if(!$!value_allPurposeHide)checked="checked"#end type="radio" />
                 </td>
                 <td colspan="4">
                     <label for="hidden_false_0">
@@ -1065,10 +1118,10 @@ $(document).ready(function(){
                 <td>
                 </td>
                 <td>
-                    <input name="hasAllPurposeReleaseDate" id="hasAllPurposeReleaseDate" value="true" type="checkbox">
+                   <input name="allPurposeShowFrom" id="allPurposeShowFrom" value="true" type="checkbox" #if ($value_allPurposeShowFrom) checked="checked" #end />
                 </td>
                 <td colspan="3">
-                    <label for="hasAllPurposeReleaseDate">
+                    <label for="allPurposeShowFrom">
                         $tlang.getString("allPurpose.show.from")
                     </label>
                 </td>
@@ -1123,10 +1176,10 @@ $(document).ready(function(){
                 <td>
                 </td>
                 <td>
-                    <input name="hasAllPurposeRetractDate" id="hasAllPurposeRetractDate" value="true" type="checkbox">
+                    <input name="allPurposeShowTo" id="allPurposeShowTo" value="true" type="checkbox" #if ($!value_allPurposeShowTo) checked="checked" #end />
                 </td>
                 <td colspan="4">
-                    <label for="hasAllPurposeRetractDate">
+                    <label for="allPurposeShowTo">
                         $tlang.getString("allPurpose.show.util")
                     </label>
                 </td>
@@ -1196,6 +1249,11 @@ $(document).ready(function(){
 			    				#set($allString=$tlang.getString("allPurpose.show.all").concat(" ").concat($role))
 			    				#set($expandString=$tlang.getString("allPurpose.show.expand").concat(" ").concat($role).concat(" ").concat($tlang.getString("allPurpose.show.list")))
 			    				#set($collapseString=$tlang.getString("allPurpose.show.collapse").concat(" ").concat($role).concat(" ").concat($tlang.getString("allPurpose.show.list")))
+			        #set($expandId = "expand_")
+			        #set($expandId = $expandId.concat($role))
+			        #set($collapseId="collapse_")
+			        #set($collapseId=$collapseId.concat($role))
+			       	#set($roleDivString = $role.concat("Div"))
 			        <tr>
 			            <td>
 			            			#set($showInputString = "allPurpose_")
@@ -1204,7 +1262,8 @@ $(document).ready(function(){
 			                <label for="$allString">
 			                    $allString
 			                </label>
-			                <a href="#" id="$expandString" style="display:block;clear:both;text-decoration: underline">$expandString</a><a href="#" id="$collapseString" style="display:none;clear:both;text-decoration: underline">$collapseString</a>
+			                <br/>&nbsp;&nbsp;<a href="#" id="$collapseId" class="toggleRoleLink" style="display:none" >$collapseString</a><a href="#" id="$expandId" class="toggleRoleLink" style="display:block" >$expandString</a>
+																			<div id="$roleDivString" style="display:none">
 																					<table class="listHier lines nolines" cellpadding="0" cellspacing="0" style="margin-left:2em;width:auto;font-weight:normal">
 			                    <tbody>
 			                        #foreach($user in $!roleUsers.get($role))
@@ -1215,14 +1274,15 @@ $(document).ready(function(){
 			                                <input id="$showInputString" name="$showInputString" #if ($!value_allPurposeAccessList.contains($user.getId())) checked="checked" #end type="checkbox" value="$user.Id"/>
 			                            </td>
 			                            <td class="">
-			                                <label for="allPurposeUser" style="white-space:nowrap">
+			                                <label for="$showInputString" style="white-space:nowrap">
 			                                   $user.getDisplayName()
 			                                </label>
 			                            </td>
 			                        </tr>
 			                        #end
 			                    </tbody>
-			                </table>
+			                		</table>
+			                </div>		
 			            </td>
 			        </tr>
 			        #end

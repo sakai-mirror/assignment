@@ -116,17 +116,24 @@ public interface AssignmentSupplementItemService {
 	
 	/**
 	 * Save the AssignmentAllPurposeItem object
-	 * @param nItem
+	 * @param aItem
 	 * @return
 	 */
-	public boolean saveAllPurposeItem(AssignmentAllPurposeItem nItem);
+	public boolean saveAllPurposeItem(AssignmentAllPurposeItem aItem);
 	
 	/**
 	 * Remove the AssignmentAllPurposeItem object
-	 * @param nItem
+	 * @param aItem
 	 * @return
 	 */
-	public boolean removeAllPurposeItem(AssignmentAllPurposeItem nItem);
+	public boolean removeAllPurposeItem(AssignmentAllPurposeItem aItem);
+	
+	/**
+	 * reset the all purpose item access list
+	 * @param aItem
+	 * @return
+	 */
+	public boolean cleanAllPurposeItemAccess(AssignmentAllPurposeItem aItem);
 	
 	/**
 	 * Get the AssignmentAllPurposeItem object
@@ -144,6 +151,13 @@ public interface AssignmentSupplementItemService {
 	 * save AssignmentAllPurposeItemAccess object
 	 */
 	public boolean saveAllPurposeItemAccess(AssignmentAllPurposeItemAccess access);
+	
+	/**
+	 * remove the access record
+	 * @param access
+	 * @return
+	 */
+	public boolean removeAllPurposeItemAccess(AssignmentAllPurposeItemAccess access);
 	
 	/**
 	 * get the access list for this AllPurposeItem

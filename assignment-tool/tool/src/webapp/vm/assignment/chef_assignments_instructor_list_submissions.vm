@@ -316,14 +316,15 @@ $('#toggleAllPurpose').click(function(){
 		<form name= "listSubmissionsForm" action="#toolForm("AssignmentAction")" method="post">
 			<input type="hidden" name="assignmentId" value="$assignment.Reference" />
 			## model answer
-			<h4  id="toggleModel" class="toggleAnchor specialLink">$tlang.getString('allPurpose')</h4>
+			#if($allowViewModelAnswer)
+			<h4  id="toggleModel" class="toggleAnchor specialLink">$tlang.getString('modelAnswer')</h4>
 			<div class="model toggledContent">
 					<p>$!assignmentModelAnswerItem.getText()</p>
-					#set ($attachments = $!assignmentModelAnswerItem.getAttachmentObjectSet())
+					#set ($mAttachments = $!assignmentModelAnswerItem.getAttachmentObjectSet())
 						<ul class="attachList">
 							#set ($size = 0)
 							#set ($props = false)
-							#foreach ($attachment in $!attachments) 
+							#foreach ($attachment in $!mAttachments) 
 								#set ($props = $attachment.Properties) 
 								#if ($!props)
 									#set ($size = $size + 1)
@@ -332,7 +333,7 @@ $('#toggleAllPurpose').click(function(){
 							#if ($size == 0)
 								<p class="instruction">$tlang.getString("gen.noatt")</p>
 							#else
-								#foreach ($attachment in $attachments)
+								#foreach ($attachment in $mAttachments)
 									#set ($props = false)
 									#set ($props = $attachment.Properties) 
 									#if ($!props)
@@ -352,6 +353,7 @@ $('#toggleAllPurpose').click(function(){
 					#end
 					</ul>
 				</div>
+			#end
 			#if ($!allowReadAssignmentNoteItem)
 				<h4  id="toggleNotes" class="toggleAnchor specialLink">$tlang.getString('note.label')</h4>
 				<div class="notes toggledContent">
@@ -364,11 +366,11 @@ $('#toggleAllPurpose').click(function(){
 			<div class="allPurpose toggledContent">
 					<p>$!assignmentAllPurposeItem.getTitle()</p>
 					<p>$!assignmentAllPurposeItem.getText()</p>
-					#set ($attachments = $!assignmentAllPurposeItem.getAttachmentObjectSet())
+					#set ($aAttachments = $!assignmentAllPurposeItem.getAttachmentObjectSet())
 						<ul class="attachList">
 							#set ($size = 0)
 							#set ($props = false)
-							#foreach ($attachment in $!attachments) 
+							#foreach ($attachment in $!aAttachments) 
 								#set ($props = $attachment.Properties) 
 								#if ($!props)
 									#set ($size = $size + 1)
@@ -377,7 +379,7 @@ $('#toggleAllPurpose').click(function(){
 							#if ($size == 0)
 								<p class="instruction">$tlang.getString("gen.noatt")</p>
 							#else
-								#foreach ($attachment in $attachments)
+								#foreach ($attachment in $aAttachments)
 									#set ($props = false)
 									#set ($props = $attachment.Properties) 
 									#if ($!props)

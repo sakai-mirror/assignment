@@ -696,7 +696,9 @@ public class AssignmentAction extends PagedResourceActionII
 	private static final String ALLPURPOSE = "allPurpose";
 	private static final String ALLPURPOSE_TITLE = "allPurpose.title";
 	private static final String ALLPURPOSE_TEXT = "allPurpose.text";
-	private static final String ALLPURPOSE_HIDE = "allPurpose.HIDE";
+	private static final String ALLPURPOSE_HIDE = "allPurpose.hide";
+	private static final String ALLPURPOSE_SHOW_FROM = "allPurpose.show.from";
+	private static final String ALLPURPOSE_SHOW_TO = "allPurpose.show.to";
 	private static final String ALLPURPOSE_RELEASE_DATE = "allPurpose.releaseDate";
 	private static final String ALLPURPOSE_RETRACT_DATE= "allPurpose.retractDate";
 	private static final String ALLPURPOSE_ACCESS = "allPurpose.access";
@@ -934,6 +936,7 @@ public class AssignmentAction extends PagedResourceActionII
 		User user = (User) state.getAttribute(STATE_USER);
 		String currentAssignmentReference = (String) state.getAttribute(VIEW_SUBMISSION_ASSIGNMENT_REFERENCE);
 		Assignment assignment = null;
+		AssignmentSubmission s = null;
 		try
 		{
 			assignment = AssignmentService.getAssignment(currentAssignmentReference);
@@ -943,7 +946,7 @@ public class AssignmentAction extends PagedResourceActionII
 			{
 				context.put("nonElectronicType", Boolean.TRUE);
 			}
-			AssignmentSubmission s = AssignmentService.getSubmission(assignment.getReference(), user);
+			s = AssignmentService.getSubmission(assignment.getReference(), user);
 			if (s != null)
 			{
 				context.put("submission", s);
@@ -1003,6 +1006,9 @@ public class AssignmentAction extends PagedResourceActionII
 			addAlert(state, rb.getString("not_allowed_to_submit"));
 		}
 		context.put("allowSubmit", new Boolean(allowSubmit));
+		
+		// put supplement item into context
+		supplementItemIntoContext(context, assignment, s);
 
 		String template = (String) getContext(data).get("template");
 		return template + TEMPLATE_STUDENT_VIEW_SUBMISSION;
@@ -1089,13 +1095,14 @@ public class AssignmentAction extends PagedResourceActionII
 		User user = (User) state.getAttribute(STATE_USER);
 
 		Assignment assignment = null;
+		AssignmentSubmission submission = null;
 		
 		try
 		{
 			assignment = AssignmentService.getAssignment(aReference);
 			context.put("assignment", assignment);
 			
-			AssignmentSubmission submission = AssignmentService.getSubmission(aReference, user);
+			submission = AssignmentService.getSubmission(aReference, user);
 			context.put("submission", submission);
 			
 			// can the student view model answer or not
@@ -1124,6 +1131,9 @@ public class AssignmentAction extends PagedResourceActionII
 		context.put("contentTypeImageService", state.getAttribute(STATE_CONTENT_TYPE_IMAGE_SERVICE));
 		context.put("userDirectoryService", UserDirectoryService.getInstance());
 
+		// put supplement item into context
+		supplementItemIntoContext(context, assignment, submission);
+		
 		String template = (String) getContext(data).get("template");
 		return template + TEMPLATE_STUDENT_VIEW_ASSIGNMENT;
 
@@ -1189,10 +1199,11 @@ public class AssignmentAction extends PagedResourceActionII
 		context.put("contentTypeImageService", state.getAttribute(STATE_CONTENT_TYPE_IMAGE_SERVICE));
 
 		AssignmentSubmission submission = null;
+		Assignment assignment = null;
 		try
 		{
 			submission = AssignmentService.getSubmission((String) state.getAttribute(VIEW_GRADE_SUBMISSION_ID));
-			Assignment assignment = submission.getAssignment();
+			assignment = submission.getAssignment();
 			context.put("assignment", assignment);
 			if (assignment.getContent().getTypeOfSubmission() == Assignment.NON_ELECTRONIC_ASSIGNMENT_SUBMISSION)
 			{
@@ -1241,6 +1252,9 @@ public class AssignmentAction extends PagedResourceActionII
 			context.put("taggable", Boolean.valueOf(true));
 		}
 
+		// put supplement item into context
+		supplementItemIntoContext(context, assignment, submission);
+		
 		String template = (String) getContext(data).get("template");
 		return template + TEMPLATE_STUDENT_VIEW_GRADE;
 
@@ -1704,9 +1718,11 @@ public class AssignmentAction extends PagedResourceActionII
 			}
 			if (state.getAttribute(NOTE_SHAREWITH) == null)
 			{
-				state.setAttribute(NOTE_SHAREWITH, mNote.getShareWith());
+				state.setAttribute(NOTE_SHAREWITH, String.valueOf(mNote.getShareWith()));
 			}
 		}
+		context.put("allowReadAssignmentNoteItem", m_assignmentSupplementItemService.canReadNoteItem(a));
+		context.put("allowEditAssignmentNoteItem", m_assignmentSupplementItemService.canEditNoteItem(a));
 		context.put("note", state.getAttribute(NOTE) != null?Boolean.TRUE:Boolean.FALSE);
 		context.put("note_text", state.getAttribute(NOTE_TEXT));
 		context.put("note_to", state.getAttribute(NOTE_SHAREWITH) != null?state.getAttribute(NOTE_SHAREWITH):String.valueOf(0));
@@ -1731,6 +1747,14 @@ public class AssignmentAction extends PagedResourceActionII
 			{
 				state.setAttribute(ALLPURPOSE_HIDE, Boolean.valueOf(aItem.getHide()));
 			}
+			if (state.getAttribute(ALLPURPOSE_SHOW_FROM) == null)
+			{
+				state.setAttribute(ALLPURPOSE_SHOW_FROM, Boolean.FALSE);
+			}
+			if (state.getAttribute(ALLPURPOSE_SHOW_TO) == null)
+			{
+				state.setAttribute(ALLPURPOSE_SHOW_TO, Boolean.FALSE);
+			}
 			if (state.getAttribute(ALLPURPOSE_ACCESS) == null)
 			{
 				Set<AssignmentAllPurposeItemAccess> aSet = aItem.getAccessSet();
@@ -1744,16 +1768,26 @@ public class AssignmentAction extends PagedResourceActionII
 			}
 			// put release date information into context
 			java.util.Calendar cal = java.util.Calendar.getInstance();
-			cal.setTime(aItem.getReleaseDate());
-			dateIntoState(state, context, cal, ALLPURPOSE_RELEASE_YEAR, ALLPURPOSE_RELEASE_MONTH, ALLPURPOSE_RELEASE_DAY, ALLPURPOSE_RELEASE_HOUR, ALLPURPOSE_RELEASE_MIN, ALLPURPOSE_RELEASE_AMPM);
+			Date releaseDate = aItem.getReleaseDate();
+			if (releaseDate != null)
+			{
+				cal.setTime(aItem.getReleaseDate());
+				dateIntoState(state, context, cal, ALLPURPOSE_RELEASE_YEAR, ALLPURPOSE_RELEASE_MONTH, ALLPURPOSE_RELEASE_DAY, ALLPURPOSE_RELEASE_HOUR, ALLPURPOSE_RELEASE_MIN, ALLPURPOSE_RELEASE_AMPM);
+			}
 			// put retract date information into context
-			cal.setTime(aItem.getRetractDate());
-			dateIntoState(state, context, cal, ALLPURPOSE_RETRACT_YEAR, ALLPURPOSE_RETRACT_MONTH, ALLPURPOSE_RETRACT_DAY, ALLPURPOSE_RETRACT_HOUR, ALLPURPOSE_RETRACT_MIN, ALLPURPOSE_RETRACT_AMPM);
+			Date retractDate = aItem.getRetractDate();
+			if (retractDate != null)
+			{
+				cal.setTime(aItem.getRetractDate());
+				dateIntoState(state, context, cal, ALLPURPOSE_RETRACT_YEAR, ALLPURPOSE_RETRACT_MONTH, ALLPURPOSE_RETRACT_DAY, ALLPURPOSE_RETRACT_HOUR, ALLPURPOSE_RETRACT_MIN, ALLPURPOSE_RETRACT_AMPM);
+			}
 		}
 		context.put("allPurpose", state.getAttribute(ALLPURPOSE) != null?Boolean.TRUE:Boolean.FALSE);
 		context.put("value_allPurposeTitle", state.getAttribute(ALLPURPOSE_TITLE));
 		context.put("value_allPurposeText", state.getAttribute(ALLPURPOSE_TEXT));
 		context.put("value_allPurposeHide", state.getAttribute(ALLPURPOSE_HIDE) != null?state.getAttribute(ALLPURPOSE_HIDE):Boolean.FALSE);
+		context.put("value_allPurposeShowFrom", state.getAttribute(ALLPURPOSE_SHOW_FROM) != null?state.getAttribute(ALLPURPOSE_SHOW_FROM):Boolean.FALSE);
+		context.put("value_allPurposeShowTo", state.getAttribute(ALLPURPOSE_SHOW_TO) != null?state.getAttribute(ALLPURPOSE_SHOW_TO):Boolean.FALSE);
 		context.put("value_allPurposeAccessList", state.getAttribute(ALLPURPOSE_ACCESS));
 		dateIntoContext(state, context, ALLPURPOSE_RELEASE_YEAR, ALLPURPOSE_RELEASE_MONTH, ALLPURPOSE_RELEASE_DAY, ALLPURPOSE_RELEASE_HOUR, ALLPURPOSE_RELEASE_MIN, ALLPURPOSE_RELEASE_AMPM, "value_allPurposeReleaseYear", "value_allPurposeReleaseMonth", "value_allPurposeReleaseDay", "value_allPurposeReleaseHour", "value_allPurposeReleaseMin", "value_allPurposeReleaseAMPM");
 		dateIntoContext(state, context, ALLPURPOSE_RETRACT_YEAR, ALLPURPOSE_RETRACT_MONTH, ALLPURPOSE_RETRACT_DAY, ALLPURPOSE_RETRACT_HOUR, ALLPURPOSE_RETRACT_MIN, ALLPURPOSE_RETRACT_AMPM, "value_allPurposeRetractYear", "value_allPurposeRetractMonth", "value_allPurposeRetractDay", "value_allPurposeRetractHour", "value_allPurposeRetractMin", "value_allPurposeRetractAMPM");
@@ -2197,7 +2231,7 @@ public class AssignmentAction extends PagedResourceActionII
 		}
 
 		// put supplement item into context
-		supplementItemIntoContext(context, a);
+		supplementItemIntoContext(context, a, null);
 		
 		String template = (String) getContext(data).get("template");
 		return template + TEMPLATE_INSTRUCTOR_GRADE_SUBMISSION;
@@ -2510,7 +2544,7 @@ public class AssignmentAction extends PagedResourceActionII
 		pagingInfoToContext(state, context);
 		
 		// put supplement item into context
-		supplementItemIntoContext(context, assignment);
+		supplementItemIntoContext(context, assignment, null);
 		
 		
 		String template = (String) getContext(data).get("template");
@@ -2524,10 +2558,15 @@ public class AssignmentAction extends PagedResourceActionII
 	 * @param context
 	 * @param assignment
 	 */
-	private void supplementItemIntoContext(Context context, Assignment assignment) {
-		// instructor is always allows to see model answer
-		context.put("assignmentModelAnswerItem", m_assignmentSupplementItemService.getModelAnswer(assignment.getId()));
-		
+	private void supplementItemIntoContext(Context context, Assignment assignment, AssignmentSubmission s) {
+		// for model answer
+		boolean allowViewModelAnswer = m_assignmentSupplementItemService.canViewModelAnswer(assignment, s);
+		context.put("allowViewModelAnswer", allowViewModelAnswer);
+		if (allowViewModelAnswer)
+		{
+			context.put("assignmentModelAnswerItem", m_assignmentSupplementItemService.getModelAnswer(assignment.getId()));
+		}
+	
 		// for note item
 		boolean allowReadAssignmentNoteItem = m_assignmentSupplementItemService.canReadNoteItem(assignment);
 		context.put("allowReadAssignmentNoteItem", allowReadAssignmentNoteItem);
@@ -4577,7 +4616,15 @@ public class AssignmentAction extends PagedResourceActionII
 		}
 		if (StringUtil.trimToNull(params.getString("allPurposeHide")) != null)
 		{
-			state.setAttribute(ALLPURPOSE_HIDE, params.getString("allPurposeHide"));
+			state.setAttribute(ALLPURPOSE_HIDE, Boolean.valueOf(params.getString("allPurposeHide")));
+		}
+		if (StringUtil.trimToNull(params.getString("allPurposeShowFrom")) != null)
+		{
+			state.setAttribute(ALLPURPOSE_SHOW_FROM, Boolean.valueOf(params.getString("allPurposeShowFrom")));
+		}
+		if (StringUtil.trimToNull(params.getString("allPurposeShowTo")) != null)
+		{
+			state.setAttribute(ALLPURPOSE_SHOW_TO, Boolean.valueOf(params.getString("allPurposeShowTo")));
 		}
 		state.setAttribute(ALLPURPOSE_RELEASE_YEAR, Integer.valueOf(params.getString("allPurposeReleaseYear")));
 		state.setAttribute(ALLPURPOSE_RELEASE_MONTH, Integer.valueOf(params.getString("allPurposeReleaseMonth")));
@@ -5058,7 +5105,15 @@ public class AssignmentAction extends PagedResourceActionII
 				
 				// assignment supplement items
 				String aId = a.getId();
-				if (StringUtil.trimToNull(params.getString("modelanswer_text")) != null)
+				//model answer
+				if (params.getString("modelanswer_to_delete").equals("true"))
+				{
+					// to delete the model answer
+					AssignmentModelAnswerItem mAnswer = m_assignmentSupplementItemService.getModelAnswer(aId);
+					if (mAnswer != null)
+						m_assignmentSupplementItemService.removeModelAnswer(mAnswer);
+				}
+				else if (StringUtil.trimToNull(params.getString("modelanswer_text")) != null)
 				{
 					// edit/add model answer
 					AssignmentModelAnswerItem mAnswer = m_assignmentSupplementItemService.getModelAnswer(aId);
@@ -5073,7 +5128,16 @@ public class AssignmentAction extends PagedResourceActionII
 					mAnswer.setAttachmentSet(getAssignmentSupplementItemAttachment(state, mAnswer, MODELANSWER_ATTACHMENTS));
 					m_assignmentSupplementItemService.saveModelAnswer(mAnswer);
 				}
-				if (StringUtil.trimToNull(params.getString("note_text")) != null)
+				// note
+				String tt = params.getString("note_to_delete");
+				if (params.getString("note_to_delete").equals("true"))
+				{
+					// to remove note item
+					AssignmentNoteItem nNote = m_assignmentSupplementItemService.getNoteItem(aId);
+					if (nNote != null)
+						m_assignmentSupplementItemService.removeNoteItem(nNote);
+				}
+				else if (StringUtil.trimToNull(params.getString("note_text")) != null)
 				{
 					// edit/add private note
 					AssignmentNoteItem nNote = m_assignmentSupplementItemService.getNoteItem(aId);
@@ -5085,7 +5149,15 @@ public class AssignmentAction extends PagedResourceActionII
 					nNote.setCreatorId(UserDirectoryService.getCurrentUser().getId());
 					m_assignmentSupplementItemService.saveNoteItem(nNote);
 				}
-				if (StringUtil.trimToNull(params.getString("allPurposeTitle")) != null)
+				// all purpose
+				if (params.getString("allPurpose_to_delete").equals("true"))
+				{
+					// to remove allPurpose item
+					AssignmentAllPurposeItem nAllPurpose = m_assignmentSupplementItemService.getAllPurposeItem(aId);
+					if (nAllPurpose != null)
+						m_assignmentSupplementItemService.removeAllPurposeItem(nAllPurpose);
+				}
+				else if (StringUtil.trimToNull(params.getString("allPurposeTitle")) != null)
 				{
 					// edit/add private note
 					AssignmentAllPurposeItem nAllPurpose = m_assignmentSupplementItemService.getAllPurposeItem(aId);
@@ -5101,7 +5173,7 @@ public class AssignmentAction extends PagedResourceActionII
 					
 					// save the release and retract dates
 					java.util.Calendar cal = java.util.Calendar.getInstance();
-					if (params.getBoolean("hasAllPurposeReleaseDate") && !params.getBoolean("allPurposeHide"))
+					if (params.getBoolean("allPurposeShowFrom") && !params.getBoolean("allPurposeHide"))
 					{
 						// save release date
 						int hour = params.getInt("allPurposeReleaseAMPM")==0?0:12;
@@ -5113,7 +5185,7 @@ public class AssignmentAction extends PagedResourceActionII
 					{
 						nAllPurpose.setReleaseDate(null);
 					}
-					if (params.getBoolean("hasAllPurposeRetractDate") && !params.getBoolean("allPurposeHide"))
+					if (params.getBoolean("allPurposeShowTo") && !params.getBoolean("allPurposeHide"))
 					{
 						// save retract date
 						int hour = params.getInt("allPurposeRetractAMPM")==0?0:12;
@@ -5127,14 +5199,9 @@ public class AssignmentAction extends PagedResourceActionII
 					}
 					nAllPurpose.setAttachmentSet(getAssignmentSupplementItemAttachment(state, nAllPurpose, ALLPURPOSE_ATTACHMENTS));
 					
-					Set<AssignmentAllPurposeItemAccess> accessSet = nAllPurpose.getAccessSet();
-					if (accessSet == null || accessSet.size() == 0)
-					{
-						accessSet = new HashSet<AssignmentAllPurposeItemAccess>();
-					}
-					
-					List<String> accessList = m_assignmentSupplementItemService.getAccessListForAllPurposeItem(nAllPurpose);
-					
+					// clean the access list first
+					m_assignmentSupplementItemService.cleanAllPurposeItemAccess(nAllPurpose);
+					Set<AssignmentAllPurposeItemAccess> accessSet = new HashSet<AssignmentAllPurposeItemAccess>();
 					try
 					{
 						AuthzGroup realm = AuthzGroupService.getAuthzGroup(SiteService.siteReference(siteId));
@@ -5145,14 +5212,11 @@ public class AssignmentAction extends PagedResourceActionII
 							Role r = (Role) iRoles.next();
 							if (params.getString("allPurpose_" + r.getId()) != null)
 							{
-								if (accessList == null || !accessList.contains(r.getId()))
-								{
-									AssignmentAllPurposeItemAccess access = m_assignmentSupplementItemService.newAllPurposeItemAccess();
-									access.setAccess(r.getId());
-									access.setAssignmentAllPurposeItem(nAllPurpose);
-									m_assignmentSupplementItemService.saveAllPurposeItemAccess(access);
-									accessSet.add(access);
-								}
+								AssignmentAllPurposeItemAccess access = m_assignmentSupplementItemService.newAllPurposeItemAccess();
+								access.setAccess(r.getId());
+								access.setAssignmentAllPurposeItem(nAllPurpose);
+								m_assignmentSupplementItemService.saveAllPurposeItemAccess(access);
+								accessSet.add(access);
 							}
 							else
 							{
@@ -5163,14 +5227,11 @@ public class AssignmentAction extends PagedResourceActionII
 									String userId = (String) iUserIds.next();
 									if (params.getString("allPurpose_" + userId) != null)
 									{
-										if (accessList == null || !accessList.contains(userId))
-										{
-											AssignmentAllPurposeItemAccess access = m_assignmentSupplementItemService.newAllPurposeItemAccess();
-											access.setAccess(userId);
-											access.setAssignmentAllPurposeItem(nAllPurpose);
-											m_assignmentSupplementItemService.saveAllPurposeItemAccess(access);
-											accessSet.add(access);
-										}
+										AssignmentAllPurposeItemAccess access = m_assignmentSupplementItemService.newAllPurposeItemAccess();
+										access.setAccess(userId);
+										access.setAssignmentAllPurposeItem(nAllPurpose);
+										m_assignmentSupplementItemService.saveAllPurposeItemAccess(access);
+										accessSet.add(access);
 									}
 								}
 							}
@@ -7955,6 +8016,8 @@ public class AssignmentAction extends PagedResourceActionII
 		state.removeAttribute(ALLPURPOSE_TITLE);
 		state.removeAttribute(ALLPURPOSE_TEXT);
 		state.removeAttribute(ALLPURPOSE_HIDE);
+		state.removeAttribute(ALLPURPOSE_SHOW_FROM);
+		state.removeAttribute(ALLPURPOSE_SHOW_TO);
 		state.removeAttribute(ALLPURPOSE_RELEASE_DATE);
 		state.removeAttribute(ALLPURPOSE_RETRACT_DATE);
 		state.removeAttribute(ALLPURPOSE_ACCESS);

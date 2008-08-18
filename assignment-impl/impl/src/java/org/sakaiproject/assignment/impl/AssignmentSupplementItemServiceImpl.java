@@ -1,5 +1,6 @@
 package org.sakaiproject.assignment.impl;
 
+import java.util.Iterator;
 import java.util.List;
 import java.util.Date;
 import java.util.Set;
@@ -321,6 +322,24 @@ public class AssignmentSupplementItemServiceImpl extends HibernateDaoSupport imp
 	}
 	
 	/**
+	 * {@inheritDoc}
+	 */
+	public boolean cleanAllPurposeItemAccess(AssignmentAllPurposeItem mItem)
+	{
+		boolean rv = false;
+		Set<AssignmentAllPurposeItemAccess> accessSet = mItem.getAccessSet();
+		if (accessSet != null)
+		{
+			for (Iterator<AssignmentAllPurposeItemAccess> iAccessSet = accessSet.iterator(); iAccessSet.hasNext();)
+			{
+				AssignmentAllPurposeItemAccess access = iAccessSet.next();
+				rv = removeAllPurposeItemAccess(access);
+			}
+		}
+		return rv;
+	}
+	
+	/**
 	 * {@inheritDoc}}
 	 */
 	public AssignmentAllPurposeItem getAllPurposeItem(String assignmentId)
@@ -362,6 +381,25 @@ public class AssignmentSupplementItemServiceImpl extends HibernateDaoSupport imp
 	/**
 	 * {@inheritDoc}}
 	 */
+	public boolean removeAllPurposeItemAccess(AssignmentAllPurposeItemAccess access)
+	{
+
+		try 
+		{
+			getHibernateTemplate().delete(access);
+			return true;
+		}
+		catch (DataAccessException e)
+		{
+			e.printStackTrace();
+			Log.warn(this + ".removeAllPurposeItemAccess() Hibernate could not delete access for all purpose item " + access.getAssignmentAllPurposeItem().getId() + " for access" + access.getAccess());
+			return false;
+		}
+	}
+	
+	/**
+	 * {@inheritDoc}}
+	 */
 	public List<String> getAccessListForAllPurposeItem(final AssignmentAllPurposeItem item)
 	{	
 		HibernateCallback hcb = new HibernateCallback()
@@ -388,22 +426,30 @@ public class AssignmentSupplementItemServiceImpl extends HibernateDaoSupport imp
 			AssignmentModelAnswerItem m = getModelAnswer(a.getId());
 			if (m != null)
 			{
-				int show = m.getShowTo();
-				if (show == AssignmentConstants.MODEL_ANSWER_SHOW_TO_STUDENT_BEFORE_STARTS)
+				if (m_assignmentService.allowGradeSubmission(a.getReference()))
 				{
+					// model answer is viewable to all graders
 					return true;
 				}
-				else if (show == AssignmentConstants.MODEL_ANSWER_SHOW_TO_STUDENT_AFTER_SUBMIT && s != null && s.getSubmitted())
+				else
 				{
-					return true;
-				}
-				else if (show == AssignmentConstants.MODEL_ANSWER_SHOW_TO_STUDENT_AFTER_GRADE_RETURN && s!= null && s.getGradeReleased())
-				{
-					return true;
-				}
-				else if (show == AssignmentConstants.MODEL_ANSWER_SHOW_TO_STUDENT_AFTER_ACCEPT_UTIL && (a.getCloseTime().before(TimeService.newTime())))
-				{
-					return true;
+					int show = m.getShowTo();
+					if (show == AssignmentConstants.MODEL_ANSWER_SHOW_TO_STUDENT_BEFORE_STARTS)
+					{
+						return true;
+					}
+					else if (show == AssignmentConstants.MODEL_ANSWER_SHOW_TO_STUDENT_AFTER_SUBMIT && s != null && s.getSubmitted())
+					{
+						return true;
+					}
+					else if (show == AssignmentConstants.MODEL_ANSWER_SHOW_TO_STUDENT_AFTER_GRADE_RETURN && s!= null && s.getGradeReleased())
+					{
+						return true;
+					}
+					else if (show == AssignmentConstants.MODEL_ANSWER_SHOW_TO_STUDENT_AFTER_ACCEPT_UTIL && (a.getCloseTime().before(TimeService.newTime())))
+					{
+						return true;
+					}
 				}
 			}
 		}
@@ -426,7 +472,7 @@ public class AssignmentSupplementItemServiceImpl extends HibernateDaoSupport imp
 				{
 					return true;
 				}
-				else if (m_assignmentService.allowAddSubmission(a.getContext()))
+				else if (m_assignmentService.allowGradeSubmission(a.getReference()))
 				{
 					// check whether the instructor type can view the note
 					int share = note.getShareWith();
@@ -446,15 +492,31 @@ public class AssignmentSupplementItemServiceImpl extends HibernateDaoSupport imp
 	 */
 	public boolean canEditNoteItem(Assignment a)
 	{
+		String userId = "";
+		User u = m_userDirectoryService.getCurrentUser();
+		if ( u != null)
+		{
+			userId = u.getId();
+		}
+		
 		if (a != null)
 		{
 			AssignmentNoteItem note = getNoteItem(a.getId());
 			if (note != null)
 			{
-				if (note.getShareWith() == AssignmentConstants.NOTE_READ_AND_WRITE_BY_OTHER)
+				if (note.getCreatorId().equals(userId))
+				{
+					// being creator can edit
+					return true;
+				}
+				else if (note.getShareWith() == AssignmentConstants.NOTE_READ_AND_WRITE_BY_OTHER && m_assignmentService.allowGradeSubmission(a.getReference()))
 				{
 					return true;
-				}	
+				}		
+			}
+			else
+			{
+				return true;
 			}
 		}
 		
@@ -508,8 +570,11 @@ public class AssignmentSupplementItemServiceImpl extends HibernateDaoSupport imp
 			
 			if (rv)
 			{
+				// reset rv
+				rv = false;
+				
 				// need to check role/user permission only if the above time test returns true
-				Set<AssignmentAllPurposeItemAccess> access = aItem.getAccessSet();
+				List<String> access = getAccessListForAllPurposeItem(aItem);
 				User u = m_userDirectoryService.getCurrentUser();
 				if ( u != null)
 				{
