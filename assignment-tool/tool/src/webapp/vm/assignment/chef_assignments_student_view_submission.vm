@@ -160,15 +160,17 @@
 							<th>
 								$tlang.getString("gen.gra3")
 							</th>
-							<td>
-								#if ($assignment.getContent().TypeOfGrade != 1)
-									$submission.GradeDisplay
-								#else
-									$tlang.getString("gen.nograd")
-								#end
-								#if ($gradeScale == "Points")
-									(max $assignment.getContent().getMaxGradePointDisplay())
-								#end
+							<td class="highlight">
+								<strong>
+									#if ($assignment.getContent().TypeOfGrade != 1)
+										$submission.GradeDisplay
+									#else
+										$tlang.getString("gen.nograd")
+									#end
+									#if ($gradeTypeTable.get($assignment.getContent().getTypeOfGrade()) == $!tlang.getString("points"))
+										(($tlang.getString("grade.max") $assignment.getContent().getMaxGradePointDisplay())
+									#end
+								</strong>
 							</td>
 						</tr>
 					#else
@@ -178,8 +180,8 @@
 							</th>
 							<td>
 								$gradeScale
-								#if ($gradeScale == "Points")
-									(max $assignment.getContent().getMaxGradePointDisplay())
+								#if ($gradeTypeTable.get($assignment.getContent().getTypeOfGrade()) == $!tlang.getString("points"))
+									(($tlang.getString("grade.max") $assignment.getContent().getMaxGradePointDisplay())
 								#end
 							</td>
 						</tr>
