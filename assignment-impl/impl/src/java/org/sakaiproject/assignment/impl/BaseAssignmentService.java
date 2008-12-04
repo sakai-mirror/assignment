@@ -8591,7 +8591,15 @@ public abstract class BaseAssignmentService implements AssignmentService, Entity
 			}
 			else
 			{
-				return StringUtil.trimToZero(m_grade);
+				if (m_grade != null && m_grade.length() > 0)
+				{
+					return StringUtil.trimToZero(m_grade);
+				}
+				else
+				{
+					// return "ungraded" in stead
+					return rb.getString("gen.ung1");
+				}
 			}
 		}
 
