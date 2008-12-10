@@ -20,7 +20,15 @@
 	#set($returned=$submission.getReturned())
 	#set($closeTime = false)
 	#set($closeTime = $assignment.CloseTime)
-	#if ($!submission)
+	#set($allowResubmitNumber="0")
+	#set($allowResubmitNumber = $assignment.getProperties().getProperty("allow_resubmit_number"))
+	#if(!$!allowResubmitNumber.equals("0"))
+		#set($allowResubmitCloseTimeString=$assignment.getProperties().getProperty("allow_resubmit_closeTime"))
+		#if($!allowResubmitCloseTimeString)
+			#set($allowResubmitCloseTime=$!TimeService.newTime($!LongObject.parseLong($!allowResubmitCloseTimeString)))
+		#end
+	#end
+	#if ($!submission && $!allowResubmitNumber.equals("0"))
 		##override the close time setting for assignment by submission's individual setting
 		#set($closeTime = $submission.CloseTime)
 	#end
@@ -119,6 +127,28 @@
 						$!assignment.getDueTime().toStringLocalFull()
 					</td>
 				</tr>
+				##resubmit number
+				#if($!resubmitNumber)
+					<tr>
+						<th>
+							$tlang.getString("allow.resubmit.number")
+						</th>
+						<td>
+							$resubmitNumber
+						</td>
+					</tr>
+				#end
+				## resubmit close time
+				#if ($!resubmitCloseTime)
+					<tr>
+						<th>
+							$tlang.getString("allow.resubmit.closeTime")
+						</th>
+						<td>
+							$resubmitCloseTime
+						</td>
+					</tr>
+				#end
 				## no need to show status if this is for an non-electronic submission type of assignment
 					#if (!$!nonElectronicType)
 				<tr>
@@ -432,11 +462,7 @@
 						</ul>
 					#end	 
 					<p class="act">
-							##if the submission has not been submitted or has been returned and not yet resubmitted
-							#if (!$submitted || ($submitted && !$timeSubmitted) || ($returned && $!timeSubmitted && $!timeReturned && $!timeReturned.after($!timeSubmitted)))
-								#if ($!closeTime)
-									## there is close date. Can only submit before the close date
-									#if ($currentTime.before($!closeTime))
+							#if ($!canSubmit)
 										<input
 											class="disableme" 
 											type="button" 
@@ -451,23 +477,6 @@
 											onclick="document.addSubmissionForm.onsubmit();document.addSubmissionForm.option.value='attach'; document.addSubmissionForm.submit(); return false;"
 										/>
 									#end
-								#else
-									## there is no close date. Still can submit after due date
-									<input
-										class="disableme" 
-										type="button" 
-										name="attach" 
-										id="attach"
-										#if ($size==0) 
-											value="$tlang.getString("gen.addatt")"
-										#else
-											value="$tlang.getString("gen.adddroatt2")"
-										#end
-										accesskey="a" #if(!$allowSubmit)disabled="disabled"#end
-										onclick="document.addSubmissionForm.onsubmit();document.addSubmissionForm.option.value='attach'; document.addSubmissionForm.submit(); return false;"
-									/>										
-								#end
-							#end
 					</p>
 				#end
 				#if ($returned && $!timeReturned && ($!timeSubmitted && $!timeReturned && $!timeReturned.after($!timeSubmitted) || !$!timeSubmitted))
@@ -602,7 +611,7 @@
 					</p>
 				#end
 			<div class="act">
-					#if ($!closeTime && $currentTime.after($!closeTime) || !$allowSubmit)
+					#if (!$!canSubmit)
 						<input 
 							type="button" 
 							name="cancel"
@@ -612,7 +621,6 @@
 							onclick="document.addSubmissionForm.onsubmit();document.addSubmissionForm.option.value='cancel'; document.addSubmissionForm.submit(); return false;"
 						/>
 					#else
-					#if (!$submitted || ($submitted && !$timeSubmitted) || ($returned && $!timeSubmitted && $!timeReturned && $!timeReturned.after($!timeSubmitted)))
 							<input
 								type="button"
 								class="active"
@@ -654,16 +662,6 @@
 								value="$tlang.getString("gen.can")"
 								onclick="document.addSubmissionForm.onsubmit();document.addSubmissionForm.option.value='cancel'; document.addSubmissionForm.submit(); return false;"
 							/>
-						#else
-							<input 
-								type="button" 
-								name="cancel" 
-								accesskey="x"
-								id="cancel" 
-								value="$tlang.getString("gen.don")"
-								onclick="document.addSubmissionForm.onsubmit();document.addSubmissionForm.option.value='cancel'; document.addSubmissionForm.submit(); return false;"
-							/>
-						#end
 					#end
 				<span id="submitnotif" style="visibility:hidden">$tlang.getString("gen.proces")</span>
 			</div>
