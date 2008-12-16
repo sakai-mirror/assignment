@@ -95,7 +95,7 @@ function handleEnterKeyPress(ev)
 						#end
 						#set ($count = $count + 1)
 					#end
-					$!submitterNames
+					$validator.escapeHtml($!submitterNames)
 				</td>
 			</tr>
 			#if ($!submissionType != 4)

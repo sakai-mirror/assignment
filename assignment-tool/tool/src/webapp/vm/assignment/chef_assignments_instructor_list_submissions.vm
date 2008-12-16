@@ -389,7 +389,7 @@
 								&nbsp;
 							</td>
 							<td headers="studentname">
-								$!siteUser.sortName
+								$validator.escapeHtml($!siteUser.sortName)
 							</td>
 							<td headers="submitted">
 								&nbsp;
@@ -427,7 +427,7 @@
 				$tlang.getString("gen.creby")
 			</th>
 			<td>
-				$userDirectoryService.getUser($assignment.getCreator()).DisplayName ($assignment.TimeCreated.toStringLocalFull())
+				$validator.escapeHtml($userDirectoryService.getUser($assignment.getCreator()).DisplayName) ($assignment.TimeCreated.toStringLocalFull())
 			</td>
 		</tr>
 		<tr>
