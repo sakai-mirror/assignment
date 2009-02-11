@@ -1,9 +1,7 @@
 <projectDescription>
   <name>sakai-assignment-api</name>
   <comment/>
-  <projects>
-    <project>sakai-taggable-api</project>
-  </projects>
+  <projects/>
   <buildSpec>
     <buildCommand>
       <name>org.eclipse.jdt.core.javabuilder</name>
