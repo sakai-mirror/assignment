@@ -1,7 +1,35 @@
 ##<!-- $Header: Exp $ -->
 ## Assignments - Instructor new Assignment view
+<script type="text/javascript" src="/library/js/jquery.js"></script>
+
 <script type="text/javascript">
 <!--
+	function resizeFrame(updown) 
+	{
+		if (top.location != self.location) 	 {
+			var frame = parent.document.getElementById(window.name);
+		}	
+			if( frame ) 
+		{
+			if(updown=='shrink')
+			{
+				var clientH = document.body.clientHeight;
+			}
+			else
+			{
+				var clientH = document.body.clientHeight + 30;
+			}
+			$( frame ).height( clientH );
+		} 
+		else 
+		{
+//			throw( "resizeFrame did not get the frame (using name=" + window.name + ")" );
+		}
+	}
+
+
+
+
     function SetMaxPoint(obj_option, obj_textfield)
     {
 		if(obj_option.value==3)
@@ -401,19 +429,19 @@
 					<p style="display:$!addToGBDisplay">
 					<div class="checkbox  indnt2" style="display:$!addToGBDisplay">
 						## hide the assignment list from Gradebook when clicked
-						<input type="radio" name="$!name_Addtogradebook" id="$!gradebookChoice_no" value="$!gradebookChoice_no" #if($!gradebookChoice.equals("$!gradebookChoice_no"))checked#end onclick="if (document.getElementById('gradebookList')) document.getElementById('gradebookList').style.display = 'none';" >
+						<input type="radio" name="$!name_Addtogradebook" id="$!gradebookChoice_no" value="$!gradebookChoice_no" #if($!gradebookChoice.equals("$!gradebookChoice_no"))checked#end onclick="if (document.getElementById('gradebookList')) $('#gradebookList').fadeOut('fast');" >
 						<label for="$!gradebookChoice_no">#if(!$!noAddToGradebookChoice)$tlang.getString("grading.no")#else$tlang.getString("grading.no2")#end</label>
 						<br/>
 						#if (!$!noAddToGradebookChoice)
 							## hide the assignment list from Gradebook when clicked
-							<input type="radio" name="$!name_Addtogradebook" id="$!gradebookChoice_add" value="$!gradebookChoice_add" #if($!gradebookChoice.equals("$!gradebookChoice_add"))checked#end onclick="if (document.getElementById('gradebookList')) document.getElementById('gradebookList').style.display = 'none';" >
+							<input type="radio" name="$!name_Addtogradebook" id="$!gradebookChoice_add" value="$!gradebookChoice_add" #if($!gradebookChoice.equals("$!gradebookChoice_add"))checked#end onclick="if (document.getElementById('gradebookList')) $('#gradebookList').fadeOut('fast')" >
 							<label for="$!gradebookChoice_add">$tlang.getString("grading.add")</label>
 							<br/>
 						#end
 						## if there exists properiate assignment entries in Gradebook
 						#if ($!gradebookAssignments.size() > 0) 
 							## show the assignment list from Gradebook when clicked
-							<input type="radio" name="$!name_Addtogradebook" id="$!gradebookChoice_associate" value="$!gradebookChoice_associate" #if($!gradebookChoice.equals("$!gradebookChoice_associate"))checked#end onclick="if (document.getElementById('gradebookList')) document.getElementById('gradebookList').style.display = 'block';" >
+							<input type="radio" name="$!name_Addtogradebook" id="$!gradebookChoice_associate" value="$!gradebookChoice_associate" #if($!gradebookChoice.equals("$!gradebookChoice_associate"))checked#end onclick="if (document.getElementById('gradebookList')) $('#gradebookList').fadeIn('slow');" >
 							<label for="$!gradebookChoice_associate">$tlang.getString("grading.associate")</label>
 						#end
 					</div>
@@ -426,7 +454,7 @@
 					#else
 						#set ($gbListDisplay="none")
 					#end
-					<p id="gradebookList" class="checkbox  indnt2" style="display:$gbListDisplay">
+					<p id="gradebookList" class="checkbox  indnt4" style="display:$gbListDisplay">
 						<select name="$!name_AssociateGradebookAssignment" >
 							<option  value="">$tlang.getString("grading.select")</option>
 							#foreach ($aAssignment in $!gradebookAssignments)
@@ -450,9 +478,9 @@
 					</h4>
 					<p class="checkbox  indnt2">
 						#if (!$!allowGroupAssignmentsInGradebook)
-							<input type="radio" name="range" id="site" value="site" #if($!range == "site")checked="checked"#end onclick="if (document.getElementById('addToGradebook') !=null){document.getElementById('addToGradebook').style.display = 'block'};document.getElementById('groupTable').style.display = 'none';" />
+							<input type="radio" name="range" id="site" value="site" #if($!range == "site")checked="checked"#end onclick="if (document.getElementById('addToGradebook') !=null){$('#addToGradebook').fadeIn('slow')};$('#groupTable').fadeOut('fast');resizeFrame()" />
 						#else
-							<input type="radio" name="range" id="site" value="site" #if($!range == "site")checked="checked"#end onclick="document.getElementById('groupTable').style.display = 'none';" />
+							<input type="radio" name="range" id="site" value="site" #if($!range == "site")checked="checked"#end onclick="$('#groupTable').fadeOut('fast');resizeFrame()" />
 						#end
 						<label for="site">$tlang.getString("displayto.site")</label>
 					</p>	
@@ -474,11 +502,10 @@
 				## added group awareness
 				<p class="checkbox indnt2">
 					#if (!$!allowGroupAssignmentsInGradebook)
-						<input type="radio" name="range" id="groups" value="groups" #if($!range == "groups")checked="checked"#end onclick="if (document.getElementById('addToGradebook') != null){document.getElementById('addToGradebook').style.display = 'none';document.getElementById('$!name_Addtogradebook').checked=false};document.getElementById('groupTable').style.display = 'block';document.getElementById('groupTable').style.width = '80%';"  />
+						<input type="radio" name="range" id="groups" value="groups" #if($!range == "groups")checked="checked"#end onclick="if (document.getElementById('addToGradebook') != null){$('#addToGradebook').fadeOut('fast');document.getElementById('$!name_Addtogradebook').checked=false};$('#groupTable').fadeIn('slow');resizeFrame()" />
 					#else
-						<input type="radio" name="range" id="groups" value="groups" #if($!range == "groups")checked="checked"#end onclick="document.getElementById('groupTable').style.display = 'block';document.getElementById('groupTable').style.width = '80%';"  />
+						<input type="radio" name="range" id="groups" value="groups" #if($!range == "groups")checked="checked"#end onclick="$('#groupTable').fadeIn('slow');resizeFrame()"  />
 					#end
-					
 					<label for="groups">$tlang.getString("displayto.selected")</label>
 				</p>	
 				#if($!range == "groups" || $!assignment.Access == $groupAccess)
@@ -515,7 +542,7 @@
 										$group.Title
 									</label>	
 								</td>
-								<td headers="description" width="100%"> ##mozilla does not resize table children dynamically , so set here
+								<td headers="description"> ##mozilla does not resize table children dynamically , so set here
 									#set($description = "")
 									#set($description = $group.Description)
 									$!description
