@@ -87,6 +87,10 @@
       <artifactId>sakai-contentreview-service-api</artifactId>
     </dependency>
     <dependency>
+      <groupId>org.sakaiproject.entitybroker</groupId>
+      <artifactId>entitybroker-api</artifactId>
+    </dependency>
+    <dependency>
       <groupId>poi</groupId>
       <artifactId>poi</artifactId>
       <version>2.5.1</version>
