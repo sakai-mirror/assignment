@@ -5062,7 +5062,7 @@ public class AssignmentAction extends PagedResourceActionII
 				// set the Assignment Properties object
 				ResourcePropertiesEdit aPropertiesEdit = a.getPropertiesEdit();
 				oAssociateGradebookAssignment = aPropertiesEdit.getProperty(AssignmentService.PROP_ASSIGNMENT_ASSOCIATE_GRADEBOOK_ASSIGNMENT);
-				editAssignmentProperties(a, checkAddDueTime, checkAutoAnnounce, addtoGradebook, associateGradebookAssignment, allowResubmitNumber, aPropertiesEdit, post, dueTime);
+				editAssignmentProperties(a, checkAddDueTime, checkAutoAnnounce, addtoGradebook, associateGradebookAssignment, allowResubmitNumber, aPropertiesEdit, post, closeTime);
 				// the notification option
 				if (state.getAttribute(Assignment.ASSIGNMENT_INSTRUCTOR_NOTIFICATIONS_VALUE) != null)
 				{
@@ -5846,7 +5846,7 @@ public class AssignmentAction extends PagedResourceActionII
 		}
 	}
 
-	private void editAssignmentProperties(AssignmentEdit a, String checkAddDueTime, String checkAutoAnnounce, String addtoGradebook, String associateGradebookAssignment, String allowResubmitNumber, ResourcePropertiesEdit aPropertiesEdit, boolean post, Time dueTime) 
+	private void editAssignmentProperties(AssignmentEdit a, String checkAddDueTime, String checkAutoAnnounce, String addtoGradebook, String associateGradebookAssignment, String allowResubmitNumber, ResourcePropertiesEdit aPropertiesEdit, boolean post, Time closeTime) 
 	{
 		if (aPropertiesEdit.getProperty("newAssignment") != null)
 		{
@@ -5885,7 +5885,7 @@ public class AssignmentAction extends PagedResourceActionII
 		if (allowResubmitNumber != null)
 		{
 			aPropertiesEdit.addProperty(AssignmentSubmission.ALLOW_RESUBMIT_NUMBER, allowResubmitNumber);
-			aPropertiesEdit.addProperty(AssignmentSubmission.ALLOW_RESUBMIT_CLOSETIME, String.valueOf(dueTime));
+			aPropertiesEdit.addProperty(AssignmentSubmission.ALLOW_RESUBMIT_CLOSETIME, String.valueOf(closeTime));
 		}
 	}
 
