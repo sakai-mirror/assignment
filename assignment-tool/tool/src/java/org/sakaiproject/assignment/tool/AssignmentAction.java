@@ -126,6 +126,7 @@ import org.sakaiproject.site.cover.SiteService;
 import org.sakaiproject.time.api.Time;
 import org.sakaiproject.time.api.TimeBreakdown;
 import org.sakaiproject.time.cover.TimeService;
+import org.sakaiproject.tool.api.Session;
 import org.sakaiproject.tool.api.Tool;
 import org.sakaiproject.tool.api.ToolSession;
 import org.sakaiproject.tool.cover.ToolManager;
@@ -1267,6 +1268,36 @@ public class AssignmentAction extends PagedResourceActionII
 		Assignment assignment = null;
 		try
 		{
+			Session session = SessionManager.getCurrentSession();
+			SecurityAdvisor contentAdvisor = (SecurityAdvisor)session.getAttribute("assignment.content.security.advisor");
+			
+			String decoratedContentWrapper = (String)session.getAttribute("assignment.content.decoration.wrapper");
+			session.removeAttribute("assignment.content.decoration.wrapper");
+			
+			String[] contentRefs = (String[])session.getAttribute("assignment.content.decoration.wrapper.refs");
+			session.removeAttribute("assignment.content.decoration.wrapper.refs");
+			
+
+			if (contentAdvisor != null) {
+				SecurityService.pushAdvisor(contentAdvisor);
+				
+				Map urlMap = new HashMap();
+				for (String refStr:contentRefs) {
+					Reference ref = EntityManager.newReference(refStr);
+					String url = ref.getUrl();
+					urlMap.put(url, url.replaceFirst("access/content", "access/" + decoratedContentWrapper + "/content"));					
+				}
+				context.put("decoratedUrlMap", urlMap);
+			}
+			SecurityAdvisor asgnAdvisor = (SecurityAdvisor)session.getAttribute("assignment.security.advisor");
+			
+			if (asgnAdvisor != null) {
+				SecurityService.pushAdvisor(asgnAdvisor);
+	
+				session.removeAttribute("assignment.security.advisor");
+				//removing the site one too just in case
+				session.removeAttribute("sitevisit.security.advisor");
+			}
 			submission = AssignmentService.getSubmission((String) state.getAttribute(VIEW_GRADE_SUBMISSION_ID));
 			assignment = submission.getAssignment();
 			context.put("assignment", assignment);
@@ -1278,6 +1309,9 @@ public class AssignmentAction extends PagedResourceActionII
 			
 			// can the student view model answer or not
 			canViewAssignmentIntoContext(context, assignment, submission);
+
+			SecurityService.popAdvisor(); 
+			//should be the asgnAdvisor that gets popped
 		}
 		catch (IdUnusedException e)
 		{
@@ -11256,6 +11290,9 @@ public class AssignmentAction extends PagedResourceActionII
 				.get("org.sakaiproject.assignment.taggable.api.AssignmentActivityProducer");
 		context.put("activity", assignmentActivityProducer
 				.getActivity(assignment));
+		
+		String placement = ToolManager.getCurrentPlacement().getId();
+		context.put("iframeId", Validator.escapeJavascript("Main" + placement));
 	}
 	
 	private void addItem(Context context, AssignmentSubmission submission, String userId)
