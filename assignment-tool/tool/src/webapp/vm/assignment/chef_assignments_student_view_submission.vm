@@ -100,6 +100,7 @@
 			## ATTACHMENT_ONLY_ASSIGNMENT_SUBMISSION = 2;
 			## TEXT_AND_ATTACHMENT_ASSIGNMENT_SUBMISSION = 3;
 			## NON_ELECTRONIC_ASSIGNMENT_SUBMISSION = 4;
+			## SINGLE_ATTACHMENT_SUBMISSION = 5
 			<p class="instruction">
 				#if (($submissionType==1) || ($submissionType==3))
 					 $tlang.getString("stuviewsubm.asshasnot")
@@ -379,12 +380,67 @@
 			<p class="instruction">
 				$tlang.getString("nonelec_instruction")
 			</p>
+			## show feedbacks if any
+			#if ($returned && $!timeReturned)
+					#if (($!submission.FeedbackComment) && ($submission.FeedbackComment.trim().length()>0))
+						#if ($submissionType==2)
+							<h3>$tlang.getString("gen.addinst2")</h3>
+						#else
+							<h3>$tlang.getString("gen.addinst")</h3>
+						#end	
+							<div class="textPanel">$validator.escapeHtmlFormattedText($submission.FeedbackComment)</div>
+						#else
+					#end
+					## for returned (not resubmitted ) submission, show the instructor feedback
+					#if ($!prevFeedbackComment && $!prevFeedbackComment.trim().length() > 0)
+							<h4  id="toggleGen" class="toggleAnchor"><img alt="expand" class="expand" src="/library/image/sakai/expand.gif" /><img alt="collapse" class="collapse" src="/library/image/sakai/collapse.gif" />
+								$tlang.getString("gradingsub.prefee2")
+								</h4>
+					<div class="toggledContent gencoms">					
+						$cheffeedbackhelper.showPrevFeedback($cheffeedbackhelper.escapeAssignmentFeedback($!prevFeedbackComment))</div>
+					#end					
+					#set ($size = 0)
+					#set ($props = false)
+					#set ($feedbackAttachments = $submission.FeedbackAttachments)	
+					#set ($size = 0)
+					#set ($props = false)
+					#foreach ($attachment in $feedbackAttachments) 
+						#set ($props = $attachment.Properties) 
+						#if ($!props)
+							#set ($size = $size + 1)
+						#end
+					#end
+					#if ($size == 0)
+						##$tlang.getString("gen.noatt")
+					#else
+						<h4>$tlang.getString("gen.addinstatts")</h4>
+						<ul class="attachList indnt1">
+							#foreach ($attachment in $feedbackAttachments) 
+								#set ($props = false)
+								#set ($props = $attachment.Properties) 
+								#if ($!props)
+									<li>
+										#if ($props.getBooleanProperty($props.NamePropIsCollection))
+											<img src = "#imageLink($contentTypeImageService.getContentTypeImage("folder"))" border="0" alt="$tlang.getString("gen.folatt")" />
+										#else
+											<img src = "#imageLink($contentTypeImageService.getContentTypeImage($props.getProperty($props.NamePropContentType)))" border="0" alt="$tlang.getString("gen.filatt")" />
+										#end
+										<a href="$attachment.Url" target="_blank">$validator.escapeHtml($props.getPropertyFormatted($props.NamePropDisplayName))</a>						
+										#if (!$props.getBooleanProperty($props.NamePropIsCollection))
+											($props.getPropertyFormatted($props.NamePropContentLength))
+										#end
+									</li>
+								#end
+							#end
+						</ul>
+					#end
+			#end
 			##just show a simple done button for non-electronic submission type
 			<form name="dummyForm" action="#toolForm("AssignmentAction")" method="post" onsubmit="return true;">
 				<input type="submit" accesskey="x" name="eventSubmit_doCancel_show_submission" value="$tlang.getString('gen.don')" />
 			</form>
 		#else
-	<form name="addSubmissionForm" action="#toolForm("AssignmentAction")" method="post" onsubmit="return true;">
+	<form name="addSubmissionForm" action="#toolForm("AssignmentAction")" method="post" onsubmit="return true;" enctype="multipart/form-data">
 		<input type="hidden" name="eventSubmit_doRead_add_submission_form" value="x" />
 		<input type="hidden" name="option" value="cancel" />
 		<input type="hidden" name="assignmentId" value="$assignment.Reference" />
@@ -512,6 +568,17 @@
 										/>
 									#end
 					</p>
+				#end
+				
+				## for single file upload case
+				#if ($submissionType==5)
+					<div class="highlightPanel">
+						<p class="shorttext">
+							<label for="upload">$tlang.getString("att.upl")</label>
+							<input type="file" name="upload" id="upload" class="upload" />
+							<span id="submitnotifxxx" class="messageProgress" style="visibility:hidden">$tlang.getString("processmessage.file")</span>
+						</p>	
+			 	</div>
 				#end
 				#if ($returned && $!timeReturned && ($!timeSubmitted && $!timeReturned && $!timeReturned.after($!timeSubmitted) || !$!timeSubmitted))
 					#if (($!submission.FeedbackComment) && ($submission.FeedbackComment.trim().length()>0))
@@ -669,6 +736,8 @@
 								value="$!name"
 								onclick="document.addSubmissionForm.onsubmit();showNotif('submitnotif','post','addSubmissionForm'); document.addSubmissionForm.option.value='post'; document.addSubmissionForm.submit(); return false;"
 							/>
+					## for single file upload case, no need for preview or save draft
+					#if ($submissionType!=5)
 							<input
 								class="disableme" 
 								type="button" 
@@ -687,6 +756,7 @@
 								value="$tlang.getString("gen.savdra")"
 								onclick="document.addSubmissionForm.onsubmit();showNotif('submitnotif','save','addSubmissionForm');document.addSubmissionForm.option.value='save'; document.addSubmissionForm.submit(); return false;"
 							/>
+							#end
 							<input 
 								class="disableme"
 								type="button" 

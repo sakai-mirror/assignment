@@ -3,7 +3,7 @@
  * $Id$
  ***********************************************************************************
  *
- * Copyright (c) 2003, 2004, 2005, 2006, 2007 Sakai Foundation
+ * Copyright (c) 2003, 2004, 2005, 2006, 2007, 2008 The Sakai Foundation
  *
  * Licensed under the Educational Community License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -348,6 +348,16 @@ public class AssignmentService {
 			return;
 
 		service.removeAssignment(param0);
+	}
+	
+	public static void removeAssignmentAndAllReferences(
+			org.sakaiproject.assignment.api.AssignmentEdit param0)
+			throws org.sakaiproject.exception.PermissionException {
+		org.sakaiproject.assignment.api.AssignmentService service = getInstance();
+		if (service == null)
+			return;
+
+		service.removeAssignmentAndAllReferences(param0);
 	}
 
 	public static org.sakaiproject.assignment.api.AssignmentEdit editAssignment(

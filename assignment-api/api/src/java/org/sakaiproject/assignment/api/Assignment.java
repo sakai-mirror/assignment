@@ -3,7 +3,7 @@
  * $Id$
  ***********************************************************************************
  *
- * Copyright (c) 2003, 2004, 2005, 2006, 2007 Sakai Foundation
+ * Copyright (c) 2003, 2004, 2005, 2006, 2007, 2008, 2009 The Sakai Foundation
  *
  * Licensed under the Educational Community License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -82,7 +82,10 @@ public interface Assignment extends Entity, Comparable
 	/** Non-electronic assignment type */
 	public static final int NON_ELECTRONIC_ASSIGNMENT_SUBMISSION = 4;
 	
-	public static final int[] SUBMISSION_TYPES = {TEXT_ONLY_ASSIGNMENT_SUBMISSION,ATTACHMENT_ONLY_ASSIGNMENT_SUBMISSION,TEXT_AND_ATTACHMENT_ASSIGNMENT_SUBMISSION,NON_ELECTRONIC_ASSIGNMENT_SUBMISSION};
+	/** Only one single upload attachment */
+	public static final int SINGLE_ATTACHMENT_SUBMISSION = 5;
+	
+	public static final int[] SUBMISSION_TYPES = {TEXT_ONLY_ASSIGNMENT_SUBMISSION,ATTACHMENT_ONLY_ASSIGNMENT_SUBMISSION, SINGLE_ATTACHMENT_SUBMISSION, TEXT_AND_ATTACHMENT_ASSIGNMENT_SUBMISSION,NON_ELECTRONIC_ASSIGNMENT_SUBMISSION};
 
 	/** Honor Pledge not yet set */
 	public static final int HONOR_PLEDGE_NOT_SET = -1;

@@ -3,7 +3,7 @@
  * $Id$
  ***********************************************************************************
  *
- * Copyright (c) 2003, 2004, 2005, 2006, 2007 Sakai Foundation
+ * Copyright (c) 2003, 2004, 2005, 2006, 2007, 2008, 2009 The Sakai Foundation
  *
  * Licensed under the Educational Community License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -172,6 +172,13 @@ public interface AssignmentSubmission extends Entity
 	 * @return The Submission's grade..
 	 */
 	public String getGrade();
+	
+	/**
+	 * Access the submission grade, if overrideWithGradebookValue is true, the value inside Gradebook is returned. Otherwise, the grade stored inside Assignment side is returned
+	 * @param overrideWithGradebookValue
+	 * @return
+	 */
+	public String getGrade(boolean overrideWithGradebookValue);
 
 	/**
 	 * Access the grade recieved. When points-type, format it to one decimal place

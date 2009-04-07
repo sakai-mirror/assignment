@@ -364,7 +364,7 @@ function allowClick(object)
 													#end
 												#end
 												## if not submitted or returned and still allowed to submit within the due time
-												#if (($!submissionReturned && !$!allowResubmitNumber.equals("0") && $!allowResubmitCloseTime && $currentTime.before($!allowResubmitCloseTime)) || !$!submissionSubmitted)
+											 #if ($service.canSubmit($assignment.getContext(), $assignment))
 													## go to view submission page when (1) submission has been returned and allow for resubmit;(2)submission has not been posted yet.
 													<a href="#toolLinkParam("AssignmentAction" "doView_submission" "assignmentReference=$validator.escapeUrl($assignment.Reference)")">
 												#else
@@ -487,7 +487,8 @@ function allowClick(object)
 								#if ($!view.equals('lisofass1'))
 								#if ($!showNumSubmissionColumn)
 								<td headers="num_submissions" class="specialLink">
-								#if ($!service.allowGradeSubmission($assignment.getReference()))
+								## not show the link for draft assignment
+								#if (!$assignment.Draft && $!service.allowGradeSubmission($assignment.getReference()))
 									## 1- text only; 2-attachment only; 3-text and attachment; 4-Non-electronic
 									#set($ungradedNumber = $!service.getUngradedSubmissionsCount($assignment.getId()))
 									#set($totalNumber = $!service.getSubmittedSubmissionsCount($assignment.getId()))

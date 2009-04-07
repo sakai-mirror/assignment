@@ -3,7 +3,7 @@
  * $Id$
  ***********************************************************************************
  *
- * Copyright (c) 2003, 2004, 2005, 2006, 2007 Sakai Foundation
+ * Copyright (c) 2003, 2004, 2005, 2006, 2007, 2008 The Sakai Foundation
  *
  * Licensed under the Educational Community License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -170,6 +170,23 @@ public interface AssignmentSubmissionEdit extends AssignmentSubmission, Edit
 	 */
 	public void setGraded(boolean graded);
 
+	/**
+	 * Set the review Score for this assignment
+	 * @param score
+	 */
+	public void setReviewScore(int score);
+	
+	/**
+	 * Set the URL of the Review Report
+	 * @param url
+	 */
+	public void setReviewIconUrl(String url);
+	
+	/**
+	 * Set the content review status
+	 * @param status
+	 */
+	public void setReviewStatus(String status);
 	/**
 	 * Set whether the grade has been released.
 	 * 
