@@ -2885,10 +2885,12 @@ public class AssignmentAction extends PagedResourceActionII
 								if (aSubmission.getGradeReleased())
 								{
 									User[] submitters = aSubmission.getSubmitters();
-									String submitterId = submitters[0].getId();
-									String gradeString = StringUtil.trimToNull(aSubmission.getGrade());
-									Double grade = gradeString != null ? Double.valueOf(displayGrade(state,gradeString)) : null;
-									m.put(submitterId, grade);
+									if (submitters != null && submitters.length > 0) {
+										String submitterId = submitters[0].getId();
+										String gradeString = StringUtil.trimToNull(aSubmission.getGrade());
+										Double grade = gradeString != null ? Double.valueOf(displayGrade(state,gradeString)) : null;
+										m.put(submitterId, grade);
+									}
 								}
 							}
 
@@ -2931,27 +2933,32 @@ public class AssignmentAction extends PagedResourceActionII
 								AssignmentSubmission aSubmission = (AssignmentSubmission) AssignmentService
 										.getSubmission(submissionRef);
 								User[] submitters = aSubmission.getSubmitters();
-								String gradeString = StringUtil.trimToNull(aSubmission.getGrade());
-
-								if (associateGradebookAssignment != null)
+								if (submitters != null && submitters.length > 0)
 								{
-									if (g.isExternalAssignmentDefined(gradebookUid, associateGradebookAssignment))
+									 String submitterId = submitters[0].getId();
+									 
+									String gradeString = StringUtil.trimToNull(aSubmission.getGrade());
+	
+									if (associateGradebookAssignment != null)
 									{
-										// the associated assignment is externally maintained
-										g.updateExternalAssessmentScore(gradebookUid, associateGradebookAssignment, submitters[0].getId(),
+										if (g.isExternalAssignmentDefined(gradebookUid, associateGradebookAssignment))
+										{
+											// the associated assignment is externally maintained
+											g.updateExternalAssessmentScore(gradebookUid, associateGradebookAssignment, submitterId,
+													(gradeString != null && aSubmission.getGradeReleased()) ? Double.valueOf(displayGrade(state,gradeString)) : null);
+										}
+										else if (g.isAssignmentDefined(gradebookUid, associateGradebookAssignment))
+										{
+											// the associated assignment is internal one, update records
+											g.setAssignmentScore(gradebookUid, associateGradebookAssignment, submitterId,
+													(gradeString != null && aSubmission.getGradeReleased()) ? Double.valueOf(displayGrade(state,gradeString)) : null, assignmentToolTitle);
+										}
+									}
+									else
+									{
+										g.updateExternalAssessmentScore(gradebookUid, assignmentRef, submitterId,
 												(gradeString != null && aSubmission.getGradeReleased()) ? Double.valueOf(displayGrade(state,gradeString)) : null);
 									}
-									else if (g.isAssignmentDefined(gradebookUid, associateGradebookAssignment))
-									{
-										// the associated assignment is internal one, update records
-										g.setAssignmentScore(gradebookUid, associateGradebookAssignment, submitters[0].getId(),
-												(gradeString != null && aSubmission.getGradeReleased()) ? Double.valueOf(displayGrade(state,gradeString)) : null, assignmentToolTitle);
-									}
-								}
-								else
-								{
-									g.updateExternalAssessmentScore(gradebookUid, assignmentRef, submitters[0].getId(),
-											(gradeString != null && aSubmission.getGradeReleased()) ? Double.valueOf(displayGrade(state,gradeString)) : null);
 								}
 							}
 							catch (Exception e)
@@ -2973,14 +2980,17 @@ public class AssignmentAction extends PagedResourceActionII
 							{
 								AssignmentSubmission aSubmission = (AssignmentSubmission) submissions.next();
 								User[] submitters = aSubmission.getSubmitters();
-								if (isExternalAssociateAssignmentDefined)
+								if (submitters != null && submitters.length > 0)
 								{
-									// if the old associated assignment is an external maintained one
-									g.updateExternalAssessmentScore(gradebookUid, associateGradebookAssignment, submitters[0].getId(), null);
-								}
-								else if (isAssignmentDefined)
-								{
-									g.setAssignmentScore(gradebookUid, associateGradebookAssignment, submitters[0].getId(), null, assignmentToolTitle);
+									if (isExternalAssociateAssignmentDefined)
+									{
+										// if the old associated assignment is an external maintained one
+										g.updateExternalAssessmentScore(gradebookUid, associateGradebookAssignment, submitters[0].getId(), null);
+									}
+									else if (isAssignmentDefined)
+									{
+										g.setAssignmentScore(gradebookUid, associateGradebookAssignment, submitters[0].getId(), null, assignmentToolTitle);
+									}
 								}
 							}
 						}
@@ -2992,7 +3002,10 @@ public class AssignmentAction extends PagedResourceActionII
 								AssignmentSubmission aSubmission = (AssignmentSubmission) AssignmentService
 										.getSubmission(submissionRef);
 								User[] submitters = aSubmission.getSubmitters();
-								g.updateExternalAssessmentScore(gradebookUid, assignmentRef, submitters[0].getId(), null);
+								if (submitters != null && submitters.length > 0)
+								{
+									g.updateExternalAssessmentScore(gradebookUid, assignmentRef, submitters[0].getId(), null);
+								}
 							}
 							catch (Exception e)
 							{
@@ -9000,7 +9013,7 @@ public class AssignmentAction extends PagedResourceActionII
 				User[] u1 = ((AssignmentSubmission) o1).getSubmitters();
 				User[] u2 = ((AssignmentSubmission) o2).getSubmitters();
 
-				if (u1 == null || u2 == null)
+				if (u1 == null || u1.length == 0 || u2 == null || u2.length == 0)
 				{
 					return 1;
 				}
@@ -9471,7 +9484,7 @@ public class AssignmentAction extends PagedResourceActionII
 							{
 								// has been subitted or has been returned and not work on it yet
 								User[] submitters = s.getSubmitters();
-								if (!allowGradeAssignmentUsers.contains(submitters[0]))
+								if (submitters != null && submitters.length > 0 && !allowGradeAssignmentUsers.contains(submitters[0]))
 								{
 									// only include the student submission
 									submissions.add(s);
@@ -10540,7 +10553,7 @@ public class AssignmentAction extends PagedResourceActionII
 					{
 						AssignmentSubmission s = (AssignmentSubmission) sIterator.next();
 						User[] users = s.getSubmitters();
-						if (users.length > 0 && users[0] != null)
+						if (users != null && users.length > 0 && users[0] != null)
 						{
 							submissionTable.put(users[0].getDisplayId(), new UploadGradeWrapper(s.getGrade(), s.getSubmittedText(), s.getFeedbackComment(), hasSubmissionAttachment?new Vector():s.getSubmittedAttachments(), hasFeedbackAttachment?new Vector():s.getFeedbackAttachments(), (s.getSubmitted() && s.getTimeSubmitted() != null)?s.getTimeSubmitted().toString():"", s.getFeedbackText()));
 						}
@@ -10768,7 +10781,7 @@ public class AssignmentAction extends PagedResourceActionII
 					{
 						AssignmentSubmission s = (AssignmentSubmission) sIterator.next();
 						User[] users = s.getSubmitters();
-						if (users.length > 0 && users[0] != null)
+						if (users != null && users.length > 0 && users[0] != null)
 						{
 							String uName = users[0].getDisplayId();
 							if (submissionTable.containsKey(uName))
