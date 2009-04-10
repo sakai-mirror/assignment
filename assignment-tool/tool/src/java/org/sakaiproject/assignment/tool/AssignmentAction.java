@@ -1160,6 +1160,9 @@ public class AssignmentAction extends PagedResourceActionII
 		{
 			assignment = AssignmentService.getAssignment(aReference);
 			context.put("assignment", assignment);
+
+			// put creator information into context
+			putCreatorIntoContext(context, assignment);
 			
 			submission = AssignmentService.getSubmission(aReference, user);
 			context.put("submission", submission);
@@ -2513,6 +2516,9 @@ public class AssignmentAction extends PagedResourceActionII
 			context.put("assignment", assignment);
 			state.setAttribute(EXPORT_ASSIGNMENT_ID, assignment.getId());
 			
+			// put creator information into context
+			putCreatorIntoContext(context, assignment);
+			
 			// ever set the default grade for no-submissions
 			String defaultGrade = assignment.getProperties().getProperty(GRADE_NO_SUBMISSION_DEFAULT_GRADE);
 			if (defaultGrade != null)
@@ -2594,8 +2600,6 @@ public class AssignmentAction extends PagedResourceActionII
 		context.put("assignment_expand_flag", state.getAttribute(GRADE_ASSIGNMENT_EXPAND_FLAG));
 		context.put("submission_expand_flag", state.getAttribute(GRADE_SUBMISSION_EXPAND_FLAG));
 
-		// the user directory service
-		context.put("userDirectoryService", UserDirectoryService.getInstance());
 		add2ndToolbarFields(data, context);
 
 		pagingInfoToContext(state, context);
@@ -2662,18 +2666,8 @@ public class AssignmentAction extends PagedResourceActionII
 			// put the resubmit information into context
 			putResubmitInfoInContext(context, assignment, null);
 			
-			// the creator 
-			String creatorId = assignment.getCreator();
-			try
-			{
-				User creator = UserDirectoryService.getUser(creatorId);
-				context.put("creator", creator.getDisplayName());
-			}
-			catch (Exception ee)
-			{
-				context.put("creator", creatorId);
-				M_log.warn(this + ":build_instructor_view_assignment_context " + ee.getMessage());
-			}
+			// put creator information into context
+			putCreatorIntoContext(context, assignment);
 		}
 		catch (IdUnusedException e)
 		{
@@ -2720,6 +2714,22 @@ public class AssignmentAction extends PagedResourceActionII
 		return template + TEMPLATE_INSTRUCTOR_VIEW_ASSIGNMENT;
 
 	} // build_instructor_view_assignment_context
+
+
+	private void putCreatorIntoContext(Context context, Assignment assignment) {
+		// the creator 
+		String creatorId = assignment.getCreator();
+		try
+		{
+			User creator = UserDirectoryService.getUser(creatorId);
+			context.put("creator", creator.getDisplayName());
+		}
+		catch (Exception ee)
+		{
+			context.put("creator", creatorId);
+			M_log.warn(this + ":build_instructor_view_assignment_context " + ee.getMessage());
+		}
+	}
 
 	/**
 	 * build the instructor view of reordering assignments
