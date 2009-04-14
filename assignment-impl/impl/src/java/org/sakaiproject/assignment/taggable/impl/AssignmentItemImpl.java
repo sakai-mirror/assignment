@@ -101,6 +101,13 @@ public class AssignmentItemImpl implements TaggableItem {
 		return url;
 	}
 	
+	public String getItemDetailPrivateUrl(){
+		String subRef = submission.getReference().replaceAll("/", "_");
+		String url = ServerConfigurationService.getServerUrl() + 
+			"/direct/assignment/" + submission.getAssignmentId() + "/doView_grade_private/" + subRef;
+		return url;
+	}
+	
 	public String getItemDetailUrlParams() {
 		return "?TB_iframe=true";
 	}

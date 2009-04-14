@@ -529,6 +529,9 @@ public class AssignmentAction extends PagedResourceActionII
 
 	/** The student view of graded submission */
 	private static final String MODE_STUDENT_VIEW_GRADE = "Assignment.mode_student_view_grade";
+	
+	/** The student view of graded submission */
+	private static final String MODE_STUDENT_VIEW_GRADE_PRIVATE = "Assignment.mode_student_view_grade_private";
 
 	/** The student view of assignments */
 	private static final String MODE_STUDENT_VIEW_ASSIGNMENT = "Assignment.mode_student_view_assignment";
@@ -822,11 +825,14 @@ public class AssignmentAction extends PagedResourceActionII
 			// build the context for showing one assignment submission
 			template = build_student_preview_submission_context(portlet, context, data, state);
 		}
-		else if (mode.equals(MODE_STUDENT_VIEW_GRADE))
+		else if (mode.equals(MODE_STUDENT_VIEW_GRADE) || mode.equals(MODE_STUDENT_VIEW_GRADE_PRIVATE))
 		{
 			// disable auto-updates while leaving the list view
 			justDelivered(state);
 
+			if(mode.equals(MODE_STUDENT_VIEW_GRADE_PRIVATE)){
+				context.put("privateView", true);
+			}
 			// build the context for showing one graded submission
 			template = build_student_view_grade_context(portlet, context, data, state);
 		}
@@ -7152,6 +7158,21 @@ public class AssignmentAction extends PagedResourceActionII
 		state.setAttribute(STATE_MODE, MODE_STUDENT_VIEW_GRADE);
 
 	} // doView_grade
+	
+	/**
+	 * Action is to show the graded assignment submission while keeping specific information private
+	 */
+	public void doView_grade_private(RunData data)
+	{
+		SessionState state = ((JetspeedRunData) data).getPortletSessionState(((JetspeedRunData) data).getJs_peid());
+
+		ParameterParser params = data.getParameters();
+
+		state.setAttribute(VIEW_GRADE_SUBMISSION_ID, params.getString("submissionId"));
+
+		state.setAttribute(STATE_MODE, MODE_STUDENT_VIEW_GRADE_PRIVATE);
+
+	} // doView_grade_private
 
 	/**
 	 * Action is to show the student submissions
