@@ -21,10 +21,15 @@
 
 package org.sakaiproject.assignment.taggable.impl;
 
+import java.util.Date;
+
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.sakaiproject.assignment.api.AssignmentSubmission;
 import org.sakaiproject.component.cover.ServerConfigurationService;
+import org.sakaiproject.exception.IdUnusedException;
+import org.sakaiproject.site.api.Site;
+import org.sakaiproject.site.cover.SiteService;
 import org.sakaiproject.taggable.api.TaggableActivity;
 import org.sakaiproject.taggable.api.TaggableItem;
 import org.sakaiproject.user.api.User;
@@ -120,6 +125,44 @@ public class AssignmentItemImpl implements TaggableItem {
 	{
 		String url = ServerConfigurationService.getServerUrl() + "/library/image/silk/page_edit.png";
 		return url;
+	}
+	
+	public String getOwner() {
+		String owner = null;
+		User[] submitters = ((AssignmentSubmission)getObject()).getSubmitters();
+		for (User submitter : submitters) {
+			if (owner != null)
+				owner = owner + ", " + submitter.getDisplayName();
+			else
+				owner = submitter.getDisplayName();
+		}
+		return owner;
+	}
+
+	public String getSiteTitle() {
+		String siteId = ((AssignmentSubmission)getObject()).getAssignment().getContext();
+		String title = getSite(siteId).getTitle();
+		
+		return title;
+	}
+	
+	public Date getLastModifiedDate() {
+		return new Date(((AssignmentSubmission)getObject()).getTimeLastModified().getTime());
+	}
+	
+	public String getTypeName() {
+		return rb.getString("service_name");
+	}
+	
+	private Site getSite(String siteId) {
+		Site site = null;
+		try {
+			site = SiteService.getSite(siteId);
+		} catch (IdUnusedException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+		return site;
 	}
 
 	public boolean equals(Object obj)
