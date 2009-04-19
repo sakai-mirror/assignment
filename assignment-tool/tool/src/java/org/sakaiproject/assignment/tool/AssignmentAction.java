@@ -1612,7 +1612,7 @@ public class AssignmentAction extends PagedResourceActionII
 		boolean gradebookExists = isGradebookDefined();
 		if (gradebookExists)
 		{
-			GradebookService g = (GradebookService)  ComponentManager.get("org.sakaiproject.service.gradebook.GradebookService");
+			GradebookService g = (GradebookService) (org.sakaiproject.service.gradebook.shared.GradebookService) ComponentManager.get("org.sakaiproject.service.gradebook.GradebookService");
 			String gradebookUid = ToolManager.getInstance().getCurrentPlacement().getContext();
 
 			try
@@ -2708,7 +2708,7 @@ public class AssignmentAction extends PagedResourceActionII
 		boolean rv = false;
 		try
 		{
-			GradebookService g = (GradebookService)  ComponentManager
+			GradebookService g = (GradebookService) (org.sakaiproject.service.gradebook.shared.GradebookService) ComponentManager
 					.get("org.sakaiproject.service.gradebook.GradebookService");
 			String gradebookUid = ToolManager.getInstance().getCurrentPlacement().getContext();
 			if (g.isGradebookDefined(gradebookUid) && (g.currentUserHasEditPerm(gradebookUid) || g.currentUserHasGradingPerm(gradebookUid)))
@@ -5245,7 +5245,7 @@ public class AssignmentAction extends PagedResourceActionII
 		// only if the gradebook is defined
 		if (gradebookExists)
 		{
-			GradebookService g = (GradebookService)  ComponentManager.get("org.sakaiproject.service.gradebook.GradebookService");
+			GradebookService g = (GradebookService) (org.sakaiproject.service.gradebook.shared.GradebookService) ComponentManager.get("org.sakaiproject.service.gradebook.GradebookService");
 			String gradebookUid = ToolManager.getInstance().getCurrentPlacement().getContext();
 			
 			String aReference = a.getReference();
