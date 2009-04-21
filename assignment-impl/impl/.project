@@ -5,7 +5,6 @@
     <project>sakai-assignment-api</project>
     <project>sakai-contentreview-model-api</project>
     <project>sakai-contentreview-service-api</project>
-    <project>sakai-gradebook-service</project>
     <project>sakai-gradebook-service-api</project>
     <project>sakai-taggable-api</project>
   </projects>
