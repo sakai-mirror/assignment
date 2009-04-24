@@ -7,7 +7,6 @@
     <project>sakai-calendar-api</project>
     <project>sakai-contentreview-model-api</project>
     <project>sakai-contentreview-service-api</project>
-    <project>sakai-gradebook-service</project>
     <project>sakai-gradebook-service-api</project>
     <project>sakai-message-api</project>
     <project>sakai-taggable-api</project>

@@ -3,7 +3,7 @@
  * $Id$
  ***********************************************************************************
  *
- * Copyright (c) 2003, 2004, 2005, 2006, 2007, 2008 Sakai Foundation
+ * Copyright (c) 2003, 2004, 2005, 2006, 2007, 2008, 2009 The Sakai Foundation
  *
  * Licensed under the Educational Community License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -64,6 +64,7 @@ import org.sakaiproject.assignment.api.AssignmentService;
 import org.sakaiproject.assignment.api.AssignmentSubmission;
 import org.sakaiproject.assignment.api.AssignmentSubmissionEdit;
 import org.sakaiproject.assignment.taggable.api.AssignmentActivityProducer;
+import org.sakaiproject.service.gradebook.shared.GradebookService;
 import org.sakaiproject.taggable.api.TaggingManager;
 import org.sakaiproject.taggable.api.TaggingProvider;
 import org.sakaiproject.authz.api.AuthzGroup;
@@ -75,6 +76,7 @@ import org.sakaiproject.authz.cover.AuthzGroupService;
 import org.sakaiproject.authz.cover.FunctionManager;
 import org.sakaiproject.authz.cover.SecurityService;
 import org.sakaiproject.authz.api.SecurityAdvisor;
+import org.sakaiproject.authz.api.SecurityAdvisor.SecurityAdvice;
 import org.sakaiproject.component.api.ServerConfigurationService;
 import org.sakaiproject.content.api.ContentResource;
 import org.sakaiproject.content.api.ContentResourceEdit;
@@ -4911,6 +4913,7 @@ public abstract class BaseAssignmentService implements AssignmentService, Entity
 							nAssignment.setOpenTime(oAssignment.getOpenTime());
 							nAssignment.setSection(oAssignment.getSection());
 							nAssignment.setTitle(oAssignment.getTitle());
+							nAssignment.setPosition_order(oAssignment.getPosition_order());
 							// properties
 							ResourcePropertiesEdit p = nAssignment.getPropertiesEdit();
 							p.clear();
@@ -8731,6 +8734,51 @@ public abstract class BaseAssignmentService implements AssignmentService, Entity
 		 */
 		public String getGrade()
 		{
+			return getGrade(true);
+		}
+		
+		/**
+		 * {@inheritDoc}
+		 */
+		public String getGrade(boolean overrideWithGradebookValue)
+		{
+			if (!overrideWithGradebookValue)
+			{
+				// use assignment submission grade
+				return m_grade;
+			}
+			else
+			{
+				// use grade from associated Gradebook
+				Assignment m = getAssignment();
+				String gAssignmentName = StringUtil.trimToNull(m.getProperties().getProperty(AssignmentService.PROP_ASSIGNMENT_ASSOCIATE_GRADEBOOK_ASSIGNMENT));
+				if (gAssignmentName != null)
+				{
+					enableSecurityAdvisor();
+					
+					GradebookService g = (GradebookService)  ComponentManager.get("org.sakaiproject.service.gradebook.GradebookService");
+					String gradebookUid = m.getContext();
+					if (g.isGradebookDefined(gradebookUid) && g.isAssignmentDefined(gradebookUid, gAssignmentName))
+					{
+						String userId = m_submitters != null && m_submitters.size() > 0 ? (String) m_submitters.get(0):"";
+						// return student score from Gradebook
+						try
+						{
+							String gString = StringUtil.trimToNull(g.getAssignmentScoreString(gradebookUid, gAssignmentName, userId));
+							if (gString != null)
+							{
+								return gString;
+							}
+						}
+						catch (Exception e)
+						{
+							M_log.warn(this + " BaseAssignmentSubmission getGrade getAssignmentScoreString from GradebookService " + e.getMessage() + " context=" + m_context + " assignment id=" + m_assignment + " userId=" + userId + " gAssignmentName=" + gAssignmentName); 
+						}
+					}
+					
+					disableSecurityAdvisors();
+				}
+			}
 			return m_grade;
 		}
 
@@ -8742,31 +8790,32 @@ public abstract class BaseAssignmentService implements AssignmentService, Entity
 		public String getGradeDisplay()
 		{
 			Assignment m = getAssignment();
+			String grade = getGrade();
 			if (m.getContent().getTypeOfGrade() == Assignment.SCORE_GRADE_TYPE)
 			{
-				if (m_grade != null && m_grade.length() > 0 && !m_grade.equals("0"))
+				if (grade != null && grade.length() > 0 && !grade.equals("0"))
 				{
 					try
 					{
-						Integer.parseInt(m_grade);
+						Integer.parseInt(grade);
 						// if point grade, display the grade with one decimal place
-						return m_grade.substring(0, m_grade.length() - 1) + "." + m_grade.substring(m_grade.length() - 1);
+						return grade.substring(0, grade.length() - 1) + "." + grade.substring(grade.length() - 1);
 					}
 					catch (Exception e)
 					{
-						return m_grade;
+						return grade;
 					}
 				}
 				else
 				{
-					return StringUtil.trimToZero(m_grade);
+					return StringUtil.trimToZero(grade);
 				}
 			}
 			else
 			{
-				if (m_grade != null && m_grade.length() > 0)
+				if (grade != null && grade.length() > 0)
 				{
-					return StringUtil.trimToZero(m_grade);
+					return StringUtil.trimToZero(grade);
 				}
 				else
 				{
@@ -11114,13 +11163,7 @@ public abstract class BaseAssignmentService implements AssignmentService, Entity
 		{
 			if(cleanup == true)
 			{
-				SecurityService.pushAdvisor(new SecurityAdvisor() 
-				{
-					public SecurityAdvice isAllowed(String userId, String function, String reference)       
-					{    
-						return SecurityAdvice.ALLOWED;       
-					} 
-				});
+				enableSecurityAdvisor();
 
 				String toSiteId = toContext;
 				Iterator assignmentsIter = getAssignmentsForContext(toSiteId);
@@ -11163,7 +11206,7 @@ public abstract class BaseAssignmentService implements AssignmentService, Entity
 		}
 		finally
 		{
-			SecurityService.popAdvisor();
+			disableSecurityAdvisors();
 		}
 	}
 
@@ -11220,6 +11263,31 @@ public abstract class BaseAssignmentService implements AssignmentService, Entity
 
 		return body;
 	}
+	
+    /**
+     * remove all security advisors
+     */
+    protected void disableSecurityAdvisors()
+    {
+    	// remove all security advisors
+    	SecurityService.clearAdvisors();
+    }
+
+    /**
+     * Establish a security advisor to allow the "embedded" azg work to occur
+     * with no need for additional security permissions.
+     */
+    protected void enableSecurityAdvisor()
+    {
+      // put in a security advisor so we can create citationAdmin site without need
+      // of further permissions
+      SecurityService.pushAdvisor(new SecurityAdvisor() {
+        public SecurityAdvice isAllowed(String userId, String function, String reference)
+        {
+          return SecurityAdvice.ALLOWED;
+        }
+      });
+    }
 
 } // BaseAssignmentService
 
