@@ -3522,10 +3522,10 @@ public class AssignmentAction extends PagedResourceActionII
 				sEdit.setTimeReturned(null);
 			}
 
+			ResourcePropertiesEdit pEdit = sEdit.getPropertiesEdit();
 			if (state.getAttribute(AssignmentSubmission.ALLOW_RESUBMIT_NUMBER) != null)
 			{
 				// get resubmit number
-				ResourcePropertiesEdit pEdit = sEdit.getPropertiesEdit();
 				pEdit.addProperty(AssignmentSubmission.ALLOW_RESUBMIT_NUMBER, (String) state.getAttribute(AssignmentSubmission.ALLOW_RESUBMIT_NUMBER));
 			
 				if (state.getAttribute(ALLOW_RESUBMIT_CLOSEYEAR) != null)
@@ -3538,6 +3538,12 @@ public class AssignmentAction extends PagedResourceActionII
 				{
 					pEdit.removeProperty(AssignmentSubmission.ALLOW_RESUBMIT_CLOSETIME);
 				}
+			}
+			else
+			{
+				// clean resubmission property
+				pEdit.removeProperty(AssignmentSubmission.ALLOW_RESUBMIT_CLOSETIME);
+				pEdit.removeProperty(AssignmentSubmission.ALLOW_RESUBMIT_NUMBER);
 			}
 
 			// the instructor comment
@@ -7446,65 +7452,17 @@ public class AssignmentAction extends PagedResourceActionII
 		}
 		
 		// allow resubmit number and due time
-		if (params.getString(AssignmentSubmission.ALLOW_RESUBMIT_NUMBER) != null)
+		if (params.getString("tempAllowResToggle") != null)
 		{
-			String allowResubmitNumberString = params.getString(AssignmentSubmission.ALLOW_RESUBMIT_NUMBER);
-			state.setAttribute(AssignmentSubmission.ALLOW_RESUBMIT_NUMBER, params.getString(AssignmentSubmission.ALLOW_RESUBMIT_NUMBER));
-		
-			if (Integer.parseInt(allowResubmitNumberString) != 0)
+			if (params.getString(AssignmentSubmission.ALLOW_RESUBMIT_NUMBER) != null)
 			{
-				int closeMonth = (new Integer(params.getString(ALLOW_RESUBMIT_CLOSEMONTH))).intValue();
-				state.setAttribute(ALLOW_RESUBMIT_CLOSEMONTH, new Integer(closeMonth));
-				int closeDay = (new Integer(params.getString(ALLOW_RESUBMIT_CLOSEDAY))).intValue();
-				state.setAttribute(ALLOW_RESUBMIT_CLOSEDAY, new Integer(closeDay));
-				int closeYear = (new Integer(params.getString(ALLOW_RESUBMIT_CLOSEYEAR))).intValue();
-				state.setAttribute(ALLOW_RESUBMIT_CLOSEYEAR, new Integer(closeYear));
-				int closeHour = (new Integer(params.getString(ALLOW_RESUBMIT_CLOSEHOUR))).intValue();
-				state.setAttribute(ALLOW_RESUBMIT_CLOSEHOUR, new Integer(closeHour));
-				int closeMin = (new Integer(params.getString(ALLOW_RESUBMIT_CLOSEMIN))).intValue();
-				state.setAttribute(ALLOW_RESUBMIT_CLOSEMIN, new Integer(closeMin));
-				String closeAMPM = params.getString(ALLOW_RESUBMIT_CLOSEAMPM);
-				state.setAttribute(ALLOW_RESUBMIT_CLOSEAMPM, closeAMPM);
-				if ((closeAMPM.equals("PM")) && (closeHour != 12))
-				{
-					closeHour = closeHour + 12;
-				}
-				if ((closeHour == 12) && (closeAMPM.equals("AM")))
-				{
-					closeHour = 0;
-				}
-				Time closeTime = TimeService.newTimeLocal(closeYear, closeMonth, closeDay, closeHour, closeMin, 0, 0);
-				state.setAttribute(AssignmentSubmission.ALLOW_RESUBMIT_CLOSETIME, String.valueOf(closeTime.getTime()));
-				// validate date
-				if (closeTime.before(TimeService.newTime()) && state.getAttribute(NEW_ASSIGNMENT_PAST_CLOSE_DATE) == null)
-				{
-					state.setAttribute(NEW_ASSIGNMENT_PAST_CLOSE_DATE, Boolean.TRUE);
-				}
-				else
-				{
-					// clean the attribute after user confirm
-					state.removeAttribute(NEW_ASSIGNMENT_PAST_CLOSE_DATE);
-				}
-				if (state.getAttribute(NEW_ASSIGNMENT_PAST_CLOSE_DATE) != null)
-				{
-					addAlert(state, rb.getString("acesubdea4"));
-				}
-				if (!Validator.checkDate(closeDay, closeMonth, closeYear))
-				{
-					addAlert(state, rb.getString("date.invalid") + rb.getString("date.closedate") + ".");
-				}
+				// read in allowResubmit params 
+				readAllowResubmitParams(params, state);
 			}
-			else
-			{
-				// reset the state attributes
-				state.removeAttribute(ALLOW_RESUBMIT_CLOSEMONTH);
-				state.removeAttribute(ALLOW_RESUBMIT_CLOSEDAY);
-				state.removeAttribute(ALLOW_RESUBMIT_CLOSEYEAR);
-				state.removeAttribute(ALLOW_RESUBMIT_CLOSEHOUR);
-				state.removeAttribute(ALLOW_RESUBMIT_CLOSEMIN);
-				state.removeAttribute(ALLOW_RESUBMIT_CLOSEAMPM);
-				state.removeAttribute(AssignmentSubmission.ALLOW_RESUBMIT_CLOSETIME);
-			}
+		}
+		else
+		{
+			resetAllowResubmitParams(state);
 		}
 		
 		if (state.getAttribute(STATE_MESSAGE) == null)
