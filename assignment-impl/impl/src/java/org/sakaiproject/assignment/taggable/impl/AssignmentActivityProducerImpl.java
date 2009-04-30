@@ -65,7 +65,7 @@ public class AssignmentActivityProducerImpl implements
 	protected UserDirectoryService userDirectoryService;
 
 	public boolean allowGetItems(TaggableActivity activity,
-			TaggingProvider provider) {
+			TaggingProvider provider, boolean allowGetItems) {
 		// We aren't picky about the provider, so ignore that argument.
 		// Only allow this if the user can grade submissions
 		return assignmentService.allowGradeSubmission(activity.getReference());
@@ -140,7 +140,7 @@ public class AssignmentActivityProducerImpl implements
 						assignmentSubmission.getAssignment(), this));
 	}
 
-	public TaggableItem getItem(String itemRef, TaggingProvider provider) {
+	public TaggableItem getItem(String itemRef, TaggingProvider provider, boolean getMyItemsOnly) {
 		// We aren't picky about the provider, so ignore that argument.
 		TaggableItem item = null;
 		if (checkReference(itemRef)) {
@@ -160,7 +160,7 @@ public class AssignmentActivityProducerImpl implements
 	}
 
 	public List<TaggableItem> getItems(TaggableActivity activity,
-			String userId, TaggingProvider provider) {
+			String userId, TaggingProvider provider, boolean getMyItemsOnly) {
 		// We aren't picky about the provider, so ignore that argument.
 		List<TaggableItem> returned = new ArrayList<TaggableItem>();
 		try {
@@ -180,7 +180,7 @@ public class AssignmentActivityProducerImpl implements
 	}
 
 	public List<TaggableItem> getItems(TaggableActivity activity,
-			TaggingProvider provider) {
+			TaggingProvider provider, boolean getMyItemsOnly) {
 		// We aren't picky about the provider, so ignore that argument.
 		List<TaggableItem> items = new ArrayList<TaggableItem>();
 		Assignment assignment = (Assignment) activity.getObject();
@@ -252,14 +252,14 @@ public class AssignmentActivityProducerImpl implements
 	}
 
 	public boolean hasSubmissions(TaggableActivity activity,
-			TaggingProvider provider) {
-		List<TaggableItem> items = getItems(activity, provider);
+			TaggingProvider provider, boolean getMyItemsOnly) {
+		List<TaggableItem> items = getItems(activity, provider, getMyItemsOnly);
 		return items.size() > 0;
 	}
 	
 	public boolean hasSubmissions(TaggableActivity activity, String userId,
-			TaggingProvider provider) {
-		List<TaggableItem> items = getItems(activity, userId, provider);
+			TaggingProvider provider, boolean getMyItemsOnly) {
+		List<TaggableItem> items = getItems(activity, userId, provider, getMyItemsOnly);
 		return items.size() > 0;
 	}
 }
