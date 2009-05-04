@@ -2,7 +2,14 @@
   <name>sakai-assignment-impl</name>
   <comment/>
   <projects>
+    <project>sakai-announcement-api</project>
     <project>sakai-assignment-api</project>
+    <project>sakai-calendar-api</project>
+    <project>sakai-contentreview-model-api</project>
+    <project>sakai-contentreview-service-api</project>
+    <project>sakai-gradebook-service-api</project>
+    <project>sakai-message-api</project>
+    <project>sakai-taggable-api</project>
   </projects>
   <buildSpec>
     <buildCommand>

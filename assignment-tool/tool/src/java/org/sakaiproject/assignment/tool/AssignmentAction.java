@@ -699,7 +699,7 @@ public class AssignmentAction extends PagedResourceActionII
 	private static final String MODELANSWER = "modelAnswer";
 	private static final String MODELANSWER_TEXT = "modelAnswer.text";
 	private static final String MODELANSWER_SHOWTO = "modelAnswer.showTo";
-	private static final String MODELANSWER_ATTACHMENTS = "Assignment.modelanswer_attachments";
+	private static final String MODELANSWER_ATTACHMENTS = "modelanswer_attachments";
 	/******** Note ***********/
 	private static final String NOTE = "note";
 	private static final String NOTE_TEXT = "note.text";
@@ -714,7 +714,7 @@ public class AssignmentAction extends PagedResourceActionII
 	private static final String ALLPURPOSE_RELEASE_DATE = "allPurpose.releaseDate";
 	private static final String ALLPURPOSE_RETRACT_DATE= "allPurpose.retractDate";
 	private static final String ALLPURPOSE_ACCESS = "allPurpose.access";
-	private static final String ALLPURPOSE_ATTACHMENTS = "Assignment.allpurpose_attachments";
+	private static final String ALLPURPOSE_ATTACHMENTS = "allPurpose_attachments";
 	private static final String ALLPURPOSE_RELEASE_YEAR = "allPurpose.releaseYear";
 	private static final String ALLPURPOSE_RELEASE_MONTH = "allPurpose.releaseMonth";
 	private static final String ALLPURPOSE_RELEASE_DAY = "allPurpose.releaseDay";
@@ -1846,6 +1846,8 @@ public class AssignmentAction extends PagedResourceActionII
 		context.put("modelanswer", state.getAttribute(MODELANSWER) != null?Boolean.TRUE:Boolean.FALSE);
 		context.put("modelanswer_text", state.getAttribute(MODELANSWER_TEXT));
 		context.put("modelanswer_showto", state.getAttribute(MODELANSWER_SHOWTO));
+		// get attachment for model answer object
+		putSupplementItemAttachmentStateIntoContext(state, context, MODELANSWER_ATTACHMENTS);
 		// private notes
 		context.put("allowReadAssignmentNoteItem", m_assignmentSupplementItemService.canReadNoteItem(a, contextString));
 		context.put("allowEditAssignmentNoteItem", m_assignmentSupplementItemService.canEditNoteItem(a));
@@ -2467,11 +2469,8 @@ public class AssignmentAction extends PagedResourceActionII
 				context.put("defaultGrade", defaultGrade);
 			}
 			
-			// groups
-			if (state.getAttribute(VIEW_SUBMISSION_LIST_OPTION) == null)
-			{
-				state.setAttribute(VIEW_SUBMISSION_LIST_OPTION, rb.getString("gen.viewallgroupssections"));
-			}
+			initViewSubmissionListOption(state);
+			
 			String view = (String)state.getAttribute(VIEW_SUBMISSION_LIST_OPTION);
 			context.put("view", view);
 			// access point url for zip file download
@@ -2562,6 +2561,17 @@ public class AssignmentAction extends PagedResourceActionII
 		return template + TEMPLATE_INSTRUCTOR_GRADE_ASSIGNMENT;
 
 	} // build_instructor_grade_assignment_context
+
+	/**
+	 * make sure the state variable VIEW_SUBMISSION_LIST_OPTION is not null
+	 * @param state
+	 */
+	private void initViewSubmissionListOption(SessionState state) {
+		if (state.getAttribute(VIEW_SUBMISSION_LIST_OPTION) == null)
+		{
+			state.setAttribute(VIEW_SUBMISSION_LIST_OPTION, rb.getString("gen.viewallgroupssections"));
+		}
+	}
 
 	/**
 	 * put the supplement item information into context
@@ -3038,7 +3048,7 @@ public class AssignmentAction extends PagedResourceActionII
 									if (submitters != null && submitters.length > 0) {
 										String submitterId = submitters[0].getId();
 										String gradeString = StringUtil.trimToNull(aSubmission.getGrade(false));
-										Double grade = gradeString != null ? Double.valueOf(displayGrade(state,gradeString)) : null;
+										String grade = gradeString != null ? displayGrade(state,gradeString) : null;
 										m.put(submitterId, grade);
 									}
 								}
@@ -6444,6 +6454,9 @@ public class AssignmentAction extends PagedResourceActionII
 				putTimePropertiesInState(state, retractTime, ALLPURPOSE_RETRACT_MONTH, ALLPURPOSE_RETRACT_DAY, ALLPURPOSE_RETRACT_YEAR, ALLPURPOSE_RETRACT_HOUR, ALLPURPOSE_RETRACT_MIN, ALLPURPOSE_RETRACT_AMPM);
 				
 			}
+			
+			// get attachments for model answer object
+			putSupplementItemAttachmentInfoIntoState(state, aItem, ALLPURPOSE_ATTACHMENTS);
 		}
 	}
 
@@ -7396,6 +7409,17 @@ public class AssignmentAction extends PagedResourceActionII
 				state.setAttribute(attachmentsKind, refs);
 			}
 		}
+	}
+	
+	/**
+	 * put supplement item attachment state attribute value into context
+	 * @param state
+	 * @param context
+	 * @param attachmentsKind
+	 */
+	private void putSupplementItemAttachmentStateIntoContext(SessionState state, Context context, String attachmentsKind)
+	{
+		List refs = new Vector();
 		
 		String attachmentsFor = (String) state.getAttribute(ATTACHMENTS_FOR);
 		if (attachmentsFor != null && attachmentsFor.equals(attachmentsKind))
@@ -7411,37 +7435,17 @@ public class AssignmentAction extends PagedResourceActionII
 		    session.removeAttribute(FilePickerHelper.FILE_PICKER_ATTACHMENTS);
 		    session.removeAttribute(FilePickerHelper.FILE_PICKER_CANCEL);
 
+		    state.removeAttribute(ATTACHMENTS_FOR);
 		}
-	}
 		
-	/**
-	 * put supplement item attachment state attribute value into context
-	 * @param state
-	 * @param context
-	 * @param attachmentsKind
-	 */
-	private void putSupplementItemAttachmentStateIntoContext(SessionState state, Context context, String attachmentsKind)
-	{
-		String attachmentsFor = (String) state.getAttribute(ATTACHMENTS_FOR);
-		if  (MODELANSWER_ATTACHMENTS.equals(attachmentsFor))
-    	{
-    		context.put("attachments_for", "modelanswer");
-    		state.removeAttribute("attachments_for");
-    	}
-    	else if (ALLPURPOSE_ATTACHMENTS.equals(attachmentsFor)) 
-    	{
-    		context.put("attachments_for", "allPurpose");
-    		state.removeAttribute("attachments_for");
-    	}
-	    
-	    if (MODELANSWER_ATTACHMENTS.equals(attachmentsKind))
-    	{
-    		context.put("modelanswer_attachments", state.getAttribute(MODELANSWER_ATTACHMENTS));
-    	}
-	    else if (ALLPURPOSE_ATTACHMENTS.equals(attachmentsKind)) 
-    	{
-    		context.put("allPurpose_attachments", state.getAttribute(ALLPURPOSE_ATTACHMENTS));
-    	}
+		// show attachments content
+		if (state.getAttribute(attachmentsKind) != null)
+		{
+			context.put(attachmentsKind, state.getAttribute(attachmentsKind));
+		}
+		
+		// this is to keep the proper node div open
+		context.put("attachments_for", attachmentsKind);
 	}
 	
 	/**
@@ -9626,6 +9630,7 @@ public class AssignmentAction extends PagedResourceActionII
 				List submissions = AssignmentService.getSubmissions(a);
 				
 				// now are we view all sections/groups or just specific one?
+				initViewSubmissionListOption(state);
 				String allOrOneGroup = (String) state.getAttribute(VIEW_SUBMISSION_LIST_OPTION);
 				if (allOrOneGroup.equals(rb.getString("gen.viewallgroupssections")))
 				{
@@ -10651,7 +10656,7 @@ public class AssignmentAction extends PagedResourceActionII
 						User[] users = s.getSubmitters();
 						if (users != null && users.length > 0 && users[0] != null)
 						{
-							submissionTable.put(users[0].getDisplayId(), new UploadGradeWrapper(s.getGrade(), s.getSubmittedText(), s.getFeedbackComment(), hasSubmissionAttachment?new Vector():s.getSubmittedAttachments(), hasFeedbackAttachment?new Vector():s.getFeedbackAttachments(), (s.getSubmitted() && s.getTimeSubmitted() != null)?s.getTimeSubmitted().toString():"", s.getFeedbackText()));
+							submissionTable.put(users[0].getEid(), new UploadGradeWrapper(s.getGrade(), s.getSubmittedText(), s.getFeedbackComment(), hasSubmissionAttachment?new Vector():s.getSubmittedAttachments(), hasFeedbackAttachment?new Vector():s.getFeedbackAttachments(), (s.getSubmitted() && s.getTimeSubmitted() != null)?s.getTimeSubmitted().toString():"", s.getFeedbackText()));
 						}
 					}
 				}
@@ -10736,7 +10741,7 @@ public class AssignmentAction extends PagedResourceActionII
 									        			User u = UserDirectoryService.getUserByEid(items[1]/*user eid*/);
 									        			if (u != null)
 									        			{
-										        			UploadGradeWrapper w = (UploadGradeWrapper) submissionTable.get(u.getDisplayId());
+										        			UploadGradeWrapper w = (UploadGradeWrapper) submissionTable.get(u.getEid());
 										        			if (w != null)
 										        			{
 										        				String itemString = items[4];
@@ -10752,7 +10757,7 @@ public class AssignmentAction extends PagedResourceActionII
 										        				if (state.getAttribute(STATE_MESSAGE) == null)
 										        				{
 											        				w.setGrade(gradeType == Assignment.SCORE_GRADE_TYPE?scalePointGrade(state, itemString):itemString);
-											        				submissionTable.put(u.getDisplayId(), w);
+											        				submissionTable.put(u.getEid(), w);
 										        				}
 										        			}
 									        			}
@@ -10879,7 +10884,7 @@ public class AssignmentAction extends PagedResourceActionII
 						User[] users = s.getSubmitters();
 						if (users != null && users.length > 0 && users[0] != null)
 						{
-							String uName = users[0].getDisplayId();
+							String uName = users[0].getEid();
 							if (submissionTable.containsKey(uName))
 							{
 								// update the AssignmetnSubmission record
@@ -11106,7 +11111,14 @@ public class AssignmentAction extends PagedResourceActionII
     			}
     			zin.closeEntry();
 			} finally {
-			    fout.close();
+				try
+				{
+					fout.close(); // The file channel needs to be closed before the deletion.
+				}
+				catch (IOException ioException)
+				{
+					M_log.warn(this + "readIntoBytes: problem closing FileOutputStream " + ioException.getMessage());
+				}
 			}
 			
 			FileInputStream fis = new FileInputStream(f);
@@ -11117,8 +11129,25 @@ public class AssignmentAction extends PagedResourceActionII
     			ByteBuffer bb = ByteBuffer.wrap(data);
     			fc.read(bb);
 			} finally {
-			    fc.close(); // The file channel needs to be closed before the deletion.
+				try
+				{
+					fc.close(); // The file channel needs to be closed before the deletion.
+				}
+				catch (IOException ioException)
+				{
+					M_log.warn(this + "readIntoBytes: problem closing FileChannel " + ioException.getMessage());
+				}
+				
+				try
+				{
+					fis.close(); // The file inputstream needs to be closed before the deletion.
+				}
+				catch (IOException ioException)
+				{
+					M_log.warn(this + "readIntoBytes: problem closing FileInputStream " + ioException.getMessage());
+				}
 			}
+			
             //remove the file
 			f.delete();
 			
