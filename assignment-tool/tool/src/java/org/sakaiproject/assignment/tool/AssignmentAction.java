@@ -8374,11 +8374,14 @@ public class AssignmentAction extends PagedResourceActionII
 								returnResources.add(a);
 							}
 						}
-						else if (deleted.equalsIgnoreCase(Boolean.TRUE.toString()) && (a.getContent().getTypeOfSubmission() != Assignment.NON_ELECTRONIC_ASSIGNMENT_SUBMISSION) && AssignmentService.getSubmission(a.getReference(), (User) state
-								.getAttribute(STATE_USER)) != null)
+						else if (deleted.equalsIgnoreCase(Boolean.TRUE.toString()) && (a.getContent().getTypeOfSubmission() != Assignment.NON_ELECTRONIC_ASSIGNMENT_SUBMISSION))
 						{
-							// and those deleted but not non-electronic assignments but the user has made submissions to them
-							returnResources.add(a);
+							AssignmentSubmission submission = AssignmentService.getSubmission(a.getReference(), (User) state.getAttribute(STATE_USER));
+							if (submission != null && submission.getTimeSubmitted() != null)
+							{
+								// and those deleted but not non-electronic assignments but the user has made submissions to them
+								returnResources.add(a);
+							}
 						}
 					}
 					catch (IdUnusedException e)
