@@ -8374,11 +8374,14 @@ public class AssignmentAction extends PagedResourceActionII
 								returnResources.add(a);
 							}
 						}
-						else if (deleted.equalsIgnoreCase(Boolean.TRUE.toString()) && (a.getContent().getTypeOfSubmission() != Assignment.NON_ELECTRONIC_ASSIGNMENT_SUBMISSION) && AssignmentService.getSubmission(a.getReference(), (User) state
-								.getAttribute(STATE_USER)) != null)
+						else if (deleted.equalsIgnoreCase(Boolean.TRUE.toString()) && (a.getContent().getTypeOfSubmission() != Assignment.NON_ELECTRONIC_ASSIGNMENT_SUBMISSION))
 						{
-							// and those deleted but not non-electronic assignments but the user has made submissions to them
-							returnResources.add(a);
+							AssignmentSubmission submission = AssignmentService.getSubmission(a.getReference(), (User) state.getAttribute(STATE_USER));
+							if (submission != null && submission.getTimeSubmitted() != null)
+							{
+								// and those deleted but not non-electronic assignments but the user has made submissions to them
+								returnResources.add(a);
+							}
 						}
 					}
 					catch (IdUnusedException e)
@@ -9499,7 +9502,7 @@ public class AssignmentAction extends PagedResourceActionII
 						User[] users = s.getSubmitters();
 						if (users.length > 0 && users[0] != null)
 						{
-							submissionTable.put(users[0].getDisplayId(), new UploadGradeWrapper(s.getGrade(), s.getSubmittedText(), s.getFeedbackComment(), s.getSubmittedAttachments(), s.getFeedbackAttachments(), (s.getSubmitted() && s.getTimeSubmitted() != null)?s.getTimeSubmitted().toString():"", s.getFeedbackText()));
+							submissionTable.put(users[0].getDisplayId(), new UploadGradeWrapper(s.getGrade(), s.getSubmittedText(), s.getFeedbackComment(), hasSubmissionAttachment?new Vector():s.getSubmittedAttachments(), hasFeedbackAttachment?new Vector():s.getFeedbackAttachments(), (s.getSubmitted() && s.getTimeSubmitted() != null)?s.getTimeSubmitted().toString():"", s.getFeedbackText()));
 						}
 					}
 				}
@@ -9675,9 +9678,8 @@ public class AssignmentAction extends PagedResourceActionII
 											{
 												// clear the submission attachment first
 												UploadGradeWrapper r = (UploadGradeWrapper) submissionTable.get(userEid);
-												r.setSubmissionAttachments(new Vector());
 												submissionTable.put(userEid, r);
-												uploadZipAttachments(state, submissionTable, zin, entry, entryName, userEid, "submission");
+												submissionTable = uploadZipAttachments(state, submissionTable, zin, entry, entryName, userEid, "submission");
 											}
 										}
 										if (hasFeedbackAttachment)
@@ -9686,11 +9688,10 @@ public class AssignmentAction extends PagedResourceActionII
 											String submissionFolder = "/" + rb.getString("download.feedback.attachment") + "/";
 											if ( entryName.indexOf(submissionFolder) != -1)
 											{
-												// clear the submission attachment first
+												// clear the feedback attachment first
 												UploadGradeWrapper r = (UploadGradeWrapper) submissionTable.get(userEid);
-												r.setFeedbackAttachments(new Vector());
 												submissionTable.put(userEid, r);
-												uploadZipAttachments(state, submissionTable, zin, entry, entryName, userEid, "feedback");
+												submissionTable = uploadZipAttachments(state, submissionTable, zin, entry, entryName, userEid, "feedback");
 											}
 										}
 										
@@ -9857,7 +9858,7 @@ public class AssignmentAction extends PagedResourceActionII
 	 * @param userEid
 	 * @param submissionOrFeedback
 	 */
-	private void uploadZipAttachments(SessionState state, Hashtable submissionTable, ZipInputStream zin, ZipEntry entry, String entryName, String userEid, String submissionOrFeedback) {
+	private Hashtable uploadZipAttachments(SessionState state, Hashtable submissionTable, ZipInputStream zin, ZipEntry entry, String entryName, String userEid, String submissionOrFeedback) {
 		// upload all the files as instructor attachments to the submission for grading purpose
 		String fName = entryName.substring(entryName.lastIndexOf("/") + 1, entryName.length());
 		ContentTypeImageService iService = (ContentTypeImageService) state.getAttribute(STATE_CONTENT_TYPE_IMAGE_SERVICE);
@@ -9902,6 +9903,8 @@ public class AssignmentAction extends PagedResourceActionII
 		{
 			Log.warn("chef", ee.toString());
 		}
+		
+		return submissionTable;
 	}
 
 	private String getBodyTextFromZipHtml(ZipInputStream zin)
