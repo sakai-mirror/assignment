@@ -6,7 +6,7 @@
 # Example:
 #	./runconversion.sh -j "$CATALINA_HOME/common/lib/mysql-connector-java-3.1.14-bin.jar"  \
 #		-p "$CATALINA_HOME/sakai/sakai.properties" \
-#		-k 1.0.3   \
+#		-k 1.0.9   \
 #		-s 2.6.0 \
 #		-m ~/.m2/repository upgradeschema_mysql.config	
 
@@ -43,7 +43,7 @@ usage:
       properties
              the configuration file
 eg
-    `basename $0` -j $CATALINA_HOME/shared/lib/ojdbc14.jar -k 1.0.3 -s 2.6.0 -m /tmp/m2/repository convertcontent.config
+    `basename $0` -j $CATALINA_HOME/shared/lib/ojdbc14.jar -k 1.0.9 -s 2.6.0 -m /tmp/m2/repository convertcontent.config
 USAGE
 }
 
