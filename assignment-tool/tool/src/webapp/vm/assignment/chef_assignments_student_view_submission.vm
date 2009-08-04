@@ -584,14 +584,15 @@
 					 #end
 				</p>
 				#end
-			  #if (($!submission.FeedbackComment) && ($submission.FeedbackComment.trim().length()>0))
+				#if ($returned && $!timeReturned && ($!timeSubmitted && $!timeReturned && $!timeReturned.after($!timeSubmitted) || !$!timeSubmitted))
+					#if (($!submission.FeedbackComment) && ($submission.FeedbackComment.trim().length()>0))
 						#if ($submissionType==2)
 							<h3>$tlang.getString("gen.addinst2")</h3>
 						#else
 							<h3>$tlang.getString("gen.addinst")</h3>
 						#end	
 							<div class="textPanel">$validator.escapeHtmlFormattedText($submission.FeedbackComment)</div>
-					#else
+						#else
 					#end
 					## for returned (not resubmitted ) submission, show the instructor feedback
 					#if ($!prevFeedbackComment && $!prevFeedbackComment.trim().length() > 0)
@@ -673,7 +674,8 @@
 									#end
 								#end
 							</ul>
-						#end
+						#end	
+					#end
 					</div>	
 				#end
 				#if ($withGrade)
