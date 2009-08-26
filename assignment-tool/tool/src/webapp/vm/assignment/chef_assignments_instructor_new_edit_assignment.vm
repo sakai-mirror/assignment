@@ -324,12 +324,31 @@ $(document).ready(function() {
 		<p class="instruction labelindnt">
 			$tlang.getString("gen.noasscan")
 		</p>
+			#*
+			/** Assignment type not yet set */
+			public static final int ASSIGNMENT_SUBMISSION_TYPE_NOT_SET = -1;
+			
+			/** Text only assignment type */
+			public static final int TEXT_ONLY_ASSIGNMENT_SUBMISSION = 1;
+
+			/** Attachment only assignment type */
+			public static final int ATTACHMENT_ONLY_ASSIGNMENT_SUBMISSION = 2;
+			
+			/** Text and/or attachment assignment type */
+			public static final int TEXT_AND_ATTACHMENT_ASSIGNMENT_SUBMISSION = 3;
+	
+			/** Non-electronic assignment type */
+			public static final int NON_ELECTRONIC_ASSIGNMENT_SUBMISSION = 4;
+	
+			/** Only one single upload attachment */
+			public static final int SINGLE_ATTACHMENT_SUBMISSION = 5;
+		*#
 		<p class="shorttext">
 			<span class="reqStar">*</span>
 			<label for="subType">
 				$tlang.getString("gen.stusub")
 			</label>
-			<select name="$name_SubmissionType" id="subType">
+			<select name="$name_SubmissionType" id="subType" onchange="if(document.getElementById('subType').value != 4){document.getElementById('tempAllowRes').style.display = 'block';resizeFrame();}else{document.getElementById('tempAllowRes').style.display = 'none';}document.getElementById('allowResubmitNumber').style.display = 'none';document.getElementById('allowResubmitTime').style.display = 'none';" /> >
 				#foreach ($i in [1..$!value_totalSubmissionTypes])
 					#if ($i == $value_SubmissionType)
 						<option value="$i" selected="selected">$submissionTypeTable.get($i)</option>
@@ -339,12 +358,22 @@ $(document).ready(function() {
 				#end
 			</select>
 		</p>
-		<p class="shorttext" style="clear:both">
+		##show it only for those assignments not of type non-electronic submission
+		#if($!value_allowResubmitNumber==0 || $value_SubmissionType == 4)
+			#set($resubmitStyle="display:none")
+		#else 
+			#set($resubmitStyle="display:block")
+		#end
+		<p class="checkbox" id="tempAllowRes" #if ($value_SubmissionType == 4) style = "display:none"#end>
+			<input type="checkbox" id="allowResToggle" name ="allowResToggle" #if($!value_allowResubmitNumber==0 || $value_SubmissionType == 4) #else checked="checked"#end onclick="if(checked){document.getElementById('allowResubmitNumber').style.display = 'block';document.getElementById('allowResubmitTime').style.display = 'block';resizeFrame();}else{document.getElementById('allowResubmitNumber').style.display = 'none';document.getElementById('allowResubmitTime').style.display = 'none'}" /> 
+			<label for="allowResToggle">$tlang.getString("allowResubmit")</label>
+	 </p>
+		<p class="shorttext" id="allowResubmitNumber" style="$!resubmitStyle">
 				<label for="allowResubmitNumber">
 					$tlang.getString("allow.resubmit.number")
 				</label>
 				<select name="$name_allowResubmitNumber" id="allowResubmitNumber">
-					#foreach ($i in [0..10])
+					#foreach ($i in [1..10])
 						<option value="$i" #if($i==$!value_allowResubmitNumber)selected="selected"#end>
 							$i
 						</option>
@@ -352,6 +381,37 @@ $(document).ready(function() {
 					<option value="-1" #if($!value_allowResubmitNumber == -1)selected="selected"#end>$tlang.getString("allow.resubmit.number.unlimited")</option>
 				</select>
 		</p>
+		<p class="shorttext" id="allowResubmitTime" style="$!resubmitStyle">
+							## only show date selection when allowed to resubmit
+							<label for="$name_ResubmitMonth">
+								$tlang.getString("gen.resubmission") $tlang.getString("gen.acesubunt")
+							</label>
+							#chef_dateselectionwidget($name_ResubmitYear $name_ResubmitMonth $name_ResubmitDay $!value_year_from $!value_year_to $value_ResubmitYear $value_ResubmitMonth $value_ResubmitDay $dateFormat "")
+							$tlang.getString("gen.at") 
+							<select name="$name_ResubmitHour" id="$name_ResubmitHour">
+								#foreach ($i in [1..12])
+									#if ($i == $value_ResubmitHour)
+										<option value="$i" selected="selected">$i</option>
+									#else
+										<option value="$i">$i</option>
+									#end
+								#end
+							</select>
+							<select name="$name_ResubmitMin" id="$name_ResubmitMin">
+								#foreach ($i in [0, 5, 10, 15, 20, 25, 30, 35, 40, 45, 50, 55])
+									<option value="$i" #if($i == $value_ResubmitMin)selected="selected"#end>#if($i ==0)00#elseif($i == 5)05#else$i#end</option>
+								#end
+							</select>
+							<select name="$name_ResubmitAMPM" id="$name_ResubmitAMPM">
+								#foreach ($i in ["AM", "PM"])
+									#if ($i == $value_ResubmitAMPM)
+										<option value="$i" selected="selected">$i</option>
+									#else
+										<option value="$i">$i</option>
+									#end
+								#end
+							</select>
+						</p>
 		#if ($withGrade)
 			<p class="shorttext" style="clear:both">
 				<span class="reqStar">*</span>
@@ -755,7 +815,7 @@ $(document).ready(function() {
 		*#
 		<a name="extraNodesBoxTop"></a>		
 		<input type="hidden" name = "attachments_for" id="attachments_for" value="$!attachments_for" />
-		<fieldset class="extraNode" id="modelanswer-node" >## the panel for model answer
+		<fieldset class="extraNode" id="modelanswer-node" style="display:none">## the panel for model answer
 			<legend>$tlang.getString("modelAnswer")</legend>
 			<div class="longtext" style="margin:.2em">
 				<label for="modelanswer_text" class="block">
@@ -764,8 +824,8 @@ $(document).ready(function() {
 				<div class="validationError alertMessage" id="modelanswer_text_message">
 					$tlang.getString("extraNodesRequired")
 				</div>	
-				<textarea name="modelanswer_text" id="modelanswer_text" cols="60" rows="10" wrap="virtual">$!modelanswer_text</textarea>
-				<textarea name="modelanswer_text_holder" id="modelanswer_text_holder" style="display:none" cols="60" rows="2" wrap="virtual">$!modelanswer_text</textarea>
+				<textarea name="modelanswer_text" id="modelanswer_text" cols="60" rows="10" wrap="virtual">$validator.escapeHtmlTextarea($!modelanswer_text)</textarea>
+				<textarea name="modelanswer_text_holder" id="modelanswer_text_holder" style="display:none" cols="60" rows="2" wrap="virtual">$validator.escapeHtmlTextarea($!modelanswer_text)</textarea>
 				###chef_setupformattedtextareaparams("modeltext" "200" "365" "small") 
 			</div>
 			## attachments
@@ -832,7 +892,7 @@ $(document).ready(function() {
 			</p>
 		</fieldset>
 		#*the panel for grading guideline
-			<fieldset class="extraNode" id="gradingguidelines-node">
+			<fieldset class="extraNode" id="gradingguidelines-node" style="display:none">
 				<legend>Grading guidelines</legend>
 					<div class="validationError alertMessage" id="gradingguidelines-message">
 					</div>
@@ -864,7 +924,7 @@ $(document).ready(function() {
 				</p>
 			</fieldset>	
 		*#
-		<fieldset class="extraNode" id="note-node">## the panel for private note
+		<fieldset class="extraNode" id="note-node" style="display:none">## the panel for private note
 			<legend>$tlang.getString("note")</legend>
 			<div class="longtext" style="margin:.2em">
 				<span class="reqStar">*</span>				
@@ -875,8 +935,8 @@ $(document).ready(function() {
 					$tlang.getString("extraNodesRequired")
 				</div>	
 				#if ($!note && $!allowEditAssignmentNoteItem || !$!note)
-					<textarea name="note_text" id="note_text" cols="60" rows="10" wrap="virtual">$!note_text</textarea>
-					<textarea name="note_text_holder" id="note_text_holder"  style="display:none"  cols="60" rows="2" wrap="virtual">$!note_text</textarea>
+					<textarea name="note_text" id="note_text" cols="60" rows="10" wrap="virtual">$validator.escapeHtmlTextarea($!note_text)</textarea>
+					<textarea name="note_text_holder" id="note_text_holder"  style="display:none"  cols="60" rows="2" wrap="virtual">$validator.escapeHtmlTextarea($!note_text)</textarea>
 				#else
 					#if ($!allowReadAssignmentNoteItem)
 					 <div class="notes">$!note_text</div>
@@ -887,7 +947,7 @@ $(document).ready(function() {
 			<p class="longtext"  style="margin:.2em">
 				<span class="reqStar">*</span>				
 				<label for="note_to" class="block">
-					Share
+					$tlang.getString("note.to.prompt")
 				</label>
 				#if ($!note && $!allowEditAssignmentNoteItem || !$!note)
 					<select id="note_to" name="note_to">
@@ -921,7 +981,7 @@ $(document).ready(function() {
 				</p>
 			#end
 		</fieldset>			
-		<fieldset class="extraNode" id="allPurpose-node" >## the panel for allPurpose type of object
+		<fieldset class="extraNode" id="allPurpose-node" style="display:none">## the panel for allPurpose type of object
 			<legend>$tlang.getString('allPurpose')</legend>
 			<div class="shorttext" style="margin:.2em">
 				<span class="reqStar">*</span>				
@@ -941,8 +1001,8 @@ $(document).ready(function() {
 				<div class="validationError alertMessage" id="allPurpose_text_message">
 					$tlang.getString("extraNodesRequired")
 				</div>	
-				<textarea name="allPurposeText" id="allPurpose_text" cols="60" rows="10" wrap="virtual">$!value_allPurposeText</textarea>
-				<textarea name="allPurposeTextHolder"  id="allPurpose_text_holder"  style="display:none"  cols="60" rows="2" wrap="virtual">$!value_allPurposeText</textarea>
+				<textarea name="allPurposeText" id="allPurpose_text" cols="60" rows="10" wrap="virtual">$validator.escapeHtmlTextarea($!value_allPurposeText)</textarea>
+				<textarea name="allPurposeTextHolder"  id="allPurpose_text_holder"  style="display:none"  cols="60" rows="2" wrap="virtual">$validator.escapeHtmlTextarea($!value_allPurposeText)</textarea>
 			</div>	
 			## attachments for allpurpose item
 			<label for="allPurposeAttach" class="block">
@@ -1134,7 +1194,11 @@ $(document).ready(function() {
 			</div>	
 			<table border="0" cellpadding="0" cellspacing="0" class="listHier" style="margin:1em 0;width:100%"  id="allPurposeGroupLists">
 				<tbody>
+					#set ($roleCount=0)
 					#foreach ($role in $!roleUsers.keys())
+
+						#set ($roleCount=$roleCount + 1)
+
 						#set($allString=$tlang.getString("allPurpose.show.all").concat(" ").concat($role))
 						#set($expandString=$tlang.getString("allPurpose.show.expand").concat(" ").concat($role).concat(" ").concat($tlang.getString("allPurpose.show.list")))
 						#set($collapseString=$tlang.getString("allPurpose.show.collapse").concat(" ").concat($role).concat(" ").concat($tlang.getString("allPurpose.show.list")))
@@ -1143,22 +1207,22 @@ $(document).ready(function() {
 						#set($collapseId="collapse_")
 						#set($collapseId=$collapseId.concat($role))
 						#set($roleDivString = $role.concat("Div"))
+						#set($showInputString = "allPurpose_")
+	            		#set($showInputString = $showInputString.concat($role))
 						<tr>
-							<td class="groupCell"> 
-								#set($showInputString = "allPurpose_")
-			            		#set($showInputString = $showInputString.concat($role))
-								<a href="#" id="$collapseId" class="toggleRoleLink" style="display:none;" title="$collapseString">
+							<td class="groupCell">					
+								<a href="#" id="collapse_$roleCount" class="toggleRoleLink" style="display:none;" title="$collapseString">
 									<img src="/library/image/sakai/collapse.gif" alt="$collapseString" /><img src="/library/image/silk/group.png"/>
 								</a>
-								<a href="#" id="$expandId" class="toggleRoleLink" style="display:inline" title="$expandString">
+								<a href="#" id="expand_$roleCount" class="toggleRoleLink" style="display:inline" title="$expandString">
 									<img src="/library/image/sakai/expand.gif"  alt="$expandString"/><img src="/library/image/silk/group.png"/>
 								</a>
-								<input id="$showInputString" name="$showInputString" #if ($!value_allPurposeAccessList.contains($role)) checked="checked" #end type="checkbox" name="allPurpose_$role" class="selectAllMembers"/>
-								<label for="$showInputString">
+								<input id="$showInputString" name="showInputString_$roleCount" #if ($!value_allPurposeAccessList.contains($role)) checked="checked" #end type="checkbox" name="allPurpose_$role" class="selectAllMembers"/>
+								<label for="showInputString_$roleCount">
 									$allString
 								</label>
 								(<span class="highlight countDisplay"></span> <span class="highlight">$tlang.getString("allPurpose.user.selection.count")</span>)
-								<ul id="$roleDivString" style="display:none;" class="attachList userList">
+								<ul id="roleDiv_$roleCount"  style="display:none;" class="attachList userList">
 									#set($userCount=0)
 									#foreach($user in $!roleUsers.get($role))
 										#set($showInputString = "allPurpose_")

@@ -927,7 +927,7 @@ public abstract class BaseAssignmentService implements AssignmentService, Entity
 
 				retVal = addAssignment(context);
 				retVal.setContentReference(newContent.getReference());
-				retVal.setTitle(existingAssignment.getTitle() + " - Copy");
+				retVal.setTitle(existingAssignment.getTitle() + " - " + rb.getString("assignment.copy"));
 				retVal.setSection(existingAssignment.getSection());
 				retVal.setOpenTime(existingAssignment.getOpenTime());
 				retVal.setDueTime(existingAssignment.getDueTime());
@@ -1776,7 +1776,7 @@ public abstract class BaseAssignmentService implements AssignmentService, Entity
 
 				existingContent = getAssignmentContent(contentReference);
 				retVal = addAssignmentContent(context);
-				retVal.setTitle(existingContent.getTitle() + " - Copy");
+				retVal.setTitle(existingContent.getTitle() + " - " + rb.getString("assignment.copy"));
 				retVal.setInstructions(existingContent.getInstructions());
 				retVal.setHonorPledge(existingContent.getHonorPledge());
 				retVal.setTypeOfSubmission(existingContent.getTypeOfSubmission());
@@ -2338,8 +2338,17 @@ public abstract class BaseAssignmentService implements AssignmentService, Entity
 			else if (returnedTime == null && !s.getReturned() && (submittedTime == null /*grading non-submissions*/
 																|| (submittedTime != null && (s.getTimeLastModified().getTime() - submittedTime.getTime()) > 1000*60 /*make sure the last modified time is at least one minute after the submit time*/)))
 			{
-				// graded and saved before releasing it
-				EventTrackingService.post(EventTrackingService.newEvent(EVENT_GRADE_ASSIGNMENT_SUBMISSION, submissionRef, true));
+				if (StringUtil.trimToNull(s.getSubmittedText()) == null && s.getSubmittedAttachments().isEmpty()
+					&& StringUtil.trimToNull(s.getGrade()) == null && StringUtil.trimToNull(s.getFeedbackText()) == null && StringUtil.trimToNull(s.getFeedbackComment()) == null && s.getFeedbackAttachments().isEmpty() )
+				{
+					// auto add submission for those not submitted
+					EventTrackingService.post(EventTrackingService.newEvent(EVENT_ADD_ASSIGNMENT_SUBMISSION, submissionRef, true));
+				}
+				else
+				{
+					// graded and saved before releasing it
+					EventTrackingService.post(EventTrackingService.newEvent(EVENT_GRADE_ASSIGNMENT_SUBMISSION, submissionRef, true));
+				}
 			}
 			else if (returnedTime != null && s.getGraded() && (submittedTime == null/*returning non-submissions*/ 
 											|| (submittedTime != null && returnedTime.after(submittedTime))/*returning normal submissions*/ 
@@ -3041,17 +3050,22 @@ public abstract class BaseAssignmentService implements AssignmentService, Entity
 				if ((context.equals(tempAssignment.getContext()))
 						|| (context.equals(getGroupNameFromContext(tempAssignment.getContext()))))
 				{
-					if (tempAssignment.getDraft())
+					String deleted = tempAssignment.getProperties().getProperty(ResourceProperties.PROP_ASSIGNMENT_DELETED);
+					if (deleted == null || deleted.equals(""))
 					{
-						// who can see the draft assigment
-						if (isDraftAssignmentVisible(tempAssignment, context))
+						// not deleted, show it
+						if (tempAssignment.getDraft())
+						{
+							// who can see the draft assigment
+							if (isDraftAssignmentVisible(tempAssignment, context))
+							{
+								retVal.add(tempAssignment);
+							}
+						}
+						else
 						{
 							retVal.add(tempAssignment);
 						}
-					}
-					else
-					{
-						retVal.add(tempAssignment);
 					}
 				}
 			}
@@ -3966,7 +3980,7 @@ public abstract class BaseAssignmentService implements AssignmentService, Entity
 							// find right row
 							row = sheet.getRow(((Integer)user_row.get(userId)).intValue());
 						
-							if (submission.getGraded() && submission.getGradeReleased() && submission.getGrade() != null)
+							if (submission.getGraded() && submission.getGrade() != null)
 							{
 								// graded and released
 								if (assignmentType == 3)
@@ -4005,11 +4019,11 @@ public abstract class BaseAssignmentService implements AssignmentService, Entity
 									cell.setCellValue(submission.getGrade());
 								}
 							}
-							else
+							else if (submission.getSubmitted() && submission.getTimeSubmitted() != null)
 							{
-								// no grade available yet
+								// submitted, but no grade available yet
 								cell = row.getCell(cellNum);
-								cell.setCellValue("");
+								cell.setCellValue(rb.getString("gen.nograd"));
 							}
 						} // if
 					}
@@ -5725,23 +5739,15 @@ public abstract class BaseAssignmentService implements AssignmentService, Entity
 					{
 						ResourceProperties submissionProperties = submission.getProperties();
 						String property = (String) submissionProperties.getProperty(AssignmentSubmission.ALLOW_RESUBMIT_CLOSETIME);
-						resubmitCloseTime = submissionProperties.getProperty(AssignmentSubmission.ALLOW_RESUBMIT_CLOSETIME) != null? TimeService.newTime(submissionProperties.getLongProperty(AssignmentSubmission.ALLOW_RESUBMIT_CLOSETIME)):null;
-					}
-					else
-					{
-						// if no setting on the submission object level, get it from the assignment level next
-						ResourceProperties assignmentProperties = a.getProperties();
-						try
+						if (submissionProperties.getProperty(AssignmentSubmission.ALLOW_RESUBMIT_CLOSETIME) != null)
 						{
-							allowResubmitNumber = assignmentProperties.getProperty(AssignmentSubmission.ALLOW_RESUBMIT_NUMBER) != null? Integer.parseInt((String) assignmentProperties.getProperty(AssignmentSubmission.ALLOW_RESUBMIT_NUMBER)):0;
-							if (allowResubmitNumber != 0)
-							{
-								resubmitCloseTime = assignmentProperties.getProperty(AssignmentSubmission.ALLOW_RESUBMIT_CLOSETIME) != null? assignmentProperties.getTimeProperty(AssignmentSubmission.ALLOW_RESUBMIT_CLOSETIME):a.getCloseTime();
-							}
+							// see if a resubmission close time is set on submission level
+							resubmitCloseTime = TimeService.newTime(submissionProperties.getLongProperty(AssignmentSubmission.ALLOW_RESUBMIT_CLOSETIME));
 						}
-						catch (Exception e)
+						else
 						{
-							M_log.warn(this + "canSubmit: exception of get integer value for resubmit number: assignment id = " + a.getId() + " submission id = " + submission.getId() + " assignment resubmission number = " + assignmentProperties.getProperty(AssignmentSubmission.ALLOW_RESUBMIT_NUMBER) + e.getMessage());
+							// otherwise, use assignment close time as the resubmission close time
+							resubmitCloseTime = a.getCloseTime();
 						}
 					}
 					return allowResubmitNumber != 0 && resubmitCloseTime != null && currentTime.before(resubmitCloseTime);
@@ -9337,6 +9343,21 @@ public abstract class BaseAssignmentService implements AssignmentService, Entity
 				{
 					return StringUtil.trimToZero(grade);
 				}
+			}
+			else if (m.getContent().getTypeOfGrade() == Assignment.UNGRADED_GRADE_TYPE) {
+				String ret = "";
+				if (grade != null) {
+					if (grade.equalsIgnoreCase("No Grade")) ret = rb.getString("gen.nograd");
+				}
+				return ret;
+			}
+			else if (m.getContent().getTypeOfGrade() == Assignment.PASS_FAIL_GRADE_TYPE) {
+				String ret = rb.getString("ungra");
+				if (grade != null) {
+					if (grade.equalsIgnoreCase("Pass")) ret = rb.getString("pass3");
+					else if (grade.equalsIgnoreCase("Fail")) ret = rb.getString("fail");
+				}
+				return ret;
 			}
 			else
 			{

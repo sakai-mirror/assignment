@@ -84,7 +84,7 @@ iframeId = '$iframeId';
 				</div>
 				</div>
 				#end
-				<table class="listHier lines nolines" border="0" cellspacing="0" summary="Table contains list of tags associated with current assignment.">
+				<table class="listHier lines nolines" border="0" cellspacing="0" summary="$tlang.getString('tag.list.summary')">
 					#set ($columns = $provider.getColumns($activity))
 					<tr>
 						#foreach ($column in $columns)

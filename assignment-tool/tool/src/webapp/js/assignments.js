@@ -17,13 +17,14 @@ function setupAssignNew(){
         actionType = this.id.substring(0, this.id.indexOf('_'));
         roleType = this.id.substring(this.id.indexOf('_') + 1);
         if (actionType == "expand") {
-            $('#' + roleType + "Div").show('');
+
+            $('#roleDiv_' + roleType).show('');
             $('#collapse_' + roleType).show('');
             $('#expand_' + roleType).hide('');
             resizeFrame('grow');
         }
         else {
-            $('#' + roleType + "Div").hide('');
+            $('#roleDiv_' + roleType).hide('');
             $('#expand_' + roleType).show('');
             $('#collapse_' + roleType).hide('');
             resizeFrame('grow');
@@ -162,7 +163,8 @@ function setupAssignNew(){
     });
     $(".selectAllMembers").click(function(){
         if (this.checked) {
-            $(this).parents('.groupCell').children('.countDisplay').text($(this).parents('.groupCell').find('input').attr('checked', 'checked').length);
+        	// need to minus the "select all" input box itself when counting the total user selected
+            $(this).parents('.groupCell').children('.countDisplay').text($(this).parents('.groupCell').find('input').attr('checked', 'checked').length-1);
             $(this).parents('.groupCell').find('input').attr('checked', 'checked');
             
             $(this).parents('.groupCell').find('li label').addClass('selectedItem');
