@@ -22,12 +22,14 @@ import org.sakaiproject.exception.PermissionException;
 import org.sakaiproject.site.api.Site;
 import org.sakaiproject.site.api.SiteService;
 import org.sakaiproject.tool.cover.SessionManager;
+import org.theospi.portfolio.matrix.MatrixManager;
 
 public class AssignmentEntityProviderImpl implements AssignmentEntityProvider,
 CoreEntityProvider, AutoRegisterEntityProvider, PropertyProvideable {
 
   private AssignmentService assignmentService;
   private SiteService siteService;
+  private MatrixManager matrixManager;
   
   public void setAssignmentService(AssignmentService assignmentService) {
     this.assignmentService = assignmentService;
@@ -85,6 +87,9 @@ CoreEntityProvider, AutoRegisterEntityProvider, PropertyProvideable {
     String[] refParts = reference.split(Entity.SEPARATOR);
     String submissionId = "";
     String decWrapper = null;
+    String decWrapperTag = "";
+    String decSiteId = "";
+    String decPageId = "";
     
     if (refParts.length >= 4) {
     	parsedRef = refParts[0] + Entity.SEPARATOR + refParts[1] + Entity.SEPARATOR + refParts[2];
@@ -94,80 +99,96 @@ CoreEntityProvider, AutoRegisterEntityProvider, PropertyProvideable {
     	}
     	if (refParts.length >= 6) {
     		decWrapper = refParts[5].replaceAll("_", Entity.SEPARATOR);
+    		if(decWrapper != null && !"".equals(decWrapper)){
+    			String[] splitDec = decWrapper.split(Entity.SEPARATOR);
+    			if(splitDec.length == 3){
+    				decWrapperTag = splitDec[0];
+    				decSiteId = splitDec[1];
+    				decPageId = splitDec[2];
+    			}
+    		}
     	}
     }
     
     String assignmentId = parsedRef;
-    try {
-      Assignment assignment = assignmentService.getAssignment(assignmentId);
-      props.put("title", assignment.getTitle());
-      props.put("author", assignment.getCreator());
-      if (assignment.getTimeCreated() != null)
-        props.put("created_time", assignment.getTimeCreated().getDisplay());
-        if (assignment.getAuthorLastModified() != null)
-          props.put("modified_by", assignment.getAuthorLastModified());
-        if (assignment.getTimeLastModified() != null)
-          props.put("modified_time", assignment.getTimeLastModified().getDisplay());
+    
+    if(decWrapperTag.equals("ospMatrix") && matrixManager.canUserAccessWizardPageAndLinkedArtifcact(decSiteId, decPageId, submissionId)){
 
-      Site site = siteService.getSite(assignment.getContext());
-      String placement = site.getToolForCommonId("sakai.assignment.grades").getId();
-      
-      props.put("security.user", SessionManager.getCurrentSessionUserId());
-      props.put("security.site.function", SiteService.SITE_VISIT);
-      props.put("security.site.ref", site.getReference());
-      props.put("security.assignment.function", AssignmentService.SECURE_ACCESS_ASSIGNMENT);
-      
-      List<Reference> attachments = new ArrayList<Reference>();
-      
-      if (!"".equals(submissionId)) {
-	      props.put("security.assignment.ref", submissionId);
-	      
-	      SecurityService.pushAdvisor(new MySecurityAdvisor(SessionManager.getCurrentSessionUserId(), 
-	    		  AssignmentService.SECURE_ACCESS_ASSIGNMENT, submissionId));
-	      
-	      AssignmentSubmission as = assignmentService.getSubmission(submissionId);
-	      
-	      SecurityService.popAdvisor();
-	      
-	      attachments.addAll(as.getSubmittedAttachments());
-	      attachments.addAll(as.getFeedbackAttachments());
-      }
-      
-      props.put("assignment.content.decoration.wrapper", decWrapper);
-      
-      
-      
-      
-      //need the regular assignment attachments too
-      attachments.addAll(assignment.getContent().getAttachments());
-      
-      String refs = "";
-      for (Reference comp : attachments) {
-    	  refs += comp.getReference() + ":::";
-      }
-      if (refs.lastIndexOf(":::") > 0) {
-    	  props.put("submissionAttachmentRefs", refs.substring(0, refs.lastIndexOf(":::")));
-      }
-      
-      props.put("url", "/portal/tool/" + placement + "?assignmentId=" + assignment.getId() + 
-    		  "&submissionId=" + submissionId +
-    		  "&assignmentReference=" + assignment.getReference() + 
-    		  "&panel=Main&sakai_action=" + defaultView);
-      props.put("status", assignment.getStatus());
-      props.put("due_time", assignment.getDueTimeString());
-      props.put("open_time", assignment.getOpenTimeString());
-      if (assignment.getDropDeadTime() != null)
-        props.put("retract_time", assignment.getDropDeadTime().getDisplay());
-      props.put("description", assignment.getContentReference());
-      props.put("draft", "" + assignment.getDraft());
-      props.put("siteId", assignment.getContext());
-      props.put("section", assignment.getSection());
-    }
-    catch (IdUnusedException e) {
-      e.printStackTrace();
-    }
-    catch (PermissionException e) {
-      e.printStackTrace();
+    	try {
+    		Assignment assignment = assignmentService.getAssignment(assignmentId);
+
+
+
+    		props.put("title", assignment.getTitle());
+    		props.put("author", assignment.getCreator());
+    		if (assignment.getTimeCreated() != null)
+    			props.put("created_time", assignment.getTimeCreated().getDisplay());
+    		if (assignment.getAuthorLastModified() != null)
+    			props.put("modified_by", assignment.getAuthorLastModified());
+    		if (assignment.getTimeLastModified() != null)
+    			props.put("modified_time", assignment.getTimeLastModified().getDisplay());
+
+    		Site site = siteService.getSite(assignment.getContext());
+    		String placement = site.getToolForCommonId("sakai.assignment.grades").getId();
+
+    		props.put("security.user", SessionManager.getCurrentSessionUserId());
+    		props.put("security.site.function", SiteService.SITE_VISIT);
+    		props.put("security.site.ref", site.getReference());
+    		props.put("security.assignment.function", AssignmentService.SECURE_ACCESS_ASSIGNMENT);
+
+    		List<Reference> attachments = new ArrayList<Reference>();
+
+    		if (!"".equals(submissionId)) {
+    			props.put("security.assignment.ref", submissionId);
+
+    			SecurityService.pushAdvisor(new MySecurityAdvisor(SessionManager.getCurrentSessionUserId(), 
+    					AssignmentService.SECURE_ACCESS_ASSIGNMENT, submissionId));
+
+    			AssignmentSubmission as = assignmentService.getSubmission(submissionId);
+
+    			SecurityService.popAdvisor();
+
+    			attachments.addAll(as.getSubmittedAttachments());
+    			attachments.addAll(as.getFeedbackAttachments());
+    		}
+
+    		props.put("assignment.content.decoration.wrapper", decWrapper);
+
+
+
+
+    		//need the regular assignment attachments too
+    		attachments.addAll(assignment.getContent().getAttachments());
+
+    		String refs = "";
+    		for (Reference comp : attachments) {
+    			refs += comp.getReference() + ":::";
+    		}
+    		if (refs.lastIndexOf(":::") > 0) {
+    			props.put("submissionAttachmentRefs", refs.substring(0, refs.lastIndexOf(":::")));
+    		}
+
+    		props.put("url", "/portal/tool/" + placement + "?assignmentId=" + assignment.getId() + 
+    				"&submissionId=" + submissionId +
+    				"&assignmentReference=" + assignment.getReference() + 
+    				"&panel=Main&sakai_action=" + defaultView);
+    		props.put("status", assignment.getStatus());
+    		props.put("due_time", assignment.getDueTimeString());
+    		props.put("open_time", assignment.getOpenTimeString());
+    		if (assignment.getDropDeadTime() != null)
+    			props.put("retract_time", assignment.getDropDeadTime().getDisplay());
+    		props.put("description", assignment.getContentReference());
+    		props.put("draft", "" + assignment.getDraft());
+    		props.put("siteId", assignment.getContext());
+    		props.put("section", assignment.getSection());
+    	}
+
+    	catch (IdUnusedException e) {
+    		e.printStackTrace();
+    	}
+    	catch (PermissionException e) {
+    		e.printStackTrace();
+    	}
     }
     return props;
   }
@@ -225,5 +246,13 @@ CoreEntityProvider, AutoRegisterEntityProvider, PropertyProvideable {
 		  return rv;
 	  }
   }
+
+public MatrixManager getMatrixManager() {
+	return matrixManager;
+}
+
+public void setMatrixManager(MatrixManager matrixManager) {
+	this.matrixManager = matrixManager;
+}
 
 }

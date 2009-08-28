@@ -1337,7 +1337,7 @@ public class AssignmentAction extends PagedResourceActionII
 			session.removeAttribute("assignment.content.decoration.wrapper.refs");
 			
 
-			if (contentAdvisor != null) {
+			if (contentAdvisor != null && contentRefs != null) {
 				SecurityService.pushAdvisor(contentAdvisor);
 				
 				Map urlMap = new HashMap();
@@ -1354,8 +1354,6 @@ public class AssignmentAction extends PagedResourceActionII
 				SecurityService.pushAdvisor(asgnAdvisor);
 	
 				session.removeAttribute("assignment.security.advisor");
-				//removing the site one too just in case
-				session.removeAttribute("sitevisit.security.advisor");
 			}
 			submission = AssignmentService.getSubmission((String) state.getAttribute(VIEW_GRADE_SUBMISSION_ID));
 			assignment = submission.getAssignment();
