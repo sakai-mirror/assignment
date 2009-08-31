@@ -686,7 +686,7 @@ public class AssignmentAction extends PagedResourceActionII
 	private static final String MODELANSWER = "modelAnswer";
 	private static final String MODELANSWER_TEXT = "modelAnswer.text";
 	private static final String MODELANSWER_SHOWTO = "modelAnswer.showTo";
-	private static final String MODELANSWER_ATTACHMENTS = "Assignment.modelanswer_attachments";
+	private static final String MODELANSWER_ATTACHMENTS = "modelanswer_attachments";
 	/******** Note ***********/
 	private static final String NOTE = "note";
 	private static final String NOTE_TEXT = "note.text";
@@ -701,7 +701,7 @@ public class AssignmentAction extends PagedResourceActionII
 	private static final String ALLPURPOSE_RELEASE_DATE = "allPurpose.releaseDate";
 	private static final String ALLPURPOSE_RETRACT_DATE= "allPurpose.retractDate";
 	private static final String ALLPURPOSE_ACCESS = "allPurpose.access";
-	private static final String ALLPURPOSE_ATTACHMENTS = "Assignment.allpurpose_attachments";
+	private static final String ALLPURPOSE_ATTACHMENTS = "allPurpose_attachments";
 	private static final String ALLPURPOSE_RELEASE_YEAR = "allPurpose.releaseYear";
 	private static final String ALLPURPOSE_RELEASE_MONTH = "allPurpose.releaseMonth";
 	private static final String ALLPURPOSE_RELEASE_DAY = "allPurpose.releaseDay";
@@ -1750,6 +1750,8 @@ public class AssignmentAction extends PagedResourceActionII
 		context.put("modelanswer", state.getAttribute(MODELANSWER) != null?Boolean.TRUE:Boolean.FALSE);
 		context.put("modelanswer_text", state.getAttribute(MODELANSWER_TEXT));
 		context.put("modelanswer_showto", state.getAttribute(MODELANSWER_SHOWTO));
+		// get attachment for model answer object
+		putSupplementItemAttachmentStateIntoContext(state, context, MODELANSWER_ATTACHMENTS);
 		// private notes
 		context.put("allowReadAssignmentNoteItem", m_assignmentSupplementItemService.canReadNoteItem(a, contextString));
 		context.put("allowEditAssignmentNoteItem", m_assignmentSupplementItemService.canEditNoteItem(a));
@@ -6357,6 +6359,9 @@ public class AssignmentAction extends PagedResourceActionII
 				putTimePropertiesInState(state, retractTime, ALLPURPOSE_RETRACT_MONTH, ALLPURPOSE_RETRACT_DAY, ALLPURPOSE_RETRACT_YEAR, ALLPURPOSE_RETRACT_HOUR, ALLPURPOSE_RETRACT_MIN, ALLPURPOSE_RETRACT_AMPM);
 				
 			}
+			
+			// get attachments for model answer object
+			putSupplementItemAttachmentInfoIntoState(state, aItem, ALLPURPOSE_ATTACHMENTS);
 		}
 	}
 
@@ -7287,6 +7292,17 @@ public class AssignmentAction extends PagedResourceActionII
 				state.setAttribute(attachmentsKind, refs);
 			}
 		}
+	}
+	
+	/**
+	 * put supplement item attachment state attribute value into context
+	 * @param state
+	 * @param context
+	 * @param attachmentsKind
+	 */
+	private void putSupplementItemAttachmentStateIntoContext(SessionState state, Context context, String attachmentsKind)
+	{
+		List refs = new Vector();
 		
 		String attachmentsFor = (String) state.getAttribute(ATTACHMENTS_FOR);
 		if (attachmentsFor != null && attachmentsFor.equals(attachmentsKind))
@@ -7302,37 +7318,17 @@ public class AssignmentAction extends PagedResourceActionII
 		    session.removeAttribute(FilePickerHelper.FILE_PICKER_ATTACHMENTS);
 		    session.removeAttribute(FilePickerHelper.FILE_PICKER_CANCEL);
 
+		    state.removeAttribute(ATTACHMENTS_FOR);
 		}
-	}
 		
-	/**
-	 * put supplement item attachment state attribute value into context
-	 * @param state
-	 * @param context
-	 * @param attachmentsKind
-	 */
-	private void putSupplementItemAttachmentStateIntoContext(SessionState state, Context context, String attachmentsKind)
-	{
-		String attachmentsFor = (String) state.getAttribute(ATTACHMENTS_FOR);
-		if  (MODELANSWER_ATTACHMENTS.equals(attachmentsFor))
-    	{
-    		context.put("attachments_for", "modelanswer");
-    		state.removeAttribute("attachments_for");
-    	}
-    	else if (ALLPURPOSE_ATTACHMENTS.equals(attachmentsFor)) 
-    	{
-    		context.put("attachments_for", "allPurpose");
-    		state.removeAttribute("attachments_for");
-    	}
-	    
-	    if (MODELANSWER_ATTACHMENTS.equals(attachmentsKind))
-    	{
-    		context.put("modelanswer_attachments", state.getAttribute(MODELANSWER_ATTACHMENTS));
-    	}
-	    else if (ALLPURPOSE_ATTACHMENTS.equals(attachmentsKind)) 
-    	{
-    		context.put("allPurpose_attachments", state.getAttribute(ALLPURPOSE_ATTACHMENTS));
-    	}
+		// show attachments content
+		if (state.getAttribute(attachmentsKind) != null)
+		{
+			context.put(attachmentsKind, state.getAttribute(attachmentsKind));
+		}
+		
+		// this is to keep the proper node div open
+		context.put("attachments_for", attachmentsKind);
 	}
 	
 	/**
