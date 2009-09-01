@@ -9977,6 +9977,15 @@ public class AssignmentAction extends PagedResourceActionII
 				}
 			}
 		}
+		
+		try
+		{
+			point = Integer.valueOf(point).toString();
+		}
+		catch (Exception e)
+		{
+			M_log.warn(this + " scalePointGrade: cannot parse " + point + " into integer. " + e.getMessage());
+		}
 		return point;
 
 	} // scalePointGrade
