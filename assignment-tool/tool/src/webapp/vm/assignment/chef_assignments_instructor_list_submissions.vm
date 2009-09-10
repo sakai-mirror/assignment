@@ -323,6 +323,7 @@
 					</ul>
 				</div>
 			#end
+			## show all submission
 			<div id="allowResubmission_hidden" #if ($!showAllowResubmission)style="display:none"#else style="display:block"#end>
 				<input type="hidden" name = "allowResToggle" id = "allowResToggle" value="checked" />
 				<p class="discTria">
@@ -392,9 +393,12 @@
 			</div>
 			## show all submission
 			<table class="listHier lines nolines" cellpadding="0" cellspacing="0" summary="$tlang.getString("gen.viewassliststudentsummary")">
-				<tr> 
+				<tr>
+					<th id="selectResubmit">
+						<input type="checkbox" name="toggleAllSelectAllowResubmit" value="" id="toggleAllSelectAllowResubmit" onclick="javascript:toggleSelectAll(this, 'selectedAllowResubmit')" />
+					</th> 
 					<th id="attachment" class="attach">
-						&nbsp;
+						<img src="#imageLink("sakai/attachments.gif")" border="0" alt="$tlang.getString("gen.att")" width="15" height="15" />
 					</th>
 					<th id="studentname">
 						<a href="#" onclick="location='#toolLinkParam("AssignmentAction" "doSort_grade_submission" "criteria=$!sort_lastName")'; return false;"   title="$tlang.getString("gen.sorbylas")">
@@ -478,29 +482,32 @@
 					#set($submission = $userSubmission.Submission)
 					#set($siteUser=false)
 					#set($siteUser = $userSubmission.User)
+					#set($submitterId = $!siteUser.getId())
 					#set($submitterName=$!siteUser.sortName)
-					#set($submitterId=$!siteUser.getDisplayId())
-					#if ($!submitterId)
+					#set($submitterDisplayId=$!siteUser.getDisplayId())
+					#if ($!submitterDisplayId)
 						##attach the displayId
-						#set($submitterName=$submitterName.concat(" (").concat($submitterId).concat(")"))
+						#set($submitterName=$submitterName.concat(" (").concat($submitterDisplayId).concat(")"))
 					#end
 					#set($submitTime=false)
 					#set($returnedTime=false)
 					#if ($!submission)## && $submission.submitted) 
 						#set($returnedTime = $submission.getTimeReturned())
 						#set($submitTime = $submission.getTimeSubmitted())
-						<tr> 
+						<tr>
+							<td headers="allowResubmit" class="screenOnly">
+								#set($userId = $!siteUser)
+								<input type="checkbox" name="selectedAllowResubmit" value="$!submitterId" id="check_$submitterId" />
+							</td>
 							<td headers="attachment" class="attach">
-								#set ($attachments = $!submission.SubmittedAttachments)
-								#set ($size = 0)
+							 #set($size=0)
 								#set ($props = false)
-								#if (!$!attachments.isEmpty())
-									#set ($attachment = $attachments.next())
+								#foreach ($attachment in $submission.SubmittedAttachments) 
 									#set ($props = $attachment.Properties) 
 									#if ($!props)
 										#set ($size = $size + 1)
 									#end
-								#end 
+								#end
 								#if ($size > 0)
 									<img src="#imageLink("sakai/attachments.gif")" border="0" alt="$tlang.getString("gen.att")" width="15" height="15" />
 								#end
@@ -602,7 +609,6 @@
 							<td headers="gradereleased">
 								&nbsp;
 							</td>
-						</tr>
 					#end
 				#end
 			</table>

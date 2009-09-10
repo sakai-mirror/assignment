@@ -2419,6 +2419,11 @@ public class AssignmentAction extends PagedResourceActionII
 		// put supplement item into context
 		supplementItemIntoContext(state, context, assignment, null);
 		
+		// whether to show the resubmission choicif 
+		if (state.getAttribute(SHOW_ALLOW_RESUBMISSION) != null)
+		{
+			context.put("showAllowResubmission", Boolean.TRUE);
+		}
 		
 		String template = (String) getContext(data).get("template");
 		
@@ -3292,14 +3297,7 @@ public class AssignmentAction extends PagedResourceActionII
 		state.removeAttribute(GRADE_SUBMISSION_GRADE);
 		state.removeAttribute(GRADE_SUBMISSION_SUBMISSION_ID);
 		state.removeAttribute(GRADE_GREATER_THAN_MAX_ALERT);
-		state.removeAttribute(AssignmentSubmission.ALLOW_RESUBMIT_NUMBER);
-		state.removeAttribute(AssignmentSubmission.ALLOW_RESUBMIT_CLOSETIME);
-		state.removeAttribute(ALLOW_RESUBMIT_CLOSEMONTH);
-		state.removeAttribute(ALLOW_RESUBMIT_CLOSEDAY);
-		state.removeAttribute(ALLOW_RESUBMIT_CLOSEYEAR);
-		state.removeAttribute(ALLOW_RESUBMIT_CLOSEHOUR);
-		state.removeAttribute(ALLOW_RESUBMIT_CLOSEMIN);
-		state.removeAttribute(ALLOW_RESUBMIT_CLOSEAMPM);
+		resetAllowResubmitParams(state);
 	}
 
 	/**
@@ -6795,58 +6793,62 @@ public class AssignmentAction extends PagedResourceActionII
 		try
 		{
 			a = AssignmentService.getAssignment((String) state.getAttribute(GRADE_SUBMISSION_ASSIGNMENT_ID));
-			if (a.getProperties().getProperty(AssignmentSubmission.ALLOW_RESUBMIT_NUMBER) != null)
-			{
-				allowResubmitNumber= a.getProperties().getProperty(AssignmentSubmission.ALLOW_RESUBMIT_NUMBER);
-			}
-		}
-		catch (IdUnusedException e)
-		{
-			addAlert(state, rb.getString("cannotfin5"));
-			M_log.warn(this + ":putSubmissionInfoIntoState " + e.getMessage());
-		}
-		catch (PermissionException e)
-		{
-			addAlert(state, rb.getString("not_allowed_to_view"));
-			M_log.warn(this + ":putSubmissionInfoIntoState " + e.getMessage());
-		}
-
-		try
-		{
-			AssignmentSubmission s = AssignmentService.getSubmission((String) state.getAttribute(GRADE_SUBMISSION_SUBMISSION_ID));
-
-			if ((s.getFeedbackText() == null) || (s.getFeedbackText().length() == 0))
-			{
-				state.setAttribute(GRADE_SUBMISSION_FEEDBACK_TEXT, s.getSubmittedText());
-			}
-			else
-			{
-				state.setAttribute(GRADE_SUBMISSION_FEEDBACK_TEXT, s.getFeedbackText());
-			}
-			state.setAttribute(GRADE_SUBMISSION_FEEDBACK_COMMENT, s.getFeedbackComment());
-
-			List v = EntityManager.newReferenceList();
-			Iterator attachments = s.getFeedbackAttachments().iterator();
-			while (attachments.hasNext())
-			{
-				v.add(attachments.next());
-			}
-			state.setAttribute(ATTACHMENTS, v);
-
-			state.setAttribute(GRADE_SUBMISSION_GRADE, s.getGrade());
 			
-			ResourceProperties p = s.getProperties();
-			if (p.getProperty(AssignmentSubmission.ALLOW_RESUBMIT_NUMBER) != null)
+			try
 			{
-				allowResubmitNumber = p.getProperty(AssignmentSubmission.ALLOW_RESUBMIT_NUMBER);
+				AssignmentSubmission s = AssignmentService.getSubmission((String) state.getAttribute(GRADE_SUBMISSION_SUBMISSION_ID));
+	
+				if ((s.getFeedbackText() == null) || (s.getFeedbackText().length() == 0))
+				{
+					state.setAttribute(GRADE_SUBMISSION_FEEDBACK_TEXT, s.getSubmittedText());
+				}
+				else
+				{
+					state.setAttribute(GRADE_SUBMISSION_FEEDBACK_TEXT, s.getFeedbackText());
+				}
+				state.setAttribute(GRADE_SUBMISSION_FEEDBACK_COMMENT, s.getFeedbackComment());
+	
+				List v = EntityManager.newReferenceList();
+				Iterator attachments = s.getFeedbackAttachments().iterator();
+				while (attachments.hasNext())
+				{
+					v.add(attachments.next());
+				}
+				state.setAttribute(ATTACHMENTS, v);
+	
+				state.setAttribute(GRADE_SUBMISSION_GRADE, s.getGrade());
+				
+				ResourceProperties p = s.getProperties();
+				if (p.getProperty(AssignmentSubmission.ALLOW_RESUBMIT_NUMBER) != null)
+				{
+					allowResubmitNumber = p.getProperty(AssignmentSubmission.ALLOW_RESUBMIT_NUMBER);
+				}
+				else if (p.getProperty(GRADE_SUBMISSION_ALLOW_RESUBMIT) != null)
+				{
+					// if there is any legacy setting for generally allow resubmit, set the allow resubmit number to be 1, and remove the legacy property
+					allowResubmitNumber = "1";
+				}
+				  else
+				{
+					  // get it from assignment own setting
+					  if (a.getProperties().getProperty(AssignmentSubmission.ALLOW_RESUBMIT_NUMBER) != null)
+					  {
+						  allowResubmitNumber= a.getProperties().getProperty(AssignmentSubmission.ALLOW_RESUBMIT_NUMBER);
+					  }
+				}
+				
+				state.setAttribute(AssignmentSubmission.ALLOW_RESUBMIT_NUMBER, allowResubmitNumber);
 			}
-			else if (p.getProperty(GRADE_SUBMISSION_ALLOW_RESUBMIT) != null)
+			catch (IdUnusedException ee)
 			{
-				// if there is any legacy setting for generally allow resubmit, set the allow resubmit number to be 1, and remove the legacy property
-				allowResubmitNumber = "1";
+				addAlert(state, rb.getString("cannotfin5"));
+				M_log.warn(this + ":putSubmissionInfoIntoState " + ee.getMessage());
 			}
-			
-			state.setAttribute(AssignmentSubmission.ALLOW_RESUBMIT_NUMBER, allowResubmitNumber);
+			catch (PermissionException ee)
+			{
+				addAlert(state, rb.getString("not_allowed_to_view"));
+				M_log.warn(this + ":putSubmissionInfoIntoState " + ee.getMessage());
+			}
 		}
 		catch (IdUnusedException e)
 		{
@@ -6989,6 +6991,7 @@ public class AssignmentAction extends PagedResourceActionII
 
 		// clean state attribute
 		state.removeAttribute(USER_SUBMISSIONS);
+		state.removeAttribute(SHOW_ALLOW_RESUBMISSION);
 		
 		state.setAttribute(EXPORT_ASSIGNMENT_REF, params.getString("assignmentId"));
 
