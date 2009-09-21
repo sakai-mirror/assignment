@@ -5367,7 +5367,7 @@ public class AssignmentAction extends PagedResourceActionII
 			String n_resubmit_number = state.getAttribute(AssignmentSubmission.ALLOW_RESUBMIT_NUMBER) != null? (String) state.getAttribute(AssignmentSubmission.ALLOW_RESUBMIT_NUMBER):null;
 			if (o_resubmit_number == null && n_resubmit_number != null
 				|| o_resubmit_number != null && n_resubmit_number == null
-				|| !o_resubmit_number.equals(n_resubmit_number))
+				|| o_resubmit_number != null && n_resubmit_number != null && !o_resubmit_number.equals(n_resubmit_number))
 			{
 				// there is a change
 				return true;
@@ -11690,7 +11690,7 @@ public class AssignmentAction extends PagedResourceActionII
 			}
 		}
 		
-		if (allowResubmitNumber == null)
+		if (allowResubmitNumber == null || "".equals(allowResubmitNumber))
 		{
 			// default setting;
 			allowResubmitNumber = "0";
@@ -11876,12 +11876,10 @@ public class AssignmentAction extends PagedResourceActionII
 				try
 				{
 					String siteId = ToolManager.getCurrentPlacement().getContext();
-
-					String toolName = "Assignment";
 					
 					// add attachment
 					enableSecurityAdvisor();
-					ContentResource attachment = m_contentHostingService.addAttachmentResource(resourceId, siteId, toolName, contentType, bytes, props);
+					ContentResource attachment = m_contentHostingService.addAttachmentResource(resourceId, siteId, getToolTitle(), contentType, bytes, props);
 					disableSecurityAdvisors();
 					
 					// construct the state variable for attachment list
