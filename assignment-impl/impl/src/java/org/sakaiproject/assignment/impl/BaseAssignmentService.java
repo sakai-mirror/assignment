@@ -5311,7 +5311,7 @@ public abstract class BaseAssignmentService implements AssignmentService, Entity
 		 */
 		public BaseAssignment(Element el)
 		{
-			M_log.debug(this + " BASE ASSIGNMENT : ENTERING STORAGE CONSTRUCTOR");
+			M_log.debug(" BASE ASSIGNMENT : ENTERING STORAGE CONSTRUCTOR");
 
 			m_properties = new BaseResourcePropertiesEdit();
 
@@ -5322,16 +5322,16 @@ public abstract class BaseAssignmentService implements AssignmentService, Entity
 
 			m_id = el.getAttribute("id");
 			
-				M_log.debug(this + " BASE ASSIGNMENT : STORAGE CONSTRUCTOR : ASSIGNMENT ID : " + m_id);
+				M_log.debug(" BASE ASSIGNMENT : STORAGE CONSTRUCTOR : ASSIGNMENT ID : " + m_id);
 			m_title = el.getAttribute("title");
 			m_section = el.getAttribute("section");
 			m_draft = getBool(el.getAttribute("draft"));
 			
-				M_log.debug(this + " BASE ASSIGNMENT : STORAGE CONSTRUCTOR : READ THROUGH REG ATTS");
+				M_log.debug(" BASE ASSIGNMENT : STORAGE CONSTRUCTOR : READ THROUGH REG ATTS");
 
 			m_assignmentContent = el.getAttribute("assignmentcontent");
 			
-				M_log.debug(this + " BASE ASSIGNMENT : STORAGE CONSTRUCTOR : CONTENT ID : "
+				M_log.debug(" BASE ASSIGNMENT : STORAGE CONSTRUCTOR : CONTENT ID : "
 						+ m_assignmentContent);
 
 			m_openTime = getTimeObject(el.getAttribute("opendate"));
@@ -5353,7 +5353,7 @@ public abstract class BaseAssignmentService implements AssignmentService, Entity
 			m_authors = new Vector();
 			intString = el.getAttribute("numberofauthors");
 			
-				M_log.debug(this + " BASE ASSIGNMENT : STORAGE CONSTRUCTOR : number of authors : " + intString);
+				M_log.debug(" BASE ASSIGNMENT : STORAGE CONSTRUCTOR : number of authors : " + intString);
 			try
 			{
 				numAttributes = Integer.parseInt(intString);
@@ -5361,14 +5361,14 @@ public abstract class BaseAssignmentService implements AssignmentService, Entity
 				for (int x = 0; x < numAttributes; x++)
 				{
 					
-						M_log.debug(this + " BASE ASSIGNMENT : STORAGE CONSTRUCTOR : reading author # " + x);
+						M_log.debug(" BASE ASSIGNMENT : STORAGE CONSTRUCTOR : reading author # " + x);
 					attributeString = "author" + x;
 					tempString = el.getAttribute(attributeString);
 
 					if (tempString != null)
 					{
 						
-							M_log.debug(this + " BASE ASSIGNMENT : STORAGE CONSTRUCTOR : adding author # " + x
+							M_log.debug(" BASE ASSIGNMENT : STORAGE CONSTRUCTOR : adding author # " + x
 									+ " id :  " + tempString);
 						m_authors.add(tempString);
 					}
@@ -5409,7 +5409,7 @@ public abstract class BaseAssignmentService implements AssignmentService, Entity
 				m_access = access;
 			}
 
-			M_log.debug(this + " BASE ASSIGNMENT : LEAVING STORAGE CONSTRUCTOR");
+			M_log.debug(" BASE ASSIGNMENT : LEAVING STORAGE CONSTRUCTOR");
 
 		}// storage constructor
 
@@ -6539,7 +6539,7 @@ public abstract class BaseAssignmentService implements AssignmentService, Entity
 			String attributeString = null;
 			String tempString = null;
 			Reference tempReference = null;
-			M_log.debug(this + " BaseAssignmentContent : Entering read");
+			M_log.debug(" BaseAssignmentContent : Entering read");
 
 			m_id = el.getAttribute("id");
 			m_context = el.getAttribute("context");
@@ -6562,7 +6562,7 @@ public abstract class BaseAssignmentService implements AssignmentService, Entity
 			}
 			catch (Exception e)
 			{
-				M_log.warn(this + " BaseAssignmentContent Exception parsing honor pledge int from xml file string : " + e);
+				M_log.warn(" BaseAssignmentContent Exception parsing honor pledge int from xml file string : " + e);
 			}
 
 			try
@@ -6571,7 +6571,7 @@ public abstract class BaseAssignmentService implements AssignmentService, Entity
 			}
 			catch (Exception e)
 			{
-				M_log.warn(this + " BaseAssignmentContent Exception parsing submission type int from xml file string : " + e);
+				M_log.warn(" BaseAssignmentContent Exception parsing submission type int from xml file string : " + e);
 			}
 
 			try
@@ -6580,7 +6580,7 @@ public abstract class BaseAssignmentService implements AssignmentService, Entity
 			}
 			catch (Exception e)
 			{
-				M_log.warn(this + " BaseAssignmentContent Exception parsing grade type int from xml file string : " + e);
+				M_log.warn(" BaseAssignmentContent Exception parsing grade type int from xml file string : " + e);
 			}
 
 			try
@@ -6600,7 +6600,7 @@ public abstract class BaseAssignmentService implements AssignmentService, Entity
 			}
 			catch (Exception e)
 			{
-				M_log.warn(this + " BaseAssignmentContent Exception parsing maxgradepoint int from xml file string : " + e);
+				M_log.warn(" BaseAssignmentContent Exception parsing maxgradepoint int from xml file string : " + e);
 			}
 
 			// READ THE AUTHORS
@@ -6619,14 +6619,14 @@ public abstract class BaseAssignmentService implements AssignmentService, Entity
 			}
 			catch (Exception e)
 			{
-				M_log.warn(this + " BaseAssignmentContent: Exception reading authors : " + e);
+				M_log.warn(" BaseAssignmentContent: Exception reading authors : " + e);
 			}
 
 			// READ THE ATTACHMENTS
 			m_attachments = m_entityManager.newReferenceList();
-			M_log.debug(this + " BaseAssignmentContent: Reading attachments : ");
+			M_log.debug(" BaseAssignmentContent: Reading attachments : ");
 			intString = el.getAttribute("numberofattachments");
-			M_log.debug(this + " BaseAssignmentContent: num attachments : " + intString);
+			M_log.debug(" BaseAssignmentContent: num attachments : " + intString);
 			try
 			{
 				numAttributes = Integer.parseInt(intString);
@@ -6639,13 +6639,13 @@ public abstract class BaseAssignmentService implements AssignmentService, Entity
 					{
 						tempReference = m_entityManager.newReference(tempString);
 						m_attachments.add(tempReference);
-						M_log.debug(this + " BaseAssignmentContent: " + attributeString + " : " + tempString);
+						M_log.debug(" BaseAssignmentContent: " + attributeString + " : " + tempString);
 					}
 				}
 			}
 			catch (Exception e)
 			{
-				M_log.warn(this + " BaseAssignmentContent: Exception reading attachments : " + e);
+				M_log.warn(" BaseAssignmentContent: Exception reading attachments : " + e);
 			}
 
 			// READ THE PROPERTIES
@@ -6675,7 +6675,7 @@ public abstract class BaseAssignmentService implements AssignmentService, Entity
 						if (element.getTagName().equals("instructions-formatted"))
 							m_instructions = FormattedText.convertOldFormattedText(m_instructions);
 						
-							M_log.debug(this + " BaseAssignmentContent(Element): instructions : " + m_instructions);
+							M_log.debug(" BaseAssignmentContent(Element): instructions : " + m_instructions);
 					}
 					if (m_instructions == null)
 					{
@@ -6684,7 +6684,7 @@ public abstract class BaseAssignmentService implements AssignmentService, Entity
 				}
 			}
 
-			M_log.debug(this + " BaseAssignmentContent(Element): LEAVING STORAGE CONSTRUTOR");
+			M_log.debug(" BaseAssignmentContent(Element): LEAVING STORAGE CONSTRUTOR");
 
 		}// storage constructor
 		
@@ -7977,7 +7977,7 @@ public abstract class BaseAssignmentService implements AssignmentService, Entity
 			String tempString = null;
 			Reference tempReference = null;
 
-			M_log.debug(this + " BaseAssigmentSubmission : ENTERING STORAGE CONSTRUCTOR");
+			M_log.debug(" BaseAssigmentSubmission : ENTERING STORAGE CONSTRUCTOR");
 
 			m_id = el.getAttribute("id");
 			m_context = el.getAttribute("context");
@@ -8023,7 +8023,7 @@ public abstract class BaseAssignmentService implements AssignmentService, Entity
 
 			// READ THE SUBMITTERS
 			m_submitters = new Vector();
-			M_log.debug(this + " BaseAssignmentSubmission : CONSTRUCTOR : Reading submitters : ");
+			M_log.debug(" BaseAssignmentSubmission : CONSTRUCTOR : Reading submitters : ");
 			intString = el.getAttribute("numberofsubmitters");
 			try
 			{
@@ -8045,7 +8045,7 @@ public abstract class BaseAssignmentService implements AssignmentService, Entity
 			m_feedbackAttachments = m_entityManager.newReferenceList();
 			intString = el.getAttribute("numberoffeedbackattachments");
 			
-				M_log.debug(this + " BaseAssignmentSubmission: CONSTRUCTOR : num feedback attachments : " + intString);
+				M_log.debug(" BaseAssignmentSubmission: CONSTRUCTOR : num feedback attachments : " + intString);
 			try
 			{
 				numAttributes = Integer.parseInt(intString);
@@ -8059,7 +8059,7 @@ public abstract class BaseAssignmentService implements AssignmentService, Entity
 						tempReference = m_entityManager.newReference(tempString);
 						m_feedbackAttachments.add(tempReference);
 						
-							M_log.debug(this + " BaseAssignmentSubmission: CONSTRUCTOR : " + attributeString + " : "
+							M_log.debug(" BaseAssignmentSubmission: CONSTRUCTOR : " + attributeString + " : "
 									+ tempString);
 					}
 				}
@@ -8073,7 +8073,7 @@ public abstract class BaseAssignmentService implements AssignmentService, Entity
 			m_submittedAttachments = m_entityManager.newReferenceList();
 			intString = el.getAttribute("numberofsubmittedattachments");
 			
-				M_log.debug(this + " BaseAssignmentSubmission: CONSTRUCTOR : num submitted attachments : " + intString);
+				M_log.debug(" BaseAssignmentSubmission: CONSTRUCTOR : num submitted attachments : " + intString);
 			try
 			{
 				numAttributes = Integer.parseInt(intString);
@@ -8087,7 +8087,7 @@ public abstract class BaseAssignmentService implements AssignmentService, Entity
 						tempReference = m_entityManager.newReference(tempString);
 						m_submittedAttachments.add(tempReference);
 						
-							M_log.debug(this + " BaseAssignmentSubmission: CONSTRUCTOR : " + attributeString + " : "
+							M_log.debug(" BaseAssignmentSubmission: CONSTRUCTOR : " + attributeString + " : "
 									+ tempString);
 					}
 				}
@@ -8119,7 +8119,7 @@ public abstract class BaseAssignmentService implements AssignmentService, Entity
 					{
 						m_submittedText = element.getChildNodes().item(0).getNodeValue();
 						
-							M_log.debug(this + " BaseAssignmentSubmission: CONSTRUCTOR : submittedtext : " + m_submittedText);
+							M_log.debug(" BaseAssignmentSubmission: CONSTRUCTOR : submittedtext : " + m_submittedText);
 					}
 					if (m_submittedText == null)
 					{
@@ -8133,7 +8133,7 @@ public abstract class BaseAssignmentService implements AssignmentService, Entity
 					{
 						m_feedbackComment = element.getChildNodes().item(0).getNodeValue();
 						
-							M_log.debug(this + " BaseAssignmentSubmission: CONSTRUCTOR : feedbackcomment : "
+							M_log.debug(" BaseAssignmentSubmission: CONSTRUCTOR : feedbackcomment : "
 									+ m_feedbackComment);
 					}
 					if (m_feedbackComment == null)
@@ -8148,7 +8148,7 @@ public abstract class BaseAssignmentService implements AssignmentService, Entity
 					{
 						m_feedbackText = element.getChildNodes().item(0).getNodeValue();
 						
-							M_log.debug(this + " BaseAssignmentSubmission: CONSTRUCTOR : FEEDBACK TEXT : " + m_feedbackText);
+							M_log.debug(" BaseAssignmentSubmission: CONSTRUCTOR : FEEDBACK TEXT : " + m_feedbackText);
 					}
 					if (m_feedbackText == null)
 					{
@@ -8194,7 +8194,7 @@ public abstract class BaseAssignmentService implements AssignmentService, Entity
 			
 			
 			
-			M_log.debug(this + " BaseAssignmentSubmission: LEAVING STORAGE CONSTRUCTOR");
+			M_log.debug(" BaseAssignmentSubmission: LEAVING STORAGE CONSTRUCTOR");
 
 		}// storage constructor
 		
