@@ -969,7 +969,7 @@ public class AssignmentAction extends PagedResourceActionII
 				}
 				
 				// put the resubmit information into context
-				putResubmitInfoInContext(context, assignment, s);
+				assignment_resubmission_option_into_context(context, state);
 			}
 			
 			// can the student view model answer or not
@@ -1019,62 +1019,6 @@ public class AssignmentAction extends PagedResourceActionII
 		return template + TEMPLATE_STUDENT_VIEW_SUBMISSION;
 
 	} // build_student_view_submission_context
-
-	/**
-	 * put the related resubmit information into context
-	 * @param context
-	 * @param s
-	 */
-	private void putResubmitInfoInContext(Context context, Assignment a, AssignmentSubmission s) {
-		// number of times for resubmitting
-		// default to assignment level setting first
-		String dResubmitNumberString = a.getProperties().getProperty(AssignmentSubmission.ALLOW_RESUBMIT_NUMBER);
-		if (dResubmitNumberString == null)
-		{
-			dResubmitNumberString = "0";
-		}
-		if (s != null)
-		{
-			String resubmitNumberString = s.getProperties().getProperty(AssignmentSubmission.ALLOW_RESUBMIT_NUMBER);
-			if ( resubmitNumberString != null && !resubmitNumberString.equals(dResubmitNumberString))
-			{
-				// override by submission level setting
-				dResubmitNumberString = resubmitNumberString;
-			}
-		}
-		// convert and put into context
-		if (dResubmitNumberString.equals("-1"))
-		{
-			dResubmitNumberString = rb.getString("allow.resubmit.number.unlimited");
-		}
-		context.put("resubmitNumber", dResubmitNumberString);
-		
-		// resubmit close time
-		// default to assignment level setting first
-		Time dCloseTime = a.getCloseTime();
-		if (s != null)
-		{
-			String resubmitCloseTime = s.getProperties().getProperty(AssignmentSubmission.ALLOW_RESUBMIT_CLOSETIME);
-			if ( resubmitCloseTime != null)
-			{
-				try
-				{
-					Time closeTime = TimeService.newTime(Long.parseLong(resubmitCloseTime));
-					if (!closeTime.equals(dCloseTime))
-					{
-						// override by submission level setting
-						dCloseTime = closeTime;
-					}
-				}
-				catch (Exception parseException)
-				{
-					M_log.warn(this + ":putResubmitInoInContext exception in parsing close time" + resubmitCloseTime + parseException.getMessage());
-				}
-			}
-		}
-		// put into context
-		context.put("resubmitCloseTime", dCloseTime.toStringLocalFull());
-	}
 
 	/**
 	 * build the student view of showing an assignment submission confirmation
@@ -1173,7 +1117,7 @@ public class AssignmentAction extends PagedResourceActionII
 			canViewAssignmentIntoContext(context, assignment, submission);
 			
 			// put resubmit information into context
-			putResubmitInfoInContext(context, assignment, submission);
+			assignment_resubmission_option_into_context(context, state);
 		}
 		catch (IdUnusedException e)
 		{
@@ -1223,11 +1167,13 @@ public class AssignmentAction extends PagedResourceActionII
 			AssignmentSubmission submission = AssignmentService.getSubmission(aReference, user);
 			context.put("submission", submission);
 			
+			context.put("canSubmit", Boolean.valueOf(AssignmentService.canSubmit((String) state.getAttribute(STATE_CONTEXT_STRING), assignment)));
+			
 			// can the student view model answer or not
 			canViewAssignmentIntoContext(context, assignment, submission);
 			
 			// put the resubmit information into context
-			putResubmitInfoInContext(context, assignment, submission);
+			assignment_resubmission_option_into_context(context, state);
 		}
 		catch (IdUnusedException e)
 		{
@@ -1564,7 +1510,7 @@ public class AssignmentAction extends PagedResourceActionII
 		}
 		
 		// put the re-submission info into context
-		assignment_resubmission_option_into_context(a, null, context, state);
+		putTimePropertiesInContext(context, state, "Resubmit", ALLOW_RESUBMIT_CLOSEMONTH, ALLOW_RESUBMIT_CLOSEDAY, ALLOW_RESUBMIT_CLOSEYEAR, ALLOW_RESUBMIT_CLOSEHOUR, ALLOW_RESUBMIT_CLOSEMIN, ALLOW_RESUBMIT_CLOSEAMPM);
 		
 		context.put("value_year_from", state.getAttribute(NEW_ASSIGNMENT_YEAR_RANGE_FROM));
 		context.put("value_year_to", state.getAttribute(NEW_ASSIGNMENT_YEAR_RANGE_TO));
@@ -1598,16 +1544,9 @@ public class AssignmentAction extends PagedResourceActionII
 		String s = (String) state.getAttribute(NEW_ASSIGNMENT_CHECK_ADD_HONOR_PLEDGE);
 		if (s == null) s = "1";
 		context.put("value_CheckAddHonorPledge", s);
-		// number of resubmissions allowed
-		if (state.getAttribute(AssignmentSubmission.ALLOW_RESUBMIT_NUMBER) != null)
-		{
-			context.put("value_allowResubmitNumber", Integer.valueOf((String) state.getAttribute(AssignmentSubmission.ALLOW_RESUBMIT_NUMBER)));
-		}
-		else
-		{
-			// defaults to 0
-			context.put("value_allowResubmitNumber", Integer.valueOf(0));
-		}
+		
+		// put resubmission option into context
+		assignment_resubmission_option_into_context(context, state);
 
 		// get all available assignments from Gradebook tool except for those created from
 		boolean gradebookExists = isGradebookDefined();
@@ -1959,7 +1898,11 @@ public class AssignmentAction extends PagedResourceActionII
 		{
 			a = AssignmentService.getAssignment((String) state.getAttribute(GRADE_SUBMISSION_ASSIGNMENT_ID));
 			context.put("assignment", a);
-			gradeType = a.getContent().getTypeOfGrade();
+			if (a.getContent() != null)
+			{
+				gradeType = a.getContent().getTypeOfGrade();
+				context.put("value_SubmissionType", gradeType);
+			}
 		}
 		catch (IdUnusedException e)
 		{
@@ -2014,11 +1957,10 @@ public class AssignmentAction extends PagedResourceActionII
 					context.put("prevFeedbackAttachments", getPrevFeedbackAttachments(p));
 				}
 				
-				if (state.getAttribute(AssignmentSubmission.ALLOW_RESUBMIT_NUMBER) != null)
-				{
-					// put resubmission option into context
-					assignment_resubmission_option_into_context(a, s, context, state);
-				}
+
+				// put the re-submission info into context
+				putTimePropertiesInContext(context, state, "Resubmit", ALLOW_RESUBMIT_CLOSEMONTH, ALLOW_RESUBMIT_CLOSEDAY, ALLOW_RESUBMIT_CLOSEYEAR, ALLOW_RESUBMIT_CLOSEHOUR, ALLOW_RESUBMIT_CLOSEMIN, ALLOW_RESUBMIT_CLOSEAMPM);
+				assignment_resubmission_option_into_context(context, state);
 			}
 		}
 		catch (IdUnusedException e)
@@ -2119,7 +2061,10 @@ public class AssignmentAction extends PagedResourceActionII
 	 */
 	public void doNext_submission(RunData rundata, Context context)
 	{
-		navigateToSubmission(rundata, "nextSubmissionId");
+		SessionState state = ((JetspeedRunData) rundata).getPortletSessionState(((JetspeedRunData) rundata).getJs_peid());
+		
+		if (state.getAttribute(STATE_MESSAGE) == null)
+			navigateToSubmission(rundata, "nextSubmissionId");
 
 	} // doNext_submission
 
@@ -2141,7 +2086,10 @@ public class AssignmentAction extends PagedResourceActionII
 	 */
 	public void doPrev_submission(RunData rundata, Context context)
 	{
-		navigateToSubmission(rundata, "prevSubmissionId");
+		SessionState state = ((JetspeedRunData) rundata).getPortletSessionState(((JetspeedRunData) rundata).getJs_peid());
+
+		if (state.getAttribute(STATE_MESSAGE) == null)
+			navigateToSubmission(rundata, "prevSubmissionId");
 
 	} // doPrev_submission
 
@@ -2326,6 +2274,10 @@ public class AssignmentAction extends PagedResourceActionII
 			assignment = AssignmentService.getAssignment((String) state.getAttribute(EXPORT_ASSIGNMENT_REF));
 			context.put("assignment", assignment);
 			state.setAttribute(EXPORT_ASSIGNMENT_ID, assignment.getId());
+			if (assignment.getContent() != null) 
+			{
+				context.put("value_SubmissionType", new Integer(assignment.getContent().getTypeOfSubmission()));
+			}
 			
 			// put creator information into context
 			putCreatorIntoContext(context, assignment);
@@ -2378,8 +2330,14 @@ public class AssignmentAction extends PagedResourceActionII
 			List<UserSubmission> userSubmissions = prepPage(state);
 			state.setAttribute(USER_SUBMISSIONS, userSubmissions);
 			context.put("userSubmissions", state.getAttribute(USER_SUBMISSIONS));
+			// whether to show the resubmission choice
+			if (state.getAttribute(SHOW_ALLOW_RESUBMISSION) != null)
+			{
+				context.put("showAllowResubmission", Boolean.TRUE);
+			}
 			// put the re-submission info into context
-			assignment_resubmission_option_into_context(assignment, null, context, state);
+			putTimePropertiesInContext(context, state, "Resubmit", ALLOW_RESUBMIT_CLOSEMONTH, ALLOW_RESUBMIT_CLOSEDAY, ALLOW_RESUBMIT_CLOSEYEAR, ALLOW_RESUBMIT_CLOSEHOUR, ALLOW_RESUBMIT_CLOSEMIN, ALLOW_RESUBMIT_CLOSEAMPM);
+			assignment_resubmission_option_into_context(context, state);
 		}
 		catch (IdUnusedException e)
 		{
@@ -2419,12 +2377,6 @@ public class AssignmentAction extends PagedResourceActionII
 		
 		// put supplement item into context
 		supplementItemIntoContext(state, context, assignment, null);
-		
-		// whether to show the resubmission choicif 
-		if (state.getAttribute(SHOW_ALLOW_RESUBMISSION) != null)
-		{
-			context.put("showAllowResubmission", Boolean.TRUE);
-		}
 		
 		String template = (String) getContext(data).get("template");
 		
@@ -2482,7 +2434,7 @@ public class AssignmentAction extends PagedResourceActionII
 			context.put("assignment", assignment);
 			
 			// put the resubmit information into context
-			putResubmitInfoInContext(context, assignment, null);
+			assignment_resubmission_option_into_context(context, state);
 			
 			// put creator information into context
 			putCreatorIntoContext(context, assignment);
@@ -3055,6 +3007,8 @@ public class AssignmentAction extends PagedResourceActionII
 
 		try
 		{
+			Assignment a = AssignmentService.getAssignment(assignmentReference);
+			
 			AssignmentSubmission submission = AssignmentService.getSubmission(assignmentReference, u);
 
 			if (submission != null)
@@ -3075,6 +3029,9 @@ public class AssignmentAction extends PagedResourceActionII
 				state.setAttribute(ATTACHMENTS, EntityManager.newReferenceList());	
 			}
 
+			// put resubmission option into state
+			assignment_resubmission_option_into_state(a, submission, state);
+			
 			state.setAttribute(STATE_MODE, MODE_STUDENT_VIEW_SUBMISSION);
 		}
 		catch (IdUnusedException e)
@@ -4367,40 +4324,12 @@ public class AssignmentAction extends PagedResourceActionII
 		{
 			state.removeAttribute(NEW_ASSIGNMENT_GROUPS);
 		}
-
-		if (state.getAttribute(WITH_GRADES) != null && ((Boolean) state.getAttribute(WITH_GRADES)).booleanValue())
-		{
-			// the grade point
-			String gradePoints = params.getString(NEW_ASSIGNMENT_GRADE_POINTS);
-			state.setAttribute(NEW_ASSIGNMENT_GRADE_POINTS, gradePoints);
-			if (gradePoints != null)
-			{
-				if (gradeType == 3)
-				{
-					if ((gradePoints.length() == 0))
-					{
-						// in case of point grade assignment, user must specify maximum grade point
-						addAlert(state, rb.getString("plespethe3"));
-					}
-					else
-					{
-						validPointGrade(state, gradePoints);
-						// when scale is points, grade must be integer and less than maximum value
-						if (state.getAttribute(STATE_MESSAGE) == null)
-						{
-							gradePoints = scalePointGrade(state, gradePoints);
-						}
-						state.setAttribute(NEW_ASSIGNMENT_GRADE_POINTS, gradePoints);
-					}
-				}
-			}
-		}
 		
 		// allow resubmission numbers
 		if (params.getString("allowResToggle") != null && params.getString(AssignmentSubmission.ALLOW_RESUBMIT_NUMBER) != null)
 		{
 			// read in allowResubmit params 
-			readAllowResubmitParams(params, state);
+			readAllowResubmitParams(params, state, null);
 		}
 		else
 		{
@@ -4499,6 +4428,34 @@ public class AssignmentAction extends PagedResourceActionII
 			M_log.warn(this + ":postOrSaveAssignment " + e.toString() + "error finding authzGroup for = " + siteId);
 		}
 		state.setAttribute(ALLPURPOSE_ACCESS, accessList);
+		
+		if (state.getAttribute(WITH_GRADES) != null && ((Boolean) state.getAttribute(WITH_GRADES)).booleanValue())
+		{
+			// the grade point
+			String gradePoints = params.getString(NEW_ASSIGNMENT_GRADE_POINTS);
+			state.setAttribute(NEW_ASSIGNMENT_GRADE_POINTS, gradePoints);
+			if (gradePoints != null)
+			{
+				if (gradeType == 3)
+				{
+					if ((gradePoints.length() == 0))
+					{
+						// in case of point grade assignment, user must specify maximum grade point
+						addAlert(state, rb.getString("plespethe3"));
+					}
+					else
+					{
+						validPointGrade(state, gradePoints);
+						// when scale is points, grade must be integer and less than maximum value
+						if (state.getAttribute(STATE_MESSAGE) == null)
+						{
+							gradePoints = scalePointGrade(state, gradePoints);
+						}
+						state.setAttribute(NEW_ASSIGNMENT_GRADE_POINTS, gradePoints);
+					}
+				}
+			}
+		}
 		
 	} // setNewAssignmentParameters
 	
@@ -5205,20 +5162,32 @@ public class AssignmentAction extends PagedResourceActionII
 	 * @param a
 	 * @return
 	 */
-	private boolean change_resubmit_option(SessionState state, Assignment a) 
+	private boolean change_resubmit_option(SessionState state, Entity entity) 
 	{
-		if (a != null)
+		if (entity != null)
 		{
 			// editing
-			String o_resubmit_number = a.getProperties().getProperty(AssignmentSubmission.ALLOW_RESUBMIT_NUMBER);
-			String n_resubmit_number = state.getAttribute(AssignmentSubmission.ALLOW_RESUBMIT_NUMBER) != null? (String) state.getAttribute(AssignmentSubmission.ALLOW_RESUBMIT_NUMBER):null;
-			if (o_resubmit_number == null && n_resubmit_number != null
-				|| o_resubmit_number != null && n_resubmit_number == null
-				|| o_resubmit_number != null && n_resubmit_number != null && !o_resubmit_number.equals(n_resubmit_number))
-			{
-				// there is a change
-				return true;
-			}
+			return propertyValueChanged(state, entity, AssignmentSubmission.ALLOW_RESUBMIT_NUMBER) || propertyValueChanged(state, entity, AssignmentSubmission.ALLOW_RESUBMIT_CLOSETIME);
+		}
+		return false;
+	}
+
+	/**
+	 * whether there is a change between state variable and object's property value
+	 * @param state
+	 * @param entity
+	 * @param propertyName
+	 * @return
+	 */
+	private boolean propertyValueChanged(SessionState state, Entity entity, String propertyName) {
+		String o_property_value = entity.getProperties().getProperty(propertyName);
+		String n_property_value = state.getAttribute(propertyName) != null? (String) state.getAttribute(propertyName):null;
+		if (o_property_value == null && n_property_value != null
+			|| o_property_value != null && n_property_value == null
+			|| o_property_value != null && n_property_value != null && !o_property_value.equals(n_property_value))
+		{
+			// there is a change
+			return true;
 		}
 		return false;
 	}
@@ -5789,7 +5758,7 @@ public class AssignmentAction extends PagedResourceActionII
 			aPropertiesEdit.addProperty(AssignmentSubmission.ALLOW_RESUBMIT_NUMBER, allowResubmitNumber);
 			aPropertiesEdit.addProperty(AssignmentSubmission.ALLOW_RESUBMIT_CLOSETIME, String.valueOf(closeTime.getTime()));
 		}
-		else
+		else if (allowResubmitNumber == null || allowResubmitNumber.length() == 0 || allowResubmitNumber.equals("0"))	
 		{
 			aPropertiesEdit.removeProperty(AssignmentSubmission.ALLOW_RESUBMIT_NUMBER);
 			aPropertiesEdit.removeProperty(AssignmentSubmission.ALLOW_RESUBMIT_CLOSETIME);
@@ -6073,6 +6042,9 @@ public class AssignmentAction extends PagedResourceActionII
 		try
 		{
 			Assignment a = AssignmentService.getAssignment(assignmentId);
+			
+			// get resubmission option into state
+			assignment_resubmission_option_into_state(a, null, state);
 		}
 		catch (IdUnusedException e)
 		{
@@ -6236,8 +6208,9 @@ public class AssignmentAction extends PagedResourceActionII
 			{
 				state.setAttribute(NEW_ASSIGNMENT_RANGE, "groups");
 			}
-				
-			state.setAttribute(AssignmentSubmission.ALLOW_RESUBMIT_NUMBER, properties.getProperty(AssignmentSubmission.ALLOW_RESUBMIT_NUMBER) != null?properties.getProperty(AssignmentSubmission.ALLOW_RESUBMIT_NUMBER):"0");
+			
+			// put the resubmission option into state
+			assignment_resubmission_option_into_state(a, null, state);
 			
 			// set whether we use the review service or not
 			state.setAttribute(NEW_ASSIGNMENT_USE_REVIEW_SERVICE, new Boolean(a.getContent().getAllowReviewService()).toString());
@@ -6837,18 +6810,8 @@ public class AssignmentAction extends PagedResourceActionII
 	
 				state.setAttribute(GRADE_SUBMISSION_GRADE, s.getGrade());
 				
-				ResourceProperties p = s.getProperties();
-				if (p.getProperty(AssignmentSubmission.ALLOW_RESUBMIT_NUMBER) != null)
-				{
-					allowResubmitNumber = p.getProperty(AssignmentSubmission.ALLOW_RESUBMIT_NUMBER);
-				}
-				else if (p.getProperty(GRADE_SUBMISSION_ALLOW_RESUBMIT) != null)
-				{
-					// if there is any legacy setting for generally allow resubmit, set the allow resubmit number to be 1, and remove the legacy property
-					allowResubmitNumber = "1";
-				}
-				
-				state.setAttribute(AssignmentSubmission.ALLOW_RESUBMIT_NUMBER, allowResubmitNumber);
+				// put the resubmission info into state
+				assignment_resubmission_option_into_state(a, s, state);
 			}
 			catch (IdUnusedException ee)
 			{
@@ -7013,6 +6976,9 @@ public class AssignmentAction extends PagedResourceActionII
 			state.setAttribute(GRADE_ASSIGNMENT_EXPAND_FLAG, new Boolean(false));
 			state.setAttribute(GRADE_SUBMISSION_EXPAND_FLAG, new Boolean(true));
 			state.setAttribute(STATE_MODE, MODE_INSTRUCTOR_GRADE_ASSIGNMENT);
+			
+			// initialize the resubmission params
+			assignment_resubmission_option_into_state(a, null, state);
 
 			// we are changing the view, so start with first page again.
 			resetPaging(state);
@@ -7402,6 +7368,8 @@ public class AssignmentAction extends PagedResourceActionII
 
 		ParameterParser params = data.getParameters();
 		int typeOfGrade = -1;
+		
+		String submissionId = params.getString("submissionId");
 
 		boolean withGrade = state.getAttribute(WITH_GRADES) != null ? ((Boolean) state.getAttribute(WITH_GRADES)).booleanValue()
 				: false;
@@ -7422,7 +7390,7 @@ public class AssignmentAction extends PagedResourceActionII
 		
 		state.setAttribute(GRADE_SUBMISSION_FEEDBACK_ATTACHMENT, state.getAttribute(ATTACHMENTS));
 
-		String g = params.getCleanString(GRADE_SUBMISSION_GRADE);
+		String g = StringUtil.trimToNull(params.getCleanString(GRADE_SUBMISSION_GRADE));
 		if (g != null)
 		{
 			state.setAttribute(GRADE_SUBMISSION_GRADE, g);
@@ -7439,7 +7407,8 @@ public class AssignmentAction extends PagedResourceActionII
 			// for points grading, one have to enter number as the points
 			String grade = (String) state.getAttribute(GRADE_SUBMISSION_GRADE);
 
-			Assignment a = AssignmentService.getSubmission(sId).getAssignment();
+			AssignmentSubmission submission = AssignmentService.getSubmission(sId);
+			Assignment a = submission.getAssignment();
 			typeOfGrade = a.getContent().getTypeOfGrade();
 
 			if (withGrade)
@@ -7447,11 +7416,7 @@ public class AssignmentAction extends PagedResourceActionII
 				// do grade validation only for Assignment with Grade tool
 				if (typeOfGrade == Assignment.SCORE_GRADE_TYPE)
 				{
-					if ((grade.length() == 0))
-					{
-						state.setAttribute(GRADE_SUBMISSION_GRADE, grade);
-					}
-					else
+					if ((grade != null))
 					{
 						// the preview grade process might already scaled up the grade by 10
 						if (!((String) state.getAttribute(STATE_MODE)).equals(MODE_INSTRUCTOR_PREVIEW_GRADE_SUBMISSION))
@@ -7496,6 +7461,17 @@ public class AssignmentAction extends PagedResourceActionII
 					addAlert(state, rb.getString("plespethe2"));
 				}
 			}
+			
+			// allow resubmit number and due time
+			if (params.getString("allowResToggle") != null && params.getString(AssignmentSubmission.ALLOW_RESUBMIT_NUMBER) != null)
+			{
+				// read in allowResubmit params 
+				readAllowResubmitParams(params, state, submission);
+			}
+			else
+			{
+				resetAllowResubmitParams(state);
+			}
 		}
 		catch (IdUnusedException e)
 		{
@@ -7506,20 +7482,6 @@ public class AssignmentAction extends PagedResourceActionII
 		{
 			addAlert(state, rb.getString("not_allowed_to_view"));
 			M_log.warn(this + ":readGradeForm " + e.getMessage());
-		}
-		
-		// allow resubmit number and due time
-		if (params.getString("allowResToggle") != null)
-		{
-			if (params.getString(AssignmentSubmission.ALLOW_RESUBMIT_NUMBER) != null)
-			{
-				// read in allowResubmit params 
-				readAllowResubmitParams(params, state);
-			}
-		}
-		else
-		{
-			resetAllowResubmitParams(state);
 		}
 		
 		if (state.getAttribute(STATE_MESSAGE) == null)
@@ -7535,7 +7497,7 @@ public class AssignmentAction extends PagedResourceActionII
 	 * @param params
 	 * @param state
 	 */
-	protected void readAllowResubmitParams(ParameterParser params, SessionState state)
+	protected void readAllowResubmitParams(ParameterParser params, SessionState state, Entity entity)
 	{
 		String allowResubmitNumberString = params.getString(AssignmentSubmission.ALLOW_RESUBMIT_NUMBER);
 		state.setAttribute(AssignmentSubmission.ALLOW_RESUBMIT_NUMBER, params.getString(AssignmentSubmission.ALLOW_RESUBMIT_NUMBER));
@@ -7564,23 +7526,27 @@ public class AssignmentAction extends PagedResourceActionII
 			}
 			Time closeTime = TimeService.newTimeLocal(closeYear, closeMonth, closeDay, closeHour, closeMin, 0, 0);
 			state.setAttribute(AssignmentSubmission.ALLOW_RESUBMIT_CLOSETIME, String.valueOf(closeTime.getTime()));
-			// validate date
-			if (closeTime.before(TimeService.newTime()) && state.getAttribute(NEW_ASSIGNMENT_PAST_CLOSE_DATE) == null)
+			// no need to show alert if the resubmission setting has not changed
+			if (entity == null || change_resubmit_option(state, entity))
 			{
-				state.setAttribute(NEW_ASSIGNMENT_PAST_CLOSE_DATE, Boolean.TRUE);
-			}
-			else
-			{
-				// clean the attribute after user confirm
-				state.removeAttribute(NEW_ASSIGNMENT_PAST_CLOSE_DATE);
-			}
-			if (state.getAttribute(NEW_ASSIGNMENT_PAST_CLOSE_DATE) != null)
-			{
-				addAlert(state, rb.getString("acesubdea4"));
-			}
-			if (!Validator.checkDate(closeDay, closeMonth, closeYear))
-			{
-				addAlert(state, rb.getString("date.invalid") + rb.getString("date.closedate") + ".");
+				// validate date
+				if (closeTime.before(TimeService.newTime()) && state.getAttribute(NEW_ASSIGNMENT_PAST_CLOSE_DATE) == null)
+				{
+					state.setAttribute(NEW_ASSIGNMENT_PAST_CLOSE_DATE, Boolean.TRUE);
+				}
+				else
+				{
+					// clean the attribute after user confirm
+					state.removeAttribute(NEW_ASSIGNMENT_PAST_CLOSE_DATE);
+				}
+				if (state.getAttribute(NEW_ASSIGNMENT_PAST_CLOSE_DATE) != null)
+				{
+					addAlert(state, rb.getString("acesubdea5"));
+				}
+				if (!Validator.checkDate(closeDay, closeMonth, closeYear))
+				{
+					addAlert(state, rb.getString("date.invalid") + rb.getString("date.resubmission.closedate") + ".");
+				}
 			}
 		}
 		else
@@ -7599,7 +7565,7 @@ public class AssignmentAction extends PagedResourceActionII
 		state.removeAttribute(ALLOW_RESUBMIT_CLOSEMIN);
 		state.removeAttribute(ALLOW_RESUBMIT_CLOSEAMPM);
 		state.removeAttribute(AssignmentSubmission.ALLOW_RESUBMIT_CLOSETIME);
-		state.setAttribute(AssignmentSubmission.ALLOW_RESUBMIT_NUMBER, "0");
+		state.removeAttribute(AssignmentSubmission.ALLOW_RESUBMIT_NUMBER);
 	}
 
 	/**
@@ -9999,13 +9965,16 @@ public class AssignmentAction extends PagedResourceActionII
 			}
 		}
 		
-		try
+		if (StringUtil.trimToNull(point) != null)
 		{
-			point = Integer.valueOf(point).toString();
-		}
-		catch (Exception e)
-		{
-			M_log.warn(this + " scalePointGrade: cannot parse " + point + " into integer. " + e.getMessage());
+			try
+			{
+				point = Integer.valueOf(point).toString();
+			}
+			catch (Exception e)
+			{
+				M_log.warn(this + " scalePointGrade: cannot parse " + point + " into integer. " + e.getMessage());
+			}
 		}
 		return point;
 
@@ -11438,66 +11407,92 @@ public class AssignmentAction extends PagedResourceActionII
 		}
 	}
 	
-	private void assignment_resubmission_option_into_context(Assignment a, AssignmentSubmission s, Context context, SessionState state)
+	private void assignment_resubmission_option_into_context(Context context, SessionState state)
 	{
 		context.put("name_allowResubmitNumber", AssignmentSubmission.ALLOW_RESUBMIT_NUMBER);
 
 		String allowResubmitNumber = state.getAttribute(AssignmentSubmission.ALLOW_RESUBMIT_NUMBER) != null ? (String) state.getAttribute(AssignmentSubmission.ALLOW_RESUBMIT_NUMBER) : null;
 		String allowResubmitTimeString = state.getAttribute(AssignmentSubmission.ALLOW_RESUBMIT_CLOSETIME) != null ? (String) state.getAttribute(AssignmentSubmission.ALLOW_RESUBMIT_CLOSETIME) : null;
-		
-		if (allowResubmitNumber == null || allowResubmitTimeString == null)
+			
+		// the resubmit number
+		if (allowResubmitNumber != null && !allowResubmitNumber.equals("0"))
 		{
-			if (s != null)
+			context.put("value_allowResubmitNumber", Integer.valueOf(allowResubmitNumber));
+			context.put("resubmitNumber", allowResubmitNumber.equals("-1") ? rb.getString("allow.resubmit.number.unlimited"): allowResubmitNumber);
+			
+			// put allow resubmit time information into context
+			putTimePropertiesInContext(context, state, "Resubmit", ALLOW_RESUBMIT_CLOSEMONTH, ALLOW_RESUBMIT_CLOSEDAY, ALLOW_RESUBMIT_CLOSEYEAR, ALLOW_RESUBMIT_CLOSEHOUR, ALLOW_RESUBMIT_CLOSEMIN, ALLOW_RESUBMIT_CLOSEAMPM);	
+			// resubmit close time
+			Time resubmitCloseTime = null;
+			if (allowResubmitTimeString != null)
 			{
-				// if submission is present, get the resubmission values from submission object first
-				ResourceProperties sProperties = s.getProperties();
-				allowResubmitNumber = sProperties.getProperty(AssignmentSubmission.ALLOW_RESUBMIT_NUMBER);
-				allowResubmitTimeString = sProperties.getProperty(AssignmentSubmission.ALLOW_RESUBMIT_CLOSETIME);
+				resubmitCloseTime = TimeService.newTime(Long.parseLong(allowResubmitTimeString));
 			}
-			else if (a != null)
+			// put into context
+			if (resubmitCloseTime != null)
 			{
-				// otherwise, if assignment is present, get the resubmission values from assignment object next
-				ResourceProperties aProperties = a.getProperties();
-				allowResubmitNumber = aProperties.getProperty(AssignmentSubmission.ALLOW_RESUBMIT_NUMBER);
-				allowResubmitTimeString = aProperties.getProperty(AssignmentSubmission.ALLOW_RESUBMIT_CLOSETIME);
+				context.put("resubmitCloseTime", resubmitCloseTime.toStringLocalFull());
 			}
 		}
 		
-		if (allowResubmitNumber == null || "".equals(allowResubmitNumber))
+		context.put("value_year_from", state.getAttribute(NEW_ASSIGNMENT_YEAR_RANGE_FROM));
+		context.put("value_year_to", state.getAttribute(NEW_ASSIGNMENT_YEAR_RANGE_TO));
+		
+	}
+	
+	private void assignment_resubmission_option_into_state(Assignment a, AssignmentSubmission s, SessionState state)
+	{
+
+		String allowResubmitNumber = null;
+		String allowResubmitTimeString = null;
+		
+		if (s != null)
 		{
-			// default setting;
-			allowResubmitNumber = "0";
+			// if submission is present, get the resubmission values from submission object first
+			ResourceProperties sProperties = s.getProperties();
+			allowResubmitNumber = sProperties.getProperty(AssignmentSubmission.ALLOW_RESUBMIT_NUMBER);
+			allowResubmitTimeString = sProperties.getProperty(AssignmentSubmission.ALLOW_RESUBMIT_CLOSETIME);
 		}
+		else if (a != null)
+		{
+			// otherwise, if assignment is present, get the resubmission values from assignment object next
+			ResourceProperties aProperties = a.getProperties();
+			allowResubmitNumber = aProperties.getProperty(AssignmentSubmission.ALLOW_RESUBMIT_NUMBER);
+			allowResubmitTimeString = aProperties.getProperty(AssignmentSubmission.ALLOW_RESUBMIT_CLOSETIME);
+		}
+		if (StringUtil.trimToNull(allowResubmitNumber) != null)
+		{
+			state.setAttribute(AssignmentSubmission.ALLOW_RESUBMIT_NUMBER, allowResubmitNumber);
+		}
+		else
+		{
+			state.removeAttribute(AssignmentSubmission.ALLOW_RESUBMIT_NUMBER);
+		}
+		
 		if (allowResubmitTimeString == null)
 		{
 			// default setting
-			Time t = TimeService.newTime(); 
-			TimeBreakdown tBreakDown = t.breakdownLocal();
-			tBreakDown.setHour(17); // 5 in the afternoon
-			tBreakDown.setDay(tBreakDown.getDay() + 7);
-			allowResubmitTimeString = String.valueOf(TimeService.newTimeLocal(tBreakDown.getYear(), tBreakDown.getMonth(), tBreakDown.getDay(), tBreakDown.getHour(), 0, 0, 0).getTime());
-		}
-			
-		// the resubmit number
-		if (allowResubmitNumber != null)
-		{
-			context.put("value_allowResubmitNumber", Integer.valueOf(allowResubmitNumber));
+			allowResubmitTimeString = String.valueOf(a.getCloseTime().getTime());
 		}
 		
 		Time allowResubmitTime = null;
 		if (allowResubmitTimeString != null)
 		{
+			state.setAttribute(AssignmentSubmission.ALLOW_RESUBMIT_CLOSETIME, allowResubmitTimeString);
+			
 			// get time object
-			allowResubmitTime = getProperFutureTime(TimeService.newTime(Long.parseLong(allowResubmitTimeString)));
+			allowResubmitTime = TimeService.newTime(Long.parseLong(allowResubmitTimeString));
+		}
+		else
+		{
+			state.removeAttribute(AssignmentSubmission.ALLOW_RESUBMIT_CLOSETIME);
 		}
 		
-		// set up related state variables
-		putTimePropertiesInState(state, getProperFutureTime(allowResubmitTime), ALLOW_RESUBMIT_CLOSEMONTH, ALLOW_RESUBMIT_CLOSEDAY, ALLOW_RESUBMIT_CLOSEYEAR, ALLOW_RESUBMIT_CLOSEHOUR, ALLOW_RESUBMIT_CLOSEMIN, ALLOW_RESUBMIT_CLOSEAMPM);
-		// put allow resubmit time information into context
-		putTimePropertiesInContext(context, state, "Resubmit", ALLOW_RESUBMIT_CLOSEMONTH, ALLOW_RESUBMIT_CLOSEDAY, ALLOW_RESUBMIT_CLOSEYEAR, ALLOW_RESUBMIT_CLOSEHOUR, ALLOW_RESUBMIT_CLOSEMIN, ALLOW_RESUBMIT_CLOSEAMPM);
-		
-		context.put("value_year_from", state.getAttribute(NEW_ASSIGNMENT_YEAR_RANGE_FROM));
-		context.put("value_year_to", state.getAttribute(NEW_ASSIGNMENT_YEAR_RANGE_TO));
+		if (allowResubmitTime != null)
+		{
+			// set up related state variables
+			putTimePropertiesInState(state, allowResubmitTime, ALLOW_RESUBMIT_CLOSEMONTH, ALLOW_RESUBMIT_CLOSEDAY, ALLOW_RESUBMIT_CLOSEYEAR, ALLOW_RESUBMIT_CLOSEHOUR, ALLOW_RESUBMIT_CLOSEMIN, ALLOW_RESUBMIT_CLOSEAMPM);
+		}
 	}
 	
 	/**
@@ -11515,7 +11510,7 @@ public class AssignmentAction extends PagedResourceActionII
 			if (params.getString(AssignmentSubmission.ALLOW_RESUBMIT_NUMBER) != null)
 			{
 				// read in allowResubmit params 
-				readAllowResubmitParams(params, state);
+				readAllowResubmitParams(params, state, null);
 			}
 		}
 		else
