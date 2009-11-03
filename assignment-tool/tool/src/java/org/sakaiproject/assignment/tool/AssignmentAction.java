@@ -3692,13 +3692,8 @@ public class AssignmentAction extends PagedResourceActionII
 							}
 						}
 						
-						// get the assignment setting for resubmitting
-						if (a.getProperties().getProperty(AssignmentSubmission.ALLOW_RESUBMIT_NUMBER) != null)
-						{
-							edit.getPropertiesEdit().addProperty(AssignmentSubmission.ALLOW_RESUBMIT_NUMBER, a.getProperties().getProperty(AssignmentSubmission.ALLOW_RESUBMIT_NUMBER));
-							// use assignment close time as the close time for resubmit
-							edit.getPropertiesEdit().addProperty(AssignmentSubmission.ALLOW_RESUBMIT_CLOSETIME, String.valueOf(a.getCloseTime().getTime()));
-						}
+						// set the resubmission properties
+						setResubmissionProperties(a, edit);
 						
 						AssignmentService.commitEdit(edit);
 					}
@@ -3727,6 +3722,26 @@ public class AssignmentAction extends PagedResourceActionII
 		}
 
 	} // doSave_submission
+
+	/**
+	 * set the resubmission related properties in AssignmentSubmission object
+	 * @param a
+	 * @param edit
+	 */
+	private void setResubmissionProperties(Assignment a,
+			AssignmentSubmissionEdit edit) {
+		// get the assignment setting for resubmitting
+		ResourceProperties assignmentProperties = a.getProperties();
+		String assignmentAllowResubmitNumber = assignmentProperties.getProperty(AssignmentSubmission.ALLOW_RESUBMIT_NUMBER);
+		if (assignmentAllowResubmitNumber != null)
+		{
+			edit.getPropertiesEdit().addProperty(AssignmentSubmission.ALLOW_RESUBMIT_NUMBER, assignmentAllowResubmitNumber);
+			
+			String assignmentAllowResubmitCloseDate = assignmentProperties.getProperty(AssignmentSubmission.ALLOW_RESUBMIT_CLOSETIME);
+			// if assignment's setting of resubmit close time is null, use assignment close time as the close time for resubmit
+			edit.getPropertiesEdit().addProperty(AssignmentSubmission.ALLOW_RESUBMIT_CLOSETIME, assignmentAllowResubmitCloseDate != null?assignmentAllowResubmitCloseDate:String.valueOf(a.getCloseTime().getTime()));
+		}
+	}
 
 	/**
 	 * Action is to post the submission
@@ -4019,13 +4034,8 @@ public class AssignmentAction extends PagedResourceActionII
 								}
 							}
 							
-							// get the assignment setting for resubmitting
-							if (a.getProperties().getProperty(AssignmentSubmission.ALLOW_RESUBMIT_NUMBER) != null)
-							{
-								edit.getPropertiesEdit().addProperty(AssignmentSubmission.ALLOW_RESUBMIT_NUMBER, a.getProperties().getProperty(AssignmentSubmission.ALLOW_RESUBMIT_NUMBER));
-								// use assignment close time as the close time for resubmit
-								edit.getPropertiesEdit().addProperty(AssignmentSubmission.ALLOW_RESUBMIT_CLOSETIME, String.valueOf(a.getCloseTime().getTime()));
-							}
+							// set the resubmission properties
+							setResubmissionProperties(a, edit);
 	
 							AssignmentService.commitEdit(edit);
 						}
@@ -4911,6 +4921,7 @@ public class AssignmentAction extends PagedResourceActionII
 								try
 								{
 									AssignmentSubmissionEdit sEdit = AssignmentService.editSubmission(s.getReference());
+									ResourcePropertiesEdit sPropertiesEdit = sEdit.getPropertiesEdit();
 									if (bool_change_from_non_electronic)
 									{
 										sEdit.setSubmitted(false);
@@ -4926,8 +4937,17 @@ public class AssignmentAction extends PagedResourceActionII
 									}
 									if (bool_change_resubmit_option)
 									{
-										sEdit.getPropertiesEdit().addProperty(AssignmentSubmission.ALLOW_RESUBMIT_NUMBER, (String) state.getAttribute(AssignmentSubmission.ALLOW_RESUBMIT_NUMBER));
-										sEdit.getPropertiesEdit().addProperty(AssignmentSubmission.ALLOW_RESUBMIT_CLOSETIME, String.valueOf(a.getCloseTime().getTime()));
+										String aAllowResubmitNumber = a.getProperties().getProperty(AssignmentSubmission.ALLOW_RESUBMIT_NUMBER);
+										if (aAllowResubmitNumber == null || aAllowResubmitNumber.length() == 0 || aAllowResubmitNumber.equals("0"))
+										{
+											sPropertiesEdit.removeProperty(AssignmentSubmission.ALLOW_RESUBMIT_NUMBER);
+											sPropertiesEdit.removeProperty(AssignmentSubmission.ALLOW_RESUBMIT_CLOSETIME);
+										}
+										else
+										{
+											sPropertiesEdit.addProperty(AssignmentSubmission.ALLOW_RESUBMIT_NUMBER, a.getProperties().getProperty(AssignmentSubmission.ALLOW_RESUBMIT_NUMBER));
+											sPropertiesEdit.addProperty(AssignmentSubmission.ALLOW_RESUBMIT_CLOSETIME, a.getProperties().getProperty(AssignmentSubmission.ALLOW_RESUBMIT_CLOSETIME));
+										}
 									}
 									AssignmentService.commitEdit(sEdit);
 								}
@@ -6826,14 +6846,6 @@ public class AssignmentAction extends PagedResourceActionII
 				{
 					// if there is any legacy setting for generally allow resubmit, set the allow resubmit number to be 1, and remove the legacy property
 					allowResubmitNumber = "1";
-				}
-				  else
-				{
-					  // get it from assignment own setting
-					  if (a.getProperties().getProperty(AssignmentSubmission.ALLOW_RESUBMIT_NUMBER) != null)
-					  {
-						  allowResubmitNumber= a.getProperties().getProperty(AssignmentSubmission.ALLOW_RESUBMIT_NUMBER);
-					  }
 				}
 				
 				state.setAttribute(AssignmentSubmission.ALLOW_RESUBMIT_NUMBER, allowResubmitNumber);
@@ -9640,13 +9652,8 @@ public class AssignmentAction extends PagedResourceActionII
 													s.setSubmitted(true);
 													s.setAssignment(a);
 													
-													// get the assignment setting for resubmitting
-													if (a.getProperties().getProperty(AssignmentSubmission.ALLOW_RESUBMIT_NUMBER) != null)
-													{
-														s.getPropertiesEdit().addProperty(AssignmentSubmission.ALLOW_RESUBMIT_NUMBER, a.getProperties().getProperty(AssignmentSubmission.ALLOW_RESUBMIT_NUMBER));
-														// use assignment close time as the close time for resubmit
-														s.getPropertiesEdit().addProperty(AssignmentSubmission.ALLOW_RESUBMIT_CLOSETIME, String.valueOf(a.getCloseTime().getTime()));
-													}
+													// set the resubmission properties
+													setResubmissionProperties(a, s);
 													
 													AssignmentService.commitEdit(s);
 													
