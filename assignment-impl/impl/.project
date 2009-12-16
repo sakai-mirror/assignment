@@ -4,8 +4,6 @@
   <projects>
     <project>contentreview-model-api</project>
     <project>contentreview-service-api</project>
-    <project>osp-common-api</project>
-    <project>osp-matrix-api</project>
     <project>sakai-announcement-api</project>
     <project>sakai-assignment-api</project>
     <project>sakai-calendar-api</project>
