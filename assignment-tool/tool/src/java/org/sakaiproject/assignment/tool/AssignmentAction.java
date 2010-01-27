@@ -7256,8 +7256,8 @@ public class AssignmentAction extends PagedResourceActionII
 			}
 			else if (option.equals("cancelgradesubmission"))
 			{
-				// save and navigate to previous submission
-				doCancel_grade_submission(data);
+				// back to the list view
+				doBack_to_submission_list(data);
 			}
 		}
 	}
