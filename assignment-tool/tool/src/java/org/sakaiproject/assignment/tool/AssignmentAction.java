@@ -2071,15 +2071,9 @@ public class AssignmentAction extends PagedResourceActionII
 	public void doNext_submission(RunData rundata)
 	{
 		SessionState state = ((JetspeedRunData) rundata).getPortletSessionState(((JetspeedRunData) rundata).getJs_peid());
-		// save the instructor input
-		readGradeForm(rundata, state, "save");
-		if (state.getAttribute(STATE_MESSAGE) == null)
-		{
-			grade_submission_option(rundata, "save");
-		}
-		state.setAttribute(STATE_MODE, MODE_INSTRUCTOR_GRADE_SUBMISSION);
 		
-		navigateToSubmission(rundata, "nextSubmissionId");
+		if (state.getAttribute(STATE_MESSAGE) == null)
+			navigateToSubmission(rundata, "nextSubmissionId");
 
 	} // doNext_submission
 
@@ -2102,15 +2096,9 @@ public class AssignmentAction extends PagedResourceActionII
 	public void doPrev_submission(RunData rundata)
 	{
 		SessionState state = ((JetspeedRunData) rundata).getPortletSessionState(((JetspeedRunData) rundata).getJs_peid());
-		// save the instructor input
-		readGradeForm(rundata, state, "save");
+
 		if (state.getAttribute(STATE_MESSAGE) == null)
-		{
-			grade_submission_option(rundata, "save");
-		}
-		state.setAttribute(STATE_MODE, MODE_INSTRUCTOR_GRADE_SUBMISSION);
-		
-		navigateToSubmission(rundata, "prevSubmissionId");
+			navigateToSubmission(rundata, "prevSubmissionId");
 
 	} // doPrev_submission
 
@@ -7259,6 +7247,8 @@ public class AssignmentAction extends PagedResourceActionII
 				// back to the list view
 				doBack_to_submission_list(data);
 			}
+
+
 		}
 	}
 	
