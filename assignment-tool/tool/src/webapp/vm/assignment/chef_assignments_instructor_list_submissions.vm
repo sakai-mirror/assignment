@@ -6,10 +6,23 @@
     $(document).ready(function(){
         setupToggleAreas('toggleAnchor', 'toggledContent', false, 'fast');
     });
+        
+    function showBulkGrading()
+    {
+		document.getElementById('bulkGrading_shown').style.display="inline";
+    	document.getElementById('bulkGrading_hidden').style.display="none";
+    	resizeFrame('grow');
+    }
+    
+    function hideBulkGrading()
+    {
+		document.getElementById('bulkGrading_shown').style.display="none";
+    	document.getElementById('bulkGrading_hidden').style.display="inline";
+    }
     
     function showAllowResubmission()
     {
-					document.getElementById('allowResubmission_shown').style.display="inline";
+		document.getElementById('allowResubmission_shown').style.display="inline";
     	document.getElementById('allowResubmission_hidden').style.display="none";
     	document.getElementById('allowResToggle').value="checked";
     	resizeFrame('grow');
@@ -152,36 +165,6 @@
 				#set($form_action="eventSubmit_doSet_defaultNotGradedNonElectronicScore")
 				#set($form_label="not.graded.non.electronic.submission.grade")
 			#end
-			<div class="viewNav">
-							#set ($gradeType = $assignment.getContent().TypeOfGrade)
-				<form name="defaultGradeForm" class="inlineForm" method="post" action="#toolForm($action)">
-					<input type="hidden" name="$!form_action" value="setScore" />
-					<label for="defaultGrade_1" style="display:block" class="textPanelFooter">$tlang.getString($!form_label)</label>
-					##for non-point-based grading, choose the default grade from drop-down
-					#if ($!gradeType != 3)
-						<select id="defaultGrade_1" name="defaultGrade" size="1" >
-							<option value="">$tlang.getString("non.submission.grade.select")</option>
-							#if ($!gradeType == 1)
-								<option value="gen.nograd" #if($!defaultGrade && $!defaultGrade.equals("gen.nograd"))selected="selected"#end>$tlang.getString("gen.nograd")</option>
-							#elseif ($!gradeType == 2)
-								#foreach ($i in ["ungraded", "A+", "A", "A-","B+","B","B-","C+","C","C-","D+","D","D-","E","F"])
-									<option value="$i" #if($!defaultGrade && $!defaultGrade.equals($i))selected="selected"#end>$i</option>
-								#end
-							#elseif ($!gradeType == 4)
-								#foreach ($i in ["ungraded", "Pass", "Fail"])
-									<option value="$i" #if($!defaultGrade && $!defaultGrade.equals($i))selected="selected"#end>$i</option>
-								#end
-							#elseif ($!gradeType == 5)
-								<option value="Checked" #if($!defaultGrade && $!defaultGrade.equals("Checked"))selected="selected"#end>$tlang.getString("gen.checked")</option>
-							#end
-						</select>
-					#else
-						## instructor needs to type in default points in point-based-grading
-						<input type="text" id="defaultGrade_2" name="defaultGrade" value="$!defaultGrade" size="5" />
-					#end
-					<input type="button" accesskey="a" class="active"  name="apply" value="$tlang.getString('gen.applygrade')" onclick="blur();document.defaultGradeForm.submit();" title="$tlang.getString("gen.applygrade")" />
-				</form>
-			</div>
 			<div class="listNav">
 				<div class="instruction">
 					$tlang.getString("gen.viewing") $topMsgPos - $btmMsgPos $tlang.getString("gen.of") $allMsgNumber $tlang.getString("gen.items")
@@ -239,7 +222,7 @@
 		</div>
 		<form name= "listSubmissionsForm" action="#toolForm("AssignmentAction")" method="post">
 			<input type="hidden" name="assignmentId" value="$assignment.Reference" />
-			
+			<input type="hidden" name="eventSubmit_doList_submission_option" value="" />
 			## model answer
 			#if($allowViewModelAnswer)
 			<h4  id="toggleModel" class="toggleAnchor specialLink"><img alt="expand" class="expand" src="/library/image/sakai/expand.gif" /><img alt="collapse" class="collapse" src="/library/image/sakai/collapse.gif" />$tlang.getString('modelAnswer')</h4>
@@ -325,6 +308,62 @@
 					</ul>
 				</div>
 			#end
+			<div id="bulkGrading_hidden" style="display:block">
+				<p class="discTria">
+					<a href="#" onclick="javascript:showBulkGrading();">
+					<img src="#imageLink("sakai/expand.gif")" alt="$tlang.getString("allowResubmission.show")" border="0" width="13" height="13" align="top" /></a>
+						Assign or Remove Grade(s) to Selected Set of Users
+				</p>
+			</div>
+			<div id="bulkGrading_shown" style="display:none">
+				<p class="discTria">
+					<a href="#" onclick="javascript:hideBulkGrading();">
+					<img src="#imageLink("sakai/collapse.gif")" alt="$tlang.getString("allowResubmission.hide")" border="0" width="13" height="13" align="top" /></a>
+						Assign or Remove Grade(s) to Selected Set of Submissions
+					#set ($gradeType = $assignment.getContent().TypeOfGrade)
+					##<form name="defaultGradeForm" class="inlineForm" method="post" action="#toolForm($action)">
+						<input type="hidden" name="option" value="setScore" />
+						## to what submission types
+						<p class="checkbox"><input id="submissionsSet" name="submissionsSet" type="radio" value="all" /><label for="toSubmissions_all"> All Users </label></p>
+						<p class="checkbox"><input id="submissionsSet" name="submissionsSet" type="radio" value="ungraded" /><label for="toSubmissions_ungraded"> All Users With Ungraded Submissions </label></p>
+						## show this choice only for electronic submissions
+						#if ($submissionType != 4)
+							<p class="checkbox"><input id="submissionsSet" name="submissionsSet" type="radio" value="unsubmitted" /><label for="toSubmissions_ungraded"> All Users Without Submissions </label></p>
+						#end
+						<p class="checkbox"><input id="submissionsSet" name="submissionsSet" type="radio" value="selected" /><label for="toSubmissions_selected"> Selected Users </label></p>
+						</p>
+						<p>
+						##for non-point-based grading, choose the default grade from drop-down
+						#if ($!gradeType != 3)
+							<label for="defaultGrade_1" class="skip"></label>
+							<select id="defaultGrade_1" name="defaultGrade" size="1" >
+								<option value="">$tlang.getString("non.submission.grade.select")</option>
+								#if ($!gradeType == 1)
+									<option value="gen.nograd" #if($!defaultGrade && $!defaultGrade.equals("gen.nograd"))selected="selected"#end>$tlang.getString("gen.nograd")</option>
+								#elseif ($!gradeType == 2)
+									#foreach ($i in ["ungraded", "A+", "A", "A-","B+","B","B-","C+","C","C-","D+","D","D-","E","F"])
+										<option value="$i" #if($!defaultGrade && $!defaultGrade.equals($i))selected="selected"#end>$i</option>
+									#end
+								#elseif ($!gradeType == 4)
+									#foreach ($i in ["ungraded", "Pass", "Fail"])
+										<option value="$i" #if($!defaultGrade && $!defaultGrade.equals($i))selected="selected"#end>$i</option>
+									#end
+								#elseif ($!gradeType == 5)
+									<option value="Checked" #if($!defaultGrade && $!defaultGrade.equals("Checked"))selected="selected"#end>$tlang.getString("gen.checked")</option>
+								#end
+							</select>
+						#else
+							## instructor needs to type in default points in point-based-grading
+							<label for="defaultGrade_2" class="skip"></label>
+							<input type="text" id="defaultGrade_2" name="defaultGrade" value="$!defaultGrade" size="5" />
+						#end
+						<input type="button" accesskey="a" class="active"  name="applyGrade" value="Apply Grade" onclick="blur();document.option.value='applyGrade';document.listSubmissionsForm.submit();" title="Apply Grade" />
+						&nbsp;&nbsp;&nbsp;or&nbsp;&nbsp;&nbsp;
+						<input type="button" accesskey="a" class="active"  name="removeGrade" value="Remove Grade" onclick="blur();document.option.value='removeGrade';document.listSubmissionsForm.submit();" title="Remove Grade" />
+					</p>
+					##</form>
+				</p>
+			</div>
 			<div id="allowResubmission_hidden" #if (!$!showAllowResubmission && $!value_SubmissionType != 4)style="display:block"#else style="display:none"#end>
 				<input type="hidden" name = "allowResToggle" id = "allowResToggle" value="checked" />
 				<p class="discTria">
@@ -388,7 +427,8 @@
 							</select>
 							## for save the resubmission choice
 							<div class="act">
-								<input type="submit" class="active" name="eventSubmit_doSave_resubmission_option" value="$tlang.getString("update")" accesskey="s" />
+								<input type="button" class="active"  name="saveResubmissionOption" value="Save Resubmit Option" onclick="blur();document.option.value='saveResubmissionOption';document.listSubmissionsForm.submit();" title="Save Resubmit Option" />
+								##<input type="submit" class="active" name="eventSubmit_doSave_resubmission_option" value="$tlang.getString("update")" accesskey="s" />
 							</div>
 						</p>
 			</div>

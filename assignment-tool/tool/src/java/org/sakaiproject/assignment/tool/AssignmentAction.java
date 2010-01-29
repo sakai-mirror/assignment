@@ -12089,6 +12089,80 @@ public class AssignmentAction extends PagedResourceActionII
 	}
 	
 	/**
+	 * dispatch function for list submission page
+	 * @param data
+	 */
+	public void doList_submissions_option(RunData data)
+	{
+		SessionState state = ((JetspeedRunData) data).getPortletSessionState(((JetspeedRunData) data).getJs_peid());
+		ParameterParser params = data.getParameters();
+		
+		String option = StringUtil.trimToNull(params.getString("option"));
+		if (option != null)
+		{
+			if ("saveResubmissionOption".equals(option))
+			{
+				// save the resubmission option for selected users
+				doSave_resubmission_option(data);
+			}
+			else if ("applyGrade".equals(option) || "removeGrade".equals(option))
+			{
+				String submissionsSet = StringUtil.trimToNull(params.getString("submissionsSet"));
+				String defaultGrade = StringUtil.trimToNull(params.getString("defaultGrade"));
+				if (submissionsSet == null)
+				{
+					// no submissionsSet selected, show alert
+					addAlert(state, rb.getString("submissions.choose.set"));
+				}
+				else if ("applyGrade".equals(option) && defaultGrade == null)
+				{
+					// if applyGrade is chosed without grade specified
+					addAlert(state, rb.getString("submissions.choose.grade"));
+				}
+				else
+				{
+					// now we have the right submissions set
+					String assignmentRef = (String) state.getAttribute(EXPORT_ASSIGNMENT_REF);
+					try
+					{
+						Assignment assignment = AssignmentService.getAssignment(assignmentRef);
+						if ("all".equals(submissionsSet)) 
+						{
+						}
+						else if ("ungraded".equals(submissionsSet))
+						{
+						}
+						else if ("unsubmitted".equals(submissionsSet))
+						{
+						}
+						else if ("selected".equals(submissionsSet))
+						{
+						}
+					}
+					catch (IdUnusedException e)
+					{
+						M_log.warn(this + " doList_submissions_option " + option + " " + assignmentRef + e.getMessage());
+					}
+					catch (PermissionException e)
+					{
+						M_log.warn(this + " doList_submissions_option " + option + " " + assignmentRef + e.getMessage());
+					}
+				}
+			}
+		}
+	}
+	
+	public void doApply_grade_submissions(ParameterParser params)
+	{
+	}
+	
+	public void doRemove_grade_submissions(ParameterParser params)
+	{
+		
+	}
+	
+	
+	/**
 	 * save the resubmit option for selected users
 	 * @param data
 	 */
