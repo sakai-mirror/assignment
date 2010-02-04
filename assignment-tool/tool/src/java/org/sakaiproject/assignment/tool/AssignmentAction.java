@@ -6106,13 +6106,7 @@ public class AssignmentAction extends PagedResourceActionII
 		Iterator it = assignments.iterator();
 		
 		// temporarily allow the user to read and write from assignments (asn.revise permission)
-        SecurityService.pushAdvisor(new SecurityAdvisor()
-            {
-                public SecurityAdvice isAllowed(String userId, String function, String reference)
-                {
-                    return SecurityAdvice.ALLOWED;
-                }
-            });
+        enableSecurityAdvisor();
         
         while (it.hasNext()) // reads and writes the parameter for default ordering
         {
@@ -6125,7 +6119,7 @@ public class AssignmentAction extends PagedResourceActionII
         }
         
         // clear the permission
-        SecurityService.clearAdvisors();
+        disableSecurityAdvisor();
 		
 		if (state.getAttribute(STATE_MESSAGE) == null)
 		{
@@ -10016,13 +10010,7 @@ public class AssignmentAction extends PagedResourceActionII
 												{
 												
 													// temporarily allow the user to read and write from assignments (asn.revise permission)
-											        SecurityService.pushAdvisor(new SecurityAdvisor()
-											            {
-											                public SecurityAdvice isAllowed(String userId, String function, String reference)
-											                {
-											                    return SecurityAdvice.ALLOWED;
-											                }
-											            });
+											        enableSecurityAdvisor();
 											        
 													AssignmentSubmissionEdit s = AssignmentService.addSubmission(contextString, a.getId(), userId);
 													s.setSubmitted(true);
@@ -10038,7 +10026,7 @@ public class AssignmentAction extends PagedResourceActionII
 													returnResources.add(new UserSubmission(u, sub));
 			
 											        // clear the permission
-											        SecurityService.clearAdvisors();
+													disableSecurityAdvisor();
 												}
 											}
 										}
@@ -12169,7 +12157,7 @@ public class AssignmentAction extends PagedResourceActionII
 						// add attachment
 						enableSecurityAdvisor();
 						ContentResource attachment = m_contentHostingService.addAttachmentResource(resourceId, siteId, getToolTitle(), contentType, fileContentStream, props);
-						disableSecurityAdvisors();
+						disableSecurityAdvisor();
 						
 						try
 						{
@@ -12240,12 +12228,12 @@ public class AssignmentAction extends PagedResourceActionII
 	}
 	
     /**
-     * remove all security advisors
+     * remove recent added security advisor
      */
-    protected void disableSecurityAdvisors()
+    protected void disableSecurityAdvisor()
     {
-    	// remove all security advisors
-    	SecurityService.clearAdvisors();
+    	// remove recent added security advisor
+    	SecurityService.popAdvisor();
     }
 
     /**
