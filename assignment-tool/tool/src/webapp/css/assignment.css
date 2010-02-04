@@ -27,3 +27,61 @@
 		padding:.3em 0;
 		border-bottom:2px solid #ccc
 	}
+} #assignment-reorder tr {
+    width: 100%;
+	border-top:1px solid #fff;
+	border-bottom:1px solid #fff;
+}
+ #assignment-reorder td.grabHandle {
+	padding-left:20px;
+	background: url(../images/grab.png) top left repeat-y
+	}
+.orderable-hover td.grabHandle{
+	background: url(../images/grabh.png) top left repeat-y !important
+	}
+ .recentMove td.grabHandle{
+	background: url(../images/grabh.png) top left repeat-y !important
+	}
+
+/*marks a drop zone*/
+.orderable-selected{
+	border:none;
+	outline:none
+}
+.orderable-drop-marker {
+    width: 50%;
+	border:1px solid #ccc !important;
+    height: 30px; /*ok*/
+}
+
+/*hover over a selectable item*/ .orderable-hover {
+    cursor: move;
+
+}
+
+/* item left behind */ .orderable-dragging {
+    background: #eee;
+    outline: 1px dashed #aaa;
+    color: #555 !important
+}
+
+/*item being dragged*/ .orderable-avatar {
+    opacity: 0.55;
+    background: #bea !important;
+	width:50% !important;
+} 
+.orderable-avatar td {
+    vertical-align: middle !important;
+    padding: .4em
+}
+ .orderable-avatar td.open,  .orderable-avatar td.close, .orderable-avatar input{
+ 	display:none
+ }  
+ .orderable-avatar td h4, .orderable-avatar td h5, .orderable-avatar td h6, .orderable-avatar input {
+    padding: 0;
+    margin: 0;
+	font-weight:bold
+	
+} .recentMove {
+    background: #def
+}

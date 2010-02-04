@@ -1,5 +1,13 @@
 ##<!-- $Header: Exp $ -->
 ## Assignments - reorder view
+<script type="text/javascript"
+  src="/sakai-assignment-tool/fluid/Fluid-all.js"></script>
+
+    <script type="text/javascript" src="/sakai-assignment-tool/js/assignments-reorder.js"></script>
+		<style type="text/css">
+			@import url("/sakai-assignment-tool/css/assignment.css");
+		</style>
+
 <div class="portletBody" xmlns:wairole="http://www.w3.org/2005/01/wai-rdf/GUIRoleTaxonomy#"  xmlns:aaa="http://www.w3.org/2005/07/aaa">
 	#if ($allowAddAssignment || ($withGrade && $!allowGradeSubmission))
 	## for user who cannot create assignment nor grade submission, no need to show "Assignment List" link at all since there is really no other toolbar choices
@@ -62,14 +70,28 @@
 		<div class="instruction">
 			$tlang.getString("gen.sortinstruct")
 		</div>
-		<table class="listHier lines nolines" summary="$tlang.getString("sort.summary")" border="0" cellspacing="0" cellpadding="0" style="border:1px solid #fff">
+		<ul class="itemAction noPrint">
+			<li style="display:inline">
+				<span id="undo-last-inact" style="padding:0 .3em 0 0;border:none">Undo last</span>
+				<a href="#" id="undo-last" onclick="undoLast(event)" style="display:none">Undo last</a>
+			</li>
+			<li style="display:inline;border-left:1px solid #ccc;padding-left:1em">
+				<span id="undo-all-inact"  style="padding:0 .3em 0 0;border:none">Undo all</span>
+					<a id="undo-all" href="#"  onclick="undoAll(event)" style="display:none">Undo all</a>
+			</li>
+			<li style="display:inline;color:#000">
+				<span id="messageHolder" class="messageSuccess" style="display:none"> </span>
+			</li>
+		</ul>	
+		<span id="lastMoveArray" style="display:none"></span>
+		<span id="lastMoveArrayInit" style="display:none"></span>
+		<span id="lastItemMoved"  style="display:none"></span>
+		<table id="assignment-reorder" class="listHier lines nolines" summary="$tlang.getString("sort.summary")" border="0" cellspacing="0" cellpadding="0">
 			<caption class="skip" style="display: none;">$tlang.getString("sort.caption")</caption>
 			<tbody>
 			<tr>
-				<th id="moveUp">
-				</th>
-				<th id="moveDown">
-				</th>
+			<th id="textField" class="attach">
+			</th>
 				<th id="title">
 					$tlang.getString("gen.asstit")
 				</th>
@@ -79,35 +101,24 @@
 				<th id="due">
 					$tlang.getString("gen.due1")
 				</th>
-				<th id="position">
-				    $tlang.getString("gen.position")
-				</th>
 			</tr>
 			#set($count = 1)
 			#foreach($assignment in $assignments)
-			<tr class="sortable">
-			    ## The 1% width attributes fixes a minor bug of having extra space after the drop down.
-				<td headers="moveUp" class="moveUp">
-					<a#if($count <= 1) style="display:none;"#end href="#" onclick="moveRow(this,'up')" title="$tlang.getString("sort.moveup")">
-					<img src="#imageLink("sakai/arrowUp.gif")" alt="$tlang.getString("sort.moveup")" border="0" style="width:13px" />
-					</a>
+
+			<tr class="sortable"  id="assignment.orderable$count">
+				<td header="textField" style="white-space:nowrap" class="grabHandle">
+					<input type="text" size="3" value="$count" id="index$count"/>
+					<input type="hidden"  size="3" id="holder$count"  value="$count" tabindex="-2"/>
 				</td>
-				<td headers="moveDown" class="moveDown">
-					<a#if($count >= $assignmentsize) style="display:none;"#end href="#" onclick="moveRow(this,'down')" title="$tlang.getString("sort.movedn")">
-					<img src="#imageLink("sakai/arrowDown.gif")" alt="$tlang.getString("sort.movedn")" border="0" style="width:13px" />
-					</a>
-				</td>
-				<td headers="title">
+				<td headers="title" class="title">
 					<h4>$!assignment.getTitle()</h4>
 				</td>
-				<td headers="open">
+				<td headers="open" class="open">
 					$!assignment.openTime.toStringLocalFull()
 				</td>
-				<td headers="due">
+				<td headers="due" class="close">
 					$!assignment.dueTime.toStringLocalFull()
-				</td>
-				<td headers="position">
-				  <select name="position_$validator.escapeUrl("$assignment.id")" onchange="moveRow(this,this.value);">
+				  <select name="position_$validator.escapeUrl("$assignment.id")" onchange="moveRow(this,this.value);" class="selectSet" style="display:none">
 					#foreach($i in [1..$assignmentsize])
 					<option value="$i"#if("$i" == "$count") selected="selected"#end>$i</option>
 					#end
@@ -125,145 +136,3 @@
 	</form>						
 
 </div>
-<script language="JavaScript" type="text/javascript">
-	<!--
-		function submitform(id)
-		{
-			var theForm = document.getElementById(id);
-			if(theForm && theForm.onsubmit)
-			{
-				theForm.onsubmit();
-			}
-			if(theForm && theForm.submit)
-			{
-				theForm.submit();
-			}
-		}
-		function moveRow (clickedObj, destination) {
-			
-			var row = clickedObj.parentNode;
-			// Finding the nearest containing TR element
-			while (row.parentNode && row.tagName != "TR") {
-				row = row.parentNode;
-			}
-
-			var rowParent = row.parentNode;
-			var childNodes = rowParent.childNodes;
-			
-			var childTrs = new Array();
-			for (var i=0; i < childNodes.length; i++){
-				if (childNodes[i].tagName == "TR" && childNodes[i].className == "sortable"){
-					childTrs[childTrs.length] = childNodes[i];
-				}
-			}
-			var curRowPos = getRowPosition(row,childTrs);
-			/*
-				NOTE: first condition of if blocks does boundary checking to make sure we don't 
-				move out of the bounds
-			*/
-			var destIndex = null;
-			if ((curRowPos < childTrs.length-1) && destination && destination.toLowerCase() == "down") {
-				destIndex = curRowPos + 1;
-				// Set the destination integer for consumption below
-				destination = destIndex+1;
-				} else 
-			if ((curRowPos > 0) && destination && destination.toLowerCase() == "up") {
-				destIndex = curRowPos - 1;
-				// Set the destination integer for consumption below
-				destination = destIndex+1;
-			}
-			if (destination && ("" + destination).match(/^[0-9]+$/) && destination > 0 && destination <= childTrs.length) {
-
-				destIndex = destination-1;
-				
-
-				if (curRowPos < destIndex) {
-					/*
-						"insertAfter" functionality as per:
-						http://developer.mozilla.org/en/docs/DOM:element.insertBefore
-					*/
-					rowParent.insertBefore(row,childTrs[destIndex].nextSibling);
-				} else {
-					rowParent.insertBefore(row,childTrs[destIndex]);
-				}
-				
-			}
-			
-			var newChildTrs = new Array();
-			for (var i=0; i < childNodes.length; i++){
-				if (childNodes[i].tagName == "TR" && childNodes[i].className == "sortable"){
-					newChildTrs[newChildTrs.length] = childNodes[i];
-				}
-			}
-			updateUserInterface(newChildTrs,destIndex);
-		}
-		
-		function getRowPosition(currentRow,rowsArray) {
-			for (var i=0; i < rowsArray.length; i++){
-				if (rowsArray[i] == currentRow){
-					return i;
-				}
-			}
-			return "cat";
-		}
-
-		function updateUserInterface(rowsArray,targetRow) {
-			for (var curRow=0; curRow < rowsArray.length; curRow++){
-				var rowChildNodes = rowsArray[curRow].childNodes;
-				
-				if (rowsArray[curRow].tagName == "TR") {
-					if (curRow == targetRow) {
-						rowsArray[curRow].id = "selectedReorder";
-						rowsArray[curRow].cells[0].className = "arrowHere";
-						
-					} else {
-							rowsArray[curRow].id = "sortable";		
-					}
-				}
-				
-				for (var curRowChild=0; curRowChild < rowChildNodes.length; curRowChild++){
-					
-					var hasHeaders = false;
-					if (rowChildNodes[curRowChild].hasAttribute) {
-						hasHeaders = rowChildNodes[curRowChild].hasAttribute("headers");
-					} else {
-						/* 
-						Coping with lack of hasAttribute() method in IE	
-						*/
-						if(rowChildNodes[curRowChild].headers != "") {
-							hasHeaders = true;
-						}
-					}
-
-					if (rowChildNodes[curRowChild].tagName == "TD" && hasHeaders) {
-						
-					var cellChildNodes = rowChildNodes[curRowChild].childNodes;
-						for (var curCellChild=0; curCellChild < cellChildNodes.length; curCellChild++) {
-							if (cellChildNodes[curCellChild].tagName == "A") {
-								if ((curRow == 0 && rowChildNodes[curRowChild].getAttribute("headers") == "moveUp") || (curRow == rowsArray.length-1 && rowChildNodes[curRowChild].getAttribute("headers") == "moveDown")) {
-									cellChildNodes[curCellChild].style.display = "none";
-								} else {
-									cellChildNodes[curCellChild].style.display = "inline";
-							  	cellChildNodes[curCellChild].className = "moveUp";
-								}
-							}
-							if (cellChildNodes[curCellChild].tagName == "SELECT") {
-								cellChildNodes[curCellChild].selectedIndex = curRow;
-							}
-							
-							if (cellChildNodes[curCellChild].tagName == "H4") {
-								if (curRow == targetRow) {
-##									cellChildNodes[curCellChild].style.color = "white";
-								} else {
-##									cellChildNodes[curCellChild].style.color = "black";
-								}
-							}
-
-						}
-					}
-					
-				}
-			}
-		}
-	//-->
-</script>
