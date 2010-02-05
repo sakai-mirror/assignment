@@ -26,6 +26,7 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.IOException;
+import java.io.InputStream;
 import java.text.Collator;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -33,6 +34,7 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.Date;
+import java.util.Enumeration;
 import java.util.Hashtable;
 import java.util.HashSet;
 import java.util.HashMap;
@@ -41,8 +43,11 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.Vector;
-import java.util.zip.ZipEntry;
-import java.util.zip.ZipInputStream;
+
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
+import org.apache.tools.zip.ZipEntry;
+import org.apache.tools.zip.ZipFile;
 
 import java.nio.channels.*;
 import java.nio.*;
@@ -138,6 +143,9 @@ import org.sakaiproject.contentreview.service.ContentReviewService;
 public class AssignmentAction extends PagedResourceActionII
 {
 	private static ResourceLoader rb = new ResourceLoader("assignment");
+
+	/** Our logger. */
+	private static Log M_log = LogFactory.getLog(AssignmentAction.class);
 
 	private static final String ASSIGNMENT_TOOL_ID = "sakai.assignment.grades";
 	
@@ -9551,13 +9559,23 @@ public class AssignmentAction extends PagedResourceActionII
 				}
 				else if(fileData.length > 0)
 				{	
-					ZipInputStream zin = new ZipInputStream(new ByteArrayInputStream(fileData));
-					ZipEntry entry;
+					FileOutputStream tmpFileOut = null;
 					
 					try
 					{
-						while ((entry=zin.getNextEntry()) != null)
+						File f = File.createTempFile(String.valueOf(System.currentTimeMillis()),"");
+						
+						tmpFileOut = new FileOutputStream(f);
+						tmpFileOut.write(fileData);
+						tmpFileOut.flush();
+						tmpFileOut.close();
+						
+						ZipFile zipFile = new ZipFile(f, "UTF-8");
+						Enumeration<ZipEntry> zipEntries = zipFile.getEntries();
+						ZipEntry entry;
+						while (zipEntries.hasMoreElements())						 						
 						{
+							entry = zipEntries.nextElement();
 							String entryName = entry.getName();
 							if (!entry.isDirectory() && entryName.indexOf("/.") == -1)
 							{
@@ -9566,7 +9584,7 @@ public class AssignmentAction extends PagedResourceActionII
 									if (hasGradeFile)
 									{
 										// read grades.cvs from zip
-								        String result = StringUtil.trimToZero(readIntoString(zin));
+										String result = StringUtil.trimToZero(readIntoString(zipFile.getInputStream(entry)));
 								        String[] lines=null;
 								        if (result.indexOf("\r\n") != -1)
 								        	lines = result.split("\r\n");
@@ -9640,7 +9658,7 @@ public class AssignmentAction extends PagedResourceActionII
 										if (hasComment && entryName.indexOf("comments") != -1)
 										{
 											// read the comments file
-											String comment = getBodyTextFromZipHtml(zin);
+											String comment = getBodyTextFromZipHtml(zipFile.getInputStream(entry));
 									        if (comment != null)
 									        {
 									        		UploadGradeWrapper r = (UploadGradeWrapper) submissionTable.get(userEid);
@@ -9651,7 +9669,7 @@ public class AssignmentAction extends PagedResourceActionII
 										if (hasFeedbackText && entryName.indexOf("feedbackText") != -1)
 										{
 											// upload the feedback text
-											String text = getBodyTextFromZipHtml(zin);
+											String text = getBodyTextFromZipHtml(zipFile.getInputStream(entry));
 											if (text != null)
 									        {
 									        		UploadGradeWrapper r = (UploadGradeWrapper) submissionTable.get(userEid);
@@ -9662,7 +9680,7 @@ public class AssignmentAction extends PagedResourceActionII
 										if (hasSubmissionText && entryName.indexOf("_submissionText") != -1)
 										{
 											// upload the student submission text
-											String text = getBodyTextFromZipHtml(zin);
+											String text = getBodyTextFromZipHtml(zipFile.getInputStream(entry));
 											if (text != null)
 									        {
 									        		UploadGradeWrapper r = (UploadGradeWrapper) submissionTable.get(userEid);
@@ -9679,7 +9697,7 @@ public class AssignmentAction extends PagedResourceActionII
 												// clear the submission attachment first
 												UploadGradeWrapper r = (UploadGradeWrapper) submissionTable.get(userEid);
 												submissionTable.put(userEid, r);
-												submissionTable = uploadZipAttachments(state, submissionTable, zin, entry, entryName, userEid, "submission");
+												submissionTable = uploadZipAttachments(state, submissionTable, zipFile.getInputStream(entry), entry, entryName, userEid, "submission");
 											}
 										}
 										if (hasFeedbackAttachment)
@@ -9691,14 +9709,14 @@ public class AssignmentAction extends PagedResourceActionII
 												// clear the feedback attachment first
 												UploadGradeWrapper r = (UploadGradeWrapper) submissionTable.get(userEid);
 												submissionTable.put(userEid, r);
-												submissionTable = uploadZipAttachments(state, submissionTable, zin, entry, entryName, userEid, "feedback");
+												submissionTable = uploadZipAttachments(state, submissionTable, zipFile.getInputStream(entry), entry, entryName, userEid, "feedback");
 											}
 										}
 										
 										// if this is a timestamp file
 										if (entryName.indexOf("timestamp") != -1)
 										{
-											byte[] timeStamp = readIntoBytes(zin, entryName, entry.getSize());
+											byte[] timeStamp = readIntoBytes(zipFile.getInputStream(entry), entryName, entry.getSize());
 											UploadGradeWrapper r = (UploadGradeWrapper) submissionTable.get(userEid);
 							        		r.setSubmissionTimestamp(new String(timeStamp));
 							        		submissionTable.put(userEid, r);
@@ -9714,6 +9732,17 @@ public class AssignmentAction extends PagedResourceActionII
 						addAlert(state, rb.getString("uploadall.alert.zipFile"));
 						
 					}
+					finally
+					{
+						if (tmpFileOut != null) {
+							try {
+								tmpFileOut.close();
+							} catch (IOException e) {
+								M_log.warn(this + ": Error closing temp file output stream: " + e.toString());
+							}
+						}
+					}
+
 				}
 			}
 			
@@ -9858,7 +9887,7 @@ public class AssignmentAction extends PagedResourceActionII
 	 * @param userEid
 	 * @param submissionOrFeedback
 	 */
-	private Hashtable uploadZipAttachments(SessionState state, Hashtable submissionTable, ZipInputStream zin, ZipEntry entry, String entryName, String userEid, String submissionOrFeedback) {
+	private Hashtable uploadZipAttachments(SessionState state, Hashtable submissionTable, InputStream zin, ZipEntry entry, String entryName, String userEid, String submissionOrFeedback) {
 		// upload all the files as instructor attachments to the submission for grading purpose
 		String fName = entryName.substring(entryName.lastIndexOf("/") + 1, entryName.length());
 		ContentTypeImageService iService = (ContentTypeImageService) state.getAttribute(STATE_CONTENT_TYPE_IMAGE_SERVICE);
@@ -9907,7 +9936,7 @@ public class AssignmentAction extends PagedResourceActionII
 		return submissionTable;
 	}
 
-	private String getBodyTextFromZipHtml(ZipInputStream zin)
+	private String getBodyTextFromZipHtml(InputStream zin)
 	{
 		String rv = "";
 		try
@@ -9930,8 +9959,9 @@ public class AssignmentAction extends PagedResourceActionII
 		}
 		return rv;
 	}
-		private byte[] readIntoBytes(ZipInputStream zin, String fName, long length) throws IOException {
-		
+	
+		private byte[] readIntoBytes(InputStream zin, String fName, long length) throws IOException {
+
 			StringBuilder b = new StringBuilder();
 			
 			byte[] buffer = new byte[4096];
@@ -9944,7 +9974,7 @@ public class AssignmentAction extends PagedResourceActionII
 			{
 				fout.write(buffer, 0, len);
 			}
-			zin.closeEntry();
+			zin.close();
 			fout.close();
 			
 			FileInputStream fis = new FileInputStream(f);
@@ -9960,7 +9990,7 @@ public class AssignmentAction extends PagedResourceActionII
 			return data;
 	}
 	
-	private String readIntoString(ZipInputStream zin) throws IOException 
+	private String readIntoString(InputStream zin) throws IOException 
 	{
 		StringBuilder buffer = new StringBuilder();
 		int size = 2048;
