@@ -50,8 +50,11 @@
 #reorder-list li span.grabHandle, #reorder-list-sortingToolBar span.grabHandle{
 	display:block;
 	float:left;
-	width:5em;
+	width:4em;
 	padding-right:0;
+}
+#reorder-list li span.grabHandle input{
+	margin-top:-2px;
 }
 #reorder-list-sortingToolBar span.grabHandle input{
 	visibility:hidden;
@@ -88,6 +91,7 @@
 .orderable-avatar {
 	/*item being dragged*/ 
 	opacity: 0.55;
+	list-style:none;
 	background: #bea !important;
 	width: 50% !important
 }

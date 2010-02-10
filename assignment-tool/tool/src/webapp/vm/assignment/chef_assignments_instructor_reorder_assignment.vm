@@ -121,24 +121,7 @@
 					#end 
 				</a>
 			</div>
-		<ul id="reorder-list"  summary="$tlang.getString("sort.summary")" border="0" cellspacing="0" cellpadding="0">
-	#*
-				<caption class="skip" style="display: none;">$tlang.getString("sort.caption")</caption>
-			<tbody>
-			<tr>
-			<th id="textField" class="attach">
-			</th>
-				<th id="title">
-					$tlang.getString("gen.asstit")
-				</th>
-				<th id="open">
-					$tlang.getString("gen.open")
-				</th>
-				<th id="due">
-					$tlang.getString("gen.due1")
-				</th>
-			</tr>
-	*#
+		<ul id="reorder-list">
 			#set($count = 1)
 			#foreach($assignment in $assignments)
 
