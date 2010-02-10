@@ -86,8 +86,44 @@
 		<span id="lastMoveArray" style="display:none"></span>
 		<span id="lastMoveArrayInit" style="display:none"></span>
 		<span id="lastItemMoved"  style="display:none"></span>
-		<table id="assignment-reorder" class="listHier lines nolines" summary="$tlang.getString("sort.summary")" border="0" cellspacing="0" cellpadding="0">
-			<caption class="skip" style="display: none;">$tlang.getString("sort.caption")</caption>
+		
+		<div id="reorder-list-sortingToolBar">
+			<span style="white-space:nowrap" class="grabHandle"><input type="text" size="3" value="" id="dummyinput" /></span>
+			<a class="title" href="#" onclick="location='#toolLinkParam("$action" "doSort" "criteria=title")'; return false;"   title="$tlang.getString("listassig.sorbytit")">
+					$tlang.getString("listassig.sorbytit") ## $tlang.getString("gen.asstit")
+					#if ($sortedBy.equals("title")) 
+						#if ($sortedAsc.equals("true")) 
+							<img id="sortascendingtitle" src = "#imageLink("sakai/sortascending.gif")" border="0" alt="$tlang.getString("gen.sorasc")" /> 
+						#else 
+							<img id="sortdescendingtitle" src = "#imageLink("sakai/sortdescending.gif")" border="0" alt="$tlang.getString("gen.sordes")" /> 
+						#end 
+					#end 
+				</a>
+
+				<a href="#" onclick="location='#toolLinkParam("$action" "doSort" "criteria=opendate")'; return false;"  title="$tlang.getString("listassig.sorbysec")">
+					$tlang.getString("listassig.sorbyope")
+					#if ($sortedBy.equals("opendate")) 
+						#if ($sortedAsc.equals("true")) 
+							<img id="sortascendingopendate" src = "#imageLink("sakai/sortascending.gif")" border="0" alt="$tlang.getString("gen.sorasc")" /> 
+						#else 
+							<img id="sortdescendingopendate" src = "#imageLink("sakai/sortdescending.gif")" border="0" alt="$tlang.getString("listassig.sordes")" /> 
+						#end 
+					#end 
+				</a>
+				<a href="#" onclick="location='#toolLinkParam("$action" "doSort" "criteria=duedate")'; return false;"  title="$tlang.getString("gen.sorbydue")">
+					$tlang.getString("gen.sorbydue") ##$tlang.getString("gen.due1")
+					#if ($sortedBy.equals("duedate")) 
+						#if ($sortedAsc.equals("true")) 
+							<img id="sortascendingduedate" src = "#imageLink("sakai/sortascending.gif")" border="0" alt="$tlang.getString("gen.sorasc")" /> 
+						#else 
+							<img id="sortdescendingduedate" src = "#imageLink("sakai/sortdescending.gif")" border="0" alt="$tlang.getString("listassig.sordes")" /> 
+						#end 
+					#end 
+				</a>
+			</div>
+		<ul id="reorder-list"  summary="$tlang.getString("sort.summary")" border="0" cellspacing="0" cellpadding="0">
+	#*
+				<caption class="skip" style="display: none;">$tlang.getString("sort.caption")</caption>
 			<tbody>
 			<tr>
 			<th id="textField" class="attach">
@@ -102,33 +138,34 @@
 					$tlang.getString("gen.due1")
 				</th>
 			</tr>
+	*#
 			#set($count = 1)
 			#foreach($assignment in $assignments)
 
-			<tr class="sortable"  id="assignment.orderable$count">
-				<td header="textField" style="white-space:nowrap" class="grabHandle">
+			<li class="sortable"  id="assignment.orderable$count">
+				<span style="white-space:nowrap" class="grabHandle">
 					<input type="text" size="3" value="$count" id="index$count"/>
 					<input type="hidden"  size="3" id="holder$count"  value="$count" tabindex="-2"/>
-				</td>
-				<td headers="title" class="title">
-					<h4>$!assignment.getTitle()</h4>
-				</td>
-				<td headers="open" class="open">
+				</span>
+				<span class="title">
+					$validator.escapeHtml($validator.limit($!assignment.getTitle(), 64))
+				</span>
+				<span class="open">
 					$!assignment.openTime.toStringLocalFull()
-				</td>
-				<td headers="due" class="close">
+				</span>
+				<span class="close">
 					$!assignment.dueTime.toStringLocalFull()
 				  <select name="position_$validator.escapeUrl("$assignment.id")" onchange="moveRow(this,this.value);" class="selectSet" style="display:none">
 					#foreach($i in [1..$assignmentsize])
 					<option value="$i"#if("$i" == "$count") selected="selected"#end>$i</option>
 					#end
 				  </select>
-				</td>
-			</tr>
+				</span>
+			</li>
 			#set($count = $count + 1)
 			#end
-			</tbody>
-		</table>
+##			</tbody>
+		</ul>
 		<p class="act" style="margin:0;padding:.3em 0;">
 			<input type="button" name="save" value="$tlang.getString("gen.sav")" onclick="javascript:document.reorderForm.onsubmit();document.getElementById('option').value='reorder';document.reorderForm.submit();return false;" class="active" accesskey="s" />
 			<input type="button" name="cancel" value="$tlang.getString("gen.can")" onclick="javascript:document.reorderForm.onsubmit();document.getElementById('option').value='cancelreorder';document.reorderForm.submit();return false;" accesskey="x" />
