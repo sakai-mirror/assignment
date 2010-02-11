@@ -76,7 +76,7 @@ $(document).ready(function(){
                 that.select();
             });
             $("#messageHolder").fadeOut('slow');
-            $(this).parents('tr').addClass('orderable-selected');
+            $(this).parents('li').addClass('orderable-selected');
             return (null);
         }
         
@@ -121,20 +121,19 @@ $(document).ready(function(){
 });
 
 
-
 // handle things that happen after a move
 var registerChange = function(originEvent, movedEl){
-    var rows = $("reorder-list li").size();
+
+    var rows = $("#reorder-list li").size();
     if (originEvent !== 'notfluid') {
         movedEl = $("li[aria-selected='true']");
     }
-    
     
     $('#lastItemMoved').text($(movedEl).attr('id'));
     
     $(movedEl).addClass('recentMove');
     var newVal = 0;
-    newVal = $((movedEl).prevAll('li').length + 1);
+    newVal = $((movedEl).prevAll('tr').length + 1);
     // change the value of all the text fields (and value holders) to reflect new order
     var inputsX = $("input[id^=index]");
     var holderinputs = $("input[id^=holder]");
@@ -145,9 +144,6 @@ var registerChange = function(originEvent, movedEl){
         holderinputs[x].value = x + 1;
     }
     
-    $('.selectSet').each(function(n){
-        $(this).val(n + 1);
-    });
     $('#undo-last').fadeIn('slow');
     $('#undo-last-inact').hide();
     $('#undo-all').fadeIn('slow');
@@ -155,9 +151,10 @@ var registerChange = function(originEvent, movedEl){
     $(movedEl).animate({
         opacity: 1.0
     }, 2000, function(){
-        $(movedEl).removeClass('recentMove');
+		$(movedEl).removeClass('recentMove');
     });
 };
+
 
 
 var preserveStatus = function(item){
