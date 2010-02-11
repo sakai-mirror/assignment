@@ -1,11 +1,13 @@
 $(document).ready(function(){
+
+
     //get the initial order TODO - make an  array instead of putting the values in a span
     $('#reorder-list li').each(function(n){
         $('#lastMoveArrayInit').append($(this).attr('id') + ' ');
         $('#lastMoveArray').append($(this).attr('id') + ' ');
     });
-	
-	    //allow user to click on a field to edit
+    
+    //allow user to click on a field to edit
     $("input[id^=index]").click(function(event){
         event.stopPropagation();
     });
@@ -15,7 +17,41 @@ $(document).ready(function(){
         return (code == 13) ? false : true;
     });
     
-
+    $('#undo-all').click(function(event){
+        var initOrder;
+        initOrder = $.trim($('#lastMoveArrayInit').text()).split(" ");
+        for (z in initOrder) {
+            thisRow = document.getElementById(initOrder[z]);
+            $(thisRow).appendTo('#reorder-list');
+        }
+        
+        event.preventDefault();
+        registerChange();
+        $('#undo-all').hide();
+        $('#undo-all-inact').show();
+        $('#undo-last-inact').show();
+        $('#undo-last').hide();
+    });
+    $('#undo-last').click(function(event){
+        var prevOrder;
+        var lastMovedT;
+        var lastMoved;
+        prevOrder = $.trim($('#lastMoveArray').text()).split(" ");
+        for (z in prevOrder) {
+            thisRow = document.getElementById(prevOrder[z]);
+            $(thisRow).appendTo('#reorder-list');
+        }
+        lastMovedT = $.trim($('#lastItemMoved').text());
+        lastMoved = $('tr:eq(' + lastMovedT.substr(20) + ')');
+        $(lastMoved).addClass('recentMove');
+        event.preventDefault();
+        registerChange('notfluid', lastMoved);
+        $('#undo-last-inact').fadeIn('slow');
+        $('#undo-last').hide();
+    });
+    
+    
+    
     // handle changing the order text field
     $("input[id^=index]").change(function(){
         // get existing order
@@ -23,7 +59,7 @@ $(document).ready(function(){
         preserveStatus();
         //what the value was (plucked from a hidden input)
         var oldVal = $(this).siblings('input[id^=holder]').attr('value');
-
+        
         // the new value in the text field
         var newVal = this.value;
         if (isNaN(newVal) || newVal > $("input[id^=index]").size()) {
@@ -35,7 +71,7 @@ $(document).ready(function(){
             $("#messageHolder").animate({
                 opacity: 1.0
             }, 2000, function(){
-			   $(that).val(oldVal);
+                $(that).val(oldVal);
                 that.focus();
                 that.select();
             });
@@ -84,47 +120,6 @@ $(document).ready(function(){
     return fluid.reorderList("#reorder-list", opts);
 });
 
-var undoLast = function(e){
-    var prevOrder;
-    var lastMovedT;
-    var lastMoved;
-    prevOrder = $.trim($('#lastMoveArray').text()).split(" ");
-    for (z in prevOrder) {
-        thisRow = document.getElementById(prevOrder[z]);
-        $(thisRow).appendTo('#reorder-list');
-    }
-
-    lastMovedT = $.trim($('#lastItemMoved').text());
-
-	lastMoved = $('tr:eq(' + lastMovedT.substr(20) + ')');
-
-	$(lastMoved).addClass('recentMove');
-
-
-    e.preventDefault();
-    registerChange('notfluid', lastMoved);
-    $('#undo-last-inact').fadeIn('slow');
-    $('#undo-last').hide();
-
-
-    
-};
-
-var undoAll = function(e){
-    var initOrder;
-    initOrder = $.trim($('#lastMoveArrayInit').text()).split(" ");
-    for (z in initOrder) {
-        thisRow = document.getElementById(initOrder[z]);
-        $(thisRow).appendTo('#reorder-list');
-    }
-    e.preventDefault();
-    registerChange();
-    $('#undo-all').hide();
-    $('#undo-all-inact').show();
-    $('#undo-last-inact').show();
-    $('#undo-last').hide();
-    
-};
 
 
 // handle things that happen after a move
@@ -133,10 +128,10 @@ var registerChange = function(originEvent, movedEl){
     if (originEvent !== 'notfluid') {
         movedEl = $("li[aria-selected='true']");
     }
-
-
+    
+    
     $('#lastItemMoved').text($(movedEl).attr('id'));
-
+    
     $(movedEl).addClass('recentMove');
     var newVal = 0;
     newVal = $((movedEl).prevAll('li').length + 1);
@@ -161,7 +156,7 @@ var registerChange = function(originEvent, movedEl){
         opacity: 1.0
     }, 2000, function(){
         $(movedEl).removeClass('recentMove');
-   });
+    });
 };
 
 

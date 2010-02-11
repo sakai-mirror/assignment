@@ -65,19 +65,19 @@
 		<input type="hidden" name="view" id="view" value="" />
 		<input type="hidden" name="eventSubmit_doAssignment_form" value="" />
 		<h3>
-			$tlang.getString("gen.reordertitle")
+			$tlang.getString("reorder.title")
 		</h3>
 		<div class="instruction">
-			$tlang.getString("gen.sortinstruct")
+			$tlang.getString("reorder.instruction")
 		</div>
 		<ul class="itemAction noPrint">
 			<li style="display:inline">
-				<span id="undo-last-inact" style="padding:0 .3em 0 0;border:none">Undo last</span>
-				<a href="#" id="undo-last" onclick="undoLast(event)" style="display:none">Undo last</a>
+				<span id="undo-last-inact" style="padding:0 .3em 0 0;border:none">$tlang.getString("reorder.undo.last.label")</span>
+				<a href="#" id="undo-last"  style="display:none">$tlang.getString("reorder.undo.last.label")</a>
 			</li>
 			<li style="display:inline;border-left:1px solid #ccc;padding-left:1em">
-				<span id="undo-all-inact"  style="padding:0 .3em 0 0;border:none">Undo all</span>
-					<a id="undo-all" href="#"  onclick="undoAll(event)" style="display:none">Undo all</a>
+				<span id="undo-all-inact"  style="padding:0 .3em 0 0;border:none">$tlang.getString("reorder.undo.all.label")</span>
+					<a id="undo-all" href="#"  style="display:none">$tlang.getString("reorder.undo.all.label")</a>
 			</li>
 			<li style="display:inline;color:#000">
 				<span id="messageHolder" class="messageSuccess" style="display:none"> </span>
@@ -131,7 +131,7 @@
 					<input type="hidden"  size="3" id="holder$count"  value="$count" tabindex="-2"/>
 				</span>
 				<span class="title">
-					$validator.escapeHtml($validator.limit($!assignment.getTitle(), 64))
+					$validator.escapeHtml($validator.limit($!assignment.getTitle(), 45))
 				</span>
 				<span class="open">
 					$!assignment.openTime.toStringLocalFull()
