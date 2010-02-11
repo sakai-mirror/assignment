@@ -8315,6 +8315,15 @@ public class AssignmentAction extends PagedResourceActionII
 		state.setAttribute(NEW_ASSIGNMENT_DUEHOUR, Integer.valueOf(5));
 		state.setAttribute(NEW_ASSIGNMENT_DUEMIN, Integer.valueOf(0));
 		state.setAttribute(NEW_ASSIGNMENT_DUEAMPM, "PM");
+		
+		// set the resubmit time to be the same as due time
+		state.setAttribute(ALLOW_RESUBMIT_CLOSEMONTH, Integer.valueOf(month));
+		state.setAttribute(ALLOW_RESUBMIT_CLOSEDAY, Integer.valueOf(day));
+		state.setAttribute(ALLOW_RESUBMIT_CLOSEYEAR, Integer.valueOf(year));
+		state.setAttribute(ALLOW_RESUBMIT_CLOSEHOUR, Integer.valueOf(5));
+		state.setAttribute(ALLOW_RESUBMIT_CLOSEMIN, Integer.valueOf(0));
+		state.setAttribute(ALLOW_RESUBMIT_CLOSEAMPM, "PM");
+		state.setAttribute(AssignmentSubmission.ALLOW_RESUBMIT_NUMBER, Integer.valueOf(1));
 
 		// enable the close date by default
 		state.setAttribute(NEW_ASSIGNMENT_ENABLECLOSEDATE, Boolean.valueOf(true));
