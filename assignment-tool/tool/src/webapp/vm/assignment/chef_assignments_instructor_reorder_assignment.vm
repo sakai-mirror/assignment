@@ -80,7 +80,8 @@
 					<a id="undo-all" href="#"  style="display:none">$tlang.getString("reorder.undo.all.label")</a>
 			</li>
 			<li style="display:inline;color:#000">
-				<span id="messageHolder" class="messageSuccess" style="display:none"> </span>
+				<span id="failedValidMessage" style="display:none">$tlang.getString('reorder.fail.valid.message')</span>
+				<span id="messageHolder" class="messageSuccess" style="display:none">$tlang.getString("reorder.fail.valid.message")</span>
 			</li>
 		</ul>	
 		<span id="lastMoveArray" style="display:none"></span>
@@ -147,7 +148,6 @@
 			</li>
 			#set($count = $count + 1)
 			#end
-##			</tbody>
 		</ul>
 		<p class="act" style="margin:0;padding:.3em 0;">
 			<input type="button" name="save" value="$tlang.getString("gen.sav")" onclick="javascript:document.reorderForm.onsubmit();document.getElementById('option').value='reorder';document.reorderForm.submit();return false;" class="active" accesskey="s" />

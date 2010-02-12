@@ -63,7 +63,8 @@ $(document).ready(function(){
         // the new value in the text field
         var newVal = this.value;
         if (isNaN(newVal) || newVal > $("input[id^=index]").size()) {
-            $('#messageHolder').text('A number smaller than ' + $('input[id^=index]').size() + ' please!');
+            var failedValidMessage = $('#failedValidMessage').text();			
+            $('#messageHolder').text(failedValidMessage.replace('#', $('input[id^=index]').size()));
             $('.orderable-selected').removeClass('orderable-selected');
             $('#messageHolder').removeClass('messageSuccess');
             $('#messageHolder').addClass('messageValidation');
@@ -137,12 +138,17 @@ var registerChange = function(originEvent, movedEl){
     // change the value of all the text fields (and value holders) to reflect new order
     var inputsX = $("input[id^=index]");
     var holderinputs = $("input[id^=holder]");
-    for (var i = 0; i < inputsX.length; i = i + 1) {
+    	var selectItems = $("select.selectSet");
+	for (var i = 0; i < inputsX.length; i = i + 1) {
         inputsX[i].value = i + 1;
     }
     for (var x = 0; x < holderinputs.length; x = x + 1) {
         holderinputs[x].value = x + 1;
     }
+    $('.selectSet').each(function(n){
+        $(this).val(n + 1);
+    });
+    
     
     $('#undo-last').fadeIn('slow');
     $('#undo-last-inact').hide();
@@ -165,3 +171,5 @@ var preserveStatus = function(item){
         }
     });
 };
+
+
