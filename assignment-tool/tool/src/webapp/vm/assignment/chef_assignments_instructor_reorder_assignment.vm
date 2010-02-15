@@ -68,7 +68,9 @@
 			$tlang.getString("reorder.title")
 		</h3>
 		<div class="instruction">
-			$tlang.getString("reorder.instruction")
+				$tlang.getString('reorder.instruction.general')
+				<span id="inputFieldMessage" style="display:none">$tlang.getString('reorder.instruction.input')</span>
+				<span class="skip">$tlang.getString('reorder.instruction.general.hidden')</span>
 		</div>
 		<ul class="itemAction noPrint">
 			<li style="display:inline">
@@ -88,8 +90,7 @@
 		<span id="lastMoveArrayInit" style="display:none"></span>
 		<span id="lastItemMoved"  style="display:none"></span>
 		
-		<div id="reorder-list-sortingToolBar">
-			<span style="white-space:nowrap" class="grabHandle"><input type="text" size="3" value="" id="dummyinput" /></span>
+		<div id="reorder-list-sortingToolBar" class="itemAction">
 			<a class="title" href="#" onclick="location='#toolLinkParam("$action" "doSort" "criteria=title")'; return false;"   title="$tlang.getString("listassig.sorbytit")">
 					$tlang.getString("listassig.sorbytit") ## $tlang.getString("gen.asstit")
 					#if ($sortedBy.equals("title")) 
@@ -100,7 +101,7 @@
 						#end 
 					#end 
 				</a>
-
+				|
 				<a href="#" onclick="location='#toolLinkParam("$action" "doSort" "criteria=opendate")'; return false;"  title="$tlang.getString("listassig.sorbysec")">
 					$tlang.getString("listassig.sorbyope")
 					#if ($sortedBy.equals("opendate")) 
@@ -111,6 +112,7 @@
 						#end 
 					#end 
 				</a>
+				|
 				<a href="#" onclick="location='#toolLinkParam("$action" "doSort" "criteria=duedate")'; return false;"  title="$tlang.getString("gen.sorbydue")">
 					$tlang.getString("gen.sorbydue") ##$tlang.getString("gen.due1")
 					#if ($sortedBy.equals("duedate")) 
@@ -127,7 +129,7 @@
 			#foreach($assignment in $assignments)
 
 			<li class="sortable"  id="assignment.orderable$count">
-				<span style="white-space:nowrap" class="grabHandle">
+				<span style="display:none" class="grabHandle">
 					<input type="text" size="3" value="$count" id="index$count"/>
 					<input type="hidden"  size="3" id="holder$count"  value="$count" tabindex="-2"/>
 				</span>
