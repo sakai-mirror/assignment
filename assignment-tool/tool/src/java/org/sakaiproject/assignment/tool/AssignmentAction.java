@@ -2074,6 +2074,14 @@ public class AssignmentAction extends PagedResourceActionII
 	public void doNext_submission(RunData rundata)
 	{
 		SessionState state = ((JetspeedRunData) rundata).getPortletSessionState(((JetspeedRunData) rundata).getJs_peid());
+
+		// save the instructor input
+		boolean hasChange = readGradeForm(rundata, state, "save");
+		if (state.getAttribute(STATE_MESSAGE) == null && hasChange)
+		{
+			grade_submission_option(rundata, "save");
+		}
+		state.setAttribute(STATE_MODE, MODE_INSTRUCTOR_GRADE_SUBMISSION);
 		
 		if (state.getAttribute(STATE_MESSAGE) == null)
 			navigateToSubmission(rundata, "nextSubmissionId");
@@ -2099,8 +2107,9 @@ public class AssignmentAction extends PagedResourceActionII
 	public void doPrev_submission(RunData rundata)
 	{
 		SessionState state = ((JetspeedRunData) rundata).getPortletSessionState(((JetspeedRunData) rundata).getJs_peid());
-
-		if (state.getAttribute(STATE_MESSAGE) == null)
+		// save the instructor input
+		boolean hasChange = readGradeForm(rundata, state, "save");
+		if (state.getAttribute(STATE_MESSAGE) == null && hasChange)
 			navigateToSubmission(rundata, "prevSubmissionId");
 
 	} // doPrev_submission
@@ -7405,9 +7414,13 @@ public class AssignmentAction extends PagedResourceActionII
 	}
 
 	/**
-	 * readGradeForm
+	 * read grade information form and see if any grading information has been changed
+	 * @param data
+	 * @param state
+	 * @param gradeOption
+	 * @return
 	 */
-	public void readGradeForm(RunData data, SessionState state, String gradeOption)
+	public boolean readGradeForm(RunData data, SessionState state, String gradeOption)
 	{
 
 		ParameterParser params = data.getParameters();
@@ -7418,38 +7431,48 @@ public class AssignmentAction extends PagedResourceActionII
 		boolean withGrade = state.getAttribute(WITH_GRADES) != null ? ((Boolean) state.getAttribute(WITH_GRADES)).booleanValue()
 				: false;
 
+		// whether user has changed anything from previous grading information
+		boolean hasChange = false;
+		
 		boolean checkForFormattingErrors = false; // so that grading isn't held up by formatting errors
 		String feedbackComment = processFormattedTextFromBrowser(state, params.getCleanString(GRADE_SUBMISSION_FEEDBACK_COMMENT),
 				checkForFormattingErrors);
+		// comment value changed?
+		hasChange = !hasChange ? valueDiffFromStateAttribute(state, feedbackComment, GRADE_SUBMISSION_FEEDBACK_COMMENT):hasChange;
 		if (feedbackComment != null)
 		{
 			state.setAttribute(GRADE_SUBMISSION_FEEDBACK_COMMENT, feedbackComment);
 		}
+		
 
 		String feedbackText = processAssignmentFeedbackFromBrowser(state, params.getCleanString(GRADE_SUBMISSION_FEEDBACK_TEXT));
+		// feedbackText value changed?
+		hasChange = !hasChange ? valueDiffFromStateAttribute(state, feedbackText, GRADE_SUBMISSION_FEEDBACK_TEXT):hasChange;
 		if (feedbackText != null)
 		{
 			state.setAttribute(GRADE_SUBMISSION_FEEDBACK_TEXT, feedbackText);
 		}
 		
+		// any change inside attachment list?
+		if (!hasChange)
+		{
+			List stateAttachments = state.getAttribute(GRADE_SUBMISSION_FEEDBACK_ATTACHMENT) == null?null:((List) state.getAttribute(GRADE_SUBMISSION_FEEDBACK_ATTACHMENT)).isEmpty()?null:(List) state.getAttribute(GRADE_SUBMISSION_FEEDBACK_ATTACHMENT);
+			List inputAttachments = state.getAttribute(ATTACHMENTS) == null?null:((List) state.getAttribute(ATTACHMENTS)).isEmpty()?null:(List) state.getAttribute(ATTACHMENTS);
+			
+			if (stateAttachments == null && inputAttachments != null
+				|| stateAttachments != null && inputAttachments == null	
+				|| stateAttachments != null && inputAttachments != null && !(stateAttachments.containsAll(inputAttachments) && inputAttachments.containsAll(stateAttachments)))
+			{
+				hasChange = true;
+			}
+		}
 		state.setAttribute(GRADE_SUBMISSION_FEEDBACK_ATTACHMENT, state.getAttribute(ATTACHMENTS));
 
 		String g = StringUtil.trimToNull(params.getCleanString(GRADE_SUBMISSION_GRADE));
-		if (g != null)
-		{
-			state.setAttribute(GRADE_SUBMISSION_GRADE, g);
-		}
-		else
-		{
-			state.removeAttribute(GRADE_SUBMISSION_GRADE);
-		}
 
 		String sId = (String) state.getAttribute(GRADE_SUBMISSION_SUBMISSION_ID);
-
 		try
 		{
-			// for points grading, one have to enter number as the points
-			String grade = (String) state.getAttribute(GRADE_SUBMISSION_GRADE);
 
 			AssignmentSubmission submission = AssignmentService.getSubmission(sId);
 			Assignment a = submission.getAssignment();
@@ -7457,6 +7480,20 @@ public class AssignmentAction extends PagedResourceActionII
 
 			if (withGrade)
 			{
+				// any change in grade
+				hasChange = !hasChange ? (typeOfGrade == Assignment.SCORE_GRADE_TYPE?valueDiffFromStateAttribute(state, scalePointGrade(state, g), GRADE_SUBMISSION_GRADE):valueDiffFromStateAttribute(state, g, GRADE_SUBMISSION_GRADE)):hasChange;
+				if (g != null)
+				{
+					state.setAttribute(GRADE_SUBMISSION_GRADE, g);
+				}
+				else
+				{
+					state.removeAttribute(GRADE_SUBMISSION_GRADE);
+				}
+				
+				// for points grading, one have to enter number as the points
+				String grade = (String) state.getAttribute(GRADE_SUBMISSION_GRADE);
+				
 				// do grade validation only for Assignment with Grade tool
 				if (typeOfGrade == Assignment.SCORE_GRADE_TYPE)
 				{
@@ -7516,6 +7553,8 @@ public class AssignmentAction extends PagedResourceActionII
 			{
 				resetAllowResubmitParams(state);
 			}
+			// record whether the resubmission options has been changed or not
+			hasChange = hasChange || change_resubmit_option(state, submission);
 		}
 		catch (IdUnusedException e)
 		{
@@ -7534,6 +7573,29 @@ public class AssignmentAction extends PagedResourceActionII
 			grade = (typeOfGrade == Assignment.SCORE_GRADE_TYPE)?scalePointGrade(state, grade):grade;
 			state.setAttribute(GRADE_SUBMISSION_GRADE, grade);
 		}
+		
+		return hasChange;
+	}
+	
+	/**
+	 * whether the current input value is different from existing session state value
+	 * @param state
+	 * @param value
+	 * @param stateAttribute
+	 * @return
+	 */
+	private boolean valueDiffFromStateAttribute(SessionState state, String value, String stateAttribute)
+	{
+		boolean rv = false;
+		value = StringUtil.trimToNull(value);
+		String stateAttributeValue = state.getAttribute(stateAttribute) == null?null:StringUtil.trimToNull((String) state.getAttribute(stateAttribute));
+		if (stateAttributeValue == null && value != null 
+				|| stateAttributeValue != null && value == null
+				|| stateAttributeValue != null && value != null && !stateAttributeValue.equals(value))
+		{
+			rv = true;
+		}
+		return rv;
 	}
 	
 	/**
