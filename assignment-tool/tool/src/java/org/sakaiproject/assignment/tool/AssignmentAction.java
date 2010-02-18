@@ -4303,6 +4303,19 @@ public class AssignmentAction extends PagedResourceActionII
 		}
 
 		List attachments = (List) state.getAttribute(ATTACHMENTS);
+		if (attachments == null || attachments.isEmpty())
+		{
+			// read from vm file
+			String[] attachmentIds = data.getParameters().getStrings("attachments");
+			if (attachmentIds != null && attachmentIds.length != 0)
+			{
+				attachments = new Vector();
+				for (int i= 0; i<attachmentIds.length;i++)
+				{
+					attachments.add(EntityManager.newReference(attachmentIds[i]));
+				}
+			}
+		}
 		state.setAttribute(NEW_ASSIGNMENT_ATTACHMENT, attachments);
 
 		if (validify)
@@ -4835,7 +4848,7 @@ public class AssignmentAction extends PagedResourceActionII
 			boolean allowStudentViewReport = "true".equalsIgnoreCase((String) state.getAttribute(NEW_ASSIGNMENT_ALLOW_STUDENT_VIEW));
 			
 			// the attachments
-			List attachments = (List) state.getAttribute(ATTACHMENTS);
+			List attachments = (List) state.getAttribute(NEW_ASSIGNMENT_ATTACHMENT);
 			List attachments1 = EntityManager.newReferenceList(attachments);
 			
 			// set group property
