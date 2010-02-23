@@ -588,6 +588,9 @@ public class AssignmentAction extends PagedResourceActionII
 	/** The student view of assignment submission report */
 	private static final String MODE_STUDENT_VIEW = "stuvie"; // set in velocity template
 
+	/** The option view */
+	private static final String MODE_OPTIONS= "options"; // set in velocity template
+
 	/** ************************* vm names ************************** */
 	/** The list view of assignments */
 	private static final String TEMPLATE_LIST_ASSIGNMENTS = "_list_assignments";
@@ -639,6 +642,9 @@ public class AssignmentAction extends PagedResourceActionII
 
 	/** The instructor view to upload all information from archive file */
 	private static final String TEMPLATE_INSTRUCTOR_UPLOAD_ALL = "_instructor_uploadAll";
+	
+	/** The options page */
+	private static final String TEMPLATE_OPTIONS = "_options";
 
 	/** The opening mark comment */
 	private static final String COMMENT_OPEN = "{{";
@@ -776,8 +782,8 @@ public class AssignmentAction extends PagedResourceActionII
 		Object allowGradeSubmission = state.getAttribute(STATE_ALLOW_GRADE_SUBMISSION);
 
 		// allow update site?
-		context.put("allowUpdateSite", Boolean
-						.valueOf(SiteService.allowUpdateSite((String) state.getAttribute(STATE_CONTEXT_STRING))));
+		boolean allowUpdateSite = SiteService.allowUpdateSite((String) state.getAttribute(STATE_CONTEXT_STRING));
+		context.put("allowUpdateSite", Boolean.valueOf(allowUpdateSite));
 		
 		// allow all.groups?
 		boolean allowAllGroups = AssignmentService.allowAllGroups(contextString);
@@ -965,6 +971,15 @@ public class AssignmentAction extends PagedResourceActionII
 			// build the context for the instructor's create new assignment view
 			template = build_instructor_reorder_assignment_context(portlet, context, data, state);
 		}
+		else if (mode.equals(MODE_OPTIONS))
+		{
+			if (allowUpdateSite)
+			{
+				// build the options page
+				template = build_options_context(portlet, context, data, state);
+			}
+		}
+
 
 		if (template == null)
 		{
@@ -12471,4 +12486,67 @@ public class AssignmentAction extends PagedResourceActionII
     	
     	return categoryAsInt;
     }
+    
+    /*
+	 * (non-Javadoc)
+	 * 
+	 * @see org.chefproject.actions.VelocityPortletPaneledAction#doOptions(org.apache.turbine.util.RunData, org.apache.velocity.context.Context)
+	 */
+	public void doOptions(RunData data, Context context)
+	{
+		super.doOptions(data, context);
+
+		SessionState state = ((JetspeedRunData) data).getPortletSessionState(((JetspeedRunData) data).getJs_peid());
+
+		if (!alertGlobalNavigation(state, data))
+		{
+			if (SiteService.allowUpdateSite((String) state.getAttribute(STATE_CONTEXT_STRING)))
+			{
+				state.setAttribute(STATE_MODE, MODE_OPTIONS);
+			}
+			else
+			{
+				addAlert(state, rb.getString("youarenot_options"));
+			}
+			
+			// reset the global navigaion alert flag
+			if (state.getAttribute(ALERT_GLOBAL_NAVIGATION) != null)
+			{
+				state.removeAttribute(ALERT_GLOBAL_NAVIGATION);
+			}
+		}
+	} // doOptions
+	
+	/**
+	 * build the options
+	 */
+	protected String build_options_context(VelocityPortlet portlet, Context context, RunData data,
+			SessionState state)
+	{
+		context.put("context", state.getAttribute(STATE_CONTEXT_STRING));
+
+		
+		String template = (String) getContext(data).get("template");
+		return template + TEMPLATE_OPTIONS;
+
+	} // build_options_context
+	
+    /**
+     * save the option edits
+     * @param data
+     * @param context
+     */
+	public void doUpdate_options(RunData data, Context context)
+	{
+	} // doUpdate_options
+	
+	
+    /**
+     * cancel the option edits
+     * @param data
+     * @param context
+     */
+	public void doCancel_options(RunData data, Context context)
+	{
+	} // doCancel_options
 }	
