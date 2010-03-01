@@ -136,6 +136,7 @@ import org.sakaiproject.service.gradebook.shared.ConflictingExternalIdException;
 import org.sakaiproject.service.gradebook.shared.GradebookNotFoundException;
 import org.sakaiproject.site.api.Group;
 import org.sakaiproject.site.api.Site;
+import org.sakaiproject.site.api.ToolConfiguration;
 import org.sakaiproject.site.cover.SiteService;
 import org.sakaiproject.time.api.Time;
 import org.sakaiproject.time.api.TimeBreakdown;
@@ -761,6 +762,12 @@ public class AssignmentAction extends PagedResourceActionII
 	private static final String SHOW_ALLOW_RESUBMISSION = "show_allow_resubmission";
 	
 	private static final int INPUT_BUFFER_SIZE = 102400;
+	
+	private static final String SUBMISSIONS_SEARCH_ONLY = "submissions_search_only";
+	
+	/*************** search related *******************/
+	private static final String STATE_SEARCH = "state_search";
+	private static final String FORM_SEARCH = "form_search";
 	
 	/**
 	 * central place for dispatching the build routines based on the state name
@@ -2629,6 +2636,10 @@ public class AssignmentAction extends PagedResourceActionII
 		
 		// put supplement item into context
 		supplementItemIntoContext(state, context, assignment, null);
+		
+		// search context
+		context.put("searchString", state.getAttribute(STATE_SEARCH));
+		context.put("form_search", FORM_SEARCH);
 		
 		String template = (String) getContext(data).get("template");
 		
@@ -8123,6 +8134,22 @@ public class AssignmentAction extends PagedResourceActionII
 			iService = org.sakaiproject.content.cover.ContentTypeImageService.getInstance();
 			state.setAttribute(STATE_CONTENT_TYPE_IMAGE_SERVICE, iService);
 		} // if
+		
+		if (state.getAttribute(SUBMISSIONS_SEARCH_ONLY) == null)
+		{
+			String propValue = null;
+			// save the option into tool configuration
+			try {
+				Site site = SiteService.getSite(siteId);
+				ToolConfiguration tc=site.getToolForCommonId(ASSIGNMENT_TOOL_ID);
+				propValue = tc.getPlacementConfig().getProperty(SUBMISSIONS_SEARCH_ONLY);
+			}
+			catch (IdUnusedException e)
+			{
+				M_log.warn(this + ":init()  Cannot find site with id " + siteId);
+			}
+			state.setAttribute(SUBMISSIONS_SEARCH_ONLY, propValue == null ? Boolean.FALSE:Boolean.valueOf(propValue));
+		}
 
 		/** The calendar tool  */
 		if (state.getAttribute(CALENDAR_TOOL_EXIST) == null)
@@ -10080,124 +10107,177 @@ public class AssignmentAction extends PagedResourceActionII
 		{
 			// range
 			Collection groups = new Vector();
+			String assignmentId = (String) state.getAttribute(EXPORT_ASSIGNMENT_REF);
 			try
 			{
-				Assignment a = AssignmentService.getAssignment((String) state.getAttribute(EXPORT_ASSIGNMENT_REF));
-				
-				// all submissions
-				List submissions = AssignmentService.getSubmissions(a);
-				
-				// now are we view all sections/groups or just specific one?
-				initViewSubmissionListOption(state);
-				String allOrOneGroup = (String) state.getAttribute(VIEW_SUBMISSION_LIST_OPTION);
-				if (allOrOneGroup.equals(rb.getString("gen.viewallgroupssections")))
+				Assignment a = AssignmentService.getAssignment(assignmentId);
+				if (state.getAttribute(SUBMISSIONS_SEARCH_ONLY) != null && !((Boolean) state.getAttribute(SUBMISSIONS_SEARCH_ONLY)).booleanValue())
 				{
-					if (AssignmentService.allowAllGroups(contextString))
+					// all submissions
+					List submissions = AssignmentService.getSubmissions(a);
+					
+					// now are we view all sections/groups or just specific one?
+					initViewSubmissionListOption(state);
+					String allOrOneGroup = (String) state.getAttribute(VIEW_SUBMISSION_LIST_OPTION);
+					if (allOrOneGroup.equals(rb.getString("gen.viewallgroupssections")))
 					{
-						// site range
-						groups.add(SiteService.getSite(contextString));
+						if (AssignmentService.allowAllGroups(contextString))
+						{
+							// site range
+							groups.add(SiteService.getSite(contextString));
+						}
+						else
+						{
+							// get all groups user can grade
+							groups = AssignmentService.getGroupsAllowGradeAssignment(contextString, a.getReference());
+						}
 					}
 					else
 					{
-						// get all groups user can grade
-						groups = AssignmentService.getGroupsAllowGradeAssignment(contextString, a.getReference());
+						// filter out only those submissions from the selected-group members
+						try
+						{
+							Group group = SiteService.getSite(contextString).getGroup(allOrOneGroup);
+							groups.add(group);
+						}
+						catch (Exception e)
+						{
+							M_log.warn(this + "sizeResources " + e.getMessage() + " groupId=" + allOrOneGroup);
+						}
+					}
+	
+					// all users that can submit
+					List allowAddSubmissionUsers = AssignmentService.allowAddSubmissionUsers((String) state.getAttribute(EXPORT_ASSIGNMENT_REF));
+	
+					HashSet userIdSet = new HashSet();
+					for (Iterator iGroup=groups.iterator(); iGroup.hasNext();)
+					{
+						Object nGroup = iGroup.next();
+						String authzGroupRef = (nGroup instanceof Group)? ((Group) nGroup).getReference():((nGroup instanceof Site))?((Site) nGroup).getReference():null;
+						if (authzGroupRef != null)
+						{
+							try
+							{
+								AuthzGroup group = AuthzGroupService.getAuthzGroup(authzGroupRef);
+								Set grants = group.getUsers();
+								for (Iterator iUserIds = grants.iterator(); iUserIds.hasNext();)
+								{
+									String userId = (String) iUserIds.next();
+									
+									// don't show user multiple times
+									if (!userIdSet.contains(userId))
+									{
+										try
+										{
+											User u = UserDirectoryService.getUser(userId);
+											if (u != null)
+											{
+												boolean found = false;
+												for (int i = 0; !found && i<submissions.size();i++)
+												{
+													AssignmentSubmission s = (AssignmentSubmission) submissions.get(i);
+													if (s.getSubmitterIds().contains(userId))
+													{
+														returnResources.add(new UserSubmission(u, s));
+														found = true;
+													}
+												}
+												
+			
+												// add those users who haven't made any submissions and with submission rights
+												if (!found && allowAddSubmissionUsers.contains(u))
+												{
+													// construct fake submissions for grading purpose if the user has right for grading
+													if (AssignmentService.allowGradeSubmission(a.getReference()))
+													{
+													
+														// temporarily allow the user to read and write from assignments (asn.revise permission)
+												        enableSecurityAdvisor();
+												        
+														AssignmentSubmissionEdit s = AssignmentService.addSubmission(contextString, a.getId(), userId);
+														s.setSubmitted(true);
+														s.setAssignment(a);
+														
+														// set the resubmission properties
+														setResubmissionProperties(a, s);
+														
+														AssignmentService.commitEdit(s);
+														
+														// update the UserSubmission list by adding newly created Submission object
+														AssignmentSubmission sub = AssignmentService.getSubmission(s.getReference());
+														returnResources.add(new UserSubmission(u, sub));
+				
+												        // clear the permission
+														disableSecurityAdvisor();
+													}
+												}
+											}
+										}
+										catch (Exception e)
+										{
+											M_log.warn(this + ":sizeResources " + e.getMessage() + " userId = " + userId);
+										}
+										
+										// add userId into set to prevent showing user multiple times
+										userIdSet.add(userId);
+									}
+								}
+								
+							}
+							catch (Exception eee)
+							{
+								M_log.warn(this + ":sizeResources " + eee.getMessage() + " authGroupId=" + authzGroupRef);
+							}
+						}
 					}
 				}
 				else
 				{
-					// filter out only those submissions from the selected-group members
-					try
+					// for search only submissions
+					String search = (String) state.getAttribute(STATE_SEARCH);
+					if (search != null)
 					{
-						Group group = SiteService.getSite(contextString).getGroup(allOrOneGroup);
-						groups.add(group);
-					}
-					catch (Exception e)
-					{
-						M_log.warn(this + "sizeResources " + e.getMessage() + " groupId=" + allOrOneGroup);
-					}
-				}
-
-				// all users that can submit
-				List allowAddSubmissionUsers = AssignmentService.allowAddSubmissionUsers((String) state.getAttribute(EXPORT_ASSIGNMENT_REF));
-
-				HashSet userIdSet = new HashSet();
-				for (Iterator iGroup=groups.iterator(); iGroup.hasNext();)
-				{
-					Object nGroup = iGroup.next();
-					String authzGroupRef = (nGroup instanceof Group)? ((Group) nGroup).getReference():((nGroup instanceof Site))?((Site) nGroup).getReference():null;
-					if (authzGroupRef != null)
-					{
-						try
+						// all users that can submit
+						List allowAddSubmissionUsers = AssignmentService.allowAddSubmissionUsers((String) state.getAttribute(EXPORT_ASSIGNMENT_REF));
+						if (allowAddSubmissionUsers != null)
 						{
-							AuthzGroup group = AuthzGroupService.getAuthzGroup(authzGroupRef);
-							Set grants = group.getUsers();
-							for (Iterator iUserIds = grants.iterator(); iUserIds.hasNext();)
+							for (int i = 0; i < allowAddSubmissionUsers.size(); i++)
 							{
-								String userId = (String) iUserIds.next();
-								
-								// don't show user multiple times
-								if (!userIdSet.contains(userId))
+								User u = (User) allowAddSubmissionUsers.get(i);
+								if (u.getDisplayName() != null && u.getDisplayName().toLowerCase().indexOf(search.toLowerCase()) != -1
+									|| u.getEmail() != null && u.getEmail().toLowerCase().indexOf(search.toLowerCase()) != -1
+									|| u.getEid() != null && u.getEid().toLowerCase().indexOf(search.toLowerCase()) != -1)
 								{
-									try
+									// match based on name, email, and eid
+									AssignmentSubmission submission = AssignmentService.getSubmission(assignmentId, u);
+									if (submission == null)
 									{
-										User u = UserDirectoryService.getUser(userId);
-										if (u != null)
+										// construct fake submissions for grading purpose if the user has right for grading
+										if (AssignmentService.allowGradeSubmission(a.getReference()))
 										{
-											boolean found = false;
-											for (int i = 0; !found && i<submissions.size();i++)
-											{
-												AssignmentSubmission s = (AssignmentSubmission) submissions.get(i);
-												if (s.getSubmitterIds().contains(userId))
-												{
-													returnResources.add(new UserSubmission(u, s));
-													found = true;
-												}
-											}
+											// temporarily allow the user to read and write from assignments (asn.revise permission)
+									        enableSecurityAdvisor();
+									        
+											AssignmentSubmissionEdit s = AssignmentService.addSubmission(contextString, a.getId(), u.getId());
+											s.setSubmitted(true);
+											s.setAssignment(a);
 											
-		
-											// add those users who haven't made any submissions and with submission rights
-											if (!found && allowAddSubmissionUsers.contains(u))
-											{
-												// construct fake submissions for grading purpose if the user has right for grading
-												if (AssignmentService.allowGradeSubmission(a.getReference()))
-												{
-												
-													// temporarily allow the user to read and write from assignments (asn.revise permission)
-											        enableSecurityAdvisor();
-											        
-													AssignmentSubmissionEdit s = AssignmentService.addSubmission(contextString, a.getId(), userId);
-													s.setSubmitted(true);
-													s.setAssignment(a);
-													
-													// set the resubmission properties
-													setResubmissionProperties(a, s);
-													
-													AssignmentService.commitEdit(s);
-													
-													// update the UserSubmission list by adding newly created Submission object
-													AssignmentSubmission sub = AssignmentService.getSubmission(s.getReference());
-													returnResources.add(new UserSubmission(u, sub));
-			
-											        // clear the permission
-													disableSecurityAdvisor();
-												}
-											}
+											// set the resubmission properties
+											setResubmissionProperties(a, s);
+											
+											AssignmentService.commitEdit(s);
+											
+									        // clear the permission
+											disableSecurityAdvisor();
+											
+											// update the UserSubmission list by adding newly created Submission object
+											submission = AssignmentService.getSubmission(s.getReference());
+	
 										}
 									}
-									catch (Exception e)
-									{
-										M_log.warn(this + ":sizeResources " + e.getMessage() + " userId = " + userId);
-									}
-									
-									// add userId into set to prevent showing user multiple times
-									userIdSet.add(userId);
+									returnResources.add(new UserSubmission(u, submission));
 								}
 							}
-							
-						}
-						catch (Exception eee)
-						{
-							M_log.warn(this + ":sizeResources " + eee.getMessage() + " authGroupId=" + authzGroupRef);
 						}
 					}
 				}
@@ -12488,16 +12568,23 @@ public class AssignmentAction extends PagedResourceActionII
     }
     
     /*
-	 * (non-Javadoc)
-	 * 
-	 * @see org.chefproject.actions.VelocityPortletPaneledAction#doOptions(org.apache.turbine.util.RunData, org.apache.velocity.context.Context)
+	 * (non-Javadoc) 
 	 */
 	public void doOptions(RunData data, Context context)
 	{
-		super.doOptions(data, context);
-
 		SessionState state = ((JetspeedRunData) data).getPortletSessionState(((JetspeedRunData) data).getJs_peid());
-
+		String siteId = ToolManager.getCurrentPlacement().getContext();
+		try {
+			Site site = SiteService.getSite(siteId);
+			ToolConfiguration tc=site.getToolForCommonId(ASSIGNMENT_TOOL_ID);
+			String optionValue = tc.getPlacementConfig().getProperty(SUBMISSIONS_SEARCH_ONLY);
+			state.setAttribute(SUBMISSIONS_SEARCH_ONLY, optionValue == null ? Boolean.FALSE:Boolean.valueOf(optionValue));
+		}
+		catch (IdUnusedException e)
+		{
+			M_log.warn(this + ":doOptions  Cannot find site with id " + siteId);
+		}
+		
 		if (!alertGlobalNavigation(state, data))
 		{
 			if (SiteService.allowUpdateSite((String) state.getAttribute(STATE_CONTEXT_STRING)))
@@ -12520,11 +12607,11 @@ public class AssignmentAction extends PagedResourceActionII
 	/**
 	 * build the options
 	 */
-	protected String build_options_context(VelocityPortlet portlet, Context context, RunData data,
-			SessionState state)
+	protected String build_options_context(VelocityPortlet portlet, Context context, RunData data, SessionState state)
 	{
 		context.put("context", state.getAttribute(STATE_CONTEXT_STRING));
 
+		context.put(SUBMISSIONS_SEARCH_ONLY, (Boolean) state.getAttribute(SUBMISSIONS_SEARCH_ONLY));
 		
 		String template = (String) getContext(data).get("template");
 		return template + TEMPLATE_OPTIONS;
@@ -12536,8 +12623,38 @@ public class AssignmentAction extends PagedResourceActionII
      * @param data
      * @param context
      */
-	public void doUpdate_options(RunData data, Context context)
+	public void doUpdate_options(RunData data)
 	{
+		SessionState state = ((JetspeedRunData) data).getPortletSessionState(((JetspeedRunData) data).getJs_peid());
+		String siteId = ToolManager.getCurrentPlacement().getContext();
+		ParameterParser params = data.getParameters();
+		
+		// only show those submissions matching search criteria
+		boolean submissionsSearchOnly = params.getBoolean(SUBMISSIONS_SEARCH_ONLY);
+		state.setAttribute(SUBMISSIONS_SEARCH_ONLY, Boolean.valueOf(submissionsSearchOnly));
+		
+		// save the option into tool configuration
+		try {
+			Site site = SiteService.getSite(siteId);
+			ToolConfiguration tc=site.getToolForCommonId(ASSIGNMENT_TOOL_ID);
+			tc.getPlacementConfig().setProperty(SUBMISSIONS_SEARCH_ONLY, Boolean.toString(submissionsSearchOnly));
+			SiteService.save(site);
+		}
+		catch (IdUnusedException e)
+		{
+			M_log.warn(this + ":doOptions  Cannot find site with id " + siteId);
+			addAlert(state, rb.getFormattedMessage("options_cannotFindSite", new Object[]{siteId}));
+		}
+		catch (PermissionException e)
+		{
+			M_log.warn(this + ":doOptions Do not have permission to edit site with id " + siteId);
+			addAlert(state, rb.getFormattedMessage("options_cannotEditSite", new Object[]{siteId}));
+		}
+		if (state.getAttribute(STATE_MESSAGE) == null)
+		{
+			// back to list view
+			state.setAttribute(STATE_MODE, MODE_LIST_ASSIGNMENTS);
+		}
 	} // doUpdate_options
 	
 	
@@ -12548,5 +12665,39 @@ public class AssignmentAction extends PagedResourceActionII
      */
 	public void doCancel_options(RunData data, Context context)
 	{
+		SessionState state = ((JetspeedRunData) data).getPortletSessionState(((JetspeedRunData) data).getJs_peid());
+		state.setAttribute(STATE_MODE, MODE_LIST_ASSIGNMENTS);
 	} // doCancel_options
+	
+	/**
+	 * Handle the submission search request.
+	 */
+	public void doSubmission_search(RunData data, Context context) {
+		SessionState state = ((JetspeedRunData) data)
+				.getPortletSessionState(((JetspeedRunData) data).getJs_peid());
+
+		// read the search form field into the state object
+		String search = StringUtil.trimToNull(data.getParameters().getString(
+				FORM_SEARCH));
+
+		// set the flag to go to the prev page on the next list
+		if (search == null) {
+			state.removeAttribute(STATE_SEARCH);
+		} else {
+			state.setAttribute(STATE_SEARCH, search);
+		}
+
+	} // doSubmission_search
+
+	/**
+	 * Handle a Search Clear request.
+	 */
+	public void doSubmission_search_clear(RunData data, Context context) {
+		SessionState state = ((JetspeedRunData) data)
+				.getPortletSessionState(((JetspeedRunData) data).getJs_peid());
+
+		// clear the search
+		state.removeAttribute(STATE_SEARCH);
+
+	} // doSubmission_search_clear
 }	

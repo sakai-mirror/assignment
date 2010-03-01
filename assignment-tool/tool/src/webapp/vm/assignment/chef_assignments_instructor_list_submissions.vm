@@ -78,9 +78,9 @@
 		$validator.escapeHtml($assignment.getTitle())<span class="highlight"> - $!tlang.getString('gen.subm2') </span>
 	</h3>
 	#if ($alertMessage)<div class="alertMessage">$tlang.getString("gen.alert") $validator.escapeHtml($alertMessage)</div><div class="clear"></div>#end
-		## show the view by group choice when there is at least one group defined
-		#if ($!groups.hasNext())
-			<div class="navPanel">
+		<div class="navPanel">
+			## show the view by group choice when there is at least one group defined
+			#if ($!groups.hasNext())
 				<div class="viewNav">
 					<form name="viewForm" class="inlineForm" method="post" action="#toolForm("AssignmentAction")">
 						<input type="hidden" name="eventSubmit_doView_submission_list_option" value="view" />
@@ -96,8 +96,24 @@
 						</select>
 					</form>
 				</div>
+			#end
+			<div class="searchNav">
+				
+					<form name="searchForm" class="inlineForm" action="#toolForm("AssignmentAction")" method="post">
+						<input type="hidden" name="eventSubmit_doSubmission_search" value="null" />
+						<label for="$form_search" class="skip">$tlang.getString('list.search')</label>
+						<input size="20"  value="$validator.escapeHtml($!searchString)" name="$form_search" id="$form_search" type="text" class="searchField"  />
+						<a href="#" title="$tlang.getString('search')" onclick="location = '#toolLink($action "doSubmission_search")'+buildQueryString('searchForm');return false;">
+							<input type="button" value="$tlang.getString('search')" />
+						</a>
+						#if (($!searchString) && (!$searchString.equals("")))
+							<a href="#" title="$tlang.getString('search_clear')" onclick="location = '#toolLink($action "doSubmission_search_clear")'+buildQueryString('searchForm');return false;">
+								<input type="button" class="button" value="$tlang.getString("search_clear")" />
+							</a>
+						#end
+					</form>
 			</div>
-		#end		
+		</div>		
 		#set ($submissionType = $assignment.getContent().getTypeOfSubmission())
 		#set ($showMsg = false)
 		#set ($showMsg = $!allMsgNumber)
