@@ -1921,7 +1921,6 @@ public class AssignmentAction extends PagedResourceActionII
 			if (a.getContent() != null)
 			{
 				gradeType = a.getContent().getTypeOfGrade();
-				context.put("value_SubmissionType", gradeType);
 			}
 		}
 		catch (IdUnusedException e)
