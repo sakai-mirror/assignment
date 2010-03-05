@@ -89,7 +89,11 @@
 						</label>
 						<span class="skip">$tlang.getString("newassig.selectmessage")</span>
 						<select id="view" name="view" size="1" tabindex="3" onchange="blur();document.viewForm.submit();">
-							<option value="$tlang.getString('gen.viewallgroupssections')" #if($!view.equals($tlang.getString('gen.viewallgroupssections')))selected="selected"#end >$tlang.getString('gen.viewallgroupssections')</option>
+							#if (!$showSubmissionByFilterSearchOnly)
+								<option value="all" #if($!view.equals("all"))selected="selected"#end >$tlang.getString('gen.viewallgroupssections')</option>
+							#else
+								<option value="" >$tlang.getString('please_select_group')</option>
+							#end
 							#foreach($aGroup in $groups)
 								<option value="$!aGroup.Reference" #if($!view.equals($!aGroup.Reference))selected="selected"#end >$validator.escapeHtml($aGroup.Title)</option>
 							#end
@@ -101,7 +105,7 @@
 				
 					<form name="searchForm" class="inlineForm" action="#toolForm("AssignmentAction")" method="post">
 						<input type="hidden" name="eventSubmit_doSubmission_search" value="null" />
-						<label for="$form_search" class="skip">$tlang.getString('list.search')</label>
+						<label for="$form_search" class="skip">$tlang.getString("search")</label>
 						<input size="20"  value="$validator.escapeHtml($!searchString)" name="$form_search" id="$form_search" type="text" class="searchField"  />
 						<a href="#" title="$tlang.getString('search')" onclick="location = '#toolLink($action "doSubmission_search")'+buildQueryString('searchForm');return false;">
 							<input type="button" value="$tlang.getString('search')" />
