@@ -7677,7 +7677,11 @@ public class AssignmentAction extends PagedResourceActionII
 				// save and do reorder
 				doReorder(data);
 			}
-
+			else if ("options".equals(option))
+			{
+				// go to the options view
+				doOptions(data);
+			}
 
 		}
 	}
@@ -12542,7 +12546,7 @@ public class AssignmentAction extends PagedResourceActionII
     /*
 	 * (non-Javadoc) 
 	 */
-	public void doOptions(RunData data, Context context)
+	public void doOptions(RunData data)
 	{
 		SessionState state = ((JetspeedRunData) data).getPortletSessionState(((JetspeedRunData) data).getJs_peid());
 		String siteId = ToolManager.getCurrentPlacement().getContext();
