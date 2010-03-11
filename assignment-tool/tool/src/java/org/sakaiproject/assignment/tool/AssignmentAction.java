@@ -775,6 +775,7 @@ public class AssignmentAction extends PagedResourceActionII
 	public String buildMainPanelContext(VelocityPortlet portlet, Context context, RunData data, SessionState state)
 	{
 		String template = null;
+		context.put("action", "AssignmentAction");
 
 		context.put("tlang", rb);
 		context.put("dateFormat", getDateFormatString());
@@ -2638,7 +2639,7 @@ public class AssignmentAction extends PagedResourceActionII
 		supplementItemIntoContext(state, context, assignment, null);
 		
 		// search context
-		context.put("searchString", state.getAttribute(STATE_SEARCH));
+		context.put("searchString", state.getAttribute(STATE_SEARCH) != null?state.getAttribute(STATE_SEARCH):rb.getString("search_student_instruction"));
 		context.put("form_search", FORM_SEARCH);
 		context.put("showSubmissionByFilterSearchOnly", state.getAttribute(SUBMISSIONS_SEARCH_ONLY) != null && ((Boolean) state.getAttribute(SUBMISSIONS_SEARCH_ONLY)).booleanValue() ? Boolean.TRUE:Boolean.FALSE);
 		
@@ -10228,6 +10229,7 @@ public class AssignmentAction extends PagedResourceActionII
 			String authzGroupRef = (nGroup instanceof Group)? ((Group) nGroup).getReference():((nGroup instanceof Site))?((Site) nGroup).getReference():null;
 			if (authzGroupRef != null)
 			{
+				// search by group filtering 
 				try
 				{
 					AuthzGroup group = AuthzGroupService.getAuthzGroup(authzGroupRef);
@@ -10242,53 +10244,10 @@ public class AssignmentAction extends PagedResourceActionII
 							try
 							{
 								User u = UserDirectoryService.getUser(userId);
-								if (u != null && searchString != null)
-								{
-									if (u.getDisplayName() != null && u.getDisplayName().toLowerCase().indexOf(searchString.toLowerCase()) != -1
-											|| u.getEmail() != null && u.getEmail().toLowerCase().indexOf(searchString.toLowerCase()) != -1
-											|| u.getEid() != null && u.getEid().toLowerCase().indexOf(searchString.toLowerCase()) != -1)
-									{
-										// search match
-									}
-									else
-									{
-										// search miss
-										u = null;
-									}
-								}
-								if (u != null)
-								{
-									// match based on name, email, and eid
-									AssignmentSubmission submission = AssignmentService.getSubmission(a.getId(), u);
-									if (submission == null && AssignmentService.allowGradeSubmission(a.getReference()))
-									{
-										// construct fake submissions for grading purpose if the user has right for grading
-										if (AssignmentService.allowGradeSubmission(a.getReference()))
-										{
-											// temporarily allow the user to read and write from assignments (asn.revise permission)
-									        enableSecurityAdvisor();
-									        
-											AssignmentSubmissionEdit s = AssignmentService.addSubmission(contextString, a.getId(), u.getId());
-											s.setSubmitted(true);
-											s.setAssignment(a);
-											
-											// set the resubmission properties
-											setResubmissionProperties(a, s);
-											
-											AssignmentService.commitEdit(s);
-											
-									        // clear the permission
-											disableSecurityAdvisor();
-											
-											// update the UserSubmission list by adding newly created Submission object
-											submission = AssignmentService.getSubmission(s.getReference());
-	
-										}
-									}
-									// add to return value
-									if (submission != null) {
-										rv.add(new UserSubmission(u, submission));
-									}
+								AssignmentSubmission submission = getUserSubmissionBySearch(contextString, a, u, searchString);
+								// add to return value
+								if (submission != null) {
+									rv.add(new UserSubmission(u, submission));
 								}
 							}
 							catch (Exception e)
@@ -10307,8 +10266,90 @@ public class AssignmentAction extends PagedResourceActionII
 					M_log.warn(this + ":filterStudentSubmissions " + eee.getMessage() + " authGroupId=" + authzGroupRef);
 				}
 			}
+			else
+			{
+				// retrieve users by search
+				if (searchString != null)
+				{
+					// search by allowSubmitStudent list
+					for (Iterator iUsers = allowAddSubmissionUsers.iterator();iUsers.hasNext();)
+					{
+						User u = (User) iUsers.next();
+						AssignmentSubmission submission = getUserSubmissionBySearch(contextString, a, u, searchString);
+						// add to return value
+						if (submission != null) {
+							rv.add(new UserSubmission(u, submission));
+						}
+					}
+				}
+			}
 		}
 		
+		return rv;
+	}
+
+
+	private AssignmentSubmission getUserSubmissionBySearch(String contextString,
+			Assignment a, User u, String searchString) {
+		
+		AssignmentSubmission rv = null;
+		
+		if (u != null && searchString != null)
+		{
+			if (u.getDisplayName() != null && u.getDisplayName().toLowerCase().indexOf(searchString.toLowerCase()) != -1
+					|| u.getEmail() != null && u.getEmail().toLowerCase().indexOf(searchString.toLowerCase()) != -1
+					|| u.getEid() != null && u.getEid().toLowerCase().indexOf(searchString.toLowerCase()) != -1
+					|| u.getId() != null && u.getId().toLowerCase().indexOf(searchString.toLowerCase()) != -1)
+			{
+				// search match
+			}
+			else
+			{
+				// search miss
+				u = null;
+			}
+		}
+		if (u != null)
+		{
+			// match based on name, email, and eid
+			try
+			{
+				rv = AssignmentService.getSubmission(a.getId(), u);
+				if (rv == null && AssignmentService.allowGradeSubmission(a.getReference()))
+				{
+					// construct fake submissions for grading purpose if the user has right for grading
+					if (AssignmentService.allowGradeSubmission(a.getReference()))
+					{
+						// temporarily allow the user to read and write from assignments (asn.revise permission)
+				        enableSecurityAdvisor();
+				        
+						AssignmentSubmissionEdit s = AssignmentService.addSubmission(contextString, a.getId(), u.getId());
+						s.setSubmitted(true);
+						s.setAssignment(a);
+						
+						// set the resubmission properties
+						setResubmissionProperties(a, s);
+						
+						AssignmentService.commitEdit(s);
+						
+				        // clear the permission
+						disableSecurityAdvisor();
+						
+						// update the UserSubmission list by adding newly created Submission object
+						rv = AssignmentService.getSubmission(s.getReference());
+		
+					}
+				}
+			}
+			catch (PermissionException e)
+			{
+				M_log.warn(this + ":getUserSubmissionBySearch " + e.getMessage() + " assignment id=" + a.getId() + " searchString=" + searchString);
+			}
+			catch (IdUnusedException e)
+			{
+				M_log.warn(this + ":getUserSubmissionBySearch " + e.getMessage() + " assignment id=" + a.getId() + " searchString=" + searchString);
+			}
+		}
 		return rv;
 	}
 
@@ -12546,7 +12587,12 @@ public class AssignmentAction extends PagedResourceActionII
     /*
 	 * (non-Javadoc) 
 	 */
-	public void doOptions(RunData data)
+	public void doOptions(RunData data, Context context)
+	{
+		doOptions(data);
+	} // doOptions
+	
+	protected void doOptions(RunData data)
 	{
 		SessionState state = ((JetspeedRunData) data).getPortletSessionState(((JetspeedRunData) data).getJs_peid());
 		String siteId = ToolManager.getCurrentPlacement().getContext();
@@ -12578,7 +12624,7 @@ public class AssignmentAction extends PagedResourceActionII
 				state.removeAttribute(ALERT_GLOBAL_NAVIGATION);
 			}
 		}
-	} // doOptions
+	}
 	
 	/**
 	 * build the options
@@ -12618,12 +12664,12 @@ public class AssignmentAction extends PagedResourceActionII
 		}
 		catch (IdUnusedException e)
 		{
-			M_log.warn(this + ":doOptions  Cannot find site with id " + siteId);
+			M_log.warn(this + ":doUpdate_options  Cannot find site with id " + siteId);
 			addAlert(state, rb.getFormattedMessage("options_cannotFindSite", new Object[]{siteId}));
 		}
 		catch (PermissionException e)
 		{
-			M_log.warn(this + ":doOptions Do not have permission to edit site with id " + siteId);
+			M_log.warn(this + ":doUpdate_options Do not have permission to edit site with id " + siteId);
 			addAlert(state, rb.getFormattedMessage("options_cannotEditSite", new Object[]{siteId}));
 		}
 		if (state.getAttribute(STATE_MESSAGE) == null)
