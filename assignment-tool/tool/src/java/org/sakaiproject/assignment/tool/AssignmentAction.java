@@ -2641,7 +2641,33 @@ public class AssignmentAction extends PagedResourceActionII
 		supplementItemIntoContext(state, context, assignment, null);
 		
 		// search context
-		context.put("searchString", state.getAttribute(STATE_SEARCH) != null?state.getAttribute(STATE_SEARCH):rb.getString("search_student_instruction"));
+		String searchPrompt = (String) state.getAttribute(STATE_SEARCH); 
+		if (searchPrompt == null || searchPrompt.length() == 0)
+		{
+			searchPrompt = "";
+			searchPrompt += rb.getString("search_student_instruction");
+			List<String> searchFields = (List<String>) state.getAttribute(SEARCHABLE_USER_FIELDS);
+			if (searchFields != null)
+			{
+				if (searchFields.contains("sortname"))
+				{
+					searchPrompt += rb.getString("search_student_instruction_name");
+				}
+				if (searchFields.contains("eid"))
+				{
+					searchPrompt += rb.getString("search_student_instruction_eid");
+				}
+				if (searchFields.contains("email"))
+				{
+					searchPrompt += rb.getString("search_student_instruction_email");
+				}
+				if (searchFields.contains("id"))
+				{
+					searchPrompt += rb.getString("search_student_instruction_id");
+				}
+			}
+		}
+		context.put("searchString", searchPrompt);
 		context.put("form_search", FORM_SEARCH);
 		context.put("showSubmissionByFilterSearchOnly", state.getAttribute(SUBMISSIONS_SEARCH_ONLY) != null && ((Boolean) state.getAttribute(SUBMISSIONS_SEARCH_ONLY)).booleanValue() ? Boolean.TRUE:Boolean.FALSE);
 		
