@@ -102,19 +102,20 @@
 							#end
 						</select>
 					</form>
+					<br />
+					&nbsp;&nbsp;&nbsp;$tlang.getString("and_or")&nbsp;&nbsp;&nbsp;
+					<br />
 				#end
-				&nbsp;&nbsp;&nbsp;$tlang.getString("and_or")&nbsp;&nbsp;&nbsp;
 				<form name="searchForm" class="inlineForm" action="#toolForm("AssignmentAction")" method="post">
-					<input type="hidden" name="eventSubmit_doSubmission_search" value="null" />
+					<input type="hidden" name="eventSubmit_doSubmission_search_option" value="null" />
+					<input type="hidden" name="option" id="option" value="" />
 					<label for="$form_search" class="skip">$tlang.getString("search")</label>
 					<input size="50"  value="$validator.escapeHtml($!searchString)" name="$form_search" id="$form_search" type="text" class="searchField"  />
-					<a href="#" title="$tlang.getString('search')" onclick="location = '#toolLink($action "doSubmission_search")'+buildQueryString('searchForm');return false;">
-						<input type="button" value="$tlang.getString('search')" />
-					</a>
+					<input type="button" value="$tlang.getString('search')" 
+						onclick="document.searchForm.option.value='submit';javascript:document.searchForm.submit();" />
 					#if (($!searchString) && (!$searchString.equals("")))
-						<a href="#" title="$tlang.getString('search_clear')" onclick="location = '#toolLink($action "doSubmission_search_clear")'+buildQueryString('searchForm');return false;">
-							<input type="button" class="button" value="$tlang.getString("search_clear")" />
-						</a>
+						<input type="button" class="button" value="$tlang.getString("search_clear")" 
+							onclick="document.searchForm.option.value='clear';javascript:document.searchForm.submit();" />
 					#end
 				</form>
 			</div>

@@ -769,6 +769,8 @@ public class AssignmentAction extends PagedResourceActionII
 	private static final String STATE_SEARCH = "state_search";
 	private static final String FORM_SEARCH = "form_search";
 	
+	private static final String SEARCHABLE_USER_FIELDS = "searchable_user_fields";
+	
 	/**
 	 * central place for dispatching the build routines based on the state name
 	 */
@@ -8365,6 +8367,16 @@ public class AssignmentAction extends PagedResourceActionII
 		{
 			state.setAttribute(NEW_ASSIGNMENT_YEAR_RANGE_TO, Integer.valueOf(2012));
 		}
+		
+		if (state.getAttribute(SEARCHABLE_USER_FIELDS) == null)
+		{
+			String[] fields = ServerConfigurationService.getStrings("assignment.searchable_user_fields");
+			if (fields == null || fields.length == 0)
+			{
+				fields = new String[]{"eid", "sortname","email"};
+			}
+			state.setAttribute(SEARCHABLE_USER_FIELDS, new ArrayList(Arrays.asList(fields)));
+		}
 	} // initState
 
 
@@ -10118,7 +10130,10 @@ public class AssignmentAction extends PagedResourceActionII
 			returnResources = submissions;
 		}
 		else if (mode.equalsIgnoreCase(MODE_INSTRUCTOR_GRADE_ASSIGNMENT))
-		{
+		{	
+			// search users based on those fields
+			List<String> searchableUserFields = (List<String>) state.getAttribute(SEARCHABLE_USER_FIELDS);
+			
 			// range
 			Collection groups = new Vector();
 			String assignmentId = (String) state.getAttribute(EXPORT_ASSIGNMENT_REF);
@@ -10160,7 +10175,7 @@ public class AssignmentAction extends PagedResourceActionII
 				List allowAddSubmissionUsers = AssignmentService.allowAddSubmissionUsers((String) state.getAttribute(EXPORT_ASSIGNMENT_REF));
 
 				/*get all student submissions based on the group filter*/
-				returnResources.addAll(filterStudentSubmissions(contextString, (String) state.getAttribute(STATE_SEARCH), groups, a, allowAddSubmissionUsers));
+				returnResources.addAll(filterStudentSubmissions(contextString, (String) state.getAttribute(STATE_SEARCH), groups, a, allowAddSubmissionUsers, searchableUserFields));
 			}
 			catch (IdUnusedException e)
 			{
@@ -10217,7 +10232,7 @@ public class AssignmentAction extends PagedResourceActionII
 
 	
 	private List<UserSubmission> filterStudentSubmissions(String contextString, String searchString,
-			Collection groups, Assignment a, List allowAddSubmissionUsers) {
+			Collection groups, Assignment a, List allowAddSubmissionUsers, List<String> searchableUserFields) {
 		// clean search string
 		searchString = StringUtil.trimToNull(searchString);
 		
@@ -10244,7 +10259,7 @@ public class AssignmentAction extends PagedResourceActionII
 							try
 							{
 								User u = UserDirectoryService.getUser(userId);
-								AssignmentSubmission submission = getUserSubmissionBySearch(contextString, a, u, searchString);
+								AssignmentSubmission submission = getUserSubmissionBySearch(contextString, a, u, searchString, searchableUserFields);
 								// add to return value
 								if (submission != null) {
 									rv.add(new UserSubmission(u, submission));
@@ -10275,7 +10290,7 @@ public class AssignmentAction extends PagedResourceActionII
 					for (Iterator iUsers = allowAddSubmissionUsers.iterator();iUsers.hasNext();)
 					{
 						User u = (User) iUsers.next();
-						AssignmentSubmission submission = getUserSubmissionBySearch(contextString, a, u, searchString);
+						AssignmentSubmission submission = getUserSubmissionBySearch(contextString, a, u, searchString, searchableUserFields);
 						// add to return value
 						if (submission != null) {
 							rv.add(new UserSubmission(u, submission));
@@ -10290,16 +10305,17 @@ public class AssignmentAction extends PagedResourceActionII
 
 
 	private AssignmentSubmission getUserSubmissionBySearch(String contextString,
-			Assignment a, User u, String searchString) {
+			Assignment a, User u, String searchString, List<String> searchableUserFields) {
 		
 		AssignmentSubmission rv = null;
 		
 		if (u != null && searchString != null)
 		{
-			if (u.getDisplayName() != null && u.getDisplayName().toLowerCase().indexOf(searchString.toLowerCase()) != -1
-					|| u.getEmail() != null && u.getEmail().toLowerCase().indexOf(searchString.toLowerCase()) != -1
-					|| u.getEid() != null && u.getEid().toLowerCase().indexOf(searchString.toLowerCase()) != -1
-					|| u.getId() != null && u.getId().toLowerCase().indexOf(searchString.toLowerCase()) != -1)
+			if (searchableUserFields != null && searchString != null 
+					&& (searchableUserFields.contains("sortname") && u.getSortName() != null && u.getSortName().toLowerCase().indexOf(searchString.toLowerCase()) != -1
+					|| searchableUserFields.contains("email") && u.getEmail() != null && u.getEmail().toLowerCase().indexOf(searchString.toLowerCase()) != -1
+					|| searchableUserFields.contains("eid") && u.getEid() != null && u.getEid().toLowerCase().indexOf(searchString.toLowerCase()) != -1
+					|| searchableUserFields.contains("id") && u.getId() != null && u.getId().toLowerCase().indexOf(searchString.toLowerCase()) != -1))
 			{
 				// search match
 			}
@@ -12690,6 +12706,25 @@ public class AssignmentAction extends PagedResourceActionII
 		SessionState state = ((JetspeedRunData) data).getPortletSessionState(((JetspeedRunData) data).getJs_peid());
 		state.setAttribute(STATE_MODE, MODE_LIST_ASSIGNMENTS);
 	} // doCancel_options
+	
+	/**
+	 * handle submission options
+	 */
+	public void doSubmission_search_option(RunData data, Context context) {
+		SessionState state = ((JetspeedRunData) data)
+				.getPortletSessionState(((JetspeedRunData) data).getJs_peid());
+
+		// read the search form field into the state object
+		String searchOption = StringUtil.trimToNull(data.getParameters().getString("option"));
+
+		// set the flag to go to the prev page on the next list
+		if (searchOption != null && "submit".equals(searchOption)) {
+			doSubmission_search(data, context);
+		} else if (searchOption != null && "clear".equals(searchOption)) {
+			doSubmission_search_clear(data, context);
+		}
+
+	} // doSubmission_search_option
 	
 	/**
 	 * Handle the submission search request.
