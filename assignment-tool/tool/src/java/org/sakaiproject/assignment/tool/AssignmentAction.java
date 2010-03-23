@@ -2147,7 +2147,6 @@ public class AssignmentAction extends PagedResourceActionII
 				: state.getAttribute(GRADE_SUBMISSION_GRADE));
 
 		context.put("assignment_expand_flag", state.getAttribute(GRADE_SUBMISSION_ASSIGNMENT_EXPAND_FLAG));
-		context.put("gradingAttachments", state.getAttribute(ATTACHMENTS));
 
 		// is this a non-electronic submission type of assignment
 		context.put("nonElectronic", (a!=null && a.getContent().getTypeOfSubmission() == Assignment.NON_ELECTRONIC_ASSIGNMENT_SUBMISSION)?Boolean.TRUE:Boolean.FALSE);
@@ -7154,6 +7153,7 @@ public class AssignmentAction extends PagedResourceActionII
 				{
 					v.add(attachments.next());
 				}
+				state.setAttribute(GRADE_SUBMISSION_FEEDBACK_ATTACHMENT,v);
 				state.setAttribute(ATTACHMENTS, v);
 
 				state.setAttribute(GRADE_SUBMISSION_GRADE, s.getGrade());
