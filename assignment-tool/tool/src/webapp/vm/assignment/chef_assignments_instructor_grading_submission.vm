@@ -70,7 +70,7 @@ function handleEnterKeyPress(ev)
 		         style="width:70%;line-height:1.4em">
 				 		
 				<h3>
-					$assignment.title
+					$validator.escapeHtml($assignment.title)
 					<span class="highlight"> - 
 					#if ($withGrade)
 						#if (!$!submission.getGraded())
@@ -170,11 +170,7 @@ function handleEnterKeyPress(ev)
 						$tlang.getString("gen.status2")
 					</th>	
 					<td>
-						#if ($submission.Graded)
-							$tlang.getString("grad3")
-						#else
-							$tlang.getString("gen.ung1")
-						#end
+					$submission.getStatus()
 					</td>
 				</tr>
 			#end
@@ -254,7 +250,7 @@ function handleEnterKeyPress(ev)
 			#if($allowViewModelAnswer)
 			<h4  id="toggleModel" class="toggleAnchor specialLink"><img alt="expand" class="expand" src="/library/image/sakai/expand.gif" /><img alt="collapse" class="collapse" src="/library/image/sakai/collapse.gif" />$tlang.getString('modelAnswer')</h4>
 			<div class="model toggledContent">
-					<p>$!assignmentModelAnswerItem.getText()</p>
+					<p>$validator.escapeHtml($!assignmentModelAnswerItem.getText())</p>
 					#set ($mAttachments = $!assignmentModelAnswerItem.getAttachmentObjectSet())
 						<ul class="attachList">
 							#set ($size = 0)
@@ -292,15 +288,15 @@ function handleEnterKeyPress(ev)
 			#if ($!allowReadAssignmentNoteItem)
 				<h4  id="toggleNotes" class="toggleAnchor specialLink"><img alt="expand" class="expand" src="/library/image/sakai/expand.gif" /><img alt="collapse" class="collapse" src="/library/image/sakai/collapse.gif" />$tlang.getString('note.label')</h4>
 				<div class="notes toggledContent">
-					$!assignmentNoteItem.getNote()
+					$validator.escapeHtml($!assignmentNoteItem.getNote())
 				</div>
 			#end
 			##all purpose
 			#if ($!allowViewAllPurposeItem)
 			<h4  id="toggleAllPurpose" class="toggleAnchor specialLink"><img alt="expand" class="expand" src="/library/image/sakai/expand.gif" /><img alt="collapse" class="collapse" src="/library/image/sakai/collapse.gif" />$tlang.getString('allPurpose')</h4>
 			<div class="allPurpose toggledContent">
-					<p>$!assignmentAllPurposeItem.getTitle()</p>
-					<p>$!assignmentAllPurposeItem.getText()</p>
+					<p>$validator.escapeHtml($!assignmentAllPurposeItem.getTitle())</p>
+					<p>$validator.escapeHtml($!assignmentAllPurposeItem.getText())</p>
 					#set ($aAttachments = $!assignmentAllPurposeItem.getAttachmentObjectSet())
 						<ul class="attachList">
 							#set ($size = 0)
@@ -430,7 +426,7 @@ function handleEnterKeyPress(ev)
 						</h4>	
 						#set ($size = 0)
 						#set ($props = false)
-						#foreach ($attachment in $gradingAttachments) 
+						#foreach ($attachment in $value_feedback_attachment) 
 							#set ($props = $attachment.Properties) 
 							#if ($!props)
 								#set ($size = $size + 1)
@@ -440,7 +436,7 @@ function handleEnterKeyPress(ev)
 							<p class="instruction">$tlang.getString("gen.noatt")</p>
 						#else
 							<ul class="attachList indnt1">
-								#foreach ($attachment in $gradingAttachments) 
+								#foreach ($attachment in $value_feedback_attachment) 
 									#set ($props = false)
 									#set ($props = $attachment.Properties) 
 									#if ($!props)
@@ -509,6 +505,7 @@ function handleEnterKeyPress(ev)
 *#
 						#if ($withGrade)
 							<div class="highlightPanel" style="width:80%">
+							#if ($allowToGrade)
 								#set ($gradeType = $assignment.getContent().TypeOfGrade)
 								#if ($gradeType == 1)
 									<p class="shorttext">
@@ -546,6 +543,13 @@ function handleEnterKeyPress(ev)
 											<input name="$name_grade" type="checkbox" value="Checked" #if ($!value_grade.equals("Checked"))checked="checked"#end id="gradeChecked"  /> <label for="gradeChecked">$tlang.getString("gen.gra2") $tlang.getString("gen.checked")</label>
 									</p>	
 								#end
+							#else
+								## if not allowed to grade, show the current grade instead
+								<input name="$name_grade" type="hidden" value="$!value_grade" />
+								<div class="alertMessage">$!notAllowedToGradeWarning</div>
+								<label for="grade">$tlang.getString("gen.gra2")</label>
+								$!value_grade
+							#end
 							</div>	
 							## the previous grades
 								#set ($previousGrades =  $submission.Properties.getProperty($submission.Properties.getNamePropSubmissionScaledPreviousGrades()))
@@ -563,13 +567,13 @@ function handleEnterKeyPress(ev)
 						<input type="hidden" name="$name_allowResubmitNumber" id="allowResubmitNumber" value="0" />
 					#else
 						##show it only for those assignments not of type non-electronic submission
-						#if($!value_allowResubmitNumber && $value_SubmissionType != 4)
+						#if($!value_allowResubmitNumber && $submissionType != 4)
 							#set($resubmitStyle="display:block")
 						#else 
 							#set($resubmitStyle="display:none")
 						#end
-						<p class="checkbox" id="tempAllowRes" #if ($value_SubmissionType == 4) style = "display:none"#end>
-							<input type="checkbox" id="allowResToggle" name ="allowResToggle" #if($!value_allowResubmitNumber && $value_SubmissionType != 4) checked="checked"#end onclick="if(checked){document.getElementById('allowResubmitNumber').style.display = 'block';document.getElementById('allowResubmitTime').style.display = 'block';resizeFrame();}else{document.getElementById('allowResubmitNumber').style.display = 'none';document.getElementById('allowResubmitTime').style.display = 'none'}" /> 
+						<p class="checkbox" id="tempAllowRes" #if ($submissionType == 4) style = "display:none"#end>
+							<input type="checkbox" id="allowResToggle" name ="allowResToggle" #if($!value_allowResubmitNumber && $submissionType != 4) checked="checked"#end onclick="if(checked){document.getElementById('allowResubmitNumber').style.display = 'block';document.getElementById('allowResubmitTime').style.display = 'block';resizeFrame();}else{document.getElementById('allowResubmitNumber').style.display = 'none';document.getElementById('allowResubmitTime').style.display = 'none'}" /> 
 							<label for="allowResToggle">$tlang.getString("allowResubmit")</label>
 	    				</p>
 						<span id="allowResubmitNumber" style="$!resubmitStyle">

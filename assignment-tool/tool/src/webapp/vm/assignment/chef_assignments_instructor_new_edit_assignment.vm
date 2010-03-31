@@ -606,10 +606,10 @@ $(document).ready(function() {
 						#foreach ($aAssignment in $!gradebookAssignments)
 							#if ($aAssignment.isExternallyMaintained())
 								## for external assignment
-								<option  value="$validator.escapeHtml($aAssignment.getExternalId())" #if($!associateGradebookAssignment.equals($aAssignment.getExternalId()))selected="selected"#end)>$aAssignment.Name</option>
+								<option  value="$validator.escapeHtml($aAssignment.getExternalId())" #if($!associateGradebookAssignment.equals($aAssignment.getExternalId()))selected="selected"#end)>$validator.escapeHtml($aAssignment.Name)</option>
 							#else
 								## for internal assignment
-								<option  value="$validator.escapeHtml($aAssignment.Name)" #if($!associateGradebookAssignment.equals($aAssignment.Name))selected="selected"#end)>$aAssignment.Name</option>
+								<option  value="$validator.escapeHtml($aAssignment.Name)" #if($!associateGradebookAssignment.equals($aAssignment.Name))selected="selected"#end)>$validator.escapeHtml($aAssignment.Name)</option>
 							#end
 						#end
 					</select>
@@ -699,7 +699,7 @@ $(document).ready(function() {
 							</td>
 							<td headers="name" class="checkbox" style="white-space:nowrap">
 								<label for="id-$group.Id">
-									$validator.escapeHtml($group.Title)
+									$validator.escapeHtml($validator.escapeHtml($group.Title))
 								</label>	
 							</td>
 							<td headers="description" width="100%"> ##mozilla does not resize table children dynamically , so set here
@@ -759,6 +759,7 @@ $(document).ready(function() {
 		#else
 			<ul class="attachList indnt1">
 				#foreach ($attachment in $attachments) 
+					<input type="hidden" name="attachments" id="attachments" value="$attachment.Reference" />
 					#set ($props = false)
 					#set ($props = $attachment.Properties) 
 					#if ($!props)
@@ -1032,7 +1033,7 @@ $(document).ready(function() {
 			<legend>$tlang.getString('allPurpose')</legend>
 			<div class="shorttext" style="margin:.2em">
 				<span class="reqStar">*</span>				
-				<label  for="allPurpose_title">$tlang.getString("allPurpose.title")</label>
+				<label  for="allPurpose_title">$validator.escapeHtml($tlang.getString("allPurpose.title"))</label>
 				<input id="allPurpose_title" name="allPurposeTitle" type="text" size="20" maxlength="30" value="$!value_allPurposeTitle" />
 				<input id="allPurpose_title_holder"  style="display:none"  name="allPurposeTitle" type="text" size="2" maxlength="30" value="$!value_allPurposeTitle" />
 				<span class="validationError alertMessageInline" id="allPurpose_title_message">

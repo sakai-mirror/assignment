@@ -29,11 +29,15 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Comparator;
+import java.text.DecimalFormat;
+import java.text.NumberFormat;
+import java.text.ParseException;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Hashtable;
 import java.util.Iterator;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import java.util.Set;
 import java.util.Stack;
@@ -2380,52 +2384,12 @@ public abstract class BaseAssignmentService implements AssignmentService, Entity
 			List allowGradeAssignmentUsers = allowGradeAssignmentUsers(a.getReference());
 			receivers.retainAll(allowGradeAssignmentUsers);
 			
-			String submitterId = s.getSubmitterIdString();
-			
-			// filter out users who's not able to grade this submission
-			List finalReceivers = new Vector();
-			
-			HashSet receiverSet = new HashSet();
-			if (a.getAccess().equals(Assignment.AssignmentAccess.GROUPED))
-			{
-				Collection groups = a.getGroups();
-				for (Iterator gIterator = groups.iterator(); gIterator.hasNext();)
-				{
-					String g = (String) gIterator.next();
-					try
-					{
-						AuthzGroup aGroup = AuthzGroupService.getAuthzGroup(g);
-						if (aGroup.isAllowed(submitterId, AssignmentService.SECURE_ADD_ASSIGNMENT_SUBMISSION))
-						{
-							for (Iterator rIterator = receivers.iterator(); rIterator.hasNext();)
-							{
-								User rUser = (User) rIterator.next();
-								String rUserId = rUser.getId();
-								if (!receiverSet.contains(rUserId) && aGroup.isAllowed(rUserId, AssignmentService.SECURE_GRADE_ASSIGNMENT_SUBMISSION))
-								{
-									finalReceivers.add(rUser);
-									receiverSet.add(rUserId);
-								}
-							}
-						}
-					}
-					catch (Exception e)
-					{
-						M_log.warn(this + " notificationToInstructors, group id =" + g + " " + e.getMessage());
-					}
-				}
-			}
-			else
-			{
-				finalReceivers.addAll(receivers);
-			}
-			
 			String messageBody = getNotificationMessage(s, "submission");
 			
 			if (notiOption.equals(Assignment.ASSIGNMENT_INSTRUCTOR_NOTIFICATIONS_EACH))
 			{
-				// send the message immidiately
-				EmailService.sendToUsers(finalReceivers, getHeaders(null, "submission"), messageBody);
+				// send the message immediately
+				EmailService.sendToUsers(receivers, getHeaders(null, "submission"), messageBody);
 			}
 			else if (notiOption.equals(Assignment.ASSIGNMENT_INSTRUCTOR_NOTIFICATIONS_DIGEST))
 			{
@@ -2433,7 +2397,7 @@ public abstract class BaseAssignmentService implements AssignmentService, Entity
 				String digestMsgBody = getPlainTextNotificationMessage(s, "submission");
 				
 				// digest the message to each user
-				for (Iterator iReceivers = finalReceivers.iterator(); iReceivers.hasNext();)
+				for (Iterator iReceivers = receivers.iterator(); iReceivers.hasNext();)
 				{
 					User user = (User) iReceivers.next();
 					DigestService.digest(user.getId(), getSubject("submission"), digestMsgBody);
@@ -2644,7 +2608,7 @@ public abstract class BaseAssignmentService implements AssignmentService, Entity
 		String text = StringUtil.trimToNull(s.getSubmittedText());
 		if ( text != null)
 		{
-			buffer.append(rb.getString("noti.submit.text") + newline + newline + Validator.escapeHtmlFormattedText(text) + newline + newline);
+			buffer.append(rb.getString("gen.submittedtext") + newline + newline + Validator.escapeHtmlFormattedText(text) + newline + newline);
 		}
 		
 		// attachment if any
@@ -3723,8 +3687,62 @@ public abstract class BaseAssignmentService implements AssignmentService, Entity
 	 */
 	public List allowGradeAssignmentUsers(String assignmentReference)
 	{
-		return SecurityService.unlockUsers(SECURE_GRADE_ASSIGNMENT_SUBMISSION, assignmentReference);
+		List users = SecurityService.unlockUsers(SECURE_GRADE_ASSIGNMENT_SUBMISSION, assignmentReference);
+		if (users == null)
+		{
+			users = new Vector();
+		}
+		
+		try
+		{
+			Assignment a = getAssignment(assignmentReference);
+			if (a.getAccess() == Assignment.AssignmentAccess.GROUPED)
+			{
+				// for grouped assignment, need to include those users that with "all.groups" and "grade assignment" permissions on the site level
+				AuthzGroup group = AuthzGroupService.getAuthzGroup(SiteService.siteReference(a.getContext()));
+				if (group != null)
+				{
+					// get the roles which are allowed for submission but not for all_site control
+					Set rolesAllowAllSite = group.getRolesIsAllowed(SECURE_ALL_GROUPS);
+					Set rolesAllowGradeAssignment = group.getRolesIsAllowed(SECURE_GRADE_ASSIGNMENT_SUBMISSION);
+					// save all the roles with both "all.groups" and "grade assignment" permissions
+					rolesAllowAllSite.retainAll(rolesAllowGradeAssignment);
+					if (rolesAllowAllSite != null)
+					{
+						for (Iterator iRoles = rolesAllowAllSite.iterator(); iRoles.hasNext(); )
+						{
+							Set<String> userIds = group.getUsersHasRole((String) iRoles.next());
+							if (userIds != null)
+							{
+								for (Iterator<String> iUserIds = userIds.iterator(); iUserIds.hasNext(); )
+								{
+									String userId =  iUserIds.next();
+									try
+									{
+										User u = UserDirectoryService.getUser(userId);
+										if (!users.contains(u))
+										{
+											users.add(u);
+										}
+									}
+									catch (Exception ee)
+									{
+										M_log.warn(this + " allowGradeAssignmentUsers " + ee.getMessage() + " problem with getting user =" + userId);
+									}
+								}
+							}
+						}
+					}
+				}
+			}
+		}
+		catch (Exception e)
+		{
+			M_log.warn(this + " allowGradeAssignmentUsers " + e.getMessage() + " assignmentReference=" + assignmentReference);
+		}
 
+		return users;
+		
 	} // allowGradeAssignmentUsers
 	
 	/**
@@ -5729,6 +5747,43 @@ public abstract class BaseAssignmentService implements AssignmentService, Entity
 			
 			submission = getSubmission(a.getReference(), u);
 			
+			// check for allow resubmission or not first
+			// return true if resubmission is allowed and current time is before resubmission close time
+			// get the resubmit settings from submission object first
+			String allowResubmitNumString = submission != null?submission.getProperties().getProperty(AssignmentSubmission.ALLOW_RESUBMIT_NUMBER):null;
+			if (allowResubmitNumString != null)
+			{
+				try
+				{
+					int allowResubmitNumber = Integer.parseInt(allowResubmitNumString);
+					String allowResubmitCloseTime = submission != null ? (String) submission.getProperties().getProperty(AssignmentSubmission.ALLOW_RESUBMIT_CLOSETIME):null;
+					Time resubmitCloseTime = null;
+					if (allowResubmitNumber == -1)
+					{
+						// unlimitted resubmission
+						return true;
+					}
+					else if (allowResubmitNumber > 0)
+					{
+						if (allowResubmitCloseTime != null)
+						{
+							// see if a resubmission close time is set on submission level
+							resubmitCloseTime = TimeService.newTime(Long.parseLong(allowResubmitCloseTime));
+						}
+						else
+						{
+							// otherwise, use assignment close time as the resubmission close time
+							resubmitCloseTime = a.getCloseTime();
+						}
+						return allowResubmitNumber != 0 && resubmitCloseTime != null && currentTime.before(resubmitCloseTime);
+					}
+				}
+				catch (NumberFormatException e)
+				{
+					M_log.warn(this + " canSubmit(String, Assignment) " + e.getMessage() + " allowResubmitNumString=" + allowResubmitNumString);
+				}
+			}
+			
 			if (submission == null || (submission != null && submission.getTimeSubmitted() == null))
 			{
 				// if there is no submission yet
@@ -5749,28 +5804,7 @@ public abstract class BaseAssignmentService implements AssignmentService, Entity
 					return true;
 				}
 				else
-				{
-					// return true if resubmission is allowed and current time is before resubmission close time
-					// get the resubmit settings from submission object first
-					int allowResubmitNumber = submission.getResubmissionNum();
-					Time resubmitCloseTime = null;
-					if (allowResubmitNumber != 0)
-					{
-						ResourceProperties submissionProperties = submission.getProperties();
-						String property = (String) submissionProperties.getProperty(AssignmentSubmission.ALLOW_RESUBMIT_CLOSETIME);
-						if (submissionProperties.getProperty(AssignmentSubmission.ALLOW_RESUBMIT_CLOSETIME) != null)
-						{
-							// see if a resubmission close time is set on submission level
-							resubmitCloseTime = TimeService.newTime(submissionProperties.getLongProperty(AssignmentSubmission.ALLOW_RESUBMIT_CLOSETIME));
-						}
-						else
-						{
-							// otherwise, use assignment close time as the resubmission close time
-							resubmitCloseTime = a.getCloseTime();
-						}
-					}
-					return allowResubmitNumber != 0 && resubmitCloseTime != null && currentTime.before(resubmitCloseTime);
-				}
+					return false;
 			}
 		}
 		catch (UserNotDefinedException e)
@@ -5778,15 +5812,8 @@ public abstract class BaseAssignmentService implements AssignmentService, Entity
 			// cannot find user
 			M_log.warn(this + " canSubmit(String, Assignment) " + e.getMessage() + " assignment ref=" + a.getReference());
 			return false;
-		} catch (EntityPropertyNotDefinedException e) {
-			// Property not defined
-			M_log.warn(this + " canSubmit(String, Assignment) " + e.getMessage() + " assignment ref=" + a.getReference());
-			return false;
-		} catch (EntityPropertyTypeException e) {
-			// entity property type exception
-			M_log.warn(this + " canSubmit(String, Assignment) " + e.getMessage() + " assignment ref=" + a.getReference());
-			return false;
 		}
+		
 	}
 
 	/**********************************************************************************************************************************************************************************************************************************************************
@@ -6332,7 +6359,7 @@ public abstract class BaseAssignmentService implements AssignmentService, Entity
 			else if ((this.getCloseTime() != null) && (this.getCloseTime().before(currentTime)))
 				return rb.getString("gen.closed");
 			else
-				return rb.getString("gen.due1");
+				return rb.getString("gen.due");
 		}
 
 		/**
@@ -7720,6 +7747,24 @@ public abstract class BaseAssignmentService implements AssignmentService, Entity
 		{
 			// formated to show one decimal place, for example, 1000 to 100.0
 			String one_decimal_maxGradePoint = m_maxGradePoint / 10 + "." + (m_maxGradePoint % 10);
+			// get localized number format
+			NumberFormat nbFormat = NumberFormat.getInstance();				
+			try {
+				Locale locale = null;
+				ResourceLoader rb = new ResourceLoader();
+	            		locale = rb.getLocale();
+	            		nbFormat = NumberFormat.getNumberInstance(locale);
+			}				
+			catch (Exception e) {
+				M_log.warn("Error while retrieving local number format, using default ", e);
+			}
+			nbFormat.setMaximumFractionDigits(1);
+			nbFormat.setMinimumFractionDigits(1);
+			nbFormat.setGroupingUsed(false);
+			// show grade in localized number format
+			Double dblGrade = new Double(one_decimal_maxGradePoint);
+			one_decimal_maxGradePoint = nbFormat.format(dblGrade);
+			
 			return one_decimal_maxGradePoint;
 		}
 
@@ -9347,16 +9392,45 @@ public abstract class BaseAssignmentService implements AssignmentService, Entity
 			{
 				if (grade != null && grade.length() > 0 && !"0".equals(grade))
 				{
+					String one_decimal_gradePoint = "";
 					try
 					{
 						Integer.parseInt(grade);
 						// if point grade, display the grade with one decimal place
-						return grade.substring(0, grade.length() - 1) + "." + grade.substring(grade.length() - 1);
+						one_decimal_gradePoint =  grade.substring(0, grade.length() - 1) + "." + grade.substring(grade.length() - 1);
 					}
-					catch (Exception e)
-					{
+					catch (NumberFormatException e) {
+						try {
+							Float.parseFloat(grade);
+							one_decimal_gradePoint = grade;
+						}
+						catch (Exception e1) {
+							return grade;
+						}
+					}
+					// get localized number format
+					NumberFormat nbFormat = NumberFormat.getInstance();				
+					try {
+						Locale locale = null;
+						ResourceLoader rb = new ResourceLoader();
+			            		locale = rb.getLocale();
+			            		nbFormat = NumberFormat.getNumberInstance(locale);
+					}				
+					catch (Exception e) {
+						M_log.warn("Error while retrieving local number format, using default ", e);
+					}
+					nbFormat.setMaximumFractionDigits(1);
+					nbFormat.setMinimumFractionDigits(1);
+					nbFormat.setGroupingUsed(false);
+					// show grade in localized number format
+					try {
+						Double dblGrade = new Double(one_decimal_gradePoint);
+						one_decimal_gradePoint = nbFormat.format(dblGrade);
+					}
+					catch (Exception e) {
 						return grade;
 					}
+					return one_decimal_gradePoint;
 				}
 				else
 				{

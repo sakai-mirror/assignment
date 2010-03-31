@@ -125,6 +125,7 @@
 				</a>
 			</div>
 		<ul id="reorder-list">
+
 			#set($count = 1)
 			#foreach($assignment in $assignments)
 
