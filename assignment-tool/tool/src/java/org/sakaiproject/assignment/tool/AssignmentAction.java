@@ -39,7 +39,7 @@ import java.util.Collections;
 import java.util.Comparator;
 import java.util.Date;
 import java.util.Enumeration;
-import java.util.Hashtable;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.HashMap;
 import java.util.Iterator;
@@ -1700,7 +1700,7 @@ public class AssignmentAction extends PagedResourceActionII
 			{
 				// get all assignments in Gradebook
 				List gradebookAssignments = g.getAssignments(gradebookUid);
-				List gradebookAssignmentsExceptSamigo = new Vector();
+				List gradebookAssignmentsExceptSamigo = new ArrayList();
 	
 				// filtering out those from Samigo
 				for (Iterator i=gradebookAssignments.iterator(); i.hasNext();)
@@ -1866,7 +1866,7 @@ public class AssignmentAction extends PagedResourceActionII
 		putSupplementItemAttachmentStateIntoContext(state, context, ALLPURPOSE_ATTACHMENTS);
 		
 		// put role information into context
-		Hashtable<String, List> roleUsers = new Hashtable<String, List>();
+		HashMap<String, List> roleUsers = new HashMap<String, List>();
 		try
 		{
 			AuthzGroup realm = AuthzGroupService.getAuthzGroup(SiteService.siteReference(contextString));
@@ -1877,7 +1877,7 @@ public class AssignmentAction extends PagedResourceActionII
 				Set<String> users = realm.getUsersHasRole(r.getId());
 				if (users!=null && users.size() > 0)
 				{
-					List<User> usersList = new Vector();
+					List<User> usersList = new ArrayList();
 					for (Iterator<String> iUsers = users.iterator(); iUsers.hasNext();)
 					{
 						String userId = iUsers.next();
@@ -1906,7 +1906,7 @@ public class AssignmentAction extends PagedResourceActionII
 
 	private void putGradebookCategoryInfoIntoContext(SessionState state,
 			Context context) {
-		Hashtable<Long, String> categoryTable = categoryTable();
+		HashMap<Long, String> categoryTable = categoryTable();
 		if (categoryTable != null)
 		{
 			context.put("value_totalCategories", Integer.valueOf(categoryTable.size()));
@@ -1914,11 +1914,11 @@ public class AssignmentAction extends PagedResourceActionII
 			// selected category
 			context.put("value_Category", state.getAttribute(NEW_ASSIGNMENT_CATEGORY));
 			
-			Enumeration<Long> categories = categoryTable.keys();
-			List<Long> categoryList = new Vector<Long>();
-			while(categories.hasMoreElements())
+			Iterator categories = categoryTable.keySet() != null?categoryTable.keySet().iterator():null;
+			List<Long> categoryList = new ArrayList<Long>();
+			while(categories.hasNext())
 			{
-				categoryList.add(categories.nextElement());
+				categoryList.add((Long) categories.next());
 			}
 			Collections.sort(categoryList);
 			context.put("categoryKeys", categoryList);
@@ -2045,9 +2045,9 @@ public class AssignmentAction extends PagedResourceActionII
 	protected String build_instructor_delete_assignment_context(VelocityPortlet portlet, Context context, RunData data,
 			SessionState state)
 	{
-		Vector assignments = new Vector();
-		Vector assignmentIds = (Vector) state.getAttribute(DELETE_ASSIGNMENT_IDS);
-		Hashtable<String, Integer> submissionCountTable = new Hashtable<String, Integer>();
+		ArrayList assignments = new ArrayList();
+		ArrayList assignmentIds = (ArrayList) state.getAttribute(DELETE_ASSIGNMENT_IDS);
+		HashMap<String, Integer> submissionCountTable = new HashMap<String, Integer>();
 		for (int i = 0; i < assignmentIds.size(); i++)
 		{
 			try
@@ -2859,7 +2859,7 @@ public class AssignmentAction extends PagedResourceActionII
 		String contextString = (String) state.getAttribute(STATE_CONTEXT_STRING);
 
 		// get the realm and its member
-		List studentMembers = new Vector();
+		List studentMembers = new ArrayList();
 		List allowSubmitMembers = AssignmentService.allowAddAnySubmissionUsers(contextString);
 		for (Iterator allowSubmitMembersIterator=allowSubmitMembers.iterator(); allowSubmitMembersIterator.hasNext();)
 		{
@@ -2879,7 +2879,7 @@ public class AssignmentAction extends PagedResourceActionII
 		context.put("studentMembers", new SortedIterator(studentMembers.iterator(), new AssignmentComparator(state, SORTED_USER_BY_SORTNAME, Boolean.TRUE.toString())));
 		context.put("assignmentService", AssignmentService.getInstance());
 		
-		Hashtable showStudentAssignments = new Hashtable();
+		HashMap showStudentAssignments = new HashMap();
 		if (state.getAttribute(STUDENT_LIST_SHOW_TABLE) != null)
 		{
 			Set showStudentListSet = (Set) state.getAttribute(STUDENT_LIST_SHOW_TABLE);
@@ -2895,7 +2895,7 @@ public class AssignmentAction extends PagedResourceActionII
 					// sort the assignments into the default order before adding
 					Iterator assignmentSorter = AssignmentService.getAssignmentsForContext(contextString, userId);
 					// filter to obtain only grade-able assignments
-					List rv = new Vector();
+					List rv = new ArrayList();
 					while (assignmentSorter.hasNext())
 					{
 						Assignment a = (Assignment) assignmentSorter.next();
@@ -3551,7 +3551,7 @@ public class AssignmentAction extends PagedResourceActionII
 		SessionState state = ((JetspeedRunData) data).getPortletSessionState(((JetspeedRunData) data).getJs_peid());
 
 		// reset the show assignment object
-		state.setAttribute(DELETE_ASSIGNMENT_IDS, new Vector());
+		state.setAttribute(DELETE_ASSIGNMENT_IDS, new ArrayList());
 
 		// back to the instructor list view of assignments
 		state.setAttribute(STATE_MODE, MODE_LIST_ASSIGNMENTS);
@@ -4279,7 +4279,7 @@ public class AssignmentAction extends PagedResourceActionII
 				doAttachUpload(data, false);
 				
 				// for the attachment only submission
-				Vector v = (Vector) state.getAttribute(ATTACHMENTS);
+				ArrayList v = (ArrayList) state.getAttribute(ATTACHMENTS);
 				if ((v == null) || (v.size() == 0))
 				{
 					addAlert(state, rb.getString("youmust1"));
@@ -4291,7 +4291,7 @@ public class AssignmentAction extends PagedResourceActionII
 				doAttachUpload(data, false);
 				
 				// for the inline and attachment submission
-				Vector v = (Vector) state.getAttribute(ATTACHMENTS);
+				ArrayList v = (ArrayList) state.getAttribute(ATTACHMENTS);
 				if ((text.length() == 0 || "<br/>".equals(text)) && ((v == null) || (v.size() == 0)))
 				{
 					addAlert(state, rb.getString("youmust2"));
@@ -4561,7 +4561,7 @@ public class AssignmentAction extends PagedResourceActionII
 			String[] attachmentIds = data.getParameters().getStrings("attachments");
 			if (attachmentIds != null && attachmentIds.length != 0)
 			{
-				attachments = new Vector();
+				attachments = new ArrayList();
 				for (int i= 0; i<attachmentIds.length;i++)
 				{
 					attachments.add(EntityManager.newReference(attachmentIds[i]));
@@ -4806,7 +4806,7 @@ public class AssignmentAction extends PagedResourceActionII
 		}
 		
 		String siteId = (String)state.getAttribute(STATE_CONTEXT_STRING);
-		List<String> accessList = new Vector<String>();
+		List<String> accessList = new ArrayList<String>();
 		try
 		{
 			AuthzGroup realm = AuthzGroupService.getAuthzGroup(SiteService.siteReference(siteId));
@@ -5225,7 +5225,7 @@ public class AssignmentAction extends PagedResourceActionII
 			
 			// set group property
 			String range = (String) state.getAttribute(NEW_ASSIGNMENT_RANGE);
-			Collection groups = new Vector();
+			Collection groups = new ArrayList();
 			try
 			{
 				Site site = SiteService.getSite(siteId);
@@ -5895,7 +5895,7 @@ public class AssignmentAction extends PagedResourceActionII
 									Collection groupRefs = a.getGroups();
 		
 									// make a collection of Group objects
-									Collection groups = new Vector();
+									Collection groups = new ArrayList();
 		
 									//make a collection of Group objects from the collection of group ref strings
 									Site site = SiteService.getSite((String) state.getAttribute(STATE_CONTEXT_STRING));
@@ -6044,7 +6044,7 @@ public class AssignmentAction extends PagedResourceActionII
 					{
 						e = null;
 						CalendarEvent.EventAccess eAccess = CalendarEvent.EventAccess.SITE;
-						Collection eGroups = new Vector();
+						Collection eGroups = new ArrayList();
 
 						if (aEdit.getAccess().equals(Assignment.AssignmentAccess.GROUPED))
 						{
@@ -6772,7 +6772,7 @@ public class AssignmentAction extends PagedResourceActionII
 			if (state.getAttribute(ALLPURPOSE_ACCESS) == null)
 			{
 				Set<AssignmentAllPurposeItemAccess> aSet = aItem.getAccessSet();
-				List<String> aList = new Vector<String>();
+				List<String> aList = new ArrayList<String>();
 				for(Iterator<AssignmentAllPurposeItemAccess> aIterator = aSet.iterator(); aIterator.hasNext();)
 				{
 					AssignmentAllPurposeItemAccess access = aIterator.next();
@@ -6823,7 +6823,7 @@ public class AssignmentAction extends PagedResourceActionII
 
 		if (assignmentIds != null)
 		{
-			Vector ids = new Vector();
+			List ids = new ArrayList();
 			for (int i = 0; i < assignmentIds.length; i++)
 			{
 				String id = (String) assignmentIds[i];
@@ -6903,7 +6903,7 @@ public class AssignmentAction extends PagedResourceActionII
 
 		if (state.getAttribute(STATE_MESSAGE) == null)
 		{
-			state.setAttribute(DELETE_ASSIGNMENT_IDS, new Vector());
+			state.setAttribute(DELETE_ASSIGNMENT_IDS, new ArrayList());
 
 			state.setAttribute(STATE_MODE, MODE_LIST_ASSIGNMENTS);
 			
@@ -7143,7 +7143,7 @@ public class AssignmentAction extends PagedResourceActionII
 		}
 		if (state.getAttribute(STATE_MESSAGE) == null)
 		{
-			state.setAttribute(DELETE_ASSIGNMENT_IDS, new Vector());
+			state.setAttribute(DELETE_ASSIGNMENT_IDS, new ArrayList());
 			state.setAttribute(STATE_MODE, MODE_LIST_ASSIGNMENTS);
 		}
 
@@ -7761,7 +7761,7 @@ public class AssignmentAction extends PagedResourceActionII
 	 */
 	private void putSupplementItemAttachmentInfoIntoState(SessionState state, AssignmentSupplementItemWithAttachment item, String attachmentsKind)
 	{
-		List refs = new Vector();
+		List refs = new ArrayList();
 		
 		if (item != null)
 		{
@@ -7788,7 +7788,7 @@ public class AssignmentAction extends PagedResourceActionII
 	 */
 	private void putSupplementItemAttachmentStateIntoContext(SessionState state, Context context, String attachmentsKind)
 	{
-		List refs = new Vector();
+		List refs = new ArrayList();
 		
 		String attachmentsFor = (String) state.getAttribute(ATTACHMENTS_FOR);
 		if (attachmentsFor != null && attachmentsFor.equals(attachmentsKind))
@@ -8664,11 +8664,11 @@ public class AssignmentAction extends PagedResourceActionII
 	} // resetNewAssignment
 
 	/**
-	 * construct a Hashtable using integer as the key and three character string of the month as the value
+	 * construct a HashMap using integer as the key and three character string of the month as the value
 	 */
-	private Hashtable monthTable()
+	private HashMap monthTable()
 	{
-		Hashtable n = new Hashtable();
+		HashMap n = new HashMap();
 		n.put(Integer.valueOf(1), rb.getString("jan"));
 		n.put(Integer.valueOf(2), rb.getString("feb"));
 		n.put(Integer.valueOf(3), rb.getString("mar"));
@@ -8686,11 +8686,11 @@ public class AssignmentAction extends PagedResourceActionII
 	} // monthTable
 
 	/**
-	 * construct a Hashtable using the integer as the key and grade type String as the value
+	 * construct a HashMap using the integer as the key and grade type String as the value
 	 */
-	private Hashtable gradeTypeTable()
+	private HashMap gradeTypeTable()
 	{
-		Hashtable n = new Hashtable();
+		HashMap n = new HashMap();
 		n.put(Integer.valueOf(2), rb.getString("letter"));
 		n.put(Integer.valueOf(3), rb.getString("points"));
 		n.put(Integer.valueOf(4), rb.getString("pass"));
@@ -8701,11 +8701,11 @@ public class AssignmentAction extends PagedResourceActionII
 	} // gradeTypeTable
 
 	/**
-	 * construct a Hashtable using the integer as the key and submission type String as the value
+	 * construct a HashMap using the integer as the key and submission type String as the value
 	 */
-	private Hashtable submissionTypeTable()
+	private HashMap submissionTypeTable()
 	{
-		Hashtable n = new Hashtable();
+		HashMap n = new HashMap();
 		n.put(Integer.valueOf(1), rb.getString("inlin"));
 		n.put(Integer.valueOf(2), rb.getString("attaonly"));
 		n.put(Integer.valueOf(3), rb.getString("inlinatt"));
@@ -8717,13 +8717,13 @@ public class AssignmentAction extends PagedResourceActionII
 	
 	/**
 	* Add the list of categories from the gradebook tool
-	* construct a Hashtable using the integer as the key and category String as the value
+	* construct a HashMap using the integer as the key and category String as the value
 	* @return
 	*/
-	private Hashtable<Long, String> categoryTable()
+	private HashMap<Long, String> categoryTable()
 	{
 		boolean gradebookExists = isGradebookDefined();
-		Hashtable<Long, String> catTable = new Hashtable<Long, String>();
+		HashMap<Long, String> catTable = new HashMap<Long, String>();
 		if (gradebookExists) {
 			
 			GradebookService g = (GradebookService)  ComponentManager.get("org.sakaiproject.service.gradebook.GradebookService");
@@ -9985,9 +9985,9 @@ public class AssignmentAction extends PagedResourceActionII
 	/**
 	 * transforms the Iterator to Vector
 	 */
-	private Vector iterator_to_vector(Iterator l)
+	private List iterator_to_vector(Iterator l)
 	{
-		Vector v = new Vector();
+		List v = new ArrayList();
 		while (l.hasNext())
 		{
 			v.add(l.next());
@@ -10021,7 +10021,7 @@ public class AssignmentAction extends PagedResourceActionII
 		String mode = (String) state.getAttribute(STATE_MODE);
 		String contextString = (String) state.getAttribute(STATE_CONTEXT_STRING);
 		// all the resources for paging
-		List returnResources = new Vector();
+		List returnResources = new ArrayList();
 
 		boolean allowAddAssignment = AssignmentService.allowAddAssignment(contextString);
 		if (mode.equalsIgnoreCase(MODE_LIST_ASSIGNMENTS))
@@ -10096,9 +10096,9 @@ public class AssignmentAction extends PagedResourceActionII
 		}
 		else if (mode.equalsIgnoreCase(MODE_INSTRUCTOR_REPORT_SUBMISSIONS))
 		{
-			Vector submissions = new Vector();
+			List submissions = new ArrayList();
 			
-			Vector assignments = iterator_to_vector(AssignmentService.getAssignmentsForContext(contextString));
+			List assignments = iterator_to_vector(AssignmentService.getAssignmentsForContext(contextString));
 			if (assignments.size() > 0)
 			{
 				// users = AssignmentService.allowAddSubmissionUsers (((Assignment)assignments.get(0)).getReference ());
@@ -10161,7 +10161,7 @@ public class AssignmentAction extends PagedResourceActionII
 			List<String> searchableUserFields = (List<String>) state.getAttribute(SEARCHABLE_USER_FIELDS);
 			
 			// range
-			Collection groups = new Vector();
+			Collection<AuthzGroup> groups = new ArrayList<AuthzGroup>();
 			String assignmentId = (String) state.getAttribute(EXPORT_ASSIGNMENT_REF);
 			try
 			{
@@ -10258,16 +10258,16 @@ public class AssignmentAction extends PagedResourceActionII
 
 	
 	private List<UserSubmission> filterStudentSubmissions(String contextString, String searchString,
-			Collection groups, Assignment a, List allowAddSubmissionUsers, List<String> searchableUserFields) {
+			Collection<AuthzGroup> groups, Assignment a, List allowAddSubmissionUsers, List<String> searchableUserFields) {
 		// clean search string
 		searchString = StringUtil.trimToNull(searchString);
 		
-		List<UserSubmission> rv = new Vector<UserSubmission> ();
+		List<UserSubmission> rv = new ArrayList<UserSubmission> ();
 		HashSet userIdSet = new HashSet();
-		for (Iterator iGroup=groups.iterator(); iGroup.hasNext();)
+		for (Iterator<AuthzGroup> iGroup=groups.iterator(); iGroup.hasNext();)
 		{
-			Object nGroup = iGroup.next();
-			String authzGroupRef = (nGroup instanceof Group)? ((Group) nGroup).getReference():((nGroup instanceof Site))?((Site) nGroup).getReference():null;
+			AuthzGroup nGroup = iGroup.next();
+			String authzGroupRef = nGroup != null?((AuthzGroup) nGroup).getReference():null;
 			if (authzGroupRef != null)
 			{
 				// search by group filtering 
@@ -11343,8 +11343,8 @@ public class AssignmentAction extends PagedResourceActionII
 			state.setAttribute(UPLOAD_ALL_HAS_FEEDBACK_ATTACHMENT, Boolean.valueOf(hasFeedbackAttachment));
 			state.setAttribute(UPLOAD_ALL_RELEASE_GRADES, Boolean.valueOf(releaseGrades));
 			
-			// constructor the hashtable for all submission objects
-			Hashtable submissionTable = new Hashtable();
+			// constructor the HashMap for all submission objects
+			HashMap submissionTable = new HashMap();
 			Assignment assignment = null;
 			List submissions = null;
 			try
@@ -11361,7 +11361,7 @@ public class AssignmentAction extends PagedResourceActionII
 						User[] users = s.getSubmitters();
 						if (users != null && users.length > 0 && users[0] != null)
 						{
-							submissionTable.put(users[0].getEid(), new UploadGradeWrapper(s.getGrade(), s.getSubmittedText(), s.getFeedbackComment(), hasSubmissionAttachment?new Vector():s.getSubmittedAttachments(), hasFeedbackAttachment?new Vector():s.getFeedbackAttachments(), (s.getSubmitted() && s.getTimeSubmitted() != null)?s.getTimeSubmitted().toString():"", s.getFeedbackText()));
+							submissionTable.put(users[0].getEid(), new UploadGradeWrapper(s.getGrade(), s.getSubmittedText(), s.getFeedbackComment(), hasSubmissionAttachment?new ArrayList():s.getSubmittedAttachments(), hasFeedbackAttachment?new ArrayList():s.getFeedbackAttachments(), (s.getSubmitted() && s.getTimeSubmitted() != null)?s.getTimeSubmitted().toString():"", s.getFeedbackText()));
 						}
 					}
 				}
@@ -11787,7 +11787,7 @@ public class AssignmentAction extends PagedResourceActionII
 	 * @param userEid
 	 * @param submissionOrFeedback
 	 */
-	private Hashtable uploadZipAttachments(SessionState state, Hashtable submissionTable, InputStream zin, ZipEntry entry, String entryName, String userEid, String submissionOrFeedback) {
+	private HashMap uploadZipAttachments(SessionState state, HashMap submissionTable, InputStream zin, ZipEntry entry, String entryName, String userEid, String submissionOrFeedback) {
 		// upload all the files as instructor attachments to the submission for grading purpose
 		String fName = entryName.substring(entryName.lastIndexOf("/") + 1, entryName.length());
 		ContentTypeImageService iService = (ContentTypeImageService) state.getAttribute(STATE_CONTENT_TYPE_IMAGE_SERVICE);
