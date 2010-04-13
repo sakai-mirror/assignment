@@ -1,9 +1,9 @@
 ##<!-- $Header: Exp $ -->
 ## Assignments - reorder view
 <script type="text/javascript"
-  src="/sakai-assignment-tool/fluid/Fluid-all.js"></script>
+  src="/library/js/fluid-latest/InfusionAll.js"></script>
 
-    <script type="text/javascript" src="/sakai-assignment-tool/js/assignments-reorder.js"></script>
+	<script type="text/javascript" src="/library/js/reorderer.js"></script>
 		<style type="text/css">
 			@import url("/sakai-assignment-tool/css/assignment.css");
 		</style>
@@ -129,7 +129,7 @@
 			#set($count = 1)
 			#foreach($assignment in $assignments)
 
-			<li class="sortable"  id="assignment.orderable$count">
+			<li class="sortable"  id="listitem.orderable$count">
 				<span style="display:none" class="grabHandle">
 					<input type="text" size="3" value="$count" id="index$count"/>
 					<input type="hidden"  size="3" id="holder$count"  value="$count" tabindex="-2"/>
