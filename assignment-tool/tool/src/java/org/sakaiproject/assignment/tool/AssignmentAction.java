@@ -5730,6 +5730,10 @@ public class AssignmentAction extends PagedResourceActionII
 						if (message != null)
 						{
 							AnnouncementMessageHeaderEdit header = message.getAnnouncementHeaderEdit();
+							
+							// add assignment id into property, to facilitate assignment lookup in Annoucement tool
+							message.getPropertiesEdit().addProperty("assignmentReference", a.getReference());
+							
 							header.setDraft(/* draft */false);
 							header.replaceAttachments(/* attachment */EntityManager.newReferenceList());
 		
