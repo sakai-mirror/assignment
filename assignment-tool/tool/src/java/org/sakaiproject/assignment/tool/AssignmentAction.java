@@ -10037,14 +10037,14 @@ public class AssignmentAction extends PagedResourceActionII
 				String allOrOneGroup = (String) state.getAttribute(VIEW_SUBMISSION_LIST_OPTION);
 				if (allOrOneGroup.equals(rb.getString("gen.viewallgroupssections")))
 				{
-					if (AssignmentService.allowAllGroups(contextString))
+					if (a.getAccess() ==  Assignment.AssignmentAccess.SITE)
 					{
 						// site range
 						groups.add(SiteService.getSite(contextString));
 					}
 					else
 					{
-						// get all groups user can grade
+						// get all those groups that user is allowed to grade
 						groups = AssignmentService.getGroupsAllowGradeAssignment(contextString, a.getReference());
 					}
 				}
