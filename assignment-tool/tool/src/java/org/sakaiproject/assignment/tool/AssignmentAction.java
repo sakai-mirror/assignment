@@ -3764,7 +3764,7 @@ public class AssignmentAction extends PagedResourceActionII
 			else
 			{
 				//remove grade from gradebook
-				integrateGradebook(state, aReference, associateGradebookAssignment, null, null, null, -1, null, sReference, "remove", -1);
+				integrateGradebook(state, aReference, associateGradebookAssignment, null, null, null, -1, null, sReference, "remove");
 			}
 		}
 		catch (IdUnusedException e)
