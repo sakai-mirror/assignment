@@ -11405,7 +11405,9 @@ public class AssignmentAction extends PagedResourceActionII
 			
 			//clean up the zip file
 			if (tempFile != null && tempFile.exists()) {
-				tempFile.delete();
+				if (!tempFile.delete()) {
+					M_log.warn("Failed to clean up temp file");
+				}
 			}
 			
 		}
