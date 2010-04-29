@@ -9560,17 +9560,17 @@ public class AssignmentAction extends PagedResourceActionII
 				else if(fileData.length > 0)
 				{	
 					FileOutputStream tmpFileOut = null;
-					
+					File tempFile = null;
 					try
 					{
-						File f = File.createTempFile(String.valueOf(System.currentTimeMillis()),"");
+						tempFile = File.createTempFile(String.valueOf(System.currentTimeMillis()),"");
 						
-						tmpFileOut = new FileOutputStream(f);
+						tmpFileOut = new FileOutputStream(tempFile);
 						tmpFileOut.write(fileData);
 						tmpFileOut.flush();
 						tmpFileOut.close();
 						
-						ZipFile zipFile = new ZipFile(f, "UTF-8");
+						ZipFile zipFile = new ZipFile(tempFile, "UTF-8");
 						Enumeration<ZipEntry> zipEntries = zipFile.getEntries();
 						ZipEntry entry;
 						while (zipEntries.hasMoreElements())						 						
@@ -9740,6 +9740,12 @@ public class AssignmentAction extends PagedResourceActionII
 							} catch (IOException e) {
 								M_log.warn(this + ": Error closing temp file output stream: " + e.toString());
 							}
+						}
+						//clean up the zip file
+						if (tempFile != null && tempFile.exists()) {
+							if (!tempFile.delete()) {
+								M_log.warn("Failed to clean up temp file");
+					}
 						}
 					}
 
