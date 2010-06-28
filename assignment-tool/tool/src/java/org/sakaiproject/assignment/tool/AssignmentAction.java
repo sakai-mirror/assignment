@@ -2061,11 +2061,8 @@ public class AssignmentAction extends PagedResourceActionII
 				context.put("defaultGrade", defaultGrade);
 			}
 			
-			// groups
-			if (state.getAttribute(VIEW_SUBMISSION_LIST_OPTION) == null)
-			{
-				state.setAttribute(VIEW_SUBMISSION_LIST_OPTION, rb.getString("gen.viewallgroupssections"));
-			}
+			initViewSubmissionListOption(state);
+			
 			String view = (String)state.getAttribute(VIEW_SUBMISSION_LIST_OPTION);
 			context.put("view", view);
 			// access point url for zip file download
@@ -8473,6 +8470,7 @@ public class AssignmentAction extends PagedResourceActionII
 				List submissions = AssignmentService.getSubmissions(a);
 				
 				// now are we view all sections/groups or just specific one?
+				initViewSubmissionListOption(state);
 				String allOrOneGroup = (String) state.getAttribute(VIEW_SUBMISSION_LIST_OPTION);
 				if (allOrOneGroup.equals(rb.getString("gen.viewallgroupssections")))
 				{
@@ -10274,6 +10272,17 @@ public class AssignmentAction extends PagedResourceActionII
 		if (contentReviewService == null)
 		{
 			contentReviewService = (ContentReviewService) ComponentManager.get(ContentReviewService.class.getName());
+		}
+	}
+	
+	/**
+	 * make sure the state variable VIEW_SUBMISSION_LIST_OPTION is not null
+	 * @param state
+	 */
+	private void initViewSubmissionListOption(SessionState state) {
+		if (state.getAttribute(VIEW_SUBMISSION_LIST_OPTION) == null)
+		{
+			state.setAttribute(VIEW_SUBMISSION_LIST_OPTION, rb.getString("gen.viewallgroupssections"));
 		}
 	}
 }
