@@ -4815,7 +4815,7 @@ public abstract class BaseAssignmentService implements AssignmentService, Entity
 													// add the new resource into attachment collection area
 													ContentResource attachment = ContentHostingService.addAttachmentResource(
 															Validator.escapeResourceName(oAttachment.getProperties().getProperty(ResourceProperties.PROP_DISPLAY_NAME)), 
-															ToolManager.getCurrentPlacement().getContext(), 
+															toContext, 
 															ToolManager.getTool("sakai.assignment.grades").getTitle(), 
 															oAttachment.getContentType(), 
 															oAttachment.getContent(), 
