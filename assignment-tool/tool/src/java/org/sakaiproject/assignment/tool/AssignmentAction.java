@@ -813,7 +813,7 @@ public class AssignmentAction extends PagedResourceActionII
 		{
 			// disable auto-updates while leaving the list view
 			justDelivered(state);
-
+			
 			// build the context for showing one graded submission
 			template = build_student_view_grade_context(portlet, context, data, state);
 		}
@@ -7100,6 +7100,32 @@ public class AssignmentAction extends PagedResourceActionII
 
 	} // doView_students_Assignment
 
+ 	/**
+	 * test whether one can access the state submission object
+	 * @param state
+	 * @return
+	 */
+	private AssignmentSubmission getStateSubmissionObject(SessionState state) {
+		AssignmentSubmission submission = null;
+		try
+		{
+			submission = AssignmentService.getSubmission((String) state.getAttribute(VIEW_GRADE_SUBMISSION_ID));
+		}
+		catch (IdUnusedException e)
+		{
+			M_log.warn(this + ":getStateSubmissionObject " + e.getMessage());
+			addAlert(state, rb.getString("cannotfin5"));
+		}
+		catch (PermissionException e)
+		{
+			M_log.warn(this + ":getStateSubmissionObject " + e.getMessage());
+			addAlert(state, rb.getString("not_allowed_to_get_submission"));
+		}
+		return submission;
+	}
+
+
+
 	/**
 	 * Action is to show the student submissions
 	 */
@@ -7144,8 +7170,12 @@ public class AssignmentAction extends PagedResourceActionII
 		ParameterParser params = data.getParameters();
 
 		state.setAttribute(VIEW_GRADE_SUBMISSION_ID, params.getString("submissionId"));
-
-		state.setAttribute(STATE_MODE, MODE_STUDENT_VIEW_GRADE);
+		
+		// whether the user can access the Submission object
+		if (getStateSubmissionObject(state) != null)
+		{
+			state.setAttribute(STATE_MODE, MODE_STUDENT_VIEW_GRADE);
+		}
 
 	} // doView_grade
 
