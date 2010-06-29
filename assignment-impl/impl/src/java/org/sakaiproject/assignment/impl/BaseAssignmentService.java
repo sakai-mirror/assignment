@@ -3481,7 +3481,7 @@ public abstract class BaseAssignmentService implements AssignmentService, Entity
 							// find right row
 							row = sheet.getRow(((Integer)user_row.get(userId)).intValue());
 						
-							if (submission.getGraded() && submission.getGradeReleased() && submission.getGrade() != null)
+							if (submission.getGraded() && submission.getGrade() != null)
 							{
 								// graded and released
 								if (assignmentType == 3)
@@ -3520,11 +3520,11 @@ public abstract class BaseAssignmentService implements AssignmentService, Entity
 									cell.setCellValue(submission.getGrade());
 								}
 							}
-							else
+							else if (submission.getSubmitted() && submission.getTimeSubmitted() != null)
 							{
-								// no grade available yet
+								// submitted, but no grade available yet
 								cell = row.getCell(cellNum);
-								cell.setCellValue("");
+								cell.setCellValue(rb.getString("gen.nograd"));
 							}
 						} // if
 					}
