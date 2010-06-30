@@ -1852,23 +1852,52 @@ public abstract class BaseAssignmentService implements AssignmentService, Entity
 	public AssignmentSubmissionEdit editSubmission(String submissionReference) throws IdUnusedException, PermissionException,
 			InUseException
 	{
-		if (!unlockCheck(SECURE_GRADE_ASSIGNMENT_SUBMISSION, submissionReference))
-		{
-			// check security (throws if not permitted)
-			unlock2(SECURE_UPDATE_ASSIGNMENT_SUBMISSION, SECURE_UPDATE_ASSIGNMENT, submissionReference);
-		}
-
 		String submissionId = submissionId(submissionReference);
+		// ignore the cache - get the AssignmentSubmission with a lock from the info store
+		AssignmentSubmissionEdit submission = m_submissionStorage.edit(submissionId);
+		if (submission == null) throw new InUseException(submissionId);
+		
+		// pass if with grade or update assignment right
+		if (!unlockCheck(SECURE_GRADE_ASSIGNMENT_SUBMISSION, submissionReference) && !unlockCheck(SECURE_UPDATE_ASSIGNMENT, submissionReference))
+		{
+			boolean notAllowed = true;
+			// normal user(not a grader) can only edit his/her own submission
+			User currentUser = UserDirectoryService.getCurrentUser(); 
+			if (unlockCheck(SECURE_UPDATE_ASSIGNMENT_SUBMISSION, submissionReference))
+			{
+				User[] submitters = submission.getSubmitters();
+				if (submitters != null && submitters.length == 1 && submitters[0].equals(currentUser))
+				{
+					// is editing one's own submission
+					// then test against extra criteria depend on the status of submission
+					try
+					{
+						Assignment a = submission.getAssignment();
+						if (canSubmit(a.getContext(), a))
+						{
+							notAllowed = false;
+						}
+					}
+					catch (Exception e)
+					{
+						M_log.warn(this + " editSubmission(): cannot get assignment for submission " + submissionReference + e.getMessage());
+					}
+				}
+			}
+			
+			if (notAllowed)
+			{
+				// throw PermissionException
+				throw new PermissionException(currentUser.getId(), SECURE_UPDATE_ASSIGNMENT, submissionReference);
+			}
+			
+		}
 
 		// check for existance
 		if (!m_submissionStorage.check(submissionId))
 		{
 			throw new IdUnusedException(submissionId);
 		}
-
-		// ignore the cache - get the AssignmentSubmission with a lock from the info store
-		AssignmentSubmissionEdit submission = m_submissionStorage.edit(submissionId);
-		if (submission == null) throw new InUseException(submissionId);
 
 		((BaseAssignmentSubmissionEdit) submission).setEvent(EVENT_UPDATE_ASSIGNMENT_SUBMISSION);
 
