@@ -418,7 +418,7 @@
 				#if ($returned && $!timeSubmitted && $!timeReturned && $!timeReturned.after($!timeSubmitted))
 					#if (($!submission.FeedbackComment) && ($submission.FeedbackComment.trim().length()>0))
 						<h5>$tlang.getString("gen.addinst")</h5>
-						<div>$validator.escapeHtmlFormattedText($submission.FeedbackComment)</div>
+						<div>$validator.escapeHtml($submission.FeedbackComment)</div>
 					#else
 					#end
 					## for returned (not resubmitted ) submission, show the instructor feedback
