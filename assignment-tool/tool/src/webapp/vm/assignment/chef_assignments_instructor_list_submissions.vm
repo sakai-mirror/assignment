@@ -50,7 +50,7 @@
 		#end
 	</div>
 	<h3>
-		$!tlang.getString('submissionsfor') "$assignment.getTitle()"
+		$!tlang.getString('submissionsfor') "$validator.escapeHtml($assignment.getTitle())"
 	</h3>
 	#if ($alertMessage)<div class="alertMessage">$tlang.getString("gen.alert") $validator.escapeHtml($alertMessage)</div><div class="clear"></div>#end
 	<div class="navPanel">

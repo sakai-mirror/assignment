@@ -44,7 +44,7 @@ function handleEnterKeyPress(ev)
 			</span>
 		</p>
 		<h3>
-			$tlang.getString("gen.openquote")$assignment.title$tlang.getString("gen.closequote")
+			$tlang.getString("gen.openquote")$validator.escapeHtml($assignment.title)$tlang.getString("gen.closequote")
 			<span class="highlight"> - 
 			#if ($withGrade)
 				#if (!$!submission.getGraded())
