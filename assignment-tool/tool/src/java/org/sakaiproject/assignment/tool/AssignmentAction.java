@@ -8266,6 +8266,9 @@ public class AssignmentAction extends PagedResourceActionII
 		state.removeAttribute(ALLPURPOSE_ACCESS);
 		state.removeAttribute(ALLPURPOSE_ATTACHMENTS);
 
+		// remove content-review setting
+		state.removeAttribute(NEW_ASSIGNMENT_USE_REVIEW_SERVICE);
+
 	} // resetNewAssignment
 
 	/**
