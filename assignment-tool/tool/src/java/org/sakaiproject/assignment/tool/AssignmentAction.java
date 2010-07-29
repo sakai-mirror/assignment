@@ -5932,7 +5932,7 @@ public class AssignmentAction extends PagedResourceActionII
         }
         
         // clear the permission
-        SecurityService.clearAdvisors();
+        SecurityService.popAdvisor();
 		
 		if (state.getAttribute(STATE_MESSAGE) == null)
 		{
@@ -9834,7 +9834,7 @@ public class AssignmentAction extends PagedResourceActionII
 													returnResources.add(new UserSubmission(u, sub));
 			
 											        // clear the permission
-											        SecurityService.clearAdvisors();
+											        SecurityService.popAdvisor();
 												}
 											}
 										}
@@ -11934,7 +11934,7 @@ public class AssignmentAction extends PagedResourceActionII
     protected void disableSecurityAdvisors()
     {
     	// remove all security advisors
-    	SecurityService.clearAdvisors();
+    	SecurityService.popAdvisor();
     }
 
     /**

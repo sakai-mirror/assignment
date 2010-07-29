@@ -11391,7 +11391,7 @@ public abstract class BaseAssignmentService implements AssignmentService, Entity
     protected void disableSecurityAdvisors()
     {
     	// remove all security advisors
-    	SecurityService.clearAdvisors();
+    	SecurityService.popAdvisor();
     }
 
     /**

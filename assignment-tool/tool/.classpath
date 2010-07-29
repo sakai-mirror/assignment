@@ -1,25 +1,42 @@
+<?xml version="1.0" encoding="UTF-8"?>
 <classpath>
-  <classpathentry kind="src" path="src/java" including="**/*.java"/>
-  <classpathentry kind="src" path="/Users/arwhyte/Development/svn/sakai/branches/2.6.x/assignment/assignment-bundles" including="**/*.properties" excluding="**/*.java"/>
-  <classpathentry kind="output" path="target/classes"/>
-  <classpathentry kind="var" path="M2_REPO/javax/servlet/servlet-api/2.4/servlet-api-2.4.jar"/>
-  <classpathentry kind="var" path="M2_REPO/commons-logging/commons-logging/1.0.4/commons-logging-1.0.4.jar"/>
-  <classpathentry kind="var" path="M2_REPO/junit/junit/3.8.1/junit-3.8.1.jar"/>
-  <classpathentry kind="var" path="M2_REPO/logkit/logkit/1.2/logkit-1.2.jar"/>
-  <classpathentry kind="var" path="M2_REPO/oro/oro/2.0.8/oro-2.0.8.jar"/>
-  <classpathentry kind="src" path="/sakai-announcement-api"/>
-  <classpathentry kind="src" path="/sakai-assignment-api"/>
-  <classpathentry kind="src" path="/sakai-calendar-api"/>
-  <classpathentry kind="var" path="M2_REPO/org/sakaiproject/kernel/sakai-component-manager/1.0.12/sakai-component-manager-1.0.12.jar"/>
-  <classpathentry kind="src" path="/sakai-contentreview-model-api"/>
-  <classpathentry kind="src" path="/sakai-contentreview-service-api"/>
-  <classpathentry kind="src" path="/sakai-gradebook-service-api"/>
-  <classpathentry kind="var" path="M2_REPO/org/sakaiproject/kernel/sakai-kernel-api/1.0.12/sakai-kernel-api-1.0.12.jar"/>
-  <classpathentry kind="var" path="M2_REPO/org/sakaiproject/kernel/sakai-kernel-util/1.0.12/sakai-kernel-util-1.0.12.jar"/>
-  <classpathentry kind="src" path="/sakai-message-api"/>
-  <classpathentry kind="src" path="/sakai-taggable-api"/>
-  <classpathentry kind="src" path="/sakai-velocity-tool"/>
-  <classpathentry kind="src" path="/sakai-velocity-tool-api"/>
-  <classpathentry kind="var" path="M2_REPO/velocity/velocity/1.3.1/velocity-1.3.1.jar"/>
-  <classpathentry kind="con" path="org.eclipse.jdt.launching.JRE_CONTAINER"/>
+	<classpathentry including="**/*.java" kind="src" path="src/java"/>
+	<classpathentry kind="var" path="M2_REPO/javax/servlet/servlet-api/2.4/servlet-api-2.4.jar" sourcepath="M2_REPO/javax/servlet/servlet-api/2.4/servlet-api-2.4-sources.jar"/>
+	<classpathentry kind="var" path="M2_REPO/ant/ant/1.6.5/ant-1.6.5.jar" sourcepath="M2_REPO/ant/ant/1.6.5/ant-1.6.5-sources.jar"/>
+	<classpathentry kind="var" path="M2_REPO/commons-logging/commons-logging/1.0.4/commons-logging-1.0.4.jar" sourcepath="M2_REPO/commons-logging/commons-logging/1.0.4/commons-logging-1.0.4-sources.jar">
+		<attributes>
+			<attribute name="javadoc_location" value="jar:file:/home/dhorwitz/.m2/repository/commons-logging/commons-logging/1.0.4/commons-logging-1.0.4-javadoc.jar!/"/>
+		</attributes>
+	</classpathentry>
+	<classpathentry kind="var" path="M2_REPO/junit/junit/3.8.1/junit-3.8.1.jar" sourcepath="M2_REPO/junit/junit/3.8.1/junit-3.8.1-sources.jar"/>
+	<classpathentry kind="var" path="M2_REPO/logkit/logkit/1.2/logkit-1.2.jar"/>
+	<classpathentry kind="var" path="M2_REPO/oro/oro/2.0.8/oro-2.0.8.jar" sourcepath="M2_REPO/oro/oro/2.0.8/oro-2.0.8-sources.jar"/>
+	<classpathentry kind="var" path="M2_REPO/org/sakaiproject/sakai-announcement-api/2.6-SNAPSHOT/sakai-announcement-api-2.6-SNAPSHOT.jar"/>
+	<classpathentry kind="src" path="/sakai-assignment-api"/>
+	<classpathentry kind="var" path="M2_REPO/org/sakaiproject/sakai-calendar-api/2.6-SNAPSHOT/sakai-calendar-api-2.6-SNAPSHOT.jar"/>
+	<classpathentry kind="var" path="M2_REPO/org/sakaiproject/kernel/sakai-component-manager/1.0.13/sakai-component-manager-1.0.13.jar" sourcepath="M2_REPO/org/sakaiproject/kernel/sakai-component-manager/1.0.13/sakai-component-manager-1.0.13-sources.jar">
+		<attributes>
+			<attribute name="javadoc_location" value="jar:file:/home/dhorwitz/.m2/repository/org/sakaiproject/kernel/sakai-component-manager/1.0.13/sakai-component-manager-1.0.13-javadoc.jar!/"/>
+		</attributes>
+	</classpathentry>
+	<classpathentry kind="var" path="M2_REPO/org/sakaiproject/sakai-contentreview-model-api/2.6-SNAPSHOT/sakai-contentreview-model-api-2.6-SNAPSHOT.jar"/>
+	<classpathentry kind="var" path="M2_REPO/org/sakaiproject/sakai-contentreview-service-api/2.6-SNAPSHOT/sakai-contentreview-service-api-2.6-SNAPSHOT.jar"/>
+	<classpathentry kind="var" path="M2_REPO/org/sakaiproject/sakai-gradebook-service-api/2.6-SNAPSHOT/sakai-gradebook-service-api-2.6-SNAPSHOT.jar"/>
+	<classpathentry kind="var" path="M2_REPO/org/sakaiproject/kernel/sakai-kernel-api/1.0.13/sakai-kernel-api-1.0.13.jar" sourcepath="M2_REPO/org/sakaiproject/kernel/sakai-kernel-api/1.0.13/sakai-kernel-api-1.0.13-sources.jar">
+		<attributes>
+			<attribute name="javadoc_location" value="jar:file:/home/dhorwitz/.m2/repository/org/sakaiproject/kernel/sakai-kernel-api/1.0.13/sakai-kernel-api-1.0.13-javadoc.jar!/"/>
+		</attributes>
+	</classpathentry>
+	<classpathentry kind="var" path="M2_REPO/org/sakaiproject/kernel/sakai-kernel-util/1.0.13/sakai-kernel-util-1.0.13.jar" sourcepath="M2_REPO/org/sakaiproject/kernel/sakai-kernel-util/1.0.13/sakai-kernel-util-1.0.13-sources.jar">
+		<attributes>
+			<attribute name="javadoc_location" value="jar:file:/home/dhorwitz/.m2/repository/org/sakaiproject/kernel/sakai-kernel-util/1.0.13/sakai-kernel-util-1.0.13-javadoc.jar!/"/>
+		</attributes>
+	</classpathentry>
+	<classpathentry kind="var" path="M2_REPO/org/sakaiproject/sakai-message-api/2.6-SNAPSHOT/sakai-message-api-2.6-SNAPSHOT.jar"/>
+	<classpathentry kind="var" path="M2_REPO/org/sakaiproject/sakai-taggable-api/2.6-SNAPSHOT/sakai-taggable-api-2.6-SNAPSHOT.jar"/>
+	<classpathentry kind="var" path="M2_REPO/org/sakaiproject/sakai-velocity-tool/2.6-SNAPSHOT/sakai-velocity-tool-2.6-SNAPSHOT.jar"/>
+	<classpathentry kind="var" path="M2_REPO/org/sakaiproject/sakai-velocity-tool-api/2.6-SNAPSHOT/sakai-velocity-tool-api-2.6-SNAPSHOT.jar"/>
+	<classpathentry kind="var" path="M2_REPO/velocity/velocity/1.3.1/velocity-1.3.1.jar"/>
+	<classpathentry kind="con" path="org.eclipse.jdt.launching.JRE_CONTAINER"/>
+	<classpathentry kind="output" path="target/classes"/>
 </classpath>
