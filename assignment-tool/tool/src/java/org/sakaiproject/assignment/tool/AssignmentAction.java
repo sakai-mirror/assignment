@@ -4318,10 +4318,10 @@ public class AssignmentAction extends PagedResourceActionII
 		}
 
 		// open time
-		Time openTime = putTimeInputInState(params, state, NEW_ASSIGNMENT_OPENMONTH, NEW_ASSIGNMENT_OPENDAY, NEW_ASSIGNMENT_OPENYEAR, NEW_ASSIGNMENT_OPENHOUR, NEW_ASSIGNMENT_OPENMIN, NEW_ASSIGNMENT_OPENAMPM, "date.opendate");
+		Time openTime = putTimeInputInState(params, state, NEW_ASSIGNMENT_OPENMONTH, NEW_ASSIGNMENT_OPENDAY, NEW_ASSIGNMENT_OPENYEAR, NEW_ASSIGNMENT_OPENHOUR, NEW_ASSIGNMENT_OPENMIN, NEW_ASSIGNMENT_OPENAMPM, "newassig.opedat");
 
 		// due time
-		Time dueTime = putTimeInputInState(params, state, NEW_ASSIGNMENT_DUEMONTH, NEW_ASSIGNMENT_DUEDAY, NEW_ASSIGNMENT_DUEYEAR, NEW_ASSIGNMENT_DUEHOUR, NEW_ASSIGNMENT_DUEMIN, NEW_ASSIGNMENT_DUEAMPM, "date.duedate");		
+		Time dueTime = putTimeInputInState(params, state, NEW_ASSIGNMENT_DUEMONTH, NEW_ASSIGNMENT_DUEDAY, NEW_ASSIGNMENT_DUEYEAR, NEW_ASSIGNMENT_DUEHOUR, NEW_ASSIGNMENT_DUEMIN, NEW_ASSIGNMENT_DUEAMPM, "gen.duedat");		
 		// show alert message when due date is in past. Remove it after user confirms the choice.
 		if (dueTime != null && dueTime.before(TimeService.newTime()) && state.getAttribute(NEW_ASSIGNMENT_PAST_DUE_DATE) == null)
 		{
@@ -5910,7 +5910,7 @@ public class AssignmentAction extends PagedResourceActionII
 						while ((!found) && (events.hasNext()))
 						{
 							e = (CalendarEvent) events.next();
-							if (((String) e.getDisplayName()).indexOf(rb.getString("assig1") + " " + title) != -1)
+							if (((String) e.getDisplayName()).indexOf(rb.getString("gen.assig") + " " + title) != -1)
 							{
 								found = true;
 							}
@@ -5973,7 +5973,7 @@ public class AssignmentAction extends PagedResourceActionII
 							}
 						}
 						e = c.addEvent(/* TimeRange */TimeService.newTimeRange(dueTime.getTime(), /* 0 duration */0 * 60 * 1000),
-								/* title */rb.getString("due") + " " + title,
+								/* title */rb.getString("gen.due") + " " + title,
 								/* description */rb.getFormattedMessage("assign_due_event_desc", new Object[]{title, dueTime.toStringLocalFull()}),
 								/* type */rb.getString("deadl"),
 								/* location */"",
@@ -6486,7 +6486,7 @@ public class AssignmentAction extends PagedResourceActionII
 						if (anySubmitted)
 						{
 							// if there is any submitted submission to this assignment, show alert
-							addAlert(state, rb.getString("assig1") + " " + a.getTitle() + " " + rb.getString("hassum"));
+							addAlert(state, rb.getString("gen.assig") + " " + a.getTitle() + " " + rb.getString("hassum"));
 						}
 						
 						if (anyDraft)
@@ -6972,7 +6972,7 @@ public class AssignmentAction extends PagedResourceActionII
 					while ((!found) && (events.hasNext()))
 					{
 						e = (CalendarEvent) events.next();
-						if (((String) e.getDisplayName()).indexOf(rb.getString("assig1") + " " + title) != -1)
+						if (((String) e.getDisplayName()).indexOf(rb.getString("gen.assig") + " " + title) != -1)
 						{
 							found = true;
 						}
@@ -9772,33 +9772,6 @@ public class AssignmentAction extends PagedResourceActionII
 		}
 
 		/**
-		 * get submission status
-		 */
-		private String getSubmissionStatus(AssignmentSubmission submission, Assignment assignment)
-		{
-			String status = "";
-
-			if (submission != null)
-				if (submission.getSubmitted())
-					if (submission.getGraded() && submission.getGradeReleased())
-						status = rb.getString("grad3");
-					else if (submission.getReturned())
-						status = rb.getString("return") + " " + submission.getTimeReturned().toStringLocalFull();
-					else
-					{
-						status = rb.getString("submitt") + submission.getTimeSubmitted().toStringLocalFull();
-						if (submission.getTimeSubmitted().after(assignment.getDueTime())) status = status + rb.getString("late");
-					}
-				else
-					status = rb.getString("inpro");
-			else
-				status = rb.getString("notsta");
-
-			return status;
-
-		} // getSubmissionStatus
-
-		/**
 		 * get assignment maximun grade available based on the assignment grade type
 		 *
 		 * @param gradeType
@@ -9819,7 +9792,7 @@ public class AssignmentAction extends PagedResourceActionII
 			else if (gradeType == 1)
 			{
 				// Ungraded grade type
-				maxGrade = rb.getString("nogra");
+				maxGrade = rb.getString("gen.nograd");
 			}
 			else if (gradeType == 2)
 			{
@@ -9834,12 +9807,12 @@ public class AssignmentAction extends PagedResourceActionII
 			else if (gradeType == 4)
 			{
 				// Pass/fail grade type
-				maxGrade = rb.getString("pass2");
+				maxGrade = rb.getString("pass");
 			}
 			else if (gradeType == 5)
 			{
 				// Grade type that only requires a check
-				maxGrade = rb.getString("check2");
+				maxGrade = rb.getString("check");
 			}
 
 			return maxGrade;

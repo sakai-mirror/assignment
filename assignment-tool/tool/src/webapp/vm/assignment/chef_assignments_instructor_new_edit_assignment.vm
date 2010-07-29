@@ -149,7 +149,7 @@ $(document).ready(function() {
 		<p class="shorttext">
 			<span class="reqStar">*</span>
 			<label for="$name_title">
-				$tlang.getString("gen.tit2")
+				$tlang.getString("gen.title")
 			</label>	
 			<input name="$name_title" id="$name_title" type="text" value="$validator.escapeHtml($!value_title)" size="30" maxlength="100" />
 		</p>
@@ -625,7 +625,7 @@ $(document).ready(function() {
 							<input type="checkbox" name="selectall" id="selectall" title="toggle select all" onclick="javascript:toggleSelectAll(this, 'selectedGroups')"  />
 						</th>
 						<th id ="groupname">
-								$tlang.getString('group.list.title')
+								$tlang.getString('gen.title')
 						</th>
 						<th id ="groupdescription">
 							$tlang.getString('group.list.descr')
@@ -686,7 +686,7 @@ $(document).ready(function() {
 		</p>
 		## attachments
 		<h4>
-			$tlang.getString("gen.addres")
+			$tlang.getString("gen.att")
 		</h4>
 		#set ($size = 0)
 		#set ($props = false)
@@ -724,7 +724,7 @@ $(document).ready(function() {
 				#end
 			</ul>
 			<div class="act">
-				<input type="button" name="attach" value="$tlang.getString('gen.adddroatt2')" onclick="javascript:document.newAssignmentForm.onsubmit();document.getElementById('option').value='attach';document.newAssignmentForm.submit();return false;" />
+				<input type="button" name="attach" value="$tlang.getString('gen.adddroatt')" onclick="javascript:document.newAssignmentForm.onsubmit();document.getElementById('option').value='attach';document.newAssignmentForm.submit();return false;" />
 			</div>
 		#end	
 		<a name="extraNodesTop"></a>
@@ -824,7 +824,7 @@ $(document).ready(function() {
 			</div>
 			## attachments
 			<label for="modelAnswerAttach" class="block">
-					$tlang.getString("gen.addres")
+					$tlang.getString("gen.att")
 			</label>
 			#set ($size = 0)
 			#set ($props = false)
@@ -979,7 +979,7 @@ $(document).ready(function() {
 			<legend>$tlang.getString('allPurpose')</legend>
 			<div class="shorttext" style="margin:.2em">
 				<span class="reqStar">*</span>				
-				<label  for="allPurpose_title">$validator.escapeHtml($tlang.getString("allPurpose.title"))</label>
+				<label  for="allPurpose_title">$validator.escapeHtml($tlang.getString("gen.title"))</label>
 				<input id="allPurpose_title" name="allPurposeTitle" type="text" size="20" maxlength="30" value="$!value_allPurposeTitle" />
 				<input id="allPurpose_title_holder"  style="display:none"  name="allPurposeTitle" type="text" size="2" maxlength="30" value="$!value_allPurposeTitle" />
 				<span class="validationError alertMessageInline" id="allPurpose_title_message">
@@ -1000,7 +1000,7 @@ $(document).ready(function() {
 			</div>	
 			## attachments for allpurpose item
 			<label for="allPurposeAttach" class="block">
-					$tlang.getString("gen.addres")
+					$tlang.getString("gen.att")
 			</label>
 			#set ($size = 0)
 			#set ($props = false)
@@ -1193,7 +1193,7 @@ $(document).ready(function() {
 
 						#set ($roleCount=$roleCount + 1)
 
-						#set($allString=$tlang.getString("allPurpose.show.all").concat(" ").concat($role))
+						#set($allString=$tlang.getString("all").concat(" ").concat($role))
 						#set($expandString=$tlang.getString("allPurpose.show.expand").concat(" ").concat($role).concat(" ").concat($tlang.getString("allPurpose.show.list")))
 						#set($collapseString=$tlang.getString("allPurpose.show.collapse").concat(" ").concat($role).concat(" ").concat($tlang.getString("allPurpose.show.list")))
 						#set($expandId = "expand_")

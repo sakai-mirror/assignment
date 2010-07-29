@@ -68,7 +68,7 @@
 								</tr>
 								<tr>
 									<th>
-										$tlang.getString("gen.open2")
+										$tlang.getString("gen.open")
 									</th>
 									<td>
 										$value_OpenDate.toStringLocalFull()
@@ -76,7 +76,7 @@
 								</tr>
 								<tr>
 									<th>
-										$tlang.getString("gen.due2")
+										$tlang.getString("gen.due")
 									</th>
 									<td>
 										$value_DueDate.toStringLocalFull()
@@ -97,7 +97,7 @@
 								#if ($withGrade)
 									<tr>
 										<th>
-											$tlang.getString("gen.stusub2")
+											$tlang.getString("gen.stusub")
 										</th>
 										<td>
 											$submissionTypeTable.get($value_SubmissionType)
@@ -189,7 +189,7 @@
 							#if ($size == 0)
 							#else
 								<h4>
-									$tlang.getString("gen.addres")
+									$tlang.getString("gen.att")
 								</h4>	
 								<ul class="attachList indnt1">
 									#foreach ($attachment in $attachments) 
@@ -230,7 +230,7 @@
 					<table class="itemSummary" summary="$tlang.getString("gen.viewasstablesummary")">
 						<tr>
 							<th>
-								$tlang.getString("gen.due2")
+								$tlang.getString("gen.due")
 							</th>
 							<td>
 								$value_DueDate.toStringLocalFull()<br />
@@ -239,7 +239,7 @@
 						#if ($withGrade)
 							<tr>
 								<th>
-									$tlang.getString("gen.status2")
+									$tlang.getString("gen.status")
 								</th>
 								<td>
 									#if ($value_OpenDate.after($currentTime))
@@ -284,7 +284,7 @@
 					#if ($size == 0)
 					#else
 						<h4>
-							$tlang.getString("gen.addres")
+							$tlang.getString("gen.att")
 						</h4>	
 						<ul class="attachList indnt1">
 							#foreach ($attachment in $attachments) 
