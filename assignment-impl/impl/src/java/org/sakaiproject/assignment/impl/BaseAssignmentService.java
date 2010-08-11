@@ -4356,7 +4356,7 @@ public abstract class BaseAssignmentService implements AssignmentService, Entity
 			String aRef = assignmentReferenceFromSubmissionsZipReference(ref);
 			Assignment a = getAssignment(aRef);
 			
-			List<String> submitterIds = getSubmitterIdList(viewString == ""? AssignmentConstants.ALL:viewString, aRef, contextString == null? a.getContext():contextString);
+			List<String> submitterIds = getSubmitterIdList(viewString.length() == 0 ? AssignmentConstants.ALL:viewString, aRef, contextString == null? a.getContext():contextString);
 	
 			if (submitterIds != null && !submitterIds.isEmpty())
 			{
