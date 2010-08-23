@@ -7948,7 +7948,7 @@ public abstract class BaseAssignmentService implements AssignmentService, Entity
 					if (cr == null )
 					{
 						M_log.debug(this + " getReviewReport No suitable attachments found in list");
-						return "error";
+						return "Error";
 					}
 					
 					String contentId = cr.getId();
