@@ -51,6 +51,7 @@ import java.util.GregorianCalendar;
 import java.nio.channels.*;
 import java.nio.*;
 
+import org.apache.commons.lang.StringUtils;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.sakaiproject.announcement.api.AnnouncementChannel;
