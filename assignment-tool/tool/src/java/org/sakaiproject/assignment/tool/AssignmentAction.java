@@ -6545,7 +6545,7 @@ public class AssignmentAction extends PagedResourceActionII
 		boolean withGrade = state.getAttribute(WITH_GRADES) != null ? ((Boolean) state.getAttribute(WITH_GRADES)).booleanValue()
 				: false;
 
-		boolean checkForFormattingErrors = false; // so that grading isn't held up by formatting errors
+		boolean checkForFormattingErrors = true; // so that grading isn't held up by formatting errors
 		String feedbackComment = processFormattedTextFromBrowser(state, params.getCleanString(GRADE_SUBMISSION_FEEDBACK_COMMENT),
 				checkForFormattingErrors);
 		if (feedbackComment != null)
@@ -8942,19 +8942,11 @@ public class AssignmentAction extends PagedResourceActionII
 	private String processFormattedTextFromBrowser(SessionState state, String strFromBrowser, boolean checkForFormattingErrors)
 	{
 		StringBuilder alertMsg = new StringBuilder();
-		try
-		{
-			boolean replaceWhitespaceTags = true;
-			String text = FormattedText.processFormattedText(strFromBrowser, alertMsg, checkForFormattingErrors,
-					replaceWhitespaceTags);
-			if (alertMsg.length() > 0) addAlert(state, alertMsg.toString());
-			return text;
-		}
-		catch (Exception e)
-		{
-			Log.warn("chef", this + ": ", e);
-			return strFromBrowser;
-		}
+		boolean replaceWhitespaceTags = true;
+		String text = FormattedText.processFormattedText(strFromBrowser, alertMsg, checkForFormattingErrors,
+				replaceWhitespaceTags);
+		if (alertMsg.length() > 0) addAlert(state, alertMsg.toString());
+		return text;
 	}
 
 	/**
@@ -8986,7 +8978,7 @@ public class AssignmentAction extends PagedResourceActionII
 			numopentags--;
 		}
 
-		boolean checkForFormattingErrors = false; // so that grading isn't held up by formatting errors
+		boolean checkForFormattingErrors = true; // so that grading isn't held up by formatting errors
 		buf = new StringBuilder(processFormattedTextFromBrowser(state, buf.toString(), checkForFormattingErrors));
 
 		while ((pos = buf.indexOf("<ins>")) != -1)
