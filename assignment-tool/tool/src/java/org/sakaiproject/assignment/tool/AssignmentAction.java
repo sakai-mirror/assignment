@@ -126,6 +126,7 @@ import org.sakaiproject.exception.IdUnusedException;
 import org.sakaiproject.exception.IdUsedException;
 import org.sakaiproject.exception.InUseException;
 import org.sakaiproject.exception.PermissionException;
+import org.sakaiproject.exception.ServerOverloadException;
 import org.sakaiproject.javax.PagingPosition;
 import org.sakaiproject.service.gradebook.shared.AssignmentHasIllegalPointsException;
 import org.sakaiproject.service.gradebook.shared.CategoryDefinition;
@@ -12246,7 +12247,9 @@ public class AssignmentAction extends PagedResourceActionII
 			}
 			catch(Exception e)
 			{
-	
+				// other exceptions should be caught earlier
+				M_log.debug(this + ".doAttachupload ***** Unknown Exception ***** " + e.getMessage());
+				addAlert(state, rb.getFormattedMessage("failed.upload", new Object[]{i}));
 			}
 			if(fileitem == null)
 			{
@@ -12314,11 +12317,17 @@ public class AssignmentAction extends PagedResourceActionII
 							addAlert(state, rb.getString("failed"));
 						}
 					}
-	
+					catch (ServerOverloadException e)
+					{
+						// disk full or no writing permission to disk
+						M_log.debug(this + ".doAttachupload ***** Disk IO Exception ***** " + e.getMessage());
+						addAlert(state, rb.getString("failed.diskio"));
+					}
 					catch(Exception ignore)
 					{
 						// other exceptions should be caught earlier
 						M_log.debug(this + ".doAttachupload ***** Unknown Exception ***** " + ignore.getMessage());
+						addAlert(state, rb.getString("failed"));
 					}
 				}
 				else
