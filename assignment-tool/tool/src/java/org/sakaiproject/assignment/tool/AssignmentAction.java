@@ -9860,6 +9860,9 @@ public class AssignmentAction extends PagedResourceActionII
 					
 				}
 				state.setAttribute("permissionDescriptions",  pRbValues);
+				
+				String groupAware = ToolManager.getCurrentTool().getRegisteredConfig().getProperty("groupAware");
+				state.setAttribute("groupAware", groupAware != null?Boolean.valueOf(groupAware):Boolean.FALSE);
 
 				// disable auto-updates while leaving the list view
 				justDelivered(state);
