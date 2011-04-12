@@ -160,7 +160,7 @@ $(document).ready(function() {
 					<label for="sectSelect">
 						$tlang.getString("gen.sect")
 					</label>
-					<select id="sectSelect" name="$name_Section" multiple="multiple" size = "3" onchange="blur()">
+					<select id="sectSelect" name="$name_Section" multiple="multiple" size="3">
 						#foreach ($i in ["001", "002", "003", "004", "005", "006", "007", "008", "009", "010", "011", "012", "013", "014", "015", "all"])
 							#if ($value_Sections.indexOf($i)!=-1)
 								<option value="$i" selected ="selected">$i</option>
@@ -1087,6 +1087,9 @@ $(document).ready(function() {
 			<div class="act">
 				<input type="button" name="allPurposeAttach" id="allPurposeAttach" value="$tlang.getString('gen.addatt')" onclick="javascript:document.newAssignmentForm.onsubmit();document.getElementById('option').value='allPurposeAttach';document.newAssignmentForm.submit();return false;"/>
 			</div>
+			<div class="validationError alertMessage" id="allPurpose_release_after_retract_message">
+				$tlang.getString("allPurpose.alert.release.afer.retract")
+			</div>
 			<table id="allPurposeAttachShowWhen">
 				<tr>
 					<td>
@@ -1107,7 +1110,7 @@ $(document).ready(function() {
 					<td colspan="3">
 						<label for="allPurposeShowFrom">
 							$tlang.getString("allPurpose.show.from")
-						</label>
+						</label>	
 					</td>
 				</tr>
 				<tr>

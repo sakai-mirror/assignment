@@ -748,18 +748,18 @@ public class AssignmentAction extends PagedResourceActionII
 	private static final String ALLPURPOSE_RETRACT_DATE= "allPurpose.retractDate";
 	private static final String ALLPURPOSE_ACCESS = "allPurpose.access";
 	private static final String ALLPURPOSE_ATTACHMENTS = "allPurpose_attachments";
-	private static final String ALLPURPOSE_RELEASE_YEAR = "allPurpose.releaseYear";
-	private static final String ALLPURPOSE_RELEASE_MONTH = "allPurpose.releaseMonth";
-	private static final String ALLPURPOSE_RELEASE_DAY = "allPurpose.releaseDay";
-	private static final String ALLPURPOSE_RELEASE_HOUR = "allPurpose.releaseHour";
-	private static final String ALLPURPOSE_RELEASE_MIN = "allPurpose.releaseMin";
-	private static final String ALLPURPOSE_RELEASE_AMPM = "allPurpose.releaseAMPM";
-	private static final String ALLPURPOSE_RETRACT_YEAR = "allPurpose.retractYear";
-	private static final String ALLPURPOSE_RETRACT_MONTH = "allPurpose.retractMonth";
-	private static final String ALLPURPOSE_RETRACT_DAY = "allPurpose.retractDay";
-	private static final String ALLPURPOSE_RETRACT_HOUR = "allPurpose.retractHour";
-	private static final String ALLPURPOSE_RETRACT_MIN = "allPurpose.retractMin";
-	private static final String ALLPURPOSE_RETRACT_AMPM = "allPurpose.retractAMPM";
+	private static final String ALLPURPOSE_RELEASE_YEAR = "allPurpose_releaseYear";
+	private static final String ALLPURPOSE_RELEASE_MONTH = "allPurpose_releaseMonth";
+	private static final String ALLPURPOSE_RELEASE_DAY = "allPurpose_releaseDay";
+	private static final String ALLPURPOSE_RELEASE_HOUR = "allPurpose_releaseHour";
+	private static final String ALLPURPOSE_RELEASE_MIN = "allPurpose_releaseMin";
+	private static final String ALLPURPOSE_RELEASE_AMPM = "allPurpose_releaseAMPM";
+	private static final String ALLPURPOSE_RETRACT_YEAR = "allPurpose_retractYear";
+	private static final String ALLPURPOSE_RETRACT_MONTH = "allPurpose_retractMonth";
+	private static final String ALLPURPOSE_RETRACT_DAY = "allPurpose_retractDay";
+	private static final String ALLPURPOSE_RETRACT_HOUR = "allPurpose_retractHour";
+	private static final String ALLPURPOSE_RETRACT_MIN = "allPurpose_retractMin";
+	private static final String ALLPURPOSE_RETRACT_AMPM = "allPurpose_retractAMPM";
 	private static final String ALLPURPOSE_TO_DELETE = "allPurpose.toDelete";
 	
 	private static final String SHOW_ALLOW_RESUBMISSION = "show_allow_resubmission";
@@ -4667,7 +4667,13 @@ public class AssignmentAction extends PagedResourceActionII
 		if (params.getString("allowResToggle") != null && params.getString(AssignmentSubmission.ALLOW_RESUBMIT_NUMBER) != null)
 		{
 			// read in allowResubmit params 
-			readAllowResubmitParams(params, state, null);
+			Time resubmitCloseTime = readAllowResubmitParams(params, state, null);
+			if (resubmitCloseTime != null) {
+			    // check the date is valid
+			    if (openTime != null && ! resubmitCloseTime.after(openTime)) {
+                    addAlert(state, rb.getString("acesubdea6"));
+			    }
+			}
 		}
 		else
 		{
@@ -7567,28 +7573,19 @@ public class AssignmentAction extends PagedResourceActionII
 			}
 			else if ("returngrade".equals(option))
 			{
-				//Added by Branden Visser - Check that the state is consistent
-				if (checkSubmissionStateConsistency(state, actualGradeSubmissionId)) {
 					// return grading
 					doReturn_grade_submission(data);
 				}
-			}
 			else if ("savegrade".equals(option))
 			{
-				//Added by Branden Visser - Check that the state is consistent
-				if (checkSubmissionStateConsistency(state, actualGradeSubmissionId)) {
 					// save grading
 					doSave_grade_submission(data);
 				}
-			}
 			else if ("previewgrade".equals(option))
 			{
-				//Added by Branden Visser - Check that the state is consistent
-				if (checkSubmissionStateConsistency(state, actualGradeSubmissionId)) {
 					// preview grading
 					doPreview_grade_submission(data);
 				}
-			}
 			else if ("cancelgrade".equals(option))
 			{
 				// cancel grading
@@ -7667,10 +7664,10 @@ public class AssignmentAction extends PagedResourceActionII
 	// added by Branden Visser - Check that the state is consistent
 	boolean checkSubmissionStateConsistency(SessionState state, String actualGradeSubmissionId) {
 		String stateGradeSubmissionId = (String)state.getAttribute(GRADE_SUBMISSION_SUBMISSION_ID);
-		Log.debug("chef", "doAssignment_form(): stateGradeSubmissionId = " + stateGradeSubmissionId);
+		Log.debug("chef", "checkSubmissionStateConsistency(): stateGradeSubmissionId = " + stateGradeSubmissionId);
 		boolean is_good = stateGradeSubmissionId.equals(actualGradeSubmissionId);
 		if (!is_good) {
-		    Log.warn("chef", "doAssignment_form(): State is inconsistent! Aborting grade save.");
+		    Log.warn("chef", "checkSubissionStateConsistency(): State is inconsistent! Aborting grade save.");
 		    addAlert(state, rb.getString("grading.alert.multiTab"));
 		}
 		return is_good;
@@ -7851,6 +7848,12 @@ public class AssignmentAction extends PagedResourceActionII
 		
 		ParameterParser params = data.getParameters();
 		String sId = params.getString("submissionId");
+		
+		//Added by Branden Visser - Check that the state is consistent
+		if (!checkSubmissionStateConsistency(state, sId)) {
+			return false;
+		}
+		
 		AssignmentSubmission submission = getSubmission(sId, "readGradeForm", state);
 		
 		// security check for allowing grading submission or not
@@ -7972,9 +7975,15 @@ public class AssignmentAction extends PagedResourceActionII
 					// read in allowResubmit params 
 					readAllowResubmitParams(params, state, submission);
 				}
-				else
+				else 
 				{
-					resetAllowResubmitParams(state);
+					state.removeAttribute(AssignmentSubmission.ALLOW_RESUBMIT_CLOSETIME);
+					state.removeAttribute(AssignmentSubmission.ALLOW_RESUBMIT_NUMBER);
+					
+					if (!"read".equals(gradeOption))
+					{
+						resetAllowResubmitParams(state);
+					}
 				}
 				// record whether the resubmission options has been changed or not
 				hasChange = hasChange || change_resubmit_option(state, submission);
@@ -8021,9 +8030,11 @@ public class AssignmentAction extends PagedResourceActionII
 	 * read in the resubmit parameters into state variables
 	 * @param params
 	 * @param state
+	 * @return the time set for the resubmit close OR null if it is not set
 	 */
-	protected void readAllowResubmitParams(ParameterParser params, SessionState state, Entity entity)
+	protected Time readAllowResubmitParams(ParameterParser params, SessionState state, Entity entity)
 	{
+	    Time resubmitCloseTime = null;
 		String allowResubmitNumberString = params.getString(AssignmentSubmission.ALLOW_RESUBMIT_NUMBER);
 		state.setAttribute(AssignmentSubmission.ALLOW_RESUBMIT_NUMBER, params.getString(AssignmentSubmission.ALLOW_RESUBMIT_NUMBER));
 	
@@ -8049,13 +8060,13 @@ public class AssignmentAction extends PagedResourceActionII
 			{
 				closeHour = 0;
 			}
-			Time closeTime = TimeService.newTimeLocal(closeYear, closeMonth, closeDay, closeHour, closeMin, 0, 0);
-			state.setAttribute(AssignmentSubmission.ALLOW_RESUBMIT_CLOSETIME, String.valueOf(closeTime.getTime()));
+			resubmitCloseTime = TimeService.newTimeLocal(closeYear, closeMonth, closeDay, closeHour, closeMin, 0, 0);
+			state.setAttribute(AssignmentSubmission.ALLOW_RESUBMIT_CLOSETIME, String.valueOf(resubmitCloseTime.getTime()));
 			// no need to show alert if the resubmission setting has not changed
 			if (entity == null || change_resubmit_option(state, entity))
 			{
 				// validate date
-				if (closeTime.before(TimeService.newTime()) && state.getAttribute(NEW_ASSIGNMENT_PAST_CLOSE_DATE) == null)
+				if (resubmitCloseTime.before(TimeService.newTime()) && state.getAttribute(NEW_ASSIGNMENT_PAST_CLOSE_DATE) == null)
 				{
 					state.setAttribute(NEW_ASSIGNMENT_PAST_CLOSE_DATE, Boolean.TRUE);
 				}
@@ -8079,20 +8090,20 @@ public class AssignmentAction extends PagedResourceActionII
 			// reset the state attributes
 			resetAllowResubmitParams(state);
 		}
+		return resubmitCloseTime;
 	}
 	
 	protected void resetAllowResubmitParams(SessionState state)
 	{
-		state.removeAttribute(ALLOW_RESUBMIT_CLOSEMONTH);
-		state.removeAttribute(ALLOW_RESUBMIT_CLOSEDAY);
-		state.removeAttribute(ALLOW_RESUBMIT_CLOSEYEAR);
-		state.removeAttribute(ALLOW_RESUBMIT_CLOSEHOUR);
-		state.removeAttribute(ALLOW_RESUBMIT_CLOSEMIN);
-		state.removeAttribute(ALLOW_RESUBMIT_CLOSEAMPM);
+		state.setAttribute(ALLOW_RESUBMIT_CLOSEMONTH,state.getAttribute(NEW_ASSIGNMENT_DUEMONTH));
+		state.setAttribute(ALLOW_RESUBMIT_CLOSEDAY,state.getAttribute(NEW_ASSIGNMENT_DUEDAY));
+		state.setAttribute(ALLOW_RESUBMIT_CLOSEYEAR,state.getAttribute(NEW_ASSIGNMENT_DUEYEAR));
+		state.setAttribute(ALLOW_RESUBMIT_CLOSEHOUR,state.getAttribute(NEW_ASSIGNMENT_DUEHOUR));
+		state.setAttribute(ALLOW_RESUBMIT_CLOSEMIN,state.getAttribute(NEW_ASSIGNMENT_DUEMIN));
+		state.setAttribute(ALLOW_RESUBMIT_CLOSEAMPM,state.getAttribute(NEW_ASSIGNMENT_DUEAMPM));
 		state.removeAttribute(AssignmentSubmission.ALLOW_RESUBMIT_CLOSETIME);
 		state.removeAttribute(AssignmentSubmission.ALLOW_RESUBMIT_NUMBER);
-	}
-
+	} 
 	/**
 	 * Populate the state object, if needed - override to do something!
 	 */
