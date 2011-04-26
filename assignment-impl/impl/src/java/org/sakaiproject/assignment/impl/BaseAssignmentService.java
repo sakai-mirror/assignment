@@ -2078,20 +2078,6 @@ public abstract class BaseAssignmentService implements AssignmentService, Entity
 
 			// close the edit object
 			((BaseAssignmentContentEdit) content).closeEdit();
-
-			// remove any realm defined for this resource
-			try
-			{
-				AuthzGroupService.removeAuthzGroup(AuthzGroupService.getAuthzGroup(content.getReference()));
-			}
-			catch (AuthzPermissionException e)
-			{
-				M_log.warn(" removeAssignmentContent: removing realm for assignment content reference=" + content.getReference() + " : " + e);
-			}
-			catch (GroupNotDefinedException e)
-			{
-				M_log.warn(" removeAssignmentContent " + content.getReference() + e.getMessage());
-			}
 		}
 	}
 
