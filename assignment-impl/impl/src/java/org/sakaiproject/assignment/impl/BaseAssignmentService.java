@@ -1067,7 +1067,7 @@ public abstract class BaseAssignmentService implements AssignmentService, Entity
 			}
 			catch (IdUnusedException e)
 			{
-				M_log.warn(this + " assignments(String, String) " + e.getMessage() + " context=" + context);
+				M_log.warn(" assignments(String, String) " + e.getMessage() + " context=" + context);
 			}
 			
 			for (int x = 0; x < assignments.size(); x++)
@@ -1096,7 +1096,7 @@ public abstract class BaseAssignmentService implements AssignmentService, Entity
 						}
 						catch (Exception ee)
 						{
-							M_log.warn(this + " assignments(String, String) " + ee.getMessage() + " groupId = " + groupId);
+							M_log.warn(" assignments(String, String) " + ee.getMessage() + " groupId = " + groupId);
 						}
 						
 					}
@@ -1114,7 +1114,7 @@ public abstract class BaseAssignmentService implements AssignmentService, Entity
 						}
 						catch (Exception e)
 						{
-							M_log.warn(this + " assignments(String, String) " + e.getMessage() + " assignment id =" + assignmentId);
+							M_log.warn(" assignments(String, String) " + e.getMessage() + " assignment id =" + assignmentId);
 							continue;
 						}
 					}
@@ -1223,7 +1223,7 @@ public abstract class BaseAssignmentService implements AssignmentService, Entity
 			}
 			catch (Exception e)
 			{
-				M_log.warn(this + " commitEdit(): closed AssignmentEdit " + e.getMessage() + " assignment id=" + assignment.getId());
+				M_log.warn(" commitEdit(): closed AssignmentEdit " + e.getMessage() + " assignment id=" + assignment.getId());
 			}
 			return;
 		}
@@ -1260,7 +1260,7 @@ public abstract class BaseAssignmentService implements AssignmentService, Entity
 			}
 			catch (Exception e)
 			{
-				M_log.warn(this + " cancelEdit(): closed AssignmentEdit " + e.getMessage() + " assignment id=" + assignment.getId());
+				M_log.warn(" cancelEdit(): closed AssignmentEdit " + e.getMessage() + " assignment id=" + assignment.getId());
 			}
 			return;
 		}
@@ -1290,7 +1290,7 @@ public abstract class BaseAssignmentService implements AssignmentService, Entity
 				}
 				catch (Exception e)
 				{
-					M_log.warn(this + " removeAssignment(): closed AssignmentEdit" + e.getMessage() + " assignment id=" + assignment.getId());
+					M_log.warn(" removeAssignment(): closed AssignmentEdit" + e.getMessage() + " assignment id=" + assignment.getId());
 				}
 				return;
 			}
@@ -1314,7 +1314,7 @@ public abstract class BaseAssignmentService implements AssignmentService, Entity
 			}
 			catch (AuthzPermissionException e)
 			{
-				M_log.warn(this + " removeAssignment: removing realm for assignment reference=" + assignment.getReference() + " : " + e.getMessage());
+				M_log.warn(" removeAssignment: removing realm for assignment reference=" + assignment.getReference() + " : " + e.getMessage());
 			}
 		}
 
@@ -1337,7 +1337,7 @@ public abstract class BaseAssignmentService implements AssignmentService, Entity
 				}
 				catch (Exception e)
 				{
-					M_log.warn(this + " removeAssignmentAndAllReferences(): closed AssignmentEdit" + e.getMessage() + " assignment id=" + assignment.getId());
+					M_log.warn(" removeAssignmentAndAllReferences(): closed AssignmentEdit" + e.getMessage() + " assignment id=" + assignment.getId());
 				}
 				return;
 			}
@@ -1375,14 +1375,14 @@ public abstract class BaseAssignmentService implements AssignmentService, Entity
 			        }
 					catch (PermissionException e) 
 					{
-						M_log.warn(this + "removeAssignmentAndAllReference: User does not have permission to remove submission " + sReference + " for assignment: " + assignment.getId()  + e.getMessage());
+						M_log.warn("removeAssignmentAndAllReference: User does not have permission to remove submission " + sReference + " for assignment: " + assignment.getId()  + e.getMessage());
 					}
 					catch (InUseException e) 
 					{
-						M_log.warn(this + "removeAssignmentAndAllReference: submission " + sReference + " for assignment: " + assignment.getId() + " is in use. " + e.getMessage());
+						M_log.warn("removeAssignmentAndAllReference: submission " + sReference + " for assignment: " + assignment.getId() + " is in use. " + e.getMessage());
 					}catch (IdUnusedException e) 
 					{
-						M_log.warn(this + "removeAssignmentAndAllReference: submission " + sReference + " for assignment: " + assignment.getId() + " does not exist. " + e.getMessage());
+						M_log.warn("removeAssignmentAndAllReference: submission " + sReference + " for assignment: " + assignment.getId() + " does not exist. " + e.getMessage());
 					}
 				}
 			}
@@ -1394,19 +1394,19 @@ public abstract class BaseAssignmentService implements AssignmentService, Entity
 			}
 			catch (AssignmentContentNotEmptyException e)
 			{
-				M_log.warn(this + " removeAssignmentAndAllReferences(): cannot remove non-empty AssignmentContent object for assignment = " + assignment.getId() + ". " + e.getMessage());
+				M_log.warn(" removeAssignmentAndAllReferences(): cannot remove non-empty AssignmentContent object for assignment = " + assignment.getId() + ". " + e.getMessage());
 			}
 			catch (PermissionException e)
 			{
-				M_log.warn(this + " removeAssignmentAndAllReferences(): not allowed to remove AssignmentContent object for assignment = " + assignment.getId() + ". " + e.getMessage());
+				M_log.warn(" removeAssignmentAndAllReferences(): not allowed to remove AssignmentContent object for assignment = " + assignment.getId() + ". " + e.getMessage());
 			}
 			catch (InUseException e)
 			{
-				M_log.warn(this + " removeAssignmentAndAllReferences(): AssignmentContent object for assignment = " + assignment.getId() + " is in used. " + e.getMessage());
+				M_log.warn(" removeAssignmentAndAllReferences(): AssignmentContent object for assignment = " + assignment.getId() + " is in used. " + e.getMessage());
 			}
 			catch (IdUnusedException e)
 			{
-				M_log.warn(this + " removeAssignmentAndAllReferences(): cannot find AssignmentContent object for assignment = " + assignment.getId() + ". " + e.getMessage());
+				M_log.warn(" removeAssignmentAndAllReferences(): cannot find AssignmentContent object for assignment = " + assignment.getId() + ". " + e.getMessage());
 			}
 			
 			// 7. remove assignment
@@ -1422,7 +1422,7 @@ public abstract class BaseAssignmentService implements AssignmentService, Entity
 			}
 			catch (AuthzPermissionException e)
 			{
-				M_log.warn(this + " removeAssignment: removing realm for assignment reference=" + assignment.getReference() + " : " + e.getMessage());
+				M_log.warn(" removeAssignment: removing realm for assignment reference=" + assignment.getReference() + " : " + e.getMessage());
 			}
 			
 			// track event
@@ -1448,7 +1448,7 @@ public abstract class BaseAssignmentService implements AssignmentService, Entity
 		} 
 		catch (PermissionException pe) 
 		{
-		    M_log.warn(this + "removeAssociatedTaggingItem: User does not have permission to remove tags for assignment: " + assignment.getId() + " via transferCopyEntities");
+		    M_log.warn("removeAssociatedTaggingItem: User does not have permission to remove tags for assignment: " + assignment.getId() + " via transferCopyEntities");
 		}
 	}
 
@@ -1484,17 +1484,17 @@ public abstract class BaseAssignmentService implements AssignmentService, Entity
 		    }
 		    catch (IdUnusedException e)
 		    {
-		        M_log.warn(this + "getCalendar: No calendar found for site: " + contextId);
+		        M_log.warn("getCalendar: No calendar found for site: " + contextId);
 		        calendar = null;
 		    }
 		    catch (PermissionException e)
 		    {
-		        M_log.warn(this + "getCalendar: The current user does not have permission to access " +
+		        M_log.warn("getCalendar: The current user does not have permission to access " +
 		                "the calendar for context: " + contextId, e);
 		    }
 		    catch (Exception ex)
 		    {
-		        M_log.warn(this + "getCalendar: Unknown exception occurred retrieving calendar for site: " + contextId, ex);
+		        M_log.warn("getCalendar: Unknown exception occurred retrieving calendar for site: " + contextId, ex);
 		        calendar = null;
 		    }
 		}
@@ -1530,11 +1530,11 @@ public abstract class BaseAssignmentService implements AssignmentService, Entity
 	                catch (IdUnusedException ee)
 	                {
 	                    // no action needed for this condition
-	                    M_log.warn(this + ":removeCalendarEvent " + ee.getMessage());
+	                    M_log.warn(":removeCalendarEvent " + ee.getMessage());
 	                }
 	                catch (PermissionException ee)
 	                {
-	                    M_log.warn(this + ":removeCalendarEvent " + ee.getMessage());
+	                    M_log.warn(":removeCalendarEvent " + ee.getMessage());
 	                }
 	            }
 	            
@@ -1549,15 +1549,15 @@ public abstract class BaseAssignmentService implements AssignmentService, Entity
 	                }
 	                catch (PermissionException ee)
 	                {
-	                    M_log.warn(this + ":removeCalendarEvent not allowed to remove calendar event for assignment = " + aEdit.getTitle() + ". ");
+	                    M_log.warn(":removeCalendarEvent not allowed to remove calendar event for assignment = " + aEdit.getTitle() + ". ");
 	                }
 	                catch (InUseException ee)
 	                {
-	                    M_log.warn(this + ":removeCalendarEvent someone else is editing calendar event for assignment = " + aEdit.getTitle() + ". ");
+	                    M_log.warn(":removeCalendarEvent someone else is editing calendar event for assignment = " + aEdit.getTitle() + ". ");
 	                }
 	                catch (IdUnusedException ee)
 	                {
-	                    M_log.warn(this + ":removeCalendarEvent calendar event are in use for assignment = " + aEdit.getTitle() + " and event =" + event.getId());
+	                    M_log.warn(":removeCalendarEvent calendar event are in use for assignment = " + aEdit.getTitle() + " and event =" + event.getId());
 	                }
 	            }
 	        }
@@ -1579,12 +1579,12 @@ public abstract class BaseAssignmentService implements AssignmentService, Entity
 	        }
 	        catch (IdUnusedException e)
 	        {
-	            M_log.warn(this + "getAnnouncement:No announcement channel found");
+	            M_log.warn("getAnnouncement:No announcement channel found");
 	            channel = null;
 	        }
 	        catch (PermissionException e)
 	        {
-	            M_log.warn(this + "getAnnouncement:Current user not authorized to deleted annc associated " +
+	            M_log.warn("getAnnouncement:Current user not authorized to deleted annc associated " +
 	            		"with assignment. " + e.getMessage());
 	            channel = null;
 	        }
@@ -1614,7 +1614,7 @@ public abstract class BaseAssignmentService implements AssignmentService, Entity
 	            }
 	            catch (PermissionException e)
 	            {
-	                M_log.warn(this + ":removeAnnouncement " + e.getMessage());
+	                M_log.warn(":removeAnnouncement " + e.getMessage());
 	            }
 	        }
 	    }
@@ -1779,7 +1779,7 @@ public abstract class BaseAssignmentService implements AssignmentService, Entity
 							catch (Exception e)
 							{
 								
-									M_log.warn(this + " LEAVING ADD DUPLICATE CONTENT : " + e.toString());
+									M_log.warn(" LEAVING ADD DUPLICATE CONTENT : " + e.toString());
 							}	
 						}
 					}
@@ -1988,7 +1988,7 @@ public abstract class BaseAssignmentService implements AssignmentService, Entity
 			}
 			catch (Exception e)
 			{
-				M_log.warn(this + " commitEdit(): closed AssignmentContentEdit " + e + " content id=" + content.getId());
+				M_log.warn(" commitEdit(): closed AssignmentContentEdit " + e + " content id=" + content.getId());
 			}
 			return;
 		}
@@ -2025,7 +2025,7 @@ public abstract class BaseAssignmentService implements AssignmentService, Entity
 			}
 			catch (Exception e)
 			{
-				M_log.warn(this + " cancelEdit(): closed AssignmentContentEdit " + e.getMessage() + " assignment content id=" + content.getId());
+				M_log.warn(" cancelEdit(): closed AssignmentContentEdit " + e.getMessage() + " assignment content id=" + content.getId());
 			}
 			return;
 		}
@@ -2061,7 +2061,7 @@ public abstract class BaseAssignmentService implements AssignmentService, Entity
 				}
 				catch (Exception e)
 				{
-					M_log.warn(this + " removeAssignmentContent(): closed AssignmentContentEdit " + e.getMessage() + " assignment content id=" + content.getId());
+					M_log.warn(" removeAssignmentContent(): closed AssignmentContentEdit " + e.getMessage() + " assignment content id=" + content.getId());
 				}
 				return;
 			}
@@ -2086,11 +2086,11 @@ public abstract class BaseAssignmentService implements AssignmentService, Entity
 			}
 			catch (AuthzPermissionException e)
 			{
-				M_log.warn(this + " removeAssignmentContent: removing realm for assignment content reference=" + content.getReference() + " : " + e);
+				M_log.warn(" removeAssignmentContent: removing realm for assignment content reference=" + content.getReference() + " : " + e);
 			}
 			catch (GroupNotDefinedException e)
 			{
-				M_log.warn(this + " removeAssignmentContent " + content.getReference() + e.getMessage());
+				M_log.warn(" removeAssignmentContent " + content.getReference() + e.getMessage());
 			}
 		}
 	}
@@ -2227,7 +2227,7 @@ public abstract class BaseAssignmentService implements AssignmentService, Entity
 					}
 					catch (Exception e)
 					{
-						M_log.warn(this + " editSubmission(): cannot get assignment for submission " + submissionReference + e.getMessage());
+						M_log.warn(" editSubmission(): cannot get assignment for submission " + submissionReference + e.getMessage());
 					}
 				}
 			}
@@ -2271,7 +2271,7 @@ public abstract class BaseAssignmentService implements AssignmentService, Entity
 			}
 			catch (Exception e)
 			{
-				M_log.warn(this + " commitEdit(): closed AssignmentSubmissionEdit assignment submission id=" + submission.getId() + e.getMessage());
+				M_log.warn(" commitEdit(): closed AssignmentSubmissionEdit assignment submission id=" + submission.getId() + e.getMessage());
 			}
 			return;
 		}
@@ -2352,11 +2352,11 @@ public abstract class BaseAssignmentService implements AssignmentService, Entity
 		}
 		catch (IdUnusedException e)
 		{
-			M_log.warn(this + " commitEdit(), submissionId=" + submissionRef, e);
+			M_log.warn(" commitEdit(), submissionId=" + submissionRef, e);
 		}
 		catch (PermissionException e)
 		{
-			M_log.warn(this + " commitEdit(), submissionId=" + submissionRef, e);
+			M_log.warn(" commitEdit(), submissionId=" + submissionRef, e);
 		}
 
 	} // commitEdit(Submission)
@@ -2575,7 +2575,7 @@ public abstract class BaseAssignmentService implements AssignmentService, Entity
 		}
 		catch (Exception ee)
 		{
-			M_log.warn(this + " htmlContent(), site id =" + context + " " + ee.getMessage());
+			M_log.warn(" htmlContent(), site id =" + context + " " + ee.getMessage());
 		}
 		
 		StringBuilder buffer = new StringBuilder();
@@ -2653,7 +2653,7 @@ public abstract class BaseAssignmentService implements AssignmentService, Entity
 		}
 		catch (Exception ee)
 		{
-			M_log.warn(this + " htmlContentReleaseGrade(), site id =" + context + " " + ee.getMessage());
+			M_log.warn(" htmlContentReleaseGrade(), site id =" + context + " " + ee.getMessage());
 		}
 		
 		StringBuilder buffer = new StringBuilder();
@@ -2683,7 +2683,7 @@ public abstract class BaseAssignmentService implements AssignmentService, Entity
 			}
 			catch (Exception e)
 			{
-				M_log.warn(this + " cancelEdit(): closed AssignmentSubmissionEdit assignment submission id=" + submission.getId() + " " + e.getMessage());
+				M_log.warn(" cancelEdit(): closed AssignmentSubmissionEdit assignment submission id=" + submission.getId() + " " + e.getMessage());
 			}
 			return;
 		}
@@ -2716,7 +2716,7 @@ public abstract class BaseAssignmentService implements AssignmentService, Entity
 				}
 				catch (Exception e)
 				{
-					M_log.warn(this + " removeSubmission(): closed AssignmentSubmissionEdit id=" + submission.getId()  + " "  + e.getMessage());
+					M_log.warn(" removeSubmission(): closed AssignmentSubmissionEdit id=" + submission.getId()  + " "  + e.getMessage());
 				}
 				return;
 			}
@@ -2741,11 +2741,11 @@ public abstract class BaseAssignmentService implements AssignmentService, Entity
 			}
 			catch (AuthzPermissionException e)
 			{
-				M_log.warn(this + " removeSubmission: removing realm for : " + submission.getReference() + " : " + e.getMessage());
+				M_log.warn(" removeSubmission: removing realm for : " + submission.getReference() + " : " + e.getMessage());
 			}
 			catch (GroupNotDefinedException e)
 			{
-				M_log.warn(this + " removeSubmission: cannot find group for submission " + submission.getReference() + " : " + e.getMessage());
+				M_log.warn(" removeSubmission: cannot find group for submission " + submission.getReference() + " : " + e.getMessage());
 			}
 		}
 	}// removeSubmission
@@ -3759,7 +3759,7 @@ public abstract class BaseAssignmentService implements AssignmentService, Entity
 									}
 									catch (Exception ee)
 									{
-										M_log.warn(this + " allowGradeAssignmentUsers " + ee.getMessage() + " problem with getting user =" + userId);
+										M_log.warn(" allowGradeAssignmentUsers " + ee.getMessage() + " problem with getting user =" + userId);
 									}
 								}
 							}
@@ -3770,7 +3770,7 @@ public abstract class BaseAssignmentService implements AssignmentService, Entity
 		}
 		catch (Exception e)
 		{
-			M_log.warn(this + " allowGradeAssignmentUsers " + e.getMessage() + " assignmentReference=" + assignmentReference);
+			M_log.warn(" allowGradeAssignmentUsers " + e.getMessage() + " assignmentReference=" + assignmentReference);
 		}
 
 		return users;
@@ -3802,7 +3802,7 @@ public abstract class BaseAssignmentService implements AssignmentService, Entity
 		}
 		catch (Exception e)
 		{
-			M_log.warn(this + " allowAddAnySubmissionUsers " + e.getMessage() + " context=" + context);
+			M_log.warn(" allowAddAnySubmissionUsers " + e.getMessage() + " context=" + context);
 		}
 		
 		return rv;
@@ -4010,7 +4010,7 @@ public abstract class BaseAssignmentService implements AssignmentService, Entity
 				}
 				catch (Exception e)
 				{
-					M_log.warn(this + " getGradesSpreadSheet " + e.getMessage() + " userId = " + userId);
+					M_log.warn(" getGradesSpreadSheet " + e.getMessage() + " userId = " + userId);
 				}
 			}
 				
@@ -4115,7 +4115,7 @@ public abstract class BaseAssignmentService implements AssignmentService, Entity
 			}
 			catch (IOException e)
 			{
-				M_log.warn(this + " getGradesSpreadsheet Can not output the grade spread sheet for reference= " + ref);
+				M_log.warn(" getGradesSpreadsheet Can not output the grade spread sheet for reference= " + ref);
 			}
 			
 			return b.getBytes();
@@ -4149,7 +4149,7 @@ public abstract class BaseAssignmentService implements AssignmentService, Entity
 						try {
 							groups.add(SiteService.getSite(contextString));
 						} catch (IdUnusedException e) {
-							M_log.warn(this + ":getSubmitterIdList cannot find site " + " " + contextString + e.getMessage());
+							M_log.warn(":getSubmitterIdList cannot find site " + " " + contextString + e.getMessage());
 						}
 					}
 					else
@@ -4168,7 +4168,7 @@ public abstract class BaseAssignmentService implements AssignmentService, Entity
 					}
 					catch (Exception e)
 					{
-						M_log.warn(this + ":getSubmitterIdList " + e.getMessage() + " groupId=" + allOrOneGroup);
+						M_log.warn(":getSubmitterIdList " + e.getMessage() + " groupId=" + allOrOneGroup);
 					}
 				}
 	
@@ -4248,7 +4248,7 @@ public abstract class BaseAssignmentService implements AssignmentService, Entity
 									}
 									catch (Exception e)
 									{
-										M_log.warn(this + ":getSubmitterIdList " + e.getMessage() + " userId = " + userId);
+										M_log.warn(":getSubmitterIdList " + e.getMessage() + " userId = " + userId);
 									}
 									
 									// add userId into set to prevent showing user multiple times
@@ -4259,7 +4259,7 @@ public abstract class BaseAssignmentService implements AssignmentService, Entity
 						}
 						catch (Exception eee)
 						{
-							M_log.warn(this + ":getSubmitterIdList " + eee.getMessage() + " authGroupId=" + authzGroupRef);
+							M_log.warn(":getSubmitterIdList " + eee.getMessage() + " authGroupId=" + authzGroupRef);
 						}
 					}
 				}
@@ -4267,12 +4267,12 @@ public abstract class BaseAssignmentService implements AssignmentService, Entity
 		}
 		catch (IdUnusedException aIdException)
 		{
-			M_log.warn(this + ":getSubmitterIdList: Assignme id not used: " + aRef + " " + aIdException.getMessage());
+			M_log.warn(":getSubmitterIdList: Assignme id not used: " + aRef + " " + aIdException.getMessage());
 		}
 
 		catch (PermissionException aPerException)
 		{
-			M_log.warn(this + ":getSubmitterIdList: Not allowed to get assignment " + aRef + " " + aPerException.getMessage());
+			M_log.warn(":getSubmitterIdList: Not allowed to get assignment " + aRef + " " + aPerException.getMessage());
 		}
 		
 		return rv;
@@ -4386,7 +4386,7 @@ public abstract class BaseAssignmentService implements AssignmentService, Entity
 					}
 					catch (UserNotDefinedException e)
 					{
-						M_log.warn(this + ":getSubmissionsZip cannot find user id=" + uId + e.getMessage() + "");
+						M_log.warn(":getSubmissionsZip cannot find user id=" + uId + e.getMessage() + "");
 					}
 				}
 	
@@ -4401,7 +4401,7 @@ public abstract class BaseAssignmentService implements AssignmentService, Entity
 					{
 						// log any error messages
 						
-							M_log.warn(this + " getSubmissionsZip ref=" + ref + exceptionMessage.toString());
+							M_log.warn(" getSubmissionsZip ref=" + ref + exceptionMessage.toString());
 					}
 				}
 			}
@@ -4414,7 +4414,7 @@ public abstract class BaseAssignmentService implements AssignmentService, Entity
 		}
 		catch (PermissionException e)
 		{
-			M_log.warn(this + " getSubmissionsZip -PermissionException Not permitted to get assignment " + ref);
+			M_log.warn(" getSubmissionsZip -PermissionException Not permitted to get assignment " + ref);
 			throw new PermissionException(SessionManager.getCurrentSessionUserId(), SECURE_ACCESS_ASSIGNMENT, ref);
 		}
 
@@ -4598,7 +4598,7 @@ public abstract class BaseAssignmentService implements AssignmentService, Entity
 		}
 		catch (IOException e)
 		{
-			exceptionMessage.append("IOException for creating submission zip file for assignment " + "\"" + assignmentTitle + "\"\n");
+			exceptionMessage.append("IOException for creating submission zip file for assignment " + "\"" + assignmentTitle + "\" exception: " + e + "\n");
 		} finally {
             // Complete the ZIP file
 		    if (out != null) {
@@ -4661,7 +4661,7 @@ public abstract class BaseAssignmentService implements AssignmentService, Entity
 					}
 					catch (IOException ioException)
 					{
-						M_log.warn(this + ":zipAttachments: problem closing zip entry " + ioException.getMessage());
+						M_log.warn(":zipAttachments: problem closing zip entry " + ioException);
 					}
 					
 					try
@@ -4670,7 +4670,7 @@ public abstract class BaseAssignmentService implements AssignmentService, Entity
 					}
 					catch (IOException ioException)
 					{
-						M_log.warn(this + ":zipAttachments: problem closing FileChannel " + ioException.getMessage());
+						M_log.warn(":zipAttachments: problem closing FileChannel " + ioException);
 					}
 					
 					try
@@ -4679,37 +4679,37 @@ public abstract class BaseAssignmentService implements AssignmentService, Entity
 					}
 					catch (IOException ioException)
 					{
-						M_log.warn(this + ":zipAttachments: problem closing Inputstream content " + ioException.getMessage());
+						M_log.warn(":zipAttachments: problem closing Inputstream content " + ioException);
 					}
 				}
 				catch (IllegalArgumentException iException)
 				{
-					M_log.warn(this + ":zipAttachments: problem creating BufferedInputStream with content and length " + data.length + iException.getMessage());
+					M_log.warn(":zipAttachments: problem creating BufferedInputStream with content and length " + data.length + iException);
 				}
 			}
 			catch (PermissionException e)
 			{
-				M_log.warn(this + " zipAttachments--PermissionException submittersName="
+				M_log.warn(" zipAttachments--PermissionException submittersName="
 						+ submittersName + " attachment reference=" + r);
 			}
 			catch (IdUnusedException e)
 			{
-				M_log.warn(this + " zipAttachments--IdUnusedException submittersName="
+				M_log.warn(" zipAttachments--IdUnusedException submittersName="
 						+ submittersName + " attachment reference=" + r);
 			}
 			catch (TypeException e)
 			{
-				M_log.warn(this + " zipAttachments--TypeException: submittersName="
+				M_log.warn(" zipAttachments--TypeException: submittersName="
 						+ submittersName + " attachment reference=" + r);
 			}
 			catch (IOException e)
 			{
-				M_log.warn(this + " zipAttachments--IOException: Problem in creating the attachment file: submittersName="
+				M_log.warn(" zipAttachments--IOException: Problem in creating the attachment file: submittersName="
 								+ submittersName + " attachment reference=" + r);
 			}
 			catch (ServerOverloadException e)
 			{
-				M_log.warn(this + " zipAttachments--ServerOverloadException: submittersName="
+				M_log.warn(" zipAttachments--ServerOverloadException: submittersName="
 						+ submittersName + " attachment reference=" + r);
 			}
 		} // for
@@ -4864,7 +4864,7 @@ public abstract class BaseAssignmentService implements AssignmentService, Entity
 							        }
 							        catch (Throwable ignore)
 							        {
-							        	M_log.warn(this + ": handleAccess 1 " + ignore.getMessage());
+							        	M_log.warn(": handleAccess 1 " + ignore.getMessage());
 							        }
 							    }
 							}
@@ -4890,7 +4890,7 @@ public abstract class BaseAssignmentService implements AssignmentService, Entity
 								}
 								catch (Throwable ignore)
 								{
-									M_log.warn(this + ": handleAccess 2 " + ignore.getMessage());
+									M_log.warn(": handleAccess 2 " + ignore.getMessage());
 								}
 								finally
 								{
@@ -4902,7 +4902,7 @@ public abstract class BaseAssignmentService implements AssignmentService, Entity
 										}
 										catch (Throwable ignore)
 										{
-											M_log.warn(this + ": handleAccess 3 " + ignore.getMessage());
+											M_log.warn(": handleAccess 3 " + ignore.getMessage());
 										}
 									}
 								}
@@ -4910,13 +4910,13 @@ public abstract class BaseAssignmentService implements AssignmentService, Entity
 						}
 						else
 						{
-							 M_log.warn(this + "handleAccess: throw IdUnusedException " + ref.getReference());
+							 M_log.warn("handleAccess: throw IdUnusedException " + ref.getReference());
 							throw new IdUnusedException(ref.getReference());
 						}
 					}
 					catch (Throwable t)
 					{
-						 M_log.warn(this + " HandleAccess: caught exception " + t.toString() + " and rethrow it!");
+						 M_log.warn(" HandleAccess: caught exception " + t.toString() + " and rethrow it!");
 						throw new EntityNotDefinedException(ref.getReference());
 					}
 				}
@@ -5002,19 +5002,19 @@ public abstract class BaseAssignmentService implements AssignmentService, Entity
 				rv = getSubmission(ref.getReference());
 			}
 			else
-				M_log.warn(this + "getEntity(): unknown message ref subtype: " + ref.getSubType() + " in ref: " + ref.getReference());
+				M_log.warn("getEntity(): unknown message ref subtype: " + ref.getSubType() + " in ref: " + ref.getReference());
 		}
 		catch (PermissionException e)
 		{
-			M_log.warn(this + "getEntity(): " + e + " ref=" + ref.getReference());
+			M_log.warn("getEntity(): " + e + " ref=" + ref.getReference());
 		}
 		catch (IdUnusedException e)
 		{
-			M_log.warn(this + "getEntity(): " + e + " ref=" + ref.getReference());
+			M_log.warn("getEntity(): " + e + " ref=" + ref.getReference());
 		}
 		catch (NullPointerException e)
 		{
-			M_log.warn(this + "getEntity(): " + e + " ref=" + ref.getReference());
+			M_log.warn("getEntity(): " + e + " ref=" + ref.getReference());
 		}
 
 		return rv;
@@ -5083,7 +5083,7 @@ public abstract class BaseAssignmentService implements AssignmentService, Entity
 		}
 		catch (Throwable e)
 		{
-			M_log.warn(this + " getEntityAuthzGroups(): " + e.getMessage() + " ref=" + ref.getReference());
+			M_log.warn(" getEntityAuthzGroups(): " + e.getMessage() + " ref=" + ref.getReference());
 		}
 
 		return rv;
@@ -5117,19 +5117,19 @@ public abstract class BaseAssignmentService implements AssignmentService, Entity
 				rv = s.getUrl();
 			}
 			else
-				M_log.warn(this + " getEntityUrl(): unknown message ref subtype: " + ref.getSubType() + " in ref: " + ref.getReference());
+				M_log.warn(" getEntityUrl(): unknown message ref subtype: " + ref.getSubType() + " in ref: " + ref.getReference());
 		}
 		catch (PermissionException e)
 		{
-			M_log.warn(this + "getEntityUrl(): " + e + " ref=" + ref.getReference());
+			M_log.warn("getEntityUrl(): " + e + " ref=" + ref.getReference());
 		}
 		catch (IdUnusedException e)
 		{
-			M_log.warn(this + "getEntityUrl(): " + e + " ref=" + ref.getReference());
+			M_log.warn("getEntityUrl(): " + e + " ref=" + ref.getReference());
 		}
 		catch (NullPointerException e)
 		{
-			M_log.warn(this + "getEntityUrl(): " + e + " ref=" + ref.getReference());
+			M_log.warn("getEntityUrl(): " + e + " ref=" + ref.getReference());
 		}
 
 		return rv;
@@ -5498,7 +5498,7 @@ public abstract class BaseAssignmentService implements AssignmentService, Entity
 		}
 		catch (Exception any)
 		{
-			M_log.warn(this + " merge(): exception: " + any.getMessage() + " siteId=" + siteId + " from site id=" + fromSiteId);
+			M_log.warn(" merge(): exception: " + any.getMessage() + " siteId=" + siteId + " from site id=" + fromSiteId);
 		}
 
 		results.append("merging assignment " + siteId + " (" + count + ") assignments.\n");
@@ -5615,7 +5615,7 @@ public abstract class BaseAssignmentService implements AssignmentService, Entity
 					}
 					catch (Exception e)
 					{
-						if (M_log.isWarnEnabled()) M_log.warn(this + " transferCopyEntities " + e.toString()  + " oAssignmentId=" + oAssignmentId);
+						if (M_log.isWarnEnabled()) M_log.warn(" transferCopyEntities " + e.toString()  + " oAssignmentId=" + oAssignmentId);
 					}
 
 					if (nContent != null)
@@ -5772,18 +5772,18 @@ public abstract class BaseAssignmentService implements AssignmentService, Entity
 				catch (Exception eeAny)
 				{
 					// if the new resource cannot be added
-					M_log.warn(this + " transferCopyEntities: cannot add new attachment with id=" + nAttachmentId + " " + eeAny.getMessage());
+					M_log.warn(" transferCopyEntities: cannot add new attachment with id=" + nAttachmentId + " " + eeAny.getMessage());
 				}
 			}
 			catch (Exception eAny)
 			{
 				// if cannot find the original attachment, do nothing.
-				M_log.warn(this + " transferCopyEntities: cannot find the original attachment with id=" + oAttachmentId + " " + eAny.getMessage());
+				M_log.warn(" transferCopyEntities: cannot find the original attachment with id=" + oAttachmentId + " " + eAny.getMessage());
 			}
 		}
 		catch (Exception any)
 		{
-			M_log.warn(this + " transferCopyEntities" + any.getMessage() + " oAttachmentId=" + oAttachmentId + " nAttachmentId=" + nAttachmentId);
+			M_log.warn(" transferCopyEntities" + any.getMessage() + " oAttachmentId=" + oAttachmentId + " nAttachmentId=" + nAttachmentId);
 		}
 		
 		return rv;
@@ -5817,19 +5817,19 @@ public abstract class BaseAssignmentService implements AssignmentService, Entity
 				rv = "AssignmentSubmission: " + s.getId() + " (" + s.getContext() + ")";
 			}
 			else
-				M_log.warn(this + " getEntityDescription(): unknown message ref subtype: " + ref.getSubType() + " in ref: " + ref.getReference());
+				M_log.warn(" getEntityDescription(): unknown message ref subtype: " + ref.getSubType() + " in ref: " + ref.getReference());
 		}
 		catch (PermissionException e)
 		{
-			M_log.warn(this + " getEntityDescription(): " + e.getMessage() + " ref=" + ref.getReference());
+			M_log.warn(" getEntityDescription(): " + e.getMessage() + " ref=" + ref.getReference());
 		}
 		catch (IdUnusedException e)
 		{
-			M_log.warn(this + " getEntityDescription(): " + e.getMessage() + " ref=" + ref.getReference());
+			M_log.warn(" getEntityDescription(): " + e.getMessage() + " ref=" + ref.getReference());
 		}
 		catch (NullPointerException e)
 		{
-			M_log.warn(this + " getEntityDescription(): " + e.getMessage() + " ref=" + ref.getReference());
+			M_log.warn(" getEntityDescription(): " + e.getMessage() + " ref=" + ref.getReference());
 		}
 
 		return rv;
@@ -5863,19 +5863,19 @@ public abstract class BaseAssignmentService implements AssignmentService, Entity
 				rv = s.getProperties();
 			}
 			else
-				M_log.warn(this + " getEntityResourceProperties: unknown message ref subtype: " + ref.getSubType() + " in ref: " + ref.getReference());
+				M_log.warn(" getEntityResourceProperties: unknown message ref subtype: " + ref.getSubType() + " in ref: " + ref.getReference());
 		}
 		catch (PermissionException e)
 		{
-			M_log.warn(this + " getEntityResourceProperties(): " + e.getMessage() + " ref=" + ref.getReference());
+			M_log.warn(" getEntityResourceProperties(): " + e.getMessage() + " ref=" + ref.getReference());
 		}
 		catch (IdUnusedException e)
 		{
-			M_log.warn(this + " getEntityResourceProperties(): " + e.getMessage() + " ref=" + ref.getReference());
+			M_log.warn(" getEntityResourceProperties(): " + e.getMessage() + " ref=" + ref.getReference());
 		}
 		catch (NullPointerException e)
 		{
-			M_log.warn(this + " getEntityResourceProperties(): " + e.getMessage() + " ref=" + ref.getReference());
+			M_log.warn(" getEntityResourceProperties(): " + e.getMessage() + " ref=" + ref.getReference());
 		}
 
 		return rv;
@@ -5964,15 +5964,15 @@ public abstract class BaseAssignmentService implements AssignmentService, Entity
 		catch (UserNotDefinedException e)
 		{
 			// cannot find user
-			M_log.warn(this + " canSubmit(String, Assignment) " + e.getMessage() + " assignment ref=" + a.getReference());
+			M_log.warn(" canSubmit(String, Assignment) " + e.getMessage() + " assignment ref=" + a.getReference());
 			return false;
 		} catch (EntityPropertyNotDefinedException e) {
 			// Property not defined
-			M_log.warn(this + " canSubmit(String, Assignment) " + e.getMessage() + " assignment ref=" + a.getReference());
+			M_log.warn(" canSubmit(String, Assignment) " + e.getMessage() + " assignment ref=" + a.getReference());
 			return false;
 		} catch (EntityPropertyTypeException e) {
 			// entity property type exception
-			M_log.warn(this + " canSubmit(String, Assignment) " + e.getMessage() + " assignment ref=" + a.getReference());
+			M_log.warn(" canSubmit(String, Assignment) " + e.getMessage() + " assignment ref=" + a.getReference());
 			return false;
 		}
 	}
@@ -6092,7 +6092,7 @@ public abstract class BaseAssignmentService implements AssignmentService, Entity
 			}
 			catch (Exception e)
 			{
-				M_log.warn(this + ": BaseAssignment(Element) " + e.getMessage());
+				M_log.warn(": BaseAssignment(Element) " + e.getMessage());
 			}
 
 			// READ THE AUTHORS
@@ -6122,7 +6122,7 @@ public abstract class BaseAssignmentService implements AssignmentService, Entity
 			}
 			catch (Exception e)
 			{
-				M_log.warn(this + " BASE ASSIGNMENT : STORAGE CONSTRUCTOR : Exception reading authors : " + e);
+				M_log.warn(" BASE ASSIGNMENT : STORAGE CONSTRUCTOR : Exception reading authors : " + e);
 			}
 
 			// READ THE PROPERTIES AND INSTRUCTIONS
@@ -6214,7 +6214,7 @@ public abstract class BaseAssignmentService implements AssignmentService, Entity
 							}
 							catch (Exception e)
 							{
-								M_log.warn(this + ":getContentHandler:DefaultEntityHandler Long data parse problem " + attributes.getValue("position_order") + e.getMessage());
+								M_log.warn(":getContentHandler:DefaultEntityHandler Long data parse problem " + attributes.getValue("position_order") + e.getMessage());
 							}
 
 							// READ THE AUTHORS
@@ -6237,7 +6237,7 @@ public abstract class BaseAssignmentService implements AssignmentService, Entity
 							}
 							catch (Exception e)
 							{
-								M_log.warn(this + " BASE ASSIGNMENT getContentHandler startElement : Exception reading authors : " + e.toString());
+								M_log.warn(" BASE ASSIGNMENT getContentHandler startElement : Exception reading authors : " + e.toString());
 							}
 
 							// extract access
@@ -6380,7 +6380,7 @@ public abstract class BaseAssignmentService implements AssignmentService, Entity
 				}
 				catch (Exception e)
 				{
-					M_log.warn(this + ": setAll(Assignment) get position order " + e.getMessage());
+					M_log.warn(": setAll(Assignment) get position order " + e.getMessage());
 				}
 				m_properties = new BaseResourcePropertiesEdit();
 				m_properties.addAll(assignment.getProperties());
@@ -6536,11 +6536,11 @@ public abstract class BaseAssignmentService implements AssignmentService, Entity
 			}
 			catch (EntityPropertyNotDefinedException e)
 			{
-				M_log.warn(this + ":getTimeCreated() no time property defined " + e.getMessage());
+				M_log.warn(":getTimeCreated() no time property defined " + e.getMessage());
 			}
 			catch (EntityPropertyTypeException e)
 			{
-				M_log.warn(this + ":getTimeCreated() no time property defined " + e.getMessage());
+				M_log.warn(":getTimeCreated() no time property defined " + e.getMessage());
 			}
 			return null;
 		}
@@ -6558,11 +6558,11 @@ public abstract class BaseAssignmentService implements AssignmentService, Entity
 			}
 			catch (EntityPropertyNotDefinedException e)
 			{
-				M_log.warn(this + ":getTimeLastModified() no time property defined " + e.getMessage());
+				M_log.warn(":getTimeLastModified() no time property defined " + e.getMessage());
 			}
 			catch (EntityPropertyTypeException e)
 			{
-				M_log.warn(this + ":getTimeLastModified() no time property defined " + e.getMessage());
+				M_log.warn(":getTimeLastModified() no time property defined " + e.getMessage());
 			}
 			return null;
 		}
@@ -6583,7 +6583,7 @@ public abstract class BaseAssignmentService implements AssignmentService, Entity
 				}
 				catch (Exception e)
 				{
-					M_log.warn(this + ":getContent() " + e.getMessage());
+					M_log.warn(":getContent() " + e.getMessage());
 				}
 			}
 
@@ -7084,7 +7084,7 @@ public abstract class BaseAssignmentService implements AssignmentService, Entity
 			// there should not be a case where there's no context
 			if (m_context == null)
 			{
-				M_log.warn(this + " setGroupAccess() called with null context: " + getReference());
+				M_log.warn(" setGroupAccess() called with null context: " + getReference());
 				throw new PermissionException(SessionManager.getCurrentSessionUserId(), "access:site", getReference());
 			}
 
@@ -7149,7 +7149,7 @@ public abstract class BaseAssignmentService implements AssignmentService, Entity
 			if (m_context == null)
 			{
 				// there should not be a case where there's no context
-				M_log.warn(this + " clearGroupAccess() called with null context. " + getReference());
+				M_log.warn(" clearGroupAccess() called with null context. " + getReference());
 				throw new PermissionException(SessionManager.getCurrentSessionUserId(), "access:site", getReference());
 			}
 			else
@@ -7485,7 +7485,7 @@ public abstract class BaseAssignmentService implements AssignmentService, Entity
 							}
 							catch (Exception e)
 							{
-								M_log.warn(this + " getContentHandler startElement Exception parsing honor pledge int from xml file string : " + e);
+								M_log.warn(" getContentHandler startElement Exception parsing honor pledge int from xml file string : " + e);
 							}
 
 							try
@@ -7494,7 +7494,7 @@ public abstract class BaseAssignmentService implements AssignmentService, Entity
 							}
 							catch (Exception e)
 							{
-								M_log.warn(this + " getContentHandler startElement Exception parsing submission type int from xml file string : " + e);
+								M_log.warn(" getContentHandler startElement Exception parsing submission type int from xml file string : " + e);
 							}
 
 							try
@@ -7503,7 +7503,7 @@ public abstract class BaseAssignmentService implements AssignmentService, Entity
 							}
 							catch (Exception e)
 							{
-								M_log.warn(this + " getContentHandler startElement Exception parsing grade type int from xml file string : " + e);
+								M_log.warn(" getContentHandler startElement Exception parsing grade type int from xml file string : " + e);
 							}
 
 							try
@@ -7523,7 +7523,7 @@ public abstract class BaseAssignmentService implements AssignmentService, Entity
 							}
 							catch (Exception e)
 							{
-								M_log.warn(this + " getContentHandler startElement Exception parsing maxgradepoint int from xml file string : " + e);
+								M_log.warn(" getContentHandler startElement Exception parsing maxgradepoint int from xml file string : " + e);
 							}
 
 							// READ THE AUTHORS
@@ -7542,7 +7542,7 @@ public abstract class BaseAssignmentService implements AssignmentService, Entity
 							}
 							catch (Exception e)
 							{
-								M_log.warn(this + " getContentHandler startElement Exception reading authors : " + e);
+								M_log.warn(" getContentHandler startElement Exception reading authors : " + e);
 							}
 
 							// READ THE ATTACHMENTS
@@ -7565,14 +7565,14 @@ public abstract class BaseAssignmentService implements AssignmentService, Entity
 							}
 							catch (Exception e)
 							{
-								M_log.warn(this + " getContentHandler startElement DbCachedContent : Exception reading attachments : " + e);
+								M_log.warn(" getContentHandler startElement DbCachedContent : Exception reading attachments : " + e);
 							}
 							
 							entity = thisEntity;
 						}
 						else
 						{
-							M_log.warn(this + " getContentHandler startElement Unexpected Element " + qName);
+							M_log.warn(" getContentHandler startElement Unexpected Element " + qName);
 						}
 					}
 				}
@@ -8563,7 +8563,7 @@ public abstract class BaseAssignmentService implements AssignmentService, Entity
 								contentReviewService.queueContent(userId, null, getAssignment().getReference(), contentId);
 							}
 							catch (QueueException qe) {
-								M_log.warn(this + " getReviewScore Unable to queue content with content review Service: " + qe.getMessage());
+								M_log.warn(" getReviewScore Unable to queue content with content review Service: " + qe.getMessage());
 							}
 								
 							
@@ -8576,7 +8576,7 @@ public abstract class BaseAssignmentService implements AssignmentService, Entity
 				}
 				catch (Exception e) {
 					
-						M_log.warn(this + " getReviewScore " + e.getMessage());
+						M_log.warn(" getReviewScore " + e.getMessage());
 					return -1;
 				}
 					
@@ -8610,7 +8610,7 @@ public abstract class BaseAssignmentService implements AssignmentService, Entity
 					
 				} catch (Exception e) {
 					//e.printStackTrace();
-					M_log.warn(this + ":getReviewReport() " + e.getMessage());
+					M_log.warn(":getReviewReport() " + e.getMessage());
 					return "Error";
 				}
 					
@@ -8630,7 +8630,7 @@ public abstract class BaseAssignmentService implements AssignmentService, Entity
 			}
 			}
 			catch (Exception e) {
-				M_log.warn(this + ":getFirstAcceptableAttachment() " + e.getMessage());
+				M_log.warn(":getFirstAcceptableAttachment() " + e.getMessage());
 				e.printStackTrace();
 			}
 			return null;
@@ -8750,7 +8750,7 @@ public abstract class BaseAssignmentService implements AssignmentService, Entity
 					}
 					catch (Exception e)
 					{
-						M_log.warn(this + ":BaseAssignmentSubmission(Element el) " + e.getMessage());
+						M_log.warn(":BaseAssignmentSubmission(Element el) " + e.getMessage());
 					}
 				}
 			}
@@ -8790,7 +8790,7 @@ public abstract class BaseAssignmentService implements AssignmentService, Entity
 			}
 			catch (Exception e)
 			{
-				M_log.warn(this + " BaseAssignmentSubmission: CONSTRUCTOR : Exception reading submitters : " + e);
+				M_log.warn(" BaseAssignmentSubmission: CONSTRUCTOR : Exception reading submitters : " + e);
 			}
 
 			// READ THE FEEDBACK ATTACHMENTS
@@ -8818,7 +8818,7 @@ public abstract class BaseAssignmentService implements AssignmentService, Entity
 			}
 			catch (Exception e)
 			{
-				M_log.warn(this + " BaseAssignmentSubmission: CONSTRUCTOR : Exception reading feedback attachments : " + e);
+				M_log.warn(" BaseAssignmentSubmission: CONSTRUCTOR : Exception reading feedback attachments : " + e);
 			}
 
 			// READ THE SUBMITTED ATTACHMENTS
@@ -8846,7 +8846,7 @@ public abstract class BaseAssignmentService implements AssignmentService, Entity
 			}
 			catch (Exception e)
 			{
-				M_log.warn(this + " BaseAssignmentSubmission: CONSTRUCTOR : Exception reading submitted attachments : " + e);
+				M_log.warn(" BaseAssignmentSubmission: CONSTRUCTOR : Exception reading submitted attachments : " + e);
 			}
 
 			// READ THE PROPERTIES, SUBMITTED TEXT, FEEDBACK COMMENT, FEEDBACK TEXT
@@ -8919,7 +8919,7 @@ public abstract class BaseAssignmentService implements AssignmentService, Entity
 			}
 			catch (NumberFormatException nfe) {
 				m_reviewScore = -1;
-				M_log.warn(this + ":BaseAssignmentSubmission(Element) " + nfe.getMessage());
+				M_log.warn(":BaseAssignmentSubmission(Element) " + nfe.getMessage());
 			}
 			try {
 			// The report given by the content review service
@@ -8982,7 +8982,7 @@ public abstract class BaseAssignmentService implements AssignmentService, Entity
 							}
 							catch (NumberFormatException nfe) {
 								m_reviewScore = -1;
-								M_log.warn(this + ":AssignmentSubmission:getContentHandler:DefaultEntityHandler " + nfe.getMessage());
+								M_log.warn(":AssignmentSubmission:getContentHandler:DefaultEntityHandler " + nfe.getMessage());
 							}
 							try {
 							// The report given by the content review service
@@ -9029,7 +9029,7 @@ public abstract class BaseAssignmentService implements AssignmentService, Entity
 									}
 									catch (Exception e)
 									{
-										M_log.warn(this + ":BaseAssignmentSubmission:getContentHanler:DefaultEnityHandler " + e.getMessage());
+										M_log.warn(":BaseAssignmentSubmission:getContentHanler:DefaultEnityHandler " + e.getMessage());
 									}
 								}
 							}
@@ -9069,7 +9069,7 @@ public abstract class BaseAssignmentService implements AssignmentService, Entity
 							}
 							catch (Exception e)
 							{
-								M_log.warn(this + " BaseAssignmentSubmission getContentHandler : Exception reading submitters : " + e);
+								M_log.warn(" BaseAssignmentSubmission getContentHandler : Exception reading submitters : " + e);
 							}
 
 							// READ THE FEEDBACK ATTACHMENTS
@@ -9092,7 +9092,7 @@ public abstract class BaseAssignmentService implements AssignmentService, Entity
 							}
 							catch (Exception e)
 							{
-								M_log.warn(this + " BaseAssignmentSubmission getContentHandler : Exception reading feedback attachments : " + e);
+								M_log.warn(" BaseAssignmentSubmission getContentHandler : Exception reading feedback attachments : " + e);
 							}
 
 							// READ THE SUBMITTED ATTACHMENTS
@@ -9115,7 +9115,7 @@ public abstract class BaseAssignmentService implements AssignmentService, Entity
 							}
 							catch (Exception e)
 							{
-								M_log.warn(this + " BaseAssignmentSubmission getContentHandler: Exception reading submitted attachments : " + e);
+								M_log.warn(" BaseAssignmentSubmission getContentHandler: Exception reading submitted attachments : " + e);
 							}
 							
 							entity = thisEntity;
@@ -9395,7 +9395,7 @@ public abstract class BaseAssignmentService implements AssignmentService, Entity
 				}
 				catch (Exception e)
 				{
-					M_log.warn(this + " BaseAssignmentSubmission getSubmitters" + e.getMessage() + userId);
+					M_log.warn(" BaseAssignmentSubmission getSubmitters" + e.getMessage() + userId);
 				}
 			}
 			
@@ -9512,7 +9512,7 @@ public abstract class BaseAssignmentService implements AssignmentService, Entity
 						}
 						catch (Exception e)
 						{
-							M_log.warn(this + " BaseAssignmentSubmission getGrade getAssignmentScoreString from GradebookService " + e.getMessage() + " context=" + m_context + " assignment id=" + m_assignment + " userId=" + userId + " gAssignmentName=" + gAssignmentName); 
+							M_log.warn(" BaseAssignmentSubmission getGrade getAssignmentScoreString from GradebookService " + e.getMessage() + " context=" + m_context + " assignment id=" + m_assignment + " userId=" + userId + " gAssignmentName=" + gAssignmentName); 
 						}
 					}
 					
@@ -10291,7 +10291,7 @@ public abstract class BaseAssignmentService implements AssignmentService, Entity
 					M_log.debug(this + " BaseAssignmentSubmissionEdit postAttachment: Unable to find assignment associated with submission id= " + this.m_id + " and assignment id=" + this.m_assignment);
 				}
 			} catch (QueueException qe) {
-				M_log.warn(this + " BaseAssignmentSubmissionEdit postAttachment: Unable to add content to Content Review queue: " + qe.getMessage());
+				M_log.warn(" BaseAssignmentSubmissionEdit postAttachment: Unable to add content to Content Review queue: " + qe.getMessage());
 			} catch (Exception e) {
 				e.printStackTrace();
 			}
@@ -10310,15 +10310,15 @@ public abstract class BaseAssignmentService implements AssignmentService, Entity
 				} catch (PermissionException e) {
 					// TODO Auto-generated catch block
 					e.printStackTrace();
-					M_log.warn(this + ":geFirstAcceptableAttachment " + e.getMessage());
+					M_log.warn(":geFirstAcceptableAttachment " + e.getMessage());
 				} catch (IdUnusedException e) {
 					// TODO Auto-generated catch block
 					e.printStackTrace();
-					M_log.warn(this + ":geFirstAcceptableAttachment " + e.getMessage());
+					M_log.warn(":geFirstAcceptableAttachment " + e.getMessage());
 				} catch (TypeException e) {
 					// TODO Auto-generated catch block
 					e.printStackTrace();
-					M_log.warn(this + ":geFirstAcceptableAttachment " + e.getMessage());
+					M_log.warn(":geFirstAcceptableAttachment " + e.getMessage());
 				}
 
 				
@@ -10792,7 +10792,7 @@ public abstract class BaseAssignmentService implements AssignmentService, Entity
 			}
 			catch (Exception e)
 			{
-				M_log.warn(this + ":geTimeObject " + e.getMessage());
+				M_log.warn(":geTimeObject " + e.getMessage());
 				try
 				{
 					long longTime = Long.parseLong(timeString);
@@ -10800,7 +10800,7 @@ public abstract class BaseAssignmentService implements AssignmentService, Entity
 				}
 				catch (Exception ee)
 				{
-					M_log.warn(this + " getTimeObject Base Exception creating time object from xml file : " + ee.getMessage() + " timeString=" + timeString);
+					M_log.warn(" getTimeObject Base Exception creating time object from xml file : " + ee.getMessage() + " timeString=" + timeString);
 				}
 			}
 		}
@@ -11094,7 +11094,7 @@ public abstract class BaseAssignmentService implements AssignmentService, Entity
 							}
 							else
 							{
-								M_log.warn(this + " AssignmentStorageUser getDefaultHandler startElement Unexpected Element in XML [" + qName + "]");
+								M_log.warn(" AssignmentStorageUser getDefaultHandler startElement Unexpected Element in XML [" + qName + "]");
 							}
 
 						}
@@ -11379,7 +11379,7 @@ public abstract class BaseAssignmentService implements AssignmentService, Entity
 							}
 							else
 							{
-								M_log.warn(this + " AssignmentContentStorageUser getDefaultEntityHandler startElement Unexpected Element in XML [" + qName + "]");
+								M_log.warn(" AssignmentContentStorageUser getDefaultEntityHandler startElement Unexpected Element in XML [" + qName + "]");
 							}
 
 						}
@@ -11681,7 +11681,7 @@ public abstract class BaseAssignmentService implements AssignmentService, Entity
 							}
 							else
 							{
-								M_log.warn(this + " AssignmentSubmissionStorageUser getDefaultHandler startElement: Unexpected Element in XML [" + qName + "]");
+								M_log.warn(" AssignmentSubmissionStorageUser getDefaultHandler startElement: Unexpected Element in XML [" + qName + "]");
 							}
 
 						}
@@ -11893,7 +11893,7 @@ public abstract class BaseAssignmentService implements AssignmentService, Entity
 					}
 					catch (Exception e)
 					{
-						M_log.warn(this + " AssignmentComparator.compare " + e.getMessage() + " id=" + userId1);
+						M_log.warn(" AssignmentComparator.compare " + e.getMessage() + " id=" + userId1);
 					}
 				}
 					
@@ -11908,7 +11908,7 @@ public abstract class BaseAssignmentService implements AssignmentService, Entity
 					}
 					catch (Exception e)
 					{
-						M_log.warn(this + " AssignmentComparator.compare " + e.getMessage() + " id=" + userId2);
+						M_log.warn(" AssignmentComparator.compare " + e.getMessage() + " id=" + userId2);
 					}
 				}
 
@@ -11979,7 +11979,7 @@ public abstract class BaseAssignmentService implements AssignmentService, Entity
 					}
 					catch(Exception ee)
 					{
-						M_log.warn(this + ":transferCopyEntities: remove Assignment and all references for " + assignment.getId() + ee.getMessage());
+						M_log.warn(":transferCopyEntities: remove Assignment and all references for " + assignment.getId() + ee.getMessage());
 					}
 				}
 				
@@ -12038,7 +12038,7 @@ public abstract class BaseAssignmentService implements AssignmentService, Entity
 			}
 			catch (Exception e)
 			{
-				M_log.warn(this + " XmlDecodeAttribute: " + e.getMessage() + " tag=" + tag);
+				M_log.warn(" XmlDecodeAttribute: " + e.getMessage() + " tag=" + tag);
 			}
 		}
 
