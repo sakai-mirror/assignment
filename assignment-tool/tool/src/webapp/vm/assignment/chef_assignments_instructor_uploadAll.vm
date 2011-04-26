@@ -57,6 +57,7 @@
 				// attach the assignment reference
 				accessPointUrl = accessPointUrl + "&contextString=" + param0 + "&viewString=" + param1;
    	window.location.href=accessPointUrl;
+   	document.getElementById('downloadUrl').value=accessPointUrl; 
    	document.getElementById('uploadAllForm').action=actionString; 
    	setTimeout("submitform('uploadAllForm')", 1500);
    }
@@ -86,6 +87,7 @@
 			<input type="hidden" name="flow" id="flow" value="upload" />
 			<input type="hidden" name="assignmentReference" id="assignmentReference" value="$aRef" />
 			<input type="hidden" name="view" id="view" value="$view" />
+			<input type="hidden" name="downloadUrl" id="downloadUrl" value="" />
 			<div class="highlightPanel">
 				#if (!$!download)
 					<div class="shorttext">
