@@ -3,7 +3,6 @@
  * $Id$
  ***********************************************************************************
  *
- * Copyright (c) 2003, 2004, 2005, 2006, 2007, 2008, 2009 The Sakai Foundation
  *
  * Licensed under the Educational Community License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -7930,7 +7929,27 @@ public class AssignmentAction extends PagedResourceActionII
 				if (withGrade)
 				{
 					// any change in grade. Do not check for ungraded assignment type
-					hasChange = (!hasChange && typeOfGrade != Assignment.UNGRADED_GRADE_TYPE) ? (typeOfGrade == Assignment.SCORE_GRADE_TYPE?valueDiffFromStateAttribute(state, scalePointGrade(state, g), scalePointGrade(state, submission.getGrade())):valueDiffFromStateAttribute(state, g, submission.getGrade())):hasChange;
+					if (!hasChange && typeOfGrade != Assignment.UNGRADED_GRADE_TYPE)
+					{
+						if (typeOfGrade == Assignment.SCORE_GRADE_TYPE)
+						{
+							String currentGrade = submission.getGrade();
+							
+							NumberFormat nbFormat = (DecimalFormat) getNumberFormat();
+							DecimalFormat dcFormat = (DecimalFormat) nbFormat;
+							String decSeparator = dcFormat.getDecimalFormatSymbols().getDecimalSeparator() + "";
+							
+							if (currentGrade != null && currentGrade.indexOf(decSeparator) != -1)
+							{
+								currentGrade =  scalePointGrade(state, submission.getGrade());
+							}
+							hasChange = valueDiffFromStateAttribute(state, scalePointGrade(state, g), currentGrade);
+						}
+						else
+						{
+							hasChange = valueDiffFromStateAttribute(state, g, submission.getGrade());
+						}
+					}
 					if (g != null)
 					{
 						state.setAttribute(GRADE_SUBMISSION_GRADE, g);
@@ -10317,6 +10336,25 @@ public class AssignmentAction extends PagedResourceActionII
 		return grade;
 
 	} // validPointGrade
+	
+	/**
+	 * get the right number format based on local
+	 * @return
+	 */
+	private NumberFormat getNumberFormat() {
+		// get localized number format
+		NumberFormat nbFormat = NumberFormat.getInstance();				
+		try {
+			Locale locale = null;
+			ResourceLoader rb = new ResourceLoader();
+			locale = rb.getLocale();
+			nbFormat = NumberFormat.getNumberInstance(locale);
+		}				
+		catch (Exception e) {
+			M_log.warn("Error while retrieving local number format, using default ", e);
+		}
+		return nbFormat;
+	} // getNumberFormat
 	
 	/**
 	 * valid grade for point based type
