@@ -215,7 +215,7 @@ public class DbAssignmentService extends BaseAssignmentService
 	 * 
 	 * @return The new storage object for Assignments.
 	 */
-	protected AssignmentStorage newAssignmentStorage()
+	public AssignmentStorage newAssignmentStorage()
 	{
 		return new DbCachedAssignmentStorage(new AssignmentStorageUser());
 
@@ -226,7 +226,7 @@ public class DbAssignmentService extends BaseAssignmentService
 	 * 
 	 * @return The new storage object for AssignmentContents.
 	 */
-	protected AssignmentContentStorage newContentStorage()
+	public AssignmentContentStorage newContentStorage()
 	{
 		return new DbCachedAssignmentContentStorage(new AssignmentContentStorageUser());
 
