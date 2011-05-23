@@ -9468,6 +9468,7 @@ public abstract class BaseAssignmentService implements AssignmentService, Entity
 				String gAssignmentName = StringUtil.trimToNull(m.getProperties().getProperty(AssignmentService.PROP_ASSIGNMENT_ASSOCIATE_GRADEBOOK_ASSIGNMENT));
 				if (gAssignmentName != null)
 				{
+					// add the grade permission ("gradebook.gradeAll", or "gradebook.gradeSection") in order to use g.getAssignmentScoreString()
 					enableSecurityAdvisor();
 					
 					GradebookService g = (GradebookService)  ComponentManager.get("org.sakaiproject.service.gradebook.GradebookService");
@@ -9481,6 +9482,7 @@ public abstract class BaseAssignmentService implements AssignmentService, Entity
 							String gString = StringUtil.trimToNull(g.getAssignmentScoreString(gradebookUid, gAssignmentName, userId));
 							if (gString != null)
 							{
+								disableSecurityAdvisor();
 								return gString;
 							}
 						}
