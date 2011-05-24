@@ -27,6 +27,7 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
+import java.io.InputStreamReader;
 import java.text.Collator;
 import java.text.DecimalFormat;
 import java.text.NumberFormat;
@@ -4329,9 +4330,6 @@ public class AssignmentAction extends PagedResourceActionII
 			}
 			else if (submissionType == 2)
 			{
-				// dealing with single file uplaod
-				doAttachUpload(data, false);
-				
 				// for the attachment only submission
 				List v = (List) state.getAttribute(ATTACHMENTS);
 				if ((v == null) || (v.size() == 0))
@@ -4340,21 +4338,13 @@ public class AssignmentAction extends PagedResourceActionII
 				}
 			}
 			else if (submissionType == 3)
-			{
-				// dealing with single file uplaod
-				doAttachUpload(data, false);
-				
+			{	
 				// for the inline and attachment submission
 				List v = (List) state.getAttribute(ATTACHMENTS);
 				if ((text.length() == 0 || "<br/>".equals(text)) && ((v == null) || (v.size() == 0)))
 				{
 					addAlert(state, rb.getString("youmust2"));
 				}
-			}
-			else if (submissionType == Assignment.SINGLE_ATTACHMENT_SUBMISSION)
-			{
-				// dealing with single file uplaod
-				doAttachUpload(data, true);
 			}
 		}
 	}
@@ -10822,6 +10812,16 @@ public class AssignmentAction extends PagedResourceActionII
 			// remove selected attachment
 			doRemove_attachment(data);
 		}
+		else if ("upload".equals(option))
+		{
+			// upload local file
+			doAttachUpload(data, true);
+		}
+		else if ("uploadSingleFile".equals(option))
+		{
+			// upload single local file
+			doAttachUpload(data, false);
+		}
 	}
 	
 	public void doRemove_attachment(RunData data)
@@ -12305,6 +12305,24 @@ public class AssignmentAction extends PagedResourceActionII
 	}
 	
 	/**
+	 * multiple file upload
+	 * @param data
+	 */
+	public void doAttachUpload(RunData data)
+	{
+		doAttachUpload(data, false);
+	}
+	
+	/**
+	 * single file upload
+	 * @param data
+	 */
+	public void doAttachUploadSingle(RunData data)
+	{
+		doAttachUpload(data, true);
+	}
+	
+	/**
 	 * upload local file for attachment
 	 * @param data
 	 * @param singleFileUpload
@@ -12316,56 +12334,48 @@ public class AssignmentAction extends PagedResourceActionII
 		ParameterParser params = data.getParameters ();
 
 		String max_file_size_mb = ServerConfigurationService.getString("content.upload.max", "1");
-
-		int submissionFileCount = 0;
-		String submissionFileCountString = params.getString("submissionFileCount");
-		if (params.getString("submissionFileCount") != null)
-		{
-			try
-			{
-				submissionFileCount = Integer.valueOf(params.getString("submissionFileCount"));
-			}
-			catch (NumberFormatException e)
-			{
-				M_log.warn(this + ".doAttachUpload: NumberFormatException " + params.getString("submissionFileCount"));
-			}
-		}
 		
 		// construct the state variable for attachment list
 		List attachments = state.getAttribute(ATTACHMENTS) != null? (List) state.getAttribute(ATTACHMENTS) : EntityManager.newReferenceList();
 		
-		for (int i = 0; i<submissionFileCount; i++)
+		FileItem fileitem = null;
+		try
 		{
-		
-			FileItem fileitem = null;
-			try
-			{
-				fileitem = params.getFileItem("upload" + i);
-			}
-			catch(Exception e)
-			{
-				// other exceptions should be caught earlier
-				M_log.debug(this + ".doAttachupload ***** Unknown Exception ***** " + e.getMessage());
-				addAlert(state, rb.getFormattedMessage("failed.upload", new Object[]{i}));
-			}
-			if(fileitem == null)
-			{
-				// "The user submitted a file to upload but it was too big!"
-				addAlert(state, rb.getFormattedMessage("size.exceeded", new Object[]{ max_file_size_mb }));
-				//addAlert(state, hrb.getString("size") + " " + max_file_size_mb + "MB " + hrb.getString("exceeded2"));
-			}
-			else if (singleFileUpload && (fileitem.getFileName() == null || fileitem.getFileName().length() == 0))
-			{
-				// only if in the single file upload case, need to warn user to upload a local file
-				addAlert(state, rb.getString("choosefile7"));
-			}
-			else if (fileitem.getFileName().length() > 0)
-			{
-				String filename = Validator.getFileName(fileitem.getFileName());
-				InputStream fileContentStream = fileitem.getInputStream();
-				String contentType = fileitem.getContentType();
-	
-				if(fileContentStream != null)
+			fileitem = params.getFileItem("upload");
+		}
+		catch(Exception e)
+		{
+			// other exceptions should be caught earlier
+			M_log.debug(this + ".doAttachupload ***** Unknown Exception ***** " + e.getMessage());
+			addAlert(state, rb.getString("failed.upload"));
+		}
+		if(fileitem == null)
+		{
+			// "The user submitted a file to upload but it was too big!"
+			addAlert(state, rb.getFormattedMessage("size.exceeded", new Object[]{ max_file_size_mb }));
+			//addAlert(state, hrb.getString("size") + " " + max_file_size_mb + "MB " + hrb.getString("exceeded2"));
+		}
+		else if (singleFileUpload && (fileitem.getFileName() == null || fileitem.getFileName().length() == 0))
+		{
+			// only if in the single file upload case, need to warn user to upload a local file
+			addAlert(state, rb.getString("choosefile7"));
+		}
+		else if (fileitem.getFileName().length() > 0)
+		{
+			String filename = Validator.getFileName(fileitem.getFileName());
+			InputStream fileContentStream = fileitem.getInputStream();
+			String contentType = fileitem.getContentType();
+
+			InputStreamReader reader = new InputStreamReader(fileContentStream);
+			
+			try{
+				
+				//check the InputStreamReader to see if the file is 0kb aka empty
+				if( reader.ready()==false )
+				{
+					addAlert(state, rb.getFormattedMessage("attempty", new Object[]{filename} ));
+				}
+				else if(fileContentStream != null)
 				{
 					// we just want the file name part - strip off any drive and path stuff
 					String name = Validator.getFileName(filename);
@@ -12432,8 +12442,11 @@ public class AssignmentAction extends PagedResourceActionII
 					addAlert(state, rb.getString("choosefile7"));
 				}
 			}
+			catch( IOException e){
+				M_log.debug(this + ".doAttachupload ***** IOException ***** " + e.getMessage());
+				addAlert(state, rb.getString("failed"));
+			}
 		}
-
 	}	// doAttachupload
 	
 	
