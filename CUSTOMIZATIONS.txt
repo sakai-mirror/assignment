@@ -1,0 +1,1 @@
+LS-9 assignment customizations for instructor to choose whether student submissions should be stored in repository

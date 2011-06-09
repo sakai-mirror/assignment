@@ -138,6 +138,14 @@ public interface AssignmentContentEdit extends AssignmentContent, AttachmentCont
 	public void setAllowStudentViewReport(boolean allow);
 	
 	/**
+	 * Does this Assignment allow submitting to the review service repository?
+	 * 
+	 * @param allow -
+	 *        true if the Assignment allows submission to the review service repository, false otherwise?
+	 */
+	public void setAllowReviewServiceRepository(boolean allow);
+
+	/**
 	 * Add an author to the author list.
 	 * 
 	 * @param author -

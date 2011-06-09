@@ -7409,6 +7409,8 @@ public abstract class BaseAssignmentService implements AssignmentService, Entity
 		
 		protected boolean m_allowStudentViewReport;
 
+		protected boolean m_allowReviewServiceRepository;
+
 		protected Time m_timeCreated;
 
 		protected Time m_timeLastModified;
@@ -7474,6 +7476,7 @@ public abstract class BaseAssignmentService implements AssignmentService, Entity
 			m_allowAttachments = getBool(el.getAttribute("allowattach"));
 			m_allowReviewService = getBool(el.getAttribute("allowreview"));
 			m_allowStudentViewReport = getBool(el.getAttribute("allowstudentview"));
+			m_allowReviewServiceRepository = getBool(el.getAttribute("allowreviewservicerepository"));
 			
 			m_timeCreated = getTimeObject(el.getAttribute("datecreated"));
 			m_timeLastModified = getTimeObject(el.getAttribute("lastmod"));
@@ -7651,6 +7654,7 @@ public abstract class BaseAssignmentService implements AssignmentService, Entity
 							m_allowAttachments = getBool(attributes.getValue("allowattach"));
 							m_allowReviewService = getBool(attributes.getValue("allowreview"));
 							m_allowStudentViewReport = getBool(attributes.getValue("allowstudentview"));
+							m_allowReviewServiceRepository = getBool(attributes.getValue("allowreviewservicerepository"));
 							
 							m_timeCreated = getTimeObject(attributes.getValue("datecreated"));
 							m_timeLastModified = getTimeObject(attributes.getValue("lastmod"));
@@ -7799,6 +7803,7 @@ public abstract class BaseAssignmentService implements AssignmentService, Entity
 		
 			content.setAttribute("allowreview", getBoolString(m_allowReviewService));
 			content.setAttribute("allowstudentview", getBoolString(m_allowStudentViewReport));
+			content.setAttribute("allowreviewservicerepository", getBoolString(m_allowReviewServiceRepository));
 			
 			content.setAttribute("honorpledge", String.valueOf(m_honorPledge));
 			content.setAttribute("submissiontype", String.valueOf(m_typeOfSubmission));
@@ -7867,6 +7872,7 @@ public abstract class BaseAssignmentService implements AssignmentService, Entity
 				//Uct
 				m_allowReviewService = content.getAllowReviewService();
 				m_allowStudentViewReport = content.getAllowStudentViewReport();
+				m_allowReviewServiceRepository = content.getAllowReviewServiceRepository();
 				
 				m_timeCreated = content.getTimeCreated();
 				m_timeLastModified = content.getTimeLastModified();
@@ -8171,6 +8177,10 @@ public abstract class BaseAssignmentService implements AssignmentService, Entity
 			return m_allowStudentViewReport;
 		}
 		
+		public boolean getAllowReviewServiceRepository()
+		{
+			return m_allowReviewServiceRepository;
+		}
 		
 		/**
 		 * Access the time that this object was created.
@@ -8506,6 +8516,17 @@ public abstract class BaseAssignmentService implements AssignmentService, Entity
 		 */
 		public void setAllowStudentViewReport(boolean allow) {
 			m_allowStudentViewReport = allow;
+		}
+
+		/**
+		 * Does this Assignment allow submitting to the review service repository?
+		 * 
+		 * @param allow -
+		 *        true if the Assignment allows review service, false otherwise?
+		 */
+		public void setAllowReviewServiceRepository(boolean allow)
+		{
+			m_allowReviewServiceRepository = allow;
 		}
 		
 		/**

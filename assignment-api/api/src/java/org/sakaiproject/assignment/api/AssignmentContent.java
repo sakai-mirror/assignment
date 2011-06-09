@@ -173,6 +173,13 @@ public interface AssignmentContent extends Entity, AttachmentContainer
 	public boolean getAllowStudentViewReport();
 	
 	/**
+	 * Access whether this AssignmentContent allows submission to review service repository.
+	 * 
+	 * @return true if the AssignmentContent allows submission to review service repository, false otherwise.
+	 */
+	public boolean getAllowReviewServiceRepository();
+
+	/**
 	 * Access the list of authors.
 	 * 
 	 * @return List of the author's user-ids.

@@ -472,6 +472,18 @@ $(document).ready(function() {
 				<h4>
 				$reviewServiceName
 				</h4>
+				<div>
+					<br /><em>NOTE, If using Turnitin:</em>
+   <ol>
+	<li>Set this assignment to &quot;Attachments only.&quot;</li>
+   <li>Tell students:</li>
+		<ol>
+			<li>Submit only one attachment.</li>
+         	<li>Only use file types: Word, PDF, HTML, RTF, or plain text.</li>
+         	<li>Always include file extension.</li>
+		</ol>
+	</ol>
+				</div>
 				<div class="checkbox  indnt2">
 					#if ($!value_UseReviewService.equals("true"))
 						<input id="$name_UseReviewService" name="$name_UseReviewService" type="checkbox" value="true" checked="checked" />
@@ -490,6 +502,16 @@ $(document).ready(function() {
 					#end
 					<label for="$name_AllowStudentView">
 						$tlang.getString("review.allow") 
+					</label>
+				</div>
+				<div class="checkbox  indnt2">
+					#if ($!value_UseReviewServiceRepository.equals("true"))
+						<input id="$name_UseReviewServiceRepository" name="$name_UseReviewServiceRepository" type="checkbox" value="true" checked="checked" />
+					#else
+						<input id="$name_UseReviewServiceRepository" name="$name_UseReviewServiceRepository" type="checkbox" value="true" />
+					#end
+					<label for="$name_UseReviewServiceRepository">
+						$tlang.getString("review.userepository") 
 					</label>
 				</div>
 			</div>
