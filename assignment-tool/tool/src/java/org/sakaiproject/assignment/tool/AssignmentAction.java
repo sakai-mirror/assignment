@@ -183,7 +183,7 @@ public class AssignmentAction extends PagedResourceActionII
 	
 	private static final String NEW_ASSIGNMENT_ALLOW_STUDENT_VIEW = "new_assignment_allow_student_view";
 	
-	private static final String NEW_ASSIGNMENT_USE_REVIEW_SERVICE_REPOSITORY = "new_assignment_use_review_service_repository";
+	
 	
 	
 	/** The attachments */
@@ -1724,7 +1724,6 @@ public class AssignmentAction extends PagedResourceActionII
 		
 		context.put("name_UseReviewService", NEW_ASSIGNMENT_USE_REVIEW_SERVICE);
 		context.put("name_AllowStudentView", NEW_ASSIGNMENT_ALLOW_STUDENT_VIEW);
-		context.put("name_UseReviewServiceRepository", NEW_ASSIGNMENT_USE_REVIEW_SERVICE_REPOSITORY);
 		
 		context.put("name_title", NEW_ASSIGNMENT_TITLE);
 		context.put("name_order", NEW_ASSIGNMENT_ORDER);
@@ -1788,7 +1787,6 @@ public class AssignmentAction extends PagedResourceActionII
 		// Keep the use review service setting
 		context.put("value_UseReviewService", state.getAttribute(NEW_ASSIGNMENT_USE_REVIEW_SERVICE));
 		context.put("value_AllowStudentView", state.getAttribute(NEW_ASSIGNMENT_ALLOW_STUDENT_VIEW));
-		context.put("value_UseReviewServiceRepository", state.getAttribute(NEW_ASSIGNMENT_USE_REVIEW_SERVICE_REPOSITORY));
 		
 		// don't show the choice when there is no Schedule tool yet
 		if (state.getAttribute(CALENDAR) != null)
@@ -4531,12 +4529,6 @@ public class AssignmentAction extends PagedResourceActionII
 		if (r == null) b = Boolean.FALSE.toString();
 		else b = Boolean.TRUE.toString();
 		state.setAttribute(NEW_ASSIGNMENT_ALLOW_STUDENT_VIEW, b);
-
-		//set whether submissions get sent to review service repository
-		r = params.getString(NEW_ASSIGNMENT_USE_REVIEW_SERVICE_REPOSITORY);
-		if (r == null) b = Boolean.FALSE.toString();
-		else b = Boolean.TRUE.toString();
-		state.setAttribute(NEW_ASSIGNMENT_USE_REVIEW_SERVICE_REPOSITORY, b);
 		
 		// treat the new assignment description as formatted text
 		boolean checkForFormattingErrors = true; // instructor is creating a new assignment - so check for errors
@@ -5312,8 +5304,6 @@ public class AssignmentAction extends PagedResourceActionII
 			
 			boolean allowStudentViewReport = "true".equalsIgnoreCase((String) state.getAttribute(NEW_ASSIGNMENT_ALLOW_STUDENT_VIEW));
 			
-			boolean useReviewServiceRepository = "true".equalsIgnoreCase((String) state.getAttribute(NEW_ASSIGNMENT_USE_REVIEW_SERVICE_REPOSITORY));
-			
 			// the attachments
 			List attachments = (List) state.getAttribute(NEW_ASSIGNMENT_ATTACHMENT);
 			
@@ -5353,7 +5343,7 @@ public class AssignmentAction extends PagedResourceActionII
 				Time oldDueTime = a.getDueTime();
 				
 				// commit the changes to AssignmentContent object
-				commitAssignmentContentEdit(state, ac, title, submissionType,useReviewService,allowStudentViewReport, useReviewServiceRepository, gradeType, gradePoints, description, checkAddHonorPledge, attachments);
+				commitAssignmentContentEdit(state, ac, title, submissionType,useReviewService,allowStudentViewReport, gradeType, gradePoints, description, checkAddHonorPledge, attachments);
 				
 				// set the Assignment Properties object
 				ResourcePropertiesEdit aPropertiesEdit = a.getPropertiesEdit();
@@ -6286,7 +6276,7 @@ public class AssignmentAction extends PagedResourceActionII
 		}
 	}
 
-	private void commitAssignmentContentEdit(SessionState state, AssignmentContentEdit ac, String title, int submissionType,boolean useReviewService, boolean allowStudentViewReport, boolean useReviewServiceRepository, int gradeType, String gradePoints, String description, String checkAddHonorPledge, List attachments) 
+	private void commitAssignmentContentEdit(SessionState state, AssignmentContentEdit ac, String title, int submissionType,boolean useReviewService, boolean allowStudentViewReport, int gradeType, String gradePoints, String description, String checkAddHonorPledge, List attachments) 
 	{
 		ac.setTitle(title);
 		ac.setInstructions(description);
@@ -6294,7 +6284,6 @@ public class AssignmentAction extends PagedResourceActionII
 		ac.setTypeOfSubmission(submissionType);
 		ac.setAllowReviewService(useReviewService);
 		ac.setAllowStudentViewReport(allowStudentViewReport);
-		ac.setAllowReviewServiceRepository(useReviewServiceRepository);
 		ac.setTypeOfGrade(gradeType);
 		if (gradeType == 3)
 		{
@@ -6707,7 +6696,7 @@ public class AssignmentAction extends PagedResourceActionII
 				setAssignmentSupplementItemInState(state, a);
 			
 			}
-
+	
 			state.setAttribute(STATE_MODE, MODE_INSTRUCTOR_NEW_EDIT_ASSIGNMENT);
 		}
 		else
