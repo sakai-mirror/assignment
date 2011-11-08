@@ -4268,7 +4268,7 @@ public abstract class BaseAssignmentService implements AssignmentService, Entity
 							{
 							
 								// temporarily allow the user to read and write from assignments (asn.revise permission)
-						        enableSecurityAdvisor();
+						        enableSecurityAdvisorToAddUpdateAssignmentSubmission();
 						        
 								AssignmentSubmissionEdit s = addSubmission(contextString, a.getId(), u.getId());
 								s.setSubmitted(true);
@@ -9700,10 +9700,10 @@ public abstract class BaseAssignmentService implements AssignmentService, Entity
 				String gAssignmentName = StringUtils.trimToNull(m.getProperties().getProperty(AssignmentService.PROP_ASSIGNMENT_ASSOCIATE_GRADEBOOK_ASSIGNMENT));
 				if (gAssignmentName != null)
 				{
-					// add the grade permission ("gradebook.gradeAll", or "gradebook.gradeSection") in order to use g.getAssignmentScoreString()
-					enableSecurityAdvisor();
-					
 					GradebookService g = (GradebookService)  ComponentManager.get("org.sakaiproject.service.gradebook.GradebookService");
+					// add the grade permission ("gradebook.gradeAll", or "gradebook.gradeSection") in order to use g.getAssignmentScoreString()
+					enableSecurityAdvisorToGradebook();
+					
 					String gradebookUid = m.getContext();
 					if (g.isGradebookDefined(gradebookUid) && g.isAssignmentDefined(gradebookUid, gAssignmentName))
 					{
@@ -12202,7 +12202,7 @@ public abstract class BaseAssignmentService implements AssignmentService, Entity
 		if(transversalMap != null && transversalMap.size() > 0){
 			Set<Entry<String, String>> entrySet = (Set<Entry<String, String>>) transversalMap.entrySet();
 			
-			enableSecurityAdvisor();
+			enableSecurityAdvisorToUpdateAssignment();
 
 			String toSiteId = toContext;
 			Iterator assignmentsIter = getAssignmentsForContext(toSiteId);
@@ -12251,7 +12251,7 @@ public abstract class BaseAssignmentService implements AssignmentService, Entity
 		{
 			if(cleanup == true)
 			{
-				enableSecurityAdvisor();
+				enableSecurityAdvisorToUpdateRemoveAssignment();
 
 				String toSiteId = toContext;
 				Iterator assignmentsIter = getAssignmentsForContext(toSiteId);
@@ -12348,17 +12348,73 @@ public abstract class BaseAssignmentService implements AssignmentService, Entity
     }
 
     /**
-     * Establish a security advisor to allow the "embedded" azg work to occur
-     * with no need for additional security permissions.
+     * Establish a security advisor to allow add or update assignment submission
      */
-    protected void enableSecurityAdvisor()
+    protected void enableSecurityAdvisorToAddUpdateAssignmentSubmission()
     {
       // put in a security advisor so we can create citationAdmin site without need
       // of further permissions
       SecurityService.pushAdvisor(new SecurityAdvisor() {
         public SecurityAdvice isAllowed(String userId, String function, String reference)
         {
-          return SecurityAdvice.ALLOWED;
+        	if (function.equals(SECURE_ADD_ASSIGNMENT_SUBMISSION) || function.equals(SECURE_UPDATE_ASSIGNMENT_SUBMISSION))
+        		return SecurityAdvice.ALLOWED;
+        	else
+        		return SecurityAdvice.NOT_ALLOWED;
+        }
+      });
+    }
+    
+    /**
+     * Establish a security advisor to allow add the grade permission ("gradebook.gradeAll", or "gradebook.gradeSection") in order to use g.getAssignmentScoreString()
+     */
+    protected void enableSecurityAdvisorToGradebook()
+    {
+      // put in a security advisor so we can create citationAdmin site without need
+      // of further permissions
+      SecurityService.pushAdvisor(new SecurityAdvisor() {
+        public SecurityAdvice isAllowed(String userId, String function, String reference)
+        {
+        	if (function.equals("gradebook.gradeAll") || function.equals("gradebook.gradeSection"))
+        		return SecurityAdvice.ALLOWED;
+        	else
+        		return SecurityAdvice.NOT_ALLOWED;
+        }
+      });
+    }
+    
+    /**
+     * Establish a security advisor to allow update or remove assignment
+     */
+    protected void enableSecurityAdvisorToUpdateRemoveAssignment()
+    {
+      // put in a security advisor so we can create citationAdmin site without need
+      // of further permissions
+      SecurityService.pushAdvisor(new SecurityAdvisor() {
+        public SecurityAdvice isAllowed(String userId, String function, String reference)
+        {
+        	if (function.equals(SECURE_UPDATE_ASSIGNMENT) || function.equals(SECURE_REMOVE_ASSIGNMENT))
+        		return SecurityAdvice.ALLOWED;
+        	else
+        		return SecurityAdvice.NOT_ALLOWED;
+        }
+      });
+    }
+    
+    /**
+     * Establish a security advisor to allow update assignment
+     */
+    protected void enableSecurityAdvisorToUpdateAssignment()
+    {
+      // put in a security advisor so we can create citationAdmin site without need
+      // of further permissions
+      SecurityService.pushAdvisor(new SecurityAdvisor() {
+        public SecurityAdvice isAllowed(String userId, String function, String reference)
+        {
+        	if (function.equals(SECURE_UPDATE_ASSIGNMENT))
+        		return SecurityAdvice.ALLOWED;
+        	else
+        		return SecurityAdvice.NOT_ALLOWED;
         }
       });
     }
