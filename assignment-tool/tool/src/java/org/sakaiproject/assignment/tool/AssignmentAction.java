@@ -7860,6 +7860,11 @@ public class AssignmentAction extends PagedResourceActionII
 		ParameterParser params = data.getParameters();
 		String sId = params.getString("submissionId");
 		
+        //Added by Branden Visser - Check that the state is consistent
+        if (!checkSubmissionStateConsistency(state, sId)) {
+            return false;
+        }
+        
 		AssignmentSubmission submission = null;
 		try
 		{
