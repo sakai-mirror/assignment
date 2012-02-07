@@ -788,7 +788,7 @@ function submitform(id)
 							$tlang.getString("gradingsub.pregra")
 						</h4>
 						<div class="gradecoms  toggledContent">		
-							$!previousGrades.length()$!previousGrades
+							$!previousGrades
 						</div>
 					#end
 				#end
