@@ -31,14 +31,6 @@
         <url>https://source.sakaiproject.org/svn/assignment/branches/assignment-2.9.x</url>
     </scm>
 
-    <distributionManagement>
-        <site>
-            <id>sakai-site</id>
-            <name>Sakai release Site</name>
-            <url>scpexe://source.sakaiproject.org/var/www/html/release/assignment/${project.version}</url>
-        </site>
-    </distributionManagement>
-
     <repositories>
         <repository>
             <id>sakai-maven</id>
