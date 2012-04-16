@@ -25,6 +25,7 @@ import java.io.BufferedInputStream;
 import java.io.InputStream;
 import java.io.IOException;
 import java.io.OutputStream;
+import java.text.Normalizer;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
@@ -4587,7 +4588,12 @@ public abstract class BaseAssignmentService implements AssignmentService, Entity
 		}
 
 	} // getSubmissionsZip
-
+	public String escapeInvalidCharsEntry(String accentedString) {
+		String decomposed = Normalizer.normalize(accentedString, Normalizer.Form.NFD);
+		String cleanString = decomposed.replaceAll("\\p{InCombiningDiacriticalMarks}+", "");
+		return cleanString;
+	}
+	
 	protected void zipSubmissions(String assignmentReference, String assignmentTitle, String gradeTypeString, int typeOfSubmission, Iterator submissions, OutputStream outputStream, StringBuilder exceptionMessage, boolean withStudentSubmissionText, boolean withStudentSubmissionAttachment, boolean withGradeFile, boolean withFeedbackText, boolean withFeedbackComment, boolean withFeedbackAttachment) 
 	{
 	    ZipOutputStream out = null;
@@ -4595,7 +4601,7 @@ public abstract class BaseAssignmentService implements AssignmentService, Entity
 			out = new ZipOutputStream(outputStream);
 
 			// create the folder structure - named after the assignment's title
-			String root = Validator.escapeZipEntry(assignmentTitle) + Entity.SEPARATOR;
+			String root = escapeInvalidCharsEntry(Validator.escapeZipEntry(assignmentTitle)) + Entity.SEPARATOR;
 
 			String submittedText = "";
 			if (!submissions.hasNext())
@@ -4646,7 +4652,16 @@ public abstract class BaseAssignmentService implements AssignmentService, Entity
 								}
 								submittersString = submittersString.concat(fullName);
 								// add the eid to the end of it to guarantee folder name uniqness
-								submittersString = submittersString + "(" + submitters[i].getEid() + ")";
+								// if user Eid contains non ascii characters, the user internal id will be used
+								String userEid = submitters[i].getEid();
+								String candidateEid = escapeInvalidCharsEntry(userEid);
+								if (candidateEid.equals(userEid)){
+									submittersString = submittersString + "(" + candidateEid + ")";
+								} else{ 	
+									submittersString = submittersString + "(" + submitters[i].getId() + ")";
+								}
+								submittersString = escapeInvalidCharsEntry(submittersString);
+								// in grades file, Eid is used
 								gradesBuffer.append(submitters[i].getDisplayId() + "," + submitters[i].getEid() + "," + fullName + "," + s.getGradeDisplay() + "\n");
 							}
 							
@@ -4703,6 +4718,7 @@ public abstract class BaseAssignmentService implements AssignmentService, Entity
 									{
 										// create a attachment folder for the submission attachments
 										String sSubAttachmentFolder = submittersName + rb.getString("stuviewsubm.submissatt") + "/";
+										sSubAttachmentFolder = escapeInvalidCharsEntry(sSubAttachmentFolder);
 										ZipEntry sSubAttachmentFolderEntry = new ZipEntry(sSubAttachmentFolder);
 										out.putNextEntry(sSubAttachmentFolderEntry);
 										// add all submission attachment into the submission attachment folder
@@ -4726,6 +4742,7 @@ public abstract class BaseAssignmentService implements AssignmentService, Entity
 								{
 									// create an attachment folder for the feedback attachments
 									String feedbackSubAttachmentFolder = submittersName + rb.getString("download.feedback.attachment") + "/";
+									feedbackSubAttachmentFolder = escapeInvalidCharsEntry(feedbackSubAttachmentFolder);
 									ZipEntry feedbackSubAttachmentFolderEntry = new ZipEntry(feedbackSubAttachmentFolder);
 									out.putNextEntry(feedbackSubAttachmentFolderEntry);
 									// add all feedback attachment folder
@@ -4802,6 +4819,7 @@ public abstract class BaseAssignmentService implements AssignmentService, Entity
 				
 				ResourceProperties props = r.getProperties();
 				String displayName = props.getPropertyFormatted(props.getNamePropDisplayName());
+				displayName = escapeInvalidCharsEntry(displayName);
 
 				// for URL content type, encode a redirect to the body URL
 				if (contentType.equalsIgnoreCase(ResourceProperties.TYPE_URL))
