@@ -29,6 +29,8 @@ import java.io.InputStream;
 import java.io.OutputStream;
 import java.io.InputStreamReader;
 import java.text.Collator;
+import java.text.ParseException;
+import java.text.RuleBasedCollator;
 import java.text.DecimalFormat;
 import java.text.NumberFormat;
 import java.text.ParseException;
@@ -9861,7 +9863,12 @@ public class AssignmentAction extends PagedResourceActionII
 			} else if (s1 == null) {
 				result = -1;
 			} else {
-				result = collator.compare(s1.toLowerCase(), s2.toLowerCase());
+				try{
+					RuleBasedCollator r_collator= new RuleBasedCollator(((RuleBasedCollator)Collator.getInstance()).getRules().replaceAll("<'\u005f'", "<' '<'\u005f'"));
+					result = r_collator.compare(s1.toLowerCase(), s2.toLowerCase());
+				}catch(ParseException e){
+					result = collator.compare(s1.toLowerCase(), s2.toLowerCase());
+				}
 			}
 			return result;
 		}
