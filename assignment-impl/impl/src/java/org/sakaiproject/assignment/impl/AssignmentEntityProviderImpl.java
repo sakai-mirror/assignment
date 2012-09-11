@@ -14,6 +14,7 @@ import org.sakaiproject.assignment.api.AssignmentEntityProvider;
 import org.sakaiproject.assignment.api.AssignmentService;
 import org.sakaiproject.assignment.api.AssignmentSubmission;
 import org.sakaiproject.assignment.api.Assignment.AssignmentAccess;
+import org.sakaiproject.authz.api.SecurityAdvisor;
 import org.sakaiproject.authz.api.SecurityService;
 import org.sakaiproject.component.cover.ServerConfigurationService;
 import org.sakaiproject.entity.api.Entity;
@@ -468,16 +469,13 @@ public class AssignmentEntityProviderImpl implements AssignmentEntityProvider, C
      * @see org.sakaiproject.entitybroker.entityprovider.CoreEntityProvider#entityExists(java.lang.String)
      */
     public boolean entityExists(String id) {
-        boolean rv = false;
-        try {
-            Assignment assignment = assignmentService.getAssignment(id);
-            if (assignment != null) {
-                rv = true;
-            }
-        } catch (Exception e) {
-            rv = false;
-        }
-        return rv;
+    	boolean rv = false;
+    	//This will look up the ref from the database, so if ref is not null, that means it found one.
+    	String ref = assignmentService.assignmentReference(id);
+    	if (ref != null) {
+    		rv = true;
+    	}
+    	return rv;
     }
 
     /* (non-Javadoc)
@@ -787,7 +785,7 @@ public class AssignmentEntityProviderImpl implements AssignmentEntityProvider, C
         String parsedRef = reference;
         String defaultView = "doView_submission";
         String[] refParts = reference.split(Entity.SEPARATOR);
-        String submissionId = "";
+        String submissionId = "null";  //setting to the string null
         String decWrapper = null;
         String decWrapperTag = "";
         String decSiteId = "";
@@ -815,7 +813,7 @@ public class AssignmentEntityProviderImpl implements AssignmentEntityProvider, C
 
         String assignmentId = parsedRef;
         boolean canUserAccessWizardPageAndLinkedArtifcact = false;
-        if (!"".equals(decSiteId) && !"".equals(decPageId) && !"".equals(submissionId)) {
+        if (!"".equals(decSiteId) && !"".equals(decPageId) && !"null".equals(submissionId)) {
             Map<String, Object> params = new HashMap<String, Object>();
             params.put("siteId", decSiteId);
             params.put("pageId", decPageId);
@@ -860,22 +858,30 @@ public class AssignmentEntityProviderImpl implements AssignmentEntityProvider, C
             props.put("security.site.function", SiteService.SITE_VISIT);
             props.put("security.site.ref", site.getReference());
             props.put("security.assignment.function", AssignmentService.SECURE_ACCESS_ASSIGNMENT);
+            props.put("security.assignment.grade.function", AssignmentService.SECURE_GRADE_ASSIGNMENT_SUBMISSION);
+            props.put("security.assignment.grade.ref", assignment.getReference());
 
             // OSP specific
             if (("ospMatrix".equals(decWrapperTag) && canUserAccessWizardPageAndLinkedArtifcact)
-                    || "".equals(submissionId)) {
+                    || "null".equals(submissionId)) {
 
                 List<Reference> attachments = new ArrayList<Reference>();
 
-                if (!"".equals(submissionId)) {
+                if (!"null".equals(submissionId)) {
                     props.put("security.assignment.ref", submissionId);
+                    SecurityAdvisor subAdv = new MySecurityAdvisor(
+							sessionManager.getCurrentSessionUserId(), 
+							AssignmentService.SECURE_ACCESS_ASSIGNMENT_SUBMISSION,
+							submissionId);
+                    SecurityAdvisor subAdv2 = new MySecurityAdvisor(
+                    		sessionManager.getCurrentSessionUserId(), 
+                    		AssignmentService.SECURE_GRADE_ASSIGNMENT_SUBMISSION,
+                            assignment.getReference());
                     try
                     {
                     	// enable permission to access submission
-                        securityService.pushAdvisor(new MySecurityAdvisor(
-    							sessionManager.getCurrentSessionUserId(), 
-    							AssignmentService.SECURE_ACCESS_ASSIGNMENT_SUBMISSION,
-    							submissionId));
+                        securityService.pushAdvisor(subAdv);
+                        securityService.pushAdvisor(subAdv2);
                     	AssignmentSubmission as = assignmentService.getSubmission(submissionId);
 	                    attachments.addAll(as.getSubmittedAttachments());
 	                    attachments.addAll(as.getFeedbackAttachments());
@@ -887,7 +893,8 @@ public class AssignmentEntityProviderImpl implements AssignmentEntityProvider, C
                     finally
                     {
                     	// remove security advisor
-                    	securityService.popAdvisor();
+                    	securityService.popAdvisor(subAdv2);
+                    	securityService.popAdvisor(subAdv);
                     }
                 }
 
