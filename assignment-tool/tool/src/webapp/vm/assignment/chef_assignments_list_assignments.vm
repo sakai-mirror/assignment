@@ -191,7 +191,7 @@ function allowClick(object)
 							#end 
 						</a>
 					</th>
-					#if ($!groups)
+					#if ($!groups && $!allowGradeSubmission)
 						##only show it when there is at least a group in site
 						<th id="$tlang.getString('gen.visible')">
 							#if (!$sortedBy.equalsIgnoreCase("$tlang.getString('gen.visible')"))
