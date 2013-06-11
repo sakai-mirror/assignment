@@ -102,7 +102,7 @@
 	<h3>
 		$validator.escapeHtml($assignment.getTitle())<span class="highlight"> - $!tlang.getString('gen.subm2') </span>
 	</h3>
-	#if ($alertMessage)<div class="alertMessage">$tlang.getString("gen.alert") $validator.escapeHtml($alertMessage)</div><div class="clear"></div>#end
+	#if ($alertMessage)<div class="alertMessage">$tlang.getString("gen.alert") $alertMessage</div><div class="clear"></div>#end
 	## reminder of submission download url
 	#if ($download_url_reminder) 
 		<div class="messageInformation">
