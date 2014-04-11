@@ -10963,7 +10963,9 @@ public class AssignmentAction extends PagedResourceActionII
 			}
 			if (invalid)
 			{
-				addAlert(state, rb.getString("plesuse0"));
+				// -------- SAK-24199 (SAKU-274) by Shoji Kajita
+				addAlert(state, rb.getFormattedMessage("plesuse0", new Object []{grade}));
+				// --------
 			}
 		}
 	}
@@ -11932,6 +11934,10 @@ public class AssignmentAction extends PagedResourceActionII
 							        				if (gradeType == Assignment.SCORE_GRADE_TYPE)
 							        				{
 							        					validPointGrade(state, itemString);
+							        				} // SAK-24199 - Applied patch provided with a few additional modifications.
+							        				else if (gradeType == Assignment.PASS_FAIL_GRADE_TYPE)
+							        				{
+							        					itemString = validatePassFailGradeValue(state, itemString);
 							        				}
 							        				else
 							        				{
@@ -13271,4 +13277,32 @@ public class AssignmentAction extends PagedResourceActionII
 		String lOptions = ServerConfigurationService.getString("assignment.letterGradeOptions", "A+,A,A-,B+,B,B-,C+,C,C-,D+,D,D-,E,F");
 		context.put("letterGradeOptions", StringUtil.split(lOptions, ","));
 	}
+    /**
+     * Validates the ungraded/pass/fail grade values provided in the upload file are valid.
+     * Values must be present in the appropriate language property file.
+     * @param state
+     * @param itemString
+     * @return one of the valid values or the original value entered by the user
+     */
+    private String validatePassFailGradeValue(SessionState state, String itemString)
+    {
+	    // -------- SAK-24199 (SAKU-274) by Shoji Kajita
+		if (itemString.equalsIgnoreCase(rb.getString("pass"))) 
+		{
+			itemString = "Pass";
+		} 
+		else if (itemString.equalsIgnoreCase(rb.getString("fail"))) 
+		{
+			itemString = "Fail";
+		} 
+		else if (itemString.equalsIgnoreCase(rb.getString("ungra")) || itemString.isEmpty()) {
+			itemString = "Ungraded";
+		}
+		else { // Not one of the expected values. Display error message.
+			addAlert(state, rb.getFormattedMessage("plesuse0", new Object []{itemString}));
+		}
+		// --------
+    	
+    	return itemString;
+    }
 }	
