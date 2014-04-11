@@ -52,6 +52,7 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Set;
+import java.util.concurrent.ConcurrentSkipListSet;
 
 import org.apache.commons.lang.StringUtils;
 import org.apache.commons.logging.Log;
@@ -8847,7 +8848,7 @@ public class AssignmentAction extends PagedResourceActionII
 
 		if (state.getAttribute(STUDENT_LIST_SHOW_TABLE) == null)
 		{
-			state.setAttribute(STUDENT_LIST_SHOW_TABLE, new HashSet());
+			state.setAttribute(STUDENT_LIST_SHOW_TABLE, new ConcurrentSkipListSet());
 		}
 
 		if (state.getAttribute(ATTACHMENTS_MODIFIED) == null)
