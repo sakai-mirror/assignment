@@ -149,7 +149,7 @@
 						onclick="javascript:invokeDownloadUrl('$accessPointUrl', '$actionString', '$alertMessage', '$contextString', '$viewString', '$searchString', '$showSubmissionByFilterSearchOnly');" value="$tlang.getString('downloadall.button.download')" />
 			#else
 				<input type="button" name="uploadButton" id="uploadButton"  accesskey="s" class="active"
-						onclick="javascript:showNotif('submitnotif','uploadButton','uploadAllForm');document.getElementById('uploadAllForm').action='#toolLinkParam($action 'doDownload_upload_all' 'flow=upload')'; submitform('uploadAllForm');" value="$tlang.getString('uploadall.button.upload')" />
+						onclick="javascript:showNotif('submitnotif','uploadButton','uploadAllForm');document.getElementById('uploadAllForm').action='#toolLinkParam($action "doDownload_upload_all" "flow=upload&sakai_csrf_token=$validator.escapeUrl($sakai_csrf_token)")'; submitform('uploadAllForm');" value="$tlang.getString('uploadall.button.upload')" />
 			#end	
 					<input type="button" name="cancelButton" id="cancelButton"  accesskey="x"
 						onclick="document.getElementById('uploadAllForm').action='#toolLinkParam($action 'doCancel_download_upload_all' 'flow=cancel')'; submitform('uploadAllForm');" value="$tlang.getString('gen.can')" />
