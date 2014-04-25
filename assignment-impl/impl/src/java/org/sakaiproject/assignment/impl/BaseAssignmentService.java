@@ -21,69 +21,21 @@
 
 package org.sakaiproject.assignment.impl;
 
-import java.io.BufferedInputStream;
-import java.io.ByteArrayOutputStream;
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.OutputStream;
-import java.io.OutputStreamWriter;
-import java.io.StringWriter;
-import java.text.NumberFormat;
-import java.text.Normalizer;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collection;
-import java.util.Comparator;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.Iterator;
-import java.util.List;
-import java.util.Locale;
-import java.util.Map;
-import java.util.Map.Entry;
-import java.util.Set;
-import java.util.Stack;
-import java.util.StringTokenizer;
-import java.util.Vector;
-import java.util.zip.ZipEntry;
-import java.util.zip.ZipOutputStream;
-
-import org.sakaiproject.site.api.Group;
-
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
-
+import au.com.bytecode.opencsv.CSVWriter;
 import org.apache.commons.codec.binary.Base64;
 import org.apache.commons.lang.StringUtils;
+import org.apache.commons.lang.math.NumberUtils;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
-import org.apache.commons.lang.math.NumberUtils;
-import org.apache.poi.hssf.usermodel.HSSFCell;
-import org.apache.poi.hssf.usermodel.HSSFCellStyle;
-import org.apache.poi.hssf.usermodel.HSSFRow;
-import org.apache.poi.hssf.usermodel.HSSFSheet;
-import org.apache.poi.hssf.usermodel.HSSFWorkbook;
+import org.apache.poi.hssf.usermodel.*;
 import org.apache.poi.ss.util.WorkbookUtil;
 import org.sakaiproject.announcement.api.AnnouncementChannel;
 import org.sakaiproject.announcement.api.AnnouncementService;
-import org.sakaiproject.assignment.api.Assignment;
-import org.sakaiproject.assignment.api.AssignmentConstants;
-import org.sakaiproject.assignment.api.AssignmentContent;
-import org.sakaiproject.assignment.api.AssignmentContentEdit;
-import org.sakaiproject.assignment.api.AssignmentContentNotEmptyException;
-import org.sakaiproject.assignment.api.AssignmentEdit;
-import org.sakaiproject.assignment.api.AssignmentService;
-import org.sakaiproject.assignment.api.AssignmentSubmission;
-import org.sakaiproject.assignment.api.AssignmentSubmissionEdit;
+import org.sakaiproject.assignment.api.*;
 import org.sakaiproject.assignment.taggable.api.AssignmentActivityProducer;
-import org.sakaiproject.assignment.api.AssignmentPeerAssessmentService;
-import org.sakaiproject.authz.api.AuthzGroup;
-import org.sakaiproject.authz.api.AuthzPermissionException;
-import org.sakaiproject.authz.api.GroupNotDefinedException;
-import org.sakaiproject.authz.api.Member;
+import org.sakaiproject.authz.api.*;
 import org.sakaiproject.authz.cover.AuthzGroupService;
 import org.sakaiproject.authz.cover.FunctionManager;
-import org.sakaiproject.authz.cover.SecurityService;
 import org.sakaiproject.calendar.api.Calendar;
 import org.sakaiproject.calendar.api.CalendarEvent;
 import org.sakaiproject.calendar.api.CalendarService;
@@ -100,43 +52,15 @@ import org.sakaiproject.contentreview.model.ContentReviewItem;
 import org.sakaiproject.contentreview.service.ContentReviewService;
 import org.sakaiproject.email.cover.DigestService;
 import org.sakaiproject.email.cover.EmailService;
-import org.sakaiproject.entity.api.AttachmentContainer;
-import org.sakaiproject.entity.api.Edit;
-import org.sakaiproject.entity.api.Entity;
-import org.sakaiproject.entity.api.EntityAccessOverloadException;
-import org.sakaiproject.entity.api.EntityCopyrightException;
-import org.sakaiproject.entity.api.EntityManager;
-import org.sakaiproject.entity.api.EntityNotDefinedException;
-import org.sakaiproject.entity.api.EntityPermissionException;
-import org.sakaiproject.entity.api.EntityPropertyNotDefinedException;
-import org.sakaiproject.entity.api.EntityPropertyTypeException;
-import org.sakaiproject.entity.api.EntityTransferrer;
-import org.sakaiproject.entity.api.EntityTransferrerRefMigrator;
-import org.sakaiproject.entity.api.HttpAccess;
-import org.sakaiproject.entity.api.Reference;
-import org.sakaiproject.entity.api.ResourceProperties;
-import org.sakaiproject.entity.api.ResourcePropertiesEdit;
+import org.sakaiproject.entity.api.*;
 import org.sakaiproject.event.api.Event;
 import org.sakaiproject.event.api.LearningResourceStoreService;
-import org.sakaiproject.event.api.LearningResourceStoreService.LRS_Actor;
-import org.sakaiproject.event.api.LearningResourceStoreService.LRS_Context;
-import org.sakaiproject.event.api.LearningResourceStoreService.LRS_Object;
-import org.sakaiproject.event.api.LearningResourceStoreService.LRS_Result;
-import org.sakaiproject.event.api.LearningResourceStoreService.LRS_Statement;
-import org.sakaiproject.event.api.LearningResourceStoreService.LRS_Verb;
+import org.sakaiproject.event.api.LearningResourceStoreService.*;
 import org.sakaiproject.event.api.LearningResourceStoreService.LRS_Verb.SAKAI_VERB;
 import org.sakaiproject.event.cover.EventTrackingService;
 import org.sakaiproject.event.cover.NotificationService;
-import org.sakaiproject.exception.IdInvalidException;
-import org.sakaiproject.exception.IdUnusedException;
-import org.sakaiproject.exception.IdUsedException;
-import org.sakaiproject.exception.InUseException;
-import org.sakaiproject.exception.PermissionException;
-import org.sakaiproject.exception.ServerOverloadException;
-import org.sakaiproject.exception.TypeException;
+import org.sakaiproject.exception.*;
 import org.sakaiproject.id.cover.IdManager;
-import org.sakaiproject.memory.api.Cache;
-import org.sakaiproject.memory.api.CacheRefresher;
 import org.sakaiproject.memory.api.MemoryService;
 import org.sakaiproject.service.gradebook.shared.GradebookExternalAssessmentService;
 import org.sakaiproject.service.gradebook.shared.GradebookService;
@@ -154,18 +78,7 @@ import org.sakaiproject.tool.cover.ToolManager;
 import org.sakaiproject.user.api.User;
 import org.sakaiproject.user.api.UserNotDefinedException;
 import org.sakaiproject.user.cover.UserDirectoryService;
-import org.sakaiproject.util.BaseResourcePropertiesEdit;
-import org.sakaiproject.util.DefaultEntityHandler;
-import org.sakaiproject.util.EmptyIterator;
-import org.sakaiproject.util.EntityCollections;
-import org.sakaiproject.util.FormattedText;
-import org.sakaiproject.util.ResourceLoader;
-import org.sakaiproject.util.SAXEntityReader;
-import org.sakaiproject.util.SingleStorageUser;
-import org.sakaiproject.util.SortedIterator;
-import org.sakaiproject.util.StringUtil;
-import org.sakaiproject.util.Validator;
-import org.sakaiproject.util.Xml;
+import org.sakaiproject.util.*;
 import org.sakaiproject.util.cover.LinkMigrationHelper;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
@@ -175,7 +88,15 @@ import org.xml.sax.Attributes;
 import org.xml.sax.ContentHandler;
 import org.xml.sax.SAXException;
 
-import au.com.bytecode.opencsv.CSVWriter;
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
+import java.io.*;
+import java.text.Normalizer;
+import java.text.NumberFormat;
+import java.util.*;
+import java.util.Map.Entry;
+import java.util.zip.ZipEntry;
+import java.util.zip.ZipOutputStream;
 
 /**
  * <p>
@@ -201,15 +122,6 @@ public abstract class BaseAssignmentService implements AssignmentService, Entity
 
 	/** A Storage object for persistent storage of Assignments. */
 	protected AssignmentSubmissionStorage m_submissionStorage = null;
-
-	/** A Cache for this service - Assignments keyed by reference. */
-	protected Cache m_assignmentCache = null;
-
-	/** A Cache for this service - AssignmentContents keyed by reference. */
-	protected Cache m_contentCache = null;
-
-	/** A Cache for this service - AssignmentSubmissions keyed by reference. */
-	protected Cache m_submissionCache = null;
 
 	/** The access point URL. */
 	protected static String m_relativeAccessPoint = null;
@@ -238,6 +150,11 @@ public abstract class BaseAssignmentService implements AssignmentService, Entity
 	private AssignmentPeerAssessmentService assignmentPeerAssessmentService = null;
 	public void setAssignmentPeerAssessmentService(AssignmentPeerAssessmentService assignmentPeerAssessmentService){
 		this.assignmentPeerAssessmentService = assignmentPeerAssessmentService;
+	}
+
+	private SecurityService securityService = null;
+	public void setSecurityService(SecurityService securityService){
+		this.securityService = securityService;
 	}
 
 	String newline = "<br />\n";
@@ -427,7 +344,7 @@ public abstract class BaseAssignmentService implements AssignmentService, Entity
 	 */
 	protected boolean unlockCheck(String lock, String resource)
 	{
-		if (!SecurityService.unlock(lock, resource))
+		if (!securityService.unlock(lock, resource))
 		{
 			return false;
 		}
@@ -448,7 +365,7 @@ public abstract class BaseAssignmentService implements AssignmentService, Entity
 	{
 		// SAK-23755 addons:
 		// super user should be allowed
-		if (SecurityService.isSuperUser())
+		if (securityService.isSuperUser())
 			return true;
 	
 		// all.groups permission should apply down to group level
@@ -479,13 +396,13 @@ public abstract class BaseAssignmentService implements AssignmentService, Entity
 			}
 			
                         if (SECURE_ADD_ASSIGNMENT_SUBMISSION.equals(lock) && assignment.isGroup())
-                                return SecurityService.unlock(lock, resource); 
+                                return securityService.unlock(lock, resource); 
                         else
                                 return false;
 		}
 		else
 		{
-			return SecurityService.unlock(lock, resource);
+			return securityService.unlock(lock, resource);
 		}
 	}// unlockCheckWithGroups
 
@@ -503,10 +420,10 @@ public abstract class BaseAssignmentService implements AssignmentService, Entity
 	protected boolean unlockCheck2(String lock1, String lock2, String resource)
 	{
 		// check the first lock
-		if (SecurityService.unlock(lock1, resource)) return true;
+		if (securityService.unlock(lock1, resource)) return true;
 
 		// if the second is different, check that
-		if ((!lock1.equals(lock2)) && (SecurityService.unlock(lock2, resource))) return true;
+		if ((!lock1.equals(lock2)) && (securityService.unlock(lock2, resource))) return true;
 
 		return false;
 
@@ -586,19 +503,13 @@ public abstract class BaseAssignmentService implements AssignmentService, Entity
 		m_contentHostingService = service;
 	}
 
-	/** Configuration: cache, or not. */
-	protected boolean m_caching = false;
-
 	/**
 	 * Configuration: set the locks-in-db
 	 * 
-	 * @param path
-	 *        The storage path.
+	 * @param value true or false
+     * @deprecated 7 April 2014 - this has no effect anymore and should be removed in 11 release
 	 */
-	public void setCaching(String value)
-	{
-		m_caching = Boolean.valueOf(value).booleanValue();
-	}
+	public void setCaching(String value) {} // intentionally blank
 
 	/** Dependency: EntityManager. */
 	protected EntityManager m_entityManager = null;
@@ -794,26 +705,6 @@ public abstract class BaseAssignmentService implements AssignmentService, Entity
 		m_submissionStorage = newSubmissionStorage();
 		m_submissionStorage.open();
 
-		// make the cache
-		if (m_caching)
-		{
-			m_assignmentCache = m_memoryService
-					.newCache(
-							"org.sakaiproject.assignment.api.AssignmentService.assignmentCache",
-							new AssignmentCacheRefresher(),
-							assignmentReference(null, ""));
-			m_contentCache = m_memoryService
-					.newCache(
-							"org.sakaiproject.assignment.api.AssignmentService.contentCache",
-							new AssignmentContentCacheRefresher(),
-							contentReference(null, ""));
-			m_submissionCache = m_memoryService
-					.newCache(
-							"org.sakaiproject.assignment.api.AssignmentService.submissionCache",
-							new AssignmentSubmissionCacheRefresher(),
-							submissionReference(null, "", ""));
-		}
-
         m_allowSubmitByInstructor = m_serverConfigurationService.getBoolean("assignments.instructor.submit.for.student", true);
         if (!m_allowSubmitByInstructor) {
             M_log.info("Instructor submission of assignments is disabled - add assignments.instructor.submit.for.student=true to sakai config to enable");
@@ -847,25 +738,6 @@ public abstract class BaseAssignmentService implements AssignmentService, Entity
 	 */
 	public void destroy()
 	{
-		if (m_caching)
-		{
-			if (m_assignmentCache != null)
-			{
-				m_assignmentCache.destroy();
-				m_assignmentCache = null;
-			}
-			if (m_contentCache != null)
-			{
-				m_contentCache.destroy();
-				m_contentCache = null;
-			}
-			if (m_submissionCache != null)
-			{
-				m_submissionCache.destroy();
-				m_submissionCache = null;
-			}
-		}
-
 		m_assignmentStorage.close();
 		m_assignmentStorage = null;
 		m_contentStorage.close();
@@ -1135,24 +1007,8 @@ public abstract class BaseAssignmentService implements AssignmentService, Entity
 
 		String assignmentId = assignmentId(assignmentReference);
 
-		if ((m_caching) && (m_assignmentCache != null) && (!m_assignmentCache.disabled()))
-		{
-			// if we have it in the cache, use it
-			if (m_assignmentCache.containsKey(assignmentReference))
-				assignment = (Assignment) m_assignmentCache.get(assignmentReference);
-			if ( assignment == null ) //SAK-12447 cache.get can return null on expired
-			{
-				assignment = m_assignmentStorage.get(assignmentId);
+		assignment = m_assignmentStorage.get(assignmentId);
 
-				// cache the result
-				m_assignmentCache.put(assignmentReference, assignment);
-			}
-		}
-		else
-		{
-			assignment = m_assignmentStorage.get(assignmentId);
-		}
-		
 		return assignment;
 	}
 
@@ -1209,76 +1065,11 @@ public abstract class BaseAssignmentService implements AssignmentService, Entity
 	 * This should be used with care; almost all scenarios should use {@link getAssignments(String)}
 	 * or {@link getAssignments(String, String)}, which do enforce permissions and visibility.
 	 *
-	 * TODO: Decide whether or not this should be exposed as part of the public API.
-	 *
 	 * @return A list of Assignment objects.
-	 *
 	 */
 	protected List getUnfilteredAssignments(String context)
 	{
-		List assignments = new ArrayList();
-
-		if ((m_caching) && (m_assignmentCache != null) && (!m_assignmentCache.disabled()))
-		{
-			// if the cache is complete, use it
-			if (m_assignmentCache.isComplete())
-			{
-				assignments = m_assignmentCache.getAll();
-				// TODO: filter by context
-			}
-
-			// otherwise get all the assignments from storage
-			else
-			{
-				// Note: while we are getting from storage, storage might change. These can be processed
-				// after we get the storage entries, and put them in the cache, and mark the cache complete.
-				// -ggolden
-				synchronized (m_assignmentCache)
-				{
-					// if we were waiting and it's now complete...
-					if (m_assignmentCache.isComplete())
-					{
-						assignments = m_assignmentCache.getAll();
-						return assignments;
-					}
-
-					// save up any events to the cache until we get past this load
-					m_assignmentCache.holdEvents();
-
-					assignments = m_assignmentStorage.getAll(context);
-
-					// update the cache, and mark it complete
-					for (int i = 0; i < assignments.size(); i++)
-					{
-						Assignment assignment = (Assignment) assignments.get(i);
-						m_assignmentCache.put(assignment.getReference(), assignment);
-					}
-
-					m_assignmentCache.setComplete();
-					// TODO: not reall, just for context
-
-					// now we are complete, process any cached events
-					m_assignmentCache.processEvents();
-				}
-			}
-		}
-
-		else
-		{
-			// // if we have done this already in this thread, use that
-			// assignments = (List) CurrentService.getInThread(context+".assignment.assignments");
-			// if (assignments == null)
-			// {
-			assignments = m_assignmentStorage.getAll(context);
-			//
-			// // "cache" the assignments in the current service in case they are needed again in this thread...
-			// if (assignments != null)
-			// {
-			// CurrentService.setInThread(context+".assignment.assignments", assignments);
-			// }
-			// }
-		}
-
+		List assignments = m_assignmentStorage.getAll(context);
 		return assignments;
 	}
 
@@ -1322,7 +1113,7 @@ public abstract class BaseAssignmentService implements AssignmentService, Entity
 		// Check whether the user can add assignments for the site.
 		// If so, return the full list.
 		String siteRef = SiteService.siteReference(siteId);
-		boolean allowAdd = SecurityService.unlock(userId, SECURE_ALL_GROUPS, siteRef);
+		boolean allowAdd = securityService.unlock(userId, SECURE_ALL_GROUPS, siteRef);
 		if (allowAdd)
 		{
 			return siteAssignments;
@@ -1337,7 +1128,7 @@ public abstract class BaseAssignmentService implements AssignmentService, Entity
 
 		// Check the user's site permissions and collect all of the ungrouped
 		// assignments if the user has permission
-		boolean allowSiteGet = SecurityService.unlock(userId, SECURE_ACCESS_ASSIGNMENT, siteRef);
+		boolean allowSiteGet = securityService.unlock(userId, SECURE_ACCESS_ASSIGNMENT, siteRef);
 		if (allowSiteGet)
 		{
 			permitted.addAll(ungrouped);
@@ -1347,7 +1138,7 @@ public abstract class BaseAssignmentService implements AssignmentService, Entity
 		permitted.addAll(filterGroupedAssignmentsForAccess(grouped, siteId, userId));
 
 		// Filter for visibility/submission state
-		List<Assignment> visible = (SecurityService.unlock(userId, SECURE_ADD_ASSIGNMENT, siteRef))? permitted : filterAssignmentsByVisibility(permitted, userId);
+		List<Assignment> visible = (securityService.unlock(userId, SECURE_ADD_ASSIGNMENT, siteRef))? permitted : filterAssignmentsByVisibility(permitted, userId);
 
 		// We are left with the original list filtered by site/group permissions and visibility/submission state
 		return visible;
@@ -2202,36 +1993,9 @@ public abstract class BaseAssignmentService implements AssignmentService, Entity
 
 		// if we have it in the cache, use it
 		String contentId = contentId(contentReference);
-
-		if ((m_caching) && (m_contentCache != null) && (!m_contentCache.disabled()))
-		{
-			if (m_contentCache.containsKey(contentReference))
-				content = (AssignmentContent) m_contentCache.get(contentReference);
-			if ( content == null ) //SAK-12447 cache.get can return null on expired
-			{
-				content = m_contentStorage.get(contentId);
-
-				// cache the result
-				m_contentCache.put(contentReference, content);
-			}
-		}
-
-		else
-		{
-			// // if we have done this already in this thread, use that
-			// content = (AssignmentContent) CurrentService.getInThread(contentId+".assignment.content");
-			// if (content == null)
-			// {
+		if (contentId != null) {
 			content = m_contentStorage.get(contentId);
-			//				
-			// // "cache" the content in the current service in case they are needed again in this thread...
-			// if (content != null)
-			// {
-			// CurrentService.setInThread(contentId+".assignment.content", contentId);
-			// }
-			// }
 		}
-
 		if (content == null) throw new IdUnusedException(contentId);
 
 		M_log.debug(this + " GOT ASSIGNMENT CONTENT : ID : " + content.getId());
@@ -2250,69 +2014,7 @@ public abstract class BaseAssignmentService implements AssignmentService, Entity
 	 */
 	protected List getAssignmentContents(String context)
 	{
-		List contents = new ArrayList();
-
-		if ((m_caching) && (m_contentCache != null) && (!m_contentCache.disabled()))
-		{
-			// if the cache is complete, use it
-			if (m_contentCache.isComplete())
-			{
-				contents = m_contentCache.getAll();
-				// TODO: filter by context
-			}
-
-			// otherwise get all the contents from storage
-			else
-			{
-				// Note: while we are getting from storage, storage might change. These can be processed
-				// after we get the storage entries, and put them in the cache, and mark the cache complete.
-				// -ggolden
-				synchronized (m_contentCache)
-				{
-					// if we were waiting and it's now complete...
-					if (m_contentCache.isComplete())
-					{
-						contents = m_contentCache.getAll();
-						return contents;
-					}
-
-					// save up any events to the cache until we get past this load
-					m_contentCache.holdEvents();
-
-					contents = m_contentStorage.getAll(context);
-
-					// update the cache, and mark it complete
-					for (int i = 0; i < contents.size(); i++)
-					{
-						AssignmentContent content = (AssignmentContent) contents.get(i);
-						m_contentCache.put(content.getReference(), content);
-					}
-
-					m_contentCache.setComplete();
-					// TODO: not really, just for context
-
-					// now we are complete, process any cached events
-					m_contentCache.processEvents();
-				}
-			}
-		}
-
-		else
-		{
-			// // if we have done this already in this thread, use that
-			// contents = (List) CurrentService.getInThread(context+".assignment.contents");
-			// if (contents == null)
-			// {
-			contents = m_contentStorage.getAll(context);
-			//
-			// // "cache" the contents in the current service in case they are needed again in this thread...
-			// if (contents != null)
-			// {
-			// CurrentService.setInThread(context+".assignment.contents", contents);
-			// }
-			// }
-		}
-
+		List contents = m_contentStorage.getAll(context);
 		return contents;
 
 	} // getAssignmentContents
@@ -3347,69 +3049,8 @@ public abstract class BaseAssignmentService implements AssignmentService, Entity
 	 */
 	protected List getSubmissions(String context)
 	{
-		List<AssignmentSubmission> submissions = new ArrayList<AssignmentSubmission>();
+		List<AssignmentSubmission> submissions = m_submissionStorage.getAll(context);
 
-		if ((m_caching) && (m_submissionCache != null) && (!m_submissionCache.disabled()))
-		{
-			// if the cache is complete, use it
-			if (m_submissionCache.isComplete())
-			{
-				submissions = m_submissionCache.getAll();
-				// TODO: filter by context
-			}
-
-			// otherwise get all the submissions from storage
-			else
-			{
-				// Note: while we are getting from storage, storage might change. These can be processed
-				// after we get the storage entries, and put them in the cache, and mark the cache complete.
-				// -ggolden
-				synchronized (m_submissionCache)
-				{
-					// if we were waiting and it's now complete...
-					if (m_submissionCache.isComplete())
-					{
-						submissions = m_submissionCache.getAll();
-						return submissions;
-					}
-
-					// save up any events to the cache until we get past this load
-					m_submissionCache.holdEvents();
-
-					submissions = m_submissionStorage.getAll(context);
-
-					// update the cache, and mark it complete
-					for (int i = 0; i < submissions.size(); i++)
-					{
-						AssignmentSubmission submission = (AssignmentSubmission) submissions.get(i);
-						m_submissionCache.put(submission.getReference(), submission);
-					}
-
-					m_submissionCache.setComplete();
-					// TODO: not really! just for context
-
-					// now we are complete, process any cached events
-					m_submissionCache.processEvents();
-				}
-			}
-		}
-
-		else
-		{
-			// // if we have done this already in this thread, use that
-			// submissions = (List) CurrentService.getInThread(context+".assignment.submissions");
-			// if (submissions == null)
-			// {
-			submissions = m_submissionStorage.getAll(context);
-			//
-			// // "cache" the submissions in the current service in case they are needed again in this thread...
-			// if (submissions != null)
-			// {
-			// CurrentService.setInThread(context+".assignment.submissions", submissions);
-			// }
-			// }
-		}
-		
 		//get all the review scores
 		if (contentReviewService != null) {
 			try {
@@ -3713,7 +3354,7 @@ public abstract class BaseAssignmentService implements AssignmentService, Entity
 	 */
 	private boolean isDraftAssignmentVisible(Assignment assignment, String context) 
 	{
-		return SecurityService.isSuperUser() // super user can always see it
+		return securityService.isSuperUser() // super user can always see it
 			|| assignment.getCreator().equals(UserDirectoryService.getCurrentUser().getId()) // the creator can see it
 			|| (unlockCheck(SECURE_SHARE_DRAFTS, SiteService.siteReference(context))); // any role user with share draft permission
 	}
@@ -3904,38 +3545,10 @@ public abstract class BaseAssignmentService implements AssignmentService, Entity
 
 		String submissionId = submissionId(submissionReference);
 
-		if ((m_caching) && (m_submissionCache != null) && (!m_submissionCache.disabled()))
-		{
-			// if we have it in the cache, use it
-			if (m_submissionCache.containsKey(submissionReference))
-				submission = (AssignmentSubmission) m_submissionCache.get(submissionReference);
-			if ( submission == null ) //SAK-12447 cache.get can return null on expired
- 			{
-				submission = m_submissionStorage.get(submissionId);
-
-				// cache the result
-				m_submissionCache.put(submissionReference, submission);
-			}
-		}
-
-		else
-		{
-			// // if we have done this already in this thread, use that
-			// submission = (AssignmentSubmission) CurrentService.getInThread(submissionId+".assignment.submission");
-			// if (submission == null)
-			// {
-			submission = m_submissionStorage.get(submissionId);
-			//				
-			// // "cache" the submission in the current service in case they are needed again in this thread...
-			// if (submission != null)
-			// {
-			// CurrentService.setInThread(submissionId+".assignment.submission", submission);
-			// }
-			// }
-		}
+		submission = m_submissionStorage.get(submissionId);
 
 		if (submission == null) throw new IdUnusedException(submissionId);
-		
+
 		// double check the submission submitter information:
 		// if current user is not the original submitter and if he doesn't have grading permission, he should not have access to other people's submission.
 		String assignmentRef = assignmentReference(submission.getContext(), submission.getAssignmentId());
@@ -4045,7 +3658,7 @@ public abstract class BaseAssignmentService implements AssignmentService, Entity
 			M_log.debug(this + " allowReceiveSubmissionNotificationUsers with resource string : " + resourceString);
 			M_log.debug("                                   				 	context string : " + context);
 		}
-		return SecurityService.unlockUsers(SECURE_ASSIGNMENT_RECEIVE_NOTIFICATIONS, resourceString);
+		return securityService.unlockUsers(SECURE_ASSIGNMENT_RECEIVE_NOTIFICATIONS, resourceString);
 
 	} // allowAddAssignmentUsers
 	
@@ -4235,7 +3848,7 @@ public abstract class BaseAssignmentService implements AssignmentService, Entity
 			Site site = SiteService.getSite(context);
 			Collection groups = site.getGroups();
 
-			if (SecurityService.isSuperUser())
+			if (securityService.isSuperUser())
 			{
 				// for super user, return all groups
 				return groups;
@@ -4247,7 +3860,7 @@ public abstract class BaseAssignmentService implements AssignmentService, Entity
 			}
 			
 			// if the user has SECURE_ALL_GROUPS in the context (site), select all site groups
-			if (SecurityService.unlock(userId, SECURE_ALL_GROUPS, SiteService.siteReference(context)) && unlockCheck(function, SiteService.siteReference(context)))
+			if (securityService.unlock(userId, SECURE_ALL_GROUPS, SiteService.siteReference(context)) && unlockCheck(function, SiteService.siteReference(context)))
 			{
 				return groups;
 			}
@@ -4400,7 +4013,7 @@ public abstract class BaseAssignmentService implements AssignmentService, Entity
 	 */
 	public List allowAddSubmissionUsers(String assignmentReference)
 	{
-		return SecurityService.unlockUsers(SECURE_ADD_ASSIGNMENT_SUBMISSION, assignmentReference);
+		return securityService.unlockUsers(SECURE_ADD_ASSIGNMENT_SUBMISSION, assignmentReference);
 
 	} // allowAddSubmissionUsers
 	
@@ -4413,7 +4026,7 @@ public abstract class BaseAssignmentService implements AssignmentService, Entity
 	 */
 	public List allowGradeAssignmentUsers(String assignmentReference)
 	{
-		List users = SecurityService.unlockUsers(SECURE_GRADE_ASSIGNMENT_SUBMISSION, assignmentReference);
+		List users = securityService.unlockUsers(SECURE_GRADE_ASSIGNMENT_SUBMISSION, assignmentReference);
 		if (users == null)
 		{
 			users = new ArrayList();
@@ -4519,7 +4132,7 @@ public abstract class BaseAssignmentService implements AssignmentService, Entity
 			M_log.debug(this + " allowAddAssignmentUsers with resource string : " + resourceString);
 			M_log.debug("                                    	context string : " + context);
 		}
-		return SecurityService.unlockUsers(SECURE_ADD_ASSIGNMENT, resourceString);
+		return securityService.unlockUsers(SECURE_ADD_ASSIGNMENT, resourceString);
 
 	} // allowAddAssignmentUsers
 
@@ -4957,34 +4570,38 @@ public abstract class BaseAssignmentService implements AssignmentService, Entity
 	                    {
 	                        if (a.isGroup()) {
 	                            // temporarily allow the user to read and write from assignments (asn.revise permission)
-                                    SecurityService.pushAdvisor(
-                                           new MySecurityAdvisor(
-                                                  SessionManager.getCurrentSessionUserId(),
-                                                  new ArrayList<String>(Arrays.asList(SECURE_ADD_ASSIGNMENT_SUBMISSION, SECURE_UPDATE_ASSIGNMENT_SUBMISSION)),
-                                                  ""/* no submission id yet, pass the empty string to advisor*/));
+                        		SecurityAdvisor securityAdvisor = new MySecurityAdvisor(
+                                        SessionManager.getCurrentSessionUserId(),
+                                        new ArrayList<String>(Arrays.asList(SECURE_ADD_ASSIGNMENT_SUBMISSION, SECURE_UPDATE_ASSIGNMENT_SUBMISSION)),
+                                        ""/* no submission id yet, pass the empty string to advisor*/);
+                        		try {
+                        			securityService.pushAdvisor(securityAdvisor);
 
-	                            M_log.debug(this + " getSubmitterGroupList context " + contextString + " for assignment " + a.getId() + " for group " + g.getId());
-	                            AssignmentSubmissionEdit s =
-	                                    addSubmission(contextString, a.getId(), g.getId());
-	                            s.setSubmitted(false);
-	                            s.setAssignment(a);
 
-	                            // set the resubmission properties
-	                            // get the assignment setting for resubmitting
-	                            ResourceProperties assignmentProperties = a.getProperties();
-	                            String assignmentAllowResubmitNumber = assignmentProperties.getProperty(AssignmentSubmission.ALLOW_RESUBMIT_NUMBER);
-	                            if (assignmentAllowResubmitNumber != null)
-	                            {
-	                                s.getPropertiesEdit().addProperty(AssignmentSubmission.ALLOW_RESUBMIT_NUMBER, assignmentAllowResubmitNumber);
+                        			M_log.debug(this + " getSubmitterGroupList context " + contextString + " for assignment " + a.getId() + " for group " + g.getId());
+                        			AssignmentSubmissionEdit s =
+                        					addSubmission(contextString, a.getId(), g.getId());
+                        			s.setSubmitted(false);
+                        			s.setAssignment(a);
 
-	                                String assignmentAllowResubmitCloseDate = assignmentProperties.getProperty(AssignmentSubmission.ALLOW_RESUBMIT_CLOSETIME);
-	                                // if assignment's setting of resubmit close time is null, use assignment close time as the close time for resubmit
-	                                s.getPropertiesEdit().addProperty(AssignmentSubmission.ALLOW_RESUBMIT_CLOSETIME, assignmentAllowResubmitCloseDate != null?assignmentAllowResubmitCloseDate:String.valueOf(a.getCloseTime().getTime()));
-	                            }
+                        			// set the resubmission properties
+                        			// get the assignment setting for resubmitting
+                        			ResourceProperties assignmentProperties = a.getProperties();
+                        			String assignmentAllowResubmitNumber = assignmentProperties.getProperty(AssignmentSubmission.ALLOW_RESUBMIT_NUMBER);
+                        			if (assignmentAllowResubmitNumber != null)
+                        			{
+                        				s.getPropertiesEdit().addProperty(AssignmentSubmission.ALLOW_RESUBMIT_NUMBER, assignmentAllowResubmitNumber);
 
-	                            commitEdit(s);
-	                            // clear the permission
-	                            SecurityService.popAdvisor();
+                        				String assignmentAllowResubmitCloseDate = assignmentProperties.getProperty(AssignmentSubmission.ALLOW_RESUBMIT_CLOSETIME);
+                        				// if assignment's setting of resubmit close time is null, use assignment close time as the close time for resubmit
+                        				s.getPropertiesEdit().addProperty(AssignmentSubmission.ALLOW_RESUBMIT_CLOSETIME, assignmentAllowResubmitCloseDate != null?assignmentAllowResubmitCloseDate:String.valueOf(a.getCloseTime().getTime()));
+                        			}
+
+                        			commitEdit(s);
+                        			// clear the permission
+                        		} finally {
+                        			securityService.popAdvisor(securityAdvisor);
+                        		}
 	                        }
 	                    }
 	                }
@@ -5078,14 +4695,14 @@ public abstract class BaseAssignmentService implements AssignmentService, Entity
 							// construct fake submissions for grading purpose if the user has right for grading
 							if (allowGradeSubmission(a.getReference()))
 							{
+								SecurityAdvisor securityAdvisor = new MySecurityAdvisor(
+			            				SessionManager.getCurrentSessionUserId(), 
+			            				new ArrayList<String>(Arrays.asList(SECURE_ADD_ASSIGNMENT_SUBMISSION, SECURE_UPDATE_ASSIGNMENT_SUBMISSION)),
+			            				""/* no submission id yet, pass the empty string to advisor*/);
 								try
 						        {
 									// temporarily allow the user to read and write from assignments (asn.revise permission)
-						            SecurityService.pushAdvisor(
-						            		new MySecurityAdvisor(
-						            				SessionManager.getCurrentSessionUserId(), 
-						            				new ArrayList<String>(Arrays.asList(SECURE_ADD_ASSIGNMENT_SUBMISSION, SECURE_UPDATE_ASSIGNMENT_SUBMISSION)),
-						            				""/* no submission id yet, pass the empty string to advisor*/));
+						            securityService.pushAdvisor(securityAdvisor);
 							        
 						            AssignmentSubmissionEdit s = addSubmission(contextString, a.getId(), u.getId());
 									if (s != null)
@@ -5110,14 +4727,10 @@ public abstract class BaseAssignmentService implements AssignmentService, Entity
 										rv.add(u.getId());
 									}
 						        }
-						        catch (Exception e)
-						        {
-						        	// exception
-						        }
 						        finally
 						        {
 						        	// clear the permission
-						        	SecurityService.popAdvisor();
+						        	securityService.popAdvisor(securityAdvisor);
 						        }
 							}
 						}
@@ -6380,7 +5993,7 @@ public abstract class BaseAssignmentService implements AssignmentService, Entity
 
 				// check SECURE_ALL_GROUPS - if not, check if the assignment has groups or not
 				// TODO: the last param needs to be a ContextService.getRef(ref.getContext())... or a ref.getContextAuthzGroup() -ggolden
-				if ((userId == null) || ((!SecurityService.isSuperUser(userId)) && (!SecurityService.unlock(userId, SECURE_ALL_GROUPS, SiteService.siteReference(ref.getContext())))))
+				if ((userId == null) || ((!securityService.isSuperUser(userId)) && (!securityService.unlock(userId, SECURE_ALL_GROUPS, SiteService.siteReference(ref.getContext())))))
 				{
 					// get the channel to get the message to get group information
 					// TODO: check for efficiency, cache and thread local caching usage -ggolden
@@ -11563,14 +11176,15 @@ public abstract class BaseAssignmentService implements AssignmentService, Entity
 					
 					// return student score from Gradebook
 					String userId = m_submitterId;
+					SecurityAdvisor securityAdvisor = new MySecurityAdvisor(
+										SessionManager.getCurrentSessionUserId(), 
+										new ArrayList<String>(Arrays.asList("gradebook.gradeAll", "gradebook.gradeSection", "gradebook.editAssignments", "gradebook.viewOwnGrades")),
+										gradebookUid);
 					try
 					{
 						// add the grade permission ("gradebook.gradeAll", "gradebook.gradeSection", "gradebook.editAssignments", or "gradebook.viewOwnGrades") in order to use g.getAssignmentScoreString()
-						SecurityService.pushAdvisor(
-								new MySecurityAdvisor(
-										SessionManager.getCurrentSessionUserId(), 
-										new ArrayList<String>(Arrays.asList("gradebook.gradeAll", "gradebook.gradeSection", "gradebook.editAssignments", "gradebook.viewOwnGrades")),
-										gradebookUid));
+						securityService.pushAdvisor(securityAdvisor);
+
 					
 						if (g.isGradebookDefined(gradebookUid) && g.isAssignmentDefined(gradebookUid, gAssignmentName))
 						{
@@ -11588,7 +11202,7 @@ public abstract class BaseAssignmentService implements AssignmentService, Entity
 					finally
 					{
 						// remove advisor
-						SecurityService.popAdvisor();
+						securityService.popAdvisor(securityAdvisor);
 					}
 				}
 			}
@@ -13534,106 +13148,6 @@ public abstract class BaseAssignmentService implements AssignmentService, Entity
 
 	}// SubmissionStorageUser
 
-	/**********************************************************************************************************************************************************************************************************************************************************
-	 * CacheRefresher implementations (no container)
-	 *********************************************************************************************************************************************************************************************************************************************************/
-
-	/**********************************************************************************************************************************************************************************************************************************************************
-	 * AssignmentCacheRefresher implementation
-	 *********************************************************************************************************************************************************************************************************************************************************/
-
-	protected class AssignmentCacheRefresher implements CacheRefresher
-	{
-		/**
-		 * Get a new value for this key whose value has already expired in the cache.
-		 * 
-		 * @param key
-		 *        The key whose value has expired and needs to be refreshed.
-		 * @param oldValue
-		 *        The old expired value of the key.
-		 * @return a new value for use in the cache for this key; if null, the entry will be removed.
-		 */
-		public Object refresh(Object key, Object oldValue, Event event)
-		{
-
-			// key is a reference, but our storage wants an id
-			String id = assignmentId((String) key);
-
-			// get whatever we have from storage for the cache for this vale
-			Assignment assignment = m_assignmentStorage.get(id);
-
-			M_log.debug(this + " AssignmentCacheRefresher:refresh(): " + key + " : " + id);
-
-			return assignment;
-
-		} // refresh
-
-	}// AssignmentCacheRefresher
-
-	/**********************************************************************************************************************************************************************************************************************************************************
-	 * AssignmentContentCacheRefresher implementation
-	 *********************************************************************************************************************************************************************************************************************************************************/
-
-	protected class AssignmentContentCacheRefresher implements CacheRefresher
-	{
-		/**
-		 * Get a new value for this key whose value has already expired in the cache.
-		 * 
-		 * @param key
-		 *        The key whose value has expired and needs to be refreshed.
-		 * @param oldValue
-		 *        The old expired value of the key.
-		 * @return a new value for use in the cache for this key; if null, the entry will be removed.
-		 */
-		public Object refresh(Object key, Object oldValue, Event event)
-		{
-
-			// key is a reference, but our storage wants an id
-			String id = contentId((String) key);
-
-			// get whatever we have from storage for the cache for this vale
-			AssignmentContent content = m_contentStorage.get(id);
-
-			M_log.debug(this + " AssignmentContentCacheRefresher: refresh(): " + key + " : " + id);
-
-			return content;
-
-		} // refresh
-
-	}// AssignmentContentCacheRefresher
-
-	/**********************************************************************************************************************************************************************************************************************************************************
-	 * AssignmentSubmissionCacheRefresher implementation
-	 *********************************************************************************************************************************************************************************************************************************************************/
-
-	protected class AssignmentSubmissionCacheRefresher implements CacheRefresher
-	{
-		/**
-		 * Get a new value for this key whose value has already expired in the cache.
-		 * 
-		 * @param key
-		 *        The key whose value has expired and needs to be refreshed.
-		 * @param oldValue
-		 *        The old expired value of the key.
-		 * @return a new value for use in the cache for this key; if null, the entry will be removed.
-		 */
-		public Object refresh(Object key, Object oldValue, Event event)
-		{
-
-			// key is a reference, but our storage wants an id
-			String id = submissionId((String) key);
-
-			// get whatever we have from storage for the cache for this vale
-			AssignmentSubmission submission = m_submissionStorage.get(id);
-
-			M_log.debug(this + " AssignmentSubmissionCacheRefresher:refresh(): " + key + " : " + id);
-
-			return submission;
-
-		} // refresh
-
-	}// AssignmentSubmissionCacheRefresher
-	
 
 	private class UserComparator implements Comparator
         {
@@ -13836,14 +13350,14 @@ public abstract class BaseAssignmentService implements AssignmentService, Entity
 					String msgBody = assignment.getContent().getInstructions();
 					StringBuffer msgBodyPreMigrate = new StringBuffer(msgBody);
 					msgBody = LinkMigrationHelper.migrateAllLinks(entrySet, msgBody);
+					SecurityAdvisor securityAdvisor = new MySecurityAdvisor(SessionManager.getCurrentSessionUserId(), 
+							new ArrayList<String>(Arrays.asList(SECURE_UPDATE_ASSIGNMENT_CONTENT)),
+							assignment.getContentReference());
 						try
 						{
 						if(!msgBody.equals(msgBodyPreMigrate.toString())){
 							// add permission to update assignment content
-							SecurityService.pushAdvisor(
-				            		new MySecurityAdvisor(SessionManager.getCurrentSessionUserId(), 
-				            							new ArrayList<String>(Arrays.asList(SECURE_UPDATE_ASSIGNMENT_CONTENT)),
-				            							assignment.getContentReference()));
+							securityService.pushAdvisor(securityAdvisor);
 							
 							AssignmentContentEdit cEdit = editAssignmentContent(assignment.getContentReference());
 							cEdit.setInstructions(msgBody);
@@ -13858,7 +13372,7 @@ public abstract class BaseAssignmentService implements AssignmentService, Entity
 						finally
 						{
 							// remove advisor
-							SecurityService.popAdvisor();
+							securityService.popAdvisor(securityAdvisor);
 						}
 					}					
 				catch(Exception ee)
@@ -13888,13 +13402,13 @@ public abstract class BaseAssignmentService implements AssignmentService, Entity
 					Assignment assignment = (Assignment) assignmentsIter.next();
 					String assignmentId = assignment.getId();
 					
+					SecurityAdvisor securityAdvisor = new MySecurityAdvisor(SessionManager.getCurrentSessionUserId(), 
+							new ArrayList<String>(Arrays.asList(SECURE_UPDATE_ASSIGNMENT, SECURE_REMOVE_ASSIGNMENT)),
+							assignmentId);
 					try 
 					{
 						// advisor to allow edit and remove assignment
-						SecurityService.pushAdvisor(
-			            		new MySecurityAdvisor(SessionManager.getCurrentSessionUserId(), 
-			            							new ArrayList<String>(Arrays.asList(SECURE_UPDATE_ASSIGNMENT, SECURE_REMOVE_ASSIGNMENT)),
-			            							assignmentId));
+						securityService.pushAdvisor(securityAdvisor);
 						
 						AssignmentEdit aEdit = editAssignment(assignmentId);
 						
@@ -13908,7 +13422,7 @@ public abstract class BaseAssignmentService implements AssignmentService, Entity
 					finally
 					{
 						// remove SecurityAdvisor
-						SecurityService.popAdvisor();
+						securityService.popAdvisor(securityAdvisor);
 					}
 				}
 			}
