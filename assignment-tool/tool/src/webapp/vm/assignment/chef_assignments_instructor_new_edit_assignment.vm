@@ -1141,7 +1141,13 @@ $(document).ready(function() {
 			#end
 		#end
 		#if ($size == 0)
-			<p class="instruction">$tlang.getString("gen.noatt")</p>
+			<p class="instruction">
+                            #if ($value_SubmissionType == 5)
+                                $tlang.getString("gen.noatt.single")
+                            #else
+                                $tlang.getString("gen.noatt")
+                            #end
+                        </p>
 
 			<div class="act">
 				<input type="button" name="attach" value="$tlang.getString('gen.addatt')" onclick="javascript:document.newAssignmentForm.onsubmit();document.getElementById('option').value='attach';document.newAssignmentForm.submit();return false;"/>
@@ -1277,7 +1283,13 @@ $(document).ready(function() {
 				#end
 			#end
 			#if ($size == 0)
-				<p class="instruction">$tlang.getString("gen.noatt")</p>
+				<p class="instruction">
+                                    #if ($value_SubmissionType == 5)
+                                        $tlang.getString("gen.noatt.single")
+                                    #else
+                                        $tlang.getString("gen.noatt")
+                                    #end
+                                </p>
 			#else
 				<ul class="attachList indnt1">
 					#foreach ($attachment in $modelanswer_attachments) 
@@ -1451,7 +1463,13 @@ $(document).ready(function() {
 				#end
 			#end
 			#if ($size == 0)
-				<p class="instruction">$tlang.getString("gen.noatt")</p>
+				<p class="instruction">
+                                    #if ($value_SubmissionType == 5)
+                                        $tlang.getString("gen.noatt.single")
+                                    #else
+                                        $tlang.getString("gen.noatt")
+                                    #end
+                                </p>
 			#else
 				<ul class="attachList indnt1">
 					#foreach ($attachment in $allPurpose_attachments) 
