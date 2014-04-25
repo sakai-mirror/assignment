@@ -506,7 +506,7 @@ function allowClick(object)
 											#set($for=$for.concat(", "))
 										#end
 										#if($!groupFound)
-											#set($for= $for.concat($validator.escapeHtml($groupFound.Title)))
+											#set($for= $for.concat($groupFound.Title))
 										#else
 											#set($for= $for.concat($group))
 										#end
