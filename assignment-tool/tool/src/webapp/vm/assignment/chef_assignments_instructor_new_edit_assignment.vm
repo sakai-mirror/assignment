@@ -437,7 +437,7 @@ $(document).ready(function() {
 			<label for="subType">
 				$tlang.getString("gen.stusub")
 			</label>
-			<select name="$name_SubmissionType" id="subType" title="$tlang.getString("gen.subformat")" onchange="if(document.getElementById('subType').value != 4){document.getElementById('tempAllowRes').style.display = 'block';resizeFrame();}else{document.getElementById('tempAllowRes').style.display = 'none';document.getElementById('allowResToggle').checked=false;document.getElementById('allowResubmitNumber').style.display = 'none';document.getElementById('allowResubmitTime').style.display = 'none';}" /> >
+			<select name="$name_SubmissionType" id="subType" title="$tlang.getString("gen.subformat")" onchange="var useReview = document.getElementById('$name_UseReviewService'); var lblUseReview = document.getElementById('lblReviewService'); var reviewSwitchNe1 = document.getElementById('review.switch.ne.1'); var reviewSwitchNe2 = document.getElementById('review.switch.ne.2'); if (document.getElementById('subType').value != 4) { reviewSwitchNe1.style.display='none'; lblReviewService.className=''; reviewSwitchNe2.style.display='none'; useReview.disabled=false; document.getElemenbById('tempAllowRes').style.display = 'block'; resizeFrame(); } else{ if (useReview.checked) { reviewSwitchNe2.style.removeProperty('display'); toggleReviewServiceOptions(this.checked); } useReview.checked=false; useReview.disabled=true; lblUseReview.className='instruction'; reviewSwitchNe1.style.removeProperty('display'); document.getElementById('tempAllowRes').style.display = 'none'; document.getElementById('allowResToggle').checked=false; document.getElementById('allowResubmitNumber').style.display = 'none'; document.getElementById('allowResubmitTime').style.display = 'none'; }" /> >
 				#foreach ($i in [1..$!value_totalSubmissionTypes])
 					#if ($i == $value_SubmissionType)
 						<option value="$i" selected="selected">$submissionTypeTable.get($i)</option>
@@ -446,6 +446,7 @@ $(document).ready(function() {
 					#end
 				#end
 			</select>
+			<div id="review.switch.ne.2" class="information" style="display:none;">$reviewSwitchNe2</div>
 		</p>
 		##show it only for those assignments not of type non-electronic submission
 		#if($!value_allowResubmitNumber && $value_SubmissionType != 4)
@@ -593,16 +594,34 @@ $(document).ready(function() {
 				<h4>
 				$reviewServiceName
 				</h4>
-				<div class="checkbox  indnt2">
-					#if ($!value_UseReviewService.equals("true"))
-						<input id="$name_UseReviewService" name="$name_UseReviewService" type="checkbox" value="true" checked="checked" onclick="toggleReviewServiceOptions(this.checked)"/>
-					#else
-						<input id="$name_UseReviewService" name="$name_UseReviewService" type="checkbox" value="true"  onclick="toggleReviewServiceOptions(this.checked)"/>
-					#end
-					<label for="$name_UseReviewService">
-						$reviewServiceUse
-					</label>
-				</div>
+				#if (4 == $value_SubmissionType)
+					<div id="review.switch.ne.1" class="information">$reviewSwitchNe1</div>
+					<div class="checkbox  indnt2">
+						#if ($!value_UseReviewService.equals("true"))
+							<input id="$name_UseReviewService" name="$name_UseReviewService" type="checkbox" value="true" checked="checked" onclick="toggleReviewServiceOptions(this.checked)" disabled/>
+						#else
+							<input id="$name_UseReviewService" name="$name_UseReviewService" type="checkbox" value="true"  onclick="toggleReviewServiceOptions(this.checked)" disabled/>
+						#end
+
+						<label id="lblReviewService" for="$name_UseReviewService" class="instruction">
+							$reviewServiceUse
+						</label>
+					</div>
+				#else
+					<div id="review.switch.ne.1" class="information" style="display:none;">$reviewSwitchNe1</div>
+					<div class="checkbox indnt2">
+						#if($!value_UseReviewService.equals("true"))
+							<input id="$name_UseReviewService" name="$name_UseReviewService" type="checkbox" value="true" checked="checked" onclick="toggleReviewServiceOptions(this.checked)"/>
+						#else
+							<input id="$name_UseReviewService" name="$name_UseReviewService" type="checkbox" value="true" onclick="toggleReviewServiceOptions(this.checked)"/>
+						#end
+
+						<label id="lblReviewService" for="$name_UseReviewService">
+							$reviewServiceUse
+						</label>
+					</div>
+				#end
+
 				#if ($!value_UseReviewService.equals("true"))
 					<div id="reviewServiceOptions" class="indnt3">
 				#else
