@@ -72,7 +72,7 @@ function enableSubmitUnlessNoFile(checkForFile)
 	if (checkForFile)
 	{
 		var btnClonableUpload = document.getElementById('clonableUpload');
-		if (btnClonableUpload.value == "")
+		if (btnClonableUpload && btnClonableUpload.value == "")
 		{
 			doEnable = false;
 		}
