@@ -592,7 +592,7 @@ $(document).ready(function() {
 		#if ($allowReviewService)
 			<div style="display:block">
 				<h4>
-				$reviewServiceName
+				$reviewServiceTitle
 				</h4>
 				#if (4 == $value_SubmissionType)
 					<div id="review.switch.ne.1" class="information">$reviewSwitchNe1</div>
@@ -637,7 +637,6 @@ $(document).ready(function() {
 							$tlang.getString("review.allow") 
 						</label>
 					</div>
-					<br/>
 					<!-- Start TII custom options -->
 					#if($reviewServiceName.equals("Turnitin"))
 					$tlang.getString("content_review.note")

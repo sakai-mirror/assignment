@@ -930,7 +930,8 @@ public class AssignmentAction extends PagedResourceActionII
 			String reviewServiceUse = rb.getFormattedMessage("review.use", new Object[]{reviewServiceName});
 			String reviewServiceNonElectronic1 = rb.getFormattedMessage("review.switch.ne.1", reviewServiceName);
 			String reviewServiceNonElectronic2 = rb.getFormattedMessage("review.switch.ne.2", reviewServiceName);
-			context.put("reviewServiceName", reviewServiceTitle);
+			context.put("reviewServiceName", reviewServiceName);
+			context.put("reviewServiceTitle", reviewServiceTitle);
 			context.put("reviewServiceUse", reviewServiceUse);
 			context.put("reviewIndicator", rb.getFormattedMessage("review.contentReviewIndicator", new Object[]{reviewServiceName}));
 			context.put("reviewSwitchNe1", reviewServiceNonElectronic1);
