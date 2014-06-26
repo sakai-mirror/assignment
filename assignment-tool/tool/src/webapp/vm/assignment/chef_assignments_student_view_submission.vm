@@ -341,7 +341,7 @@ function enableSubmitUnlessNoFile(checkForFile)
 				#if($!submitted && $!timeSubmitted && $allowReviewService && $assignment.getContent().AllowReviewService && $assignment.getContent().AllowStudentViewReport)
 					<tr>
 						<th>
-							$tlang.getString("review.report")
+							$reviewServiceName&nbsp;$tlang.getString("review.report")
 						</th>
 							<td>
 								#set($reviewResults=$submission.ContentReviewResults)

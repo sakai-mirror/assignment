@@ -626,10 +626,21 @@ $(document).ready(function() {
 					<div id="reviewServiceOptions" class="indnt3">
 				#else
 					<div id="reviewServiceOptions" style="display:none" class="indnt3">
-				#end
-				
+				#end				
+					<div class="checkbox">
+						#if ($!value_AllowStudentView.equals("true"))
+							<input id="$name_AllowStudentView" name="$name_AllowStudentView" type="checkbox" value="true" checked="checked" />
+						#else
+							<input id="$name_AllowStudentView" name="$name_AllowStudentView" type="checkbox" value="true" />
+						#end
+						<label for="$name_AllowStudentView">
+							$tlang.getString("review.allow") 
+						</label>
+					</div>
+					<br/>
+					<!-- Start TII custom options -->
+					#if($reviewServiceName.equals("Turnitin"))
 					$tlang.getString("content_review.note")
-					
 					$tlang.getString("review.submit.papers.repository")
 					<br/>
 					<div class="indnt1">
@@ -653,17 +664,6 @@ $(document).ready(function() {
 						#if($show_NEW_ASSIGNMENT_REVIEW_SERVICE_REPORT.contains($name_NEW_ASSIGNMENT_REVIEW_SERVICE_REPORT_DUE))
 							<input type="radio" name="$name_NEW_ASSIGNMENT_REVIEW_SERVICE_REPORT_RADIO" value="$name_NEW_ASSIGNMENT_REVIEW_SERVICE_REPORT_DUE" #if($value_NEW_ASSIGNMENT_REVIEW_SERVICE_REPORT_RADIO.equals("$name_NEW_ASSIGNMENT_REVIEW_SERVICE_REPORT_DUE"))checked#end/>$tlang.getString("review.originality.reports.due")<br/>
 						#end
-					</div>
-					<br/>
-					<div class="checkbox">
-						#if ($!value_AllowStudentView.equals("true"))
-							<input id="$name_AllowStudentView" name="$name_AllowStudentView" type="checkbox" value="true" checked="checked" />
-						#else
-							<input id="$name_AllowStudentView" name="$name_AllowStudentView" type="checkbox" value="true" />
-						#end
-						<label for="$name_AllowStudentView">
-							$tlang.getString("review.allow") 
-						</label>
 					</div>
 					<br/>
 					#if($show_NEW_ASSIGNMENT_REVIEW_SERVICE_EXCLUDE_BIBLIOGRAPHIC || $show_NEW_ASSIGNMENT_REVIEW_SERVICE_EXCLUDE_QUOTED || $show_NEW_ASSIGNMENT_REVIEW_SERVICE_EXCLUDE_SMALL_MATCHES)
@@ -787,7 +787,8 @@ $(document).ready(function() {
 						</div>
 						#end
 					</div>
-				</div>
+				<!-- End TII custom options -->
+				#end
 			</div>
 		#end
 		#if ($!withGrade && $!withGradebook)

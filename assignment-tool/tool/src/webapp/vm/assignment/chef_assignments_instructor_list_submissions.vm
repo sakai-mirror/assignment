@@ -570,7 +570,7 @@
 					#if ($allowReviewService && $assignment.getContent().AllowReviewService)
 						<th id="reviewService">
 							<a href="#" onclick="location='#toolLinkParam("AssignmentAction" "doSort_grade_submission" "criteria=$!sort_submitReview")'; return false;" onkeypress="location='#toolLinkParam("AssignmentAction" "doSort_grade_submission" "criteria=$!sort_submitReview")'; return false;" title="$tlang.getString("gen.sorbyreview")">
-								$tlang.getString("gen.rev")
+								$reviewServiceName
 								#if ($sortedBy.equals($!sort_submitReview)) 
 									#if ($sortedAsc.equals("true")) 
 										<img id="sort_ascending_review" src = "#imageLink("sakai/sortascending.gif")" border="0" alt="$tlang.getString("gen.sorasc")" /> 

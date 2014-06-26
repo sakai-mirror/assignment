@@ -12,13 +12,13 @@ function handleReportsTriangleDisclosure(btn)
 	var reportsDiv = document.getElementById("reportsDiv");
 	if (reportsExpanded)
 	{
-		btn.src="#imagelink("sakai/expand.gif")";
+		btn.src="/library/image/sakai/expand.gif";
 		btn.alt="$tlang.getString('review.report.expand')";
 		reportsDiv.style.display="none";
 	}
 	else
 	{
-		btn.src="#imageLink("sakai/collapse.gif")";
+		btn.src="/library/image/sakai/collapse.gif";
 		btn.alt="$tlang.getString('review.report.collapse')";
 		reportsDiv.style.display="block";
 		resizeFrame();
@@ -156,7 +156,7 @@ function handleReportsTriangleDisclosure(btn)
 				#if($allowReviewService && $assignment.getContent().AllowReviewService && $assignment.getContent().AllowStudentViewReport)
 					<tr>
 						<th>
-							$tlang.getString("review.report")
+							$reviewServiceName&nbsp;$tlang.getString("review.report")
 						</th>
 							<td>
 							#if (!$submission)
@@ -165,7 +165,7 @@ function handleReportsTriangleDisclosure(btn)
 								#set($reviewResults=$submission.ContentReviewResults)
 								#if ($reviewResults.size() >= 3)
 									<div class="discTria">
-										<input class="disclosureTriangle" type="image" onclick="handleReportsTriangleDisclosure(this); return false;" src="#imagelink("sakai/expand.gif")" alt="$tlang.getString('review.report.expand')"/>
+										<input class="disclosureTriangle" type="image" onclick="handleReportsTriangleDisclosure(this); return false;" src="/library/image/sakai/expand.gif" alt="$tlang.getString('review.report.expand')"/>
 										## TODO: reconsider for i18n
 										$reviewResults.size() $tlang.getString("review.reports")
 									</div>

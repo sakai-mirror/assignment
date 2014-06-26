@@ -10004,7 +10004,7 @@ public abstract class BaseAssignmentService implements AssignmentService, Entity
                         return -2;
                     }
 
-					int score = contentReviewService.getReviewScore(contentId);
+					int score = contentReviewService.getReviewScore(contentId, getAssignment().getReference(), getSubmitterId());
 					m_reviewScore = score;
 					M_log.debug(this + " getReviewScore CR returned a score of: " + score);
 					return score;
@@ -10015,10 +10015,9 @@ public abstract class BaseAssignmentService implements AssignmentService, Entity
 					try {
 						
 							M_log.debug(this + " getReviewScore Item is not in queue we will try add it");
-							String contentId = cr.getId();
 							String userId = this.getSubmitterId();
                                                         try {
-								contentReviewService.queueContent(userId, null, getAssignment().getReference(), contentId);
+								contentReviewService.queueContent(userId, this.getContext(), getAssignment().getReference(), Arrays.asList(cr));
 							}
 							catch (QueueException qe) {
 								M_log.warn(" getReviewScore Unable to queue content with content review Service: " + qe.getMessage());
@@ -10077,7 +10076,7 @@ public abstract class BaseAssignmentService implements AssignmentService, Entity
 					return -2;
 				}
 
-				int score = contentReviewService.getReviewScore(contentId);
+				int score = contentReviewService.getReviewScore(contentId, getAssignment().getReference(), getSubmitterId());
 				// TODO: delete the following line if there will be no repercussions:
 				m_reviewScore = score;
 				M_log.debug(this + " getReviewScore(ContentResource) CR returned a score of: " + score);
@@ -10089,11 +10088,10 @@ public abstract class BaseAssignmentService implements AssignmentService, Entity
 				try
 				{
 					M_log.debug(" getReviewScore(ContentResource) Item is not in queue we will try to add it");
-					String contentId = cr.getId();
 					String userId = (String)this.getSubmitterId();
 					try
 					{
-						contentReviewService.queueContent(userId, null, getAssignment().getReference(), contentId);
+						contentReviewService.queueContent(userId, this.getContext(), getAssignment().getReference(), Arrays.asList(cr));
 					}
 					catch (QueueException qe)
 					{
@@ -10132,9 +10130,9 @@ public abstract class BaseAssignmentService implements AssignmentService, Entity
 					String contentId = cr.getId();
 					
 					if (allowGradeSubmission(getReference()))
-						return contentReviewService.getReviewReportInstructor(contentId);
+						return contentReviewService.getReviewReportInstructor(contentId, getAssignment().getReference());
 					else
-						return contentReviewService.getReviewReportStudent(contentId);
+						return contentReviewService.getReviewReportStudent(contentId, getAssignment().getReference());
 					
 				} catch (Exception e) {
 					M_log.warn(":getReviewReport() " + e.getMessage());
@@ -10163,11 +10161,11 @@ public abstract class BaseAssignmentService implements AssignmentService, Entity
 				String contentId = cr.getId();
 				if (allowGradeSubmission(getReference()))
 				{
-					return contentReviewService.getReviewReportInstructor(contentId);
+					return contentReviewService.getReviewReportInstructor(contentId, getAssignment().getReference());
 				}
 				else
 				{
-					return contentReviewService.getReviewReportStudent(contentId);
+					return contentReviewService.getReviewReportStudent(contentId, getAssignment().getReference());
 				}
 			}
 			catch (Exception e)
@@ -12358,15 +12356,10 @@ public abstract class BaseAssignmentService implements AssignmentService, Entity
 			try {
 				//SAK-26322	--bbailla2
 				List<ContentResource> resources = getAllAcceptableAttachments(attachments);
-				Assignment ass = this.getAssignment();
+				Assignment ass = this.getAssignment();			
 				if (ass != null)
 				{
-					Iterator<ContentResource> itResources = resources.iterator();
-					while (itResources.hasNext())
-					{
-						ContentResource current = itResources.next();
-						contentReviewService.queueContent(null, null, ass.getReference(), current.getId());
-					}
+					contentReviewService.queueContent(this.getSubmitterId(), this.getContext(), ass.getReference(), resources);
 				}
 				else
 				{

@@ -5478,8 +5478,8 @@ public class AssignmentAction extends PagedResourceActionII
 				// SAK-23817: return to the Assignments List by Student
 				state.setAttribute(FROM_VIEW, MODE_INSTRUCTOR_VIEW_STUDENTS_ASSIGNMENT);
 				try {
-					submitter = u;
 					u = UserDirectoryService.getUser(studentId);
+					submitter = u;
 				} catch (UserNotDefinedException ex1) {
 					M_log.warn("Unable to find user with ID [" + studentId + "]");
 					submitter = null;
@@ -5925,7 +5925,7 @@ public class AssignmentAction extends PagedResourceActionII
 		String resourceId = sb_resourceId.toString();
 
 		ResourcePropertiesEdit inlineProps = m_contentHostingService.newResourceProperties();
-		inlineProps.addProperty(ResourceProperties.PROP_DISPLAY_NAME, resourceId);
+		inlineProps.addProperty(ResourceProperties.PROP_DISPLAY_NAME, rb.getString("submission.inline"));
 		inlineProps.addProperty(ResourceProperties.PROP_DESCRIPTION, resourceId);
 		inlineProps.addProperty(AssignmentSubmission.PROP_INLINE_SUBMISSION, "true");
 
@@ -5951,7 +5951,12 @@ public class AssignmentAction extends PagedResourceActionII
 			m_securityService.pushAdvisor(sa);
 			ContentResource attachment = m_contentHostingService.addAttachmentResource(resourceId, siteId, "Assignments", contentType, contentStream, inlineProps);
 			// TODO: need to put this file in some kind of list to improve performance with web service impls of content-review service	--bbailla2
-			contentReviewService.queueContent(null, null, edit.getAssignment().getReference(), attachment.getId());
+			String contentUserId = UserDirectoryService.getCurrentUser().getId();
+			if(submitter != null){
+				//this is a submission on behalf of a student, so grab that student's id instead
+				contentUserId = submitter.getId();
+			}
+			contentReviewService.queueContent(contentUserId, siteId, edit.getAssignment().getReference(), Arrays.asList(attachment));
 
 			try
 			{
