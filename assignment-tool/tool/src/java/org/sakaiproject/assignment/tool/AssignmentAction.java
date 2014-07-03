@@ -5944,7 +5944,13 @@ public class AssignmentAction extends PagedResourceActionII
 		{
 			public SecurityAdvice isAllowed(String userId, String function, String reference)
 			{
-				return function.equals(m_contentHostingService.AUTH_RESOURCE_ADD)?SecurityAdvice.ALLOWED:SecurityAdvice.PASS;
+				if(function.equals(m_contentHostingService.AUTH_RESOURCE_ADD)){
+					return SecurityAdvice.ALLOWED;
+				}else if(function.equals(m_contentHostingService.AUTH_RESOURCE_WRITE_ANY)){
+					return SecurityAdvice.ALLOWED;
+				}else{
+					return SecurityAdvice.PASS;
+				}
 			}
 		};
 		try
