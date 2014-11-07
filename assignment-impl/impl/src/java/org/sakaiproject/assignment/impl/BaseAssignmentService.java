@@ -4654,6 +4654,12 @@ public abstract class BaseAssignmentService implements AssignmentService, Entity
 		{
 			Assignment a = getAssignment(aRef);
 			
+			// SAK-27824
+			if (assignmentUsesAnonymousGrading(a)) {
+				bSearchFilterOnly = false;
+				searchString = "";
+			}
+			
 			if (a != null)
 			{	
 				if (bSearchFilterOnly)
@@ -5585,7 +5591,36 @@ public abstract class BaseAssignmentService implements AssignmentService, Entity
 		}
 	}
 
+	/*
+	 * SAK-17606 - If the assignment uses anonymous grading returns true, else false
+	 * 
+	 * Params: AssignmentSubmission s
+	 */
+	private boolean assignmentUsesAnonymousGrading(AssignmentSubmission s) {
+		return assignmentUsesAnonymousGrading(s.getAssignment());
+	}
 
+	/*
+	 * If the assignment uses anonymous grading returns true, else false
+	 * 
+	 * SAK-27824
+	 * 
+	 * Params: Assignment a
+	 */
+	@Override
+	public boolean assignmentUsesAnonymousGrading(Assignment a) {
+		ResourceProperties properties = a.getProperties();
+			try {
+					return properties.getBooleanProperty(NEW_ASSIGNMENT_CHECK_ANONYMOUS_GRADING);
+			}
+			catch (EntityPropertyNotDefinedException e) {
+					M_log.warn("Entity Property " + NEW_ASSIGNMENT_CHECK_ANONYMOUS_GRADING + " not defined " + e.getMessage());
+			}
+			catch (EntityPropertyTypeException e) {
+					M_log.warn("Entity Property " + NEW_ASSIGNMENT_CHECK_ANONYMOUS_GRADING + " type not defined " + e.getMessage());
+			}
+			return false;
+	}
 
 	private void zipAttachments(ZipOutputStream out, String submittersName, String sSubAttachmentFolder, List attachments) {
 		int attachedUrlCount = 0;
