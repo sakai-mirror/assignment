@@ -2036,8 +2036,8 @@ public class AssignmentAction extends PagedResourceActionII
 		}
 
 		List assignments = prepPage(state);
-		context.put("assignments", assignments.iterator());
 
+		context.put("assignments", assignments.iterator());
 		// allow add assignment?
 		Map<String, List<PeerAssessmentItem>> peerAssessmentItemsMap = new HashMap<String, List<PeerAssessmentItem>>();
 		boolean allowAddAssignment = AssignmentService.allowAddAssignment(contextString);
@@ -4002,25 +4002,13 @@ public class AssignmentAction extends PagedResourceActionII
 
 		// get the realm and its member
 		List studentMembers = new ArrayList();
-		List assignments = AssignmentService.getListAssignmentsForContext(contextString);
-
-		boolean hasAtLeastOneAnonAssigment = false;
-		for( Object obj : assignments)
-		{
-			Assignment assignment = (Assignment) obj;
-			if( AssignmentService.getInstance().assignmentUsesAnonymousGrading( assignment ) )
-			{
-				hasAtLeastOneAnonAssigment = true;
-				break;
-			}
-		}
-		context.put( "hasAtLeastOneAnonAssignment", hasAtLeastOneAnonAssigment );
-
+		Iterator assignments = AssignmentService.getAssignmentsForContext(contextString);
+	    
 		//No duplicates
 		Set allowSubmitMembers = new HashSet();
-		for( Object obj : assignments)
+		while (assignments.hasNext())
 		{
-			Assignment a = (Assignment) obj;
+			Assignment a = (Assignment) assignments.next();
 			List<String> submitterIds = AssignmentService.getSubmitterIdList(searchFilterOnly.toString(), allOrOneGroup, search, a.getReference(), contextString);
 			allowSubmitMembers.addAll(submitterIds);
 		}
@@ -4103,25 +4091,11 @@ public class AssignmentAction extends PagedResourceActionII
 	 */
 	protected String build_instructor_report_submissions(VelocityPortlet portlet, Context context, RunData data, SessionState state)
 	{
-		List submissions = prepPage( state );
-		context.put("submissions", submissions);
-
-		boolean hasAtLeastOneAnonAssigment = false;
-		for( Object obj : submissions )
-		{
-			SubmitterSubmission submission = (SubmitterSubmission) obj;
-			Assignment assignment = submission.getSubmission().getAssignment();
-			if( AssignmentService.getInstance().assignmentUsesAnonymousGrading( assignment ) )
-			{
-				hasAtLeastOneAnonAssigment = true;
-				break;
-			}
-		}
-		context.put( "hasAtLeastOneAnonAssignment", hasAtLeastOneAnonAssigment );
+		context.put("submissions", prepPage(state));
 
 		context.put("sortedBy", (String) state.getAttribute(SORTED_SUBMISSION_BY));
 		context.put("sortedAsc", (String) state.getAttribute(SORTED_SUBMISSION_ASC));
-
+                                
 		context.put("sortedBy_lastName", SORTED_GRADE_SUBMISSION_BY_LASTNAME);
 		context.put("sortedBy_submitTime", SORTED_GRADE_SUBMISSION_BY_SUBMIT_TIME);
 		context.put("sortedBy_grade", SORTED_GRADE_SUBMISSION_BY_GRADE);
