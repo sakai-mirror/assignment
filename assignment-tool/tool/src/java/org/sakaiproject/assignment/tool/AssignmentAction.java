@@ -2226,6 +2226,7 @@ public class AssignmentAction extends PagedResourceActionII
 		// set visible time context variables
                 if (Boolean.valueOf(ServerConfigurationService.getBoolean("assignment.visible.date.enabled", false))) {
                     putTimePropertiesInContext(context, state, "Visible", NEW_ASSIGNMENT_VISIBLEMONTH, NEW_ASSIGNMENT_VISIBLEDAY, NEW_ASSIGNMENT_VISIBLEYEAR, NEW_ASSIGNMENT_VISIBLEHOUR, NEW_ASSIGNMENT_VISIBLEMIN);
+                    context.put(NEW_ASSIGNMENT_VISIBLETOGGLE, ((Boolean) state.getAttribute(NEW_ASSIGNMENT_VISIBLETOGGLE)));
                 }
                 
 		// set due time context variables
@@ -2762,6 +2763,7 @@ public class AssignmentAction extends PagedResourceActionII
                 if (Boolean.valueOf(ServerConfigurationService.getBoolean("assignment.visible.date.enabled", false))) {
                     Time visibleTime = getTimeFromState(state, NEW_ASSIGNMENT_VISIBLEMONTH, NEW_ASSIGNMENT_VISIBLEDAY, NEW_ASSIGNMENT_VISIBLEYEAR, NEW_ASSIGNMENT_VISIBLEHOUR, NEW_ASSIGNMENT_VISIBLEMIN);
                     context.put("value_VisibleDate", visibleTime);
+                    context.put(NEW_ASSIGNMENT_VISIBLETOGGLE, visibleTime!=null);
                 }
 
 		// due time
@@ -5921,9 +5923,10 @@ public class AssignmentAction extends PagedResourceActionII
 		// visible time
 		if (Boolean.valueOf(ServerConfigurationService.getBoolean("assignment.visible.date.enabled", false))) {
 		    if (params.get("allowVisibleDateToggle") == null) {
-		        state.setAttribute(NEW_ASSIGNMENT_VISIBLETOGGLE, true);
+		        state.setAttribute(NEW_ASSIGNMENT_VISIBLETOGGLE, false);
 		    } else {
 		        Time visibleTime = putTimeInputInState(params, state, NEW_ASSIGNMENT_VISIBLEMONTH, NEW_ASSIGNMENT_VISIBLEDAY, NEW_ASSIGNMENT_VISIBLEYEAR, NEW_ASSIGNMENT_VISIBLEHOUR, NEW_ASSIGNMENT_VISIBLEMIN, "newassig.visdat");
+		        state.setAttribute(NEW_ASSIGNMENT_VISIBLETOGGLE, true);
 		    }
 
 		}
@@ -6933,7 +6936,7 @@ public class AssignmentAction extends PagedResourceActionII
 			// visible time
 			Time visibleTime = null;
                         if (Boolean.valueOf(ServerConfigurationService.getBoolean("assignment.visible.date.enabled", false))) {
-                             if (state.getAttribute(NEW_ASSIGNMENT_VISIBLETOGGLE) == null)
+                             if (((Boolean) state.getAttribute(NEW_ASSIGNMENT_VISIBLETOGGLE)))
                                  visibleTime = getTimeFromState(state, NEW_ASSIGNMENT_VISIBLEMONTH, NEW_ASSIGNMENT_VISIBLEDAY, NEW_ASSIGNMENT_VISIBLEYEAR, NEW_ASSIGNMENT_VISIBLEHOUR, NEW_ASSIGNMENT_VISIBLEMIN);
                         }
 
@@ -8586,7 +8589,7 @@ public class AssignmentAction extends PagedResourceActionII
 				
                                 if (Boolean.valueOf(ServerConfigurationService.getBoolean("assignment.visible.date.enabled", false))) {
                                      putTimePropertiesInState(state, a.getVisibleTime(), NEW_ASSIGNMENT_VISIBLEMONTH, NEW_ASSIGNMENT_VISIBLEDAY, NEW_ASSIGNMENT_VISIBLEYEAR, NEW_ASSIGNMENT_VISIBLEHOUR, NEW_ASSIGNMENT_VISIBLEMIN);
-                                 
+                                   	 state.setAttribute(NEW_ASSIGNMENT_VISIBLETOGGLE, a.getVisibleTime()!=null);
 				}
                                 
 				putTimePropertiesInState(state, a.getOpenTime(), NEW_ASSIGNMENT_OPENMONTH, NEW_ASSIGNMENT_OPENDAY, NEW_ASSIGNMENT_OPENYEAR, NEW_ASSIGNMENT_OPENHOUR, NEW_ASSIGNMENT_OPENMIN);
@@ -10877,6 +10880,7 @@ public class AssignmentAction extends PagedResourceActionII
                     state.setAttribute(NEW_ASSIGNMENT_VISIBLEYEAR, Integer.valueOf(year));
                     state.setAttribute(NEW_ASSIGNMENT_VISIBLEHOUR, Integer.valueOf(12));
                     state.setAttribute(NEW_ASSIGNMENT_VISIBLEMIN, Integer.valueOf(0));
+                    state.setAttribute(NEW_ASSIGNMENT_VISIBLETOGGLE, false);
                 }
                 
 		// set the open time to be 12:00 PM
