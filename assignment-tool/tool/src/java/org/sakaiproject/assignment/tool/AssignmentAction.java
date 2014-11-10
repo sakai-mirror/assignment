@@ -1430,10 +1430,10 @@ public class AssignmentAction extends PagedResourceActionII
 				        }
 				    }
 				}
-
-				// put the resubmit information into context
-				assignment_resubmission_option_into_context(context, state);
 			}
+			
+			// put the resubmit information into context
+			assignment_resubmission_option_into_context(context, state);
 
 			if (assignment.isGroup()) {
 			    context.put("assignmentService", AssignmentService.getInstance());
