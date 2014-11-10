@@ -4000,6 +4000,12 @@ public class AssignmentAction extends PagedResourceActionII
 		String search = (String) state.getAttribute(VIEW_SUBMISSION_SEARCH);
 		Boolean searchFilterOnly = (state.getAttribute(SUBMISSIONS_SEARCH_ONLY) != null && ((Boolean) state.getAttribute(SUBMISSIONS_SEARCH_ONLY)) ? Boolean.TRUE:Boolean.FALSE);
 
+		// Don't search for "Name, ID, or Email" literally
+		if (search != null && search.equals(rb.getString("search_student_instruction")))
+		{
+			search = null;
+		}
+
 		// get the realm and its member
 		List studentMembers = new ArrayList();
 		Iterator assignments = AssignmentService.getAssignmentsForContext(contextString);
@@ -12614,7 +12620,13 @@ public class AssignmentAction extends PagedResourceActionII
 			String allOrOneGroup = (String) state.getAttribute(VIEW_SUBMISSION_LIST_OPTION);
 			String search = (String) state.getAttribute(VIEW_SUBMISSION_SEARCH);
 			Boolean searchFilterOnly = (state.getAttribute(SUBMISSIONS_SEARCH_ONLY) != null && ((Boolean) state.getAttribute(SUBMISSIONS_SEARCH_ONLY)) ? Boolean.TRUE:Boolean.FALSE);
-            
+
+			// Don't search for "Name, ID, or Email" literally
+			if (search != null && search.equals(rb.getString("search_student_instruction")))
+			{
+				search = null;
+			}
+
 		    Boolean has_multiple_groups_for_user = false;
 		    List submissions = new ArrayList();
 
@@ -12711,6 +12723,12 @@ public class AssignmentAction extends PagedResourceActionII
 			String search = (String) state.getAttribute(VIEW_SUBMISSION_SEARCH);
 			String aRef = (String) state.getAttribute(EXPORT_ASSIGNMENT_REF);
 			Boolean searchFilterOnly = (state.getAttribute(SUBMISSIONS_SEARCH_ONLY) != null && ((Boolean) state.getAttribute(SUBMISSIONS_SEARCH_ONLY)) ? Boolean.TRUE:Boolean.FALSE);
+
+			// Don't search for "Name, ID, or Email" literally
+			if (search != null && search.equals(rb.getString("search_student_instruction")))
+			{
+				search = null;
+			}
 			
 			try {
 			    if (AssignmentService.getAssignment(aRef).isGroup()) {
