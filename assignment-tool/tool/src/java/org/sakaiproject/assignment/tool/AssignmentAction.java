@@ -3406,6 +3406,13 @@ public class AssignmentAction extends PagedResourceActionII
 			}
 			
 			List<SubmitterSubmission> userSubmissions = prepPage(state);
+			
+			// attach the assignment to these submissions now to avoid costly lookup for each submission later in the velocity template
+			for (SubmitterSubmission s : userSubmissions)
+			{
+				s.getSubmission().setAssignment(assignment);
+			}
+			
 			state.setAttribute(USER_SUBMISSIONS, userSubmissions);
 			context.put("userSubmissions", state.getAttribute(USER_SUBMISSIONS));
 
