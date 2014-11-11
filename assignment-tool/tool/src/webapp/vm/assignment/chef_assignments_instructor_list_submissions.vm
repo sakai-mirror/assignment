@@ -53,7 +53,7 @@
 
 </script>
 
-#set ($submissionType = $assignment.getContent().getTypeOfSubmission())
+#set ($submissionType = $assignmentContent.getTypeOfSubmission())
 
 <div class="portletBody">
 	<ul class="navIntraTool actionToolBar">
@@ -156,7 +156,7 @@
 		#if($assignment.getAllowPeerAssessment() == true && $assignment.isPeerAssessmentClosed() == false)
 			#set($disableGrade=true)
 		#end
-		#set ($submissionType = $assignment.getContent().getTypeOfSubmission())
+		#set ($submissionType = $assignmentContent.getTypeOfSubmission())
 			#set ($showMsg = false)
 			#set ($showMsg = $!allMsgNumber)
 			#if (!$!showMsg || $showMsg ==0)
@@ -187,18 +187,18 @@
 							#end
 						#end
 				</div>	
-				#set ($gradeType = $assignment.getContent().TypeOfGrade)
+				#set ($gradeType = $typeOfGrade)
 			#end
 			<input type="hidden" name="sakai_csrf_token" value="$sakai_csrf_token" />
 		</form>
-		#set ($submissionType = $assignment.getContent().getTypeOfSubmission())
+		#set ($submissionType = $assignmentContent.getTypeOfSubmission())
 		#set ($showMsg = false)
 		#set ($showMsg = $!allMsgNumber)
 		#if (!$!showMsg || $showMsg ==0)
 		#else
 		<div class="navPanel">
 			<div class="viewNav">
-			#set ($gradeType = $assignment.getContent().TypeOfGrade)
+			#set ($gradeType = $typeOfGrade)
 			#if(!$disableGrade)
 				<form name="defaultGradeForm" class="inlineForm" method="post" action="#toolForm($action)">
 					<input type="hidden" name="$!form_action" value="setScore" />
@@ -551,7 +551,7 @@
 							</a>
 						</th>
 					#end	
-					#if ($allowReviewService && $assignment.getContent().AllowReviewService)
+					#if ($allowReviewService && $assignmentContent.AllowReviewService)
 						<th id="reviewService">
 							<a href="#" onclick="location='#toolLinkParam("AssignmentAction" "doSort_grade_submission" "criteria=$!sort_submitReview")'; return false;" onkeypress="location='#toolLinkParam("AssignmentAction" "doSort_grade_submission" "criteria=$!sort_submitReview")'; return false;" title="$tlang.getString("gen.sorbyreview")">
 								$tlang.getString("gen.rev")
@@ -744,11 +744,11 @@
 							#if ($withGrade)
 								<td headers="grade">
 									#if($!submission)
-										$submission.getGradeDisplay()
+										$submission.getGradeDisplay($typeOfGrade)
 									#end
 								</td>
 							#end	
-							#if ($allowReviewService && $assignment.getContent().AllowReviewService)
+							#if ($allowReviewService && $assignmentContent.AllowReviewService)
 								<td headers="reviewService">
 								 #if ($submission.getReviewScore() == -1)
                                      <div class="alertMessage" >$!submission.getReviewError()</div>
@@ -871,10 +871,10 @@
 			</th>
 			<td>
 				## get gradeScale
-				#set ($gradeScale = $assignment.getContent().getTypeOfGradeString($assignment.getContent().getTypeOfGrade()))
+				#set ($gradeScale = $assignmentContent.getTypeOfGradeString())
 				$gradeScale
 				#if ($!gradeType == 3)
-					($tlang.getString("grade.max") $assignment.getContent().getMaxGradePointDisplay())
+					($tlang.getString("grade.max") $assignmentContent.getMaxGradePointDisplay())
 				#end
 			</td>
 		</tr>
@@ -883,7 +883,7 @@
 				$tlang.getString("gen.honple")
 			</th>
 			<td> 
-				#if ($assignment.getContent().HonorPledge == 1)
+				#if ($assignmentContent.HonorPledge == 1)
 					$tlang.getString("gen.no")
 				#else
 					$tlang.getString("gen.yes")
@@ -892,13 +892,13 @@
 		</tr>
 	</table>	
 	
-	#if ($assignment.getContent().getInstructions().length()==0)
+	#if ($assignmentContent.getInstructions().length()==0)
 	#else
 		<h4>$tlang.getString("gen.assinf")</h4>
-		<div class="textPanel">$validator.escapeHtmlFormattedText($assignment.getContent().getInstructions())</div>
+		<div class="textPanel">$validator.escapeHtmlFormattedText($assignmentContent.getInstructions())</div>
 	#end
 	#set ($size = 0)
-	#set ($attachments = $assignment.getContent().Attachments)
+	#set ($attachments = $assignmentContent.Attachments)
 	#set ($props = false)
 	#foreach ($attachment in $attachments) 
 		#set ($props = $attachment.Properties) 
