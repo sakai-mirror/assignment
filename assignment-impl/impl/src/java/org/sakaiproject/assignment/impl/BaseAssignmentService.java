@@ -4654,6 +4654,12 @@ public abstract class BaseAssignmentService implements AssignmentService, Entity
 		{
 			Assignment a = getAssignment(aRef);
 			
+			// SAK-27824
+			if (assignmentUsesAnonymousGrading(a)) {
+				bSearchFilterOnly = false;
+				searchString = "";
+			}
+			
 			if (a != null)
 			{	
 				if (bSearchFilterOnly)
@@ -5750,7 +5756,19 @@ public abstract class BaseAssignmentService implements AssignmentService, Entity
 	 * Params: AssignmentSubmission s
 	 */
 	private boolean assignmentUsesAnonymousGrading(AssignmentSubmission s) {
-			ResourceProperties properties = s.getAssignment().getProperties();
+		return assignmentUsesAnonymousGrading(s.getAssignment());
+	}
+
+	/*
+	 * If the assignment uses anonymous grading returns true, else false
+	 * 
+	 * SAK-27824
+	 * 
+	 * Params: Assignment a
+	 */
+	@Override
+	public boolean assignmentUsesAnonymousGrading(Assignment a) {
+		ResourceProperties properties = a.getProperties();
 			try {
 					return properties.getBooleanProperty(NEW_ASSIGNMENT_CHECK_ANONYMOUS_GRADING);
 			}
