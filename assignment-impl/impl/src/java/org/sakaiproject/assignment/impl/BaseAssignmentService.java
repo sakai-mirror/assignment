@@ -4277,7 +4277,7 @@ public abstract class BaseAssignmentService implements AssignmentService, Entity
 		}
 		else
 		{
-			short rowNum = 0;
+			int rowNum = 0;
 			HSSFWorkbook wb = new HSSFWorkbook();
 			
 			HSSFSheet sheet = wb.createSheet(WorkbookUtil.createSafeSheetName(siteTitle));
@@ -4285,32 +4285,32 @@ public abstract class BaseAssignmentService implements AssignmentService, Entity
 			// Create a row and put some cells in it. Rows are 0 based.
 			HSSFRow row = sheet.createRow(rowNum++);
 	
-			row.createCell((short) 0).setCellValue(rb.getString("download.spreadsheet.title"));
+			row.createCell(0).setCellValue(rb.getString("download.spreadsheet.title"));
 	
 			// empty line
 			row = sheet.createRow(rowNum++);
-			row.createCell((short) 0).setCellValue("");
+			row.createCell(0).setCellValue("");
 	
 			// site title
 			row = sheet.createRow(rowNum++);
-			row.createCell((short) 0).setCellValue(rb.getString("download.spreadsheet.site") + siteTitle);
+			row.createCell(0).setCellValue(rb.getString("download.spreadsheet.site") + siteTitle);
 	
 			// download time
 			row = sheet.createRow(rowNum++);
-			row.createCell((short) 0).setCellValue(
+			row.createCell(0).setCellValue(
 					rb.getString("download.spreadsheet.date") + TimeService.newTime().toStringLocalFull());
 	
 			// empty line
 			row = sheet.createRow(rowNum++);
-			row.createCell((short) 0).setCellValue("");
+			row.createCell(0).setCellValue("");
 	
 			HSSFCellStyle style = wb.createCellStyle();
 	
 			// this is the header row number
-			short headerRowNumber = rowNum;
+			int headerRowNumber = rowNum;
 			// set up the header cells
 			row = sheet.createRow(rowNum++);
-			short cellNum = 0;
+			int cellNum = 0;
 			
 			// user enterprise id column
 			HSSFCell cell = row.createCell(cellNum++);
@@ -4369,7 +4369,7 @@ public abstract class BaseAssignmentService implements AssignmentService, Entity
 					// put in assignment title as the column header
 					rowNum = headerRowNumber;
 					row = sheet.getRow(rowNum++);
-					cellNum = (short) (index + 2);
+					cellNum = (index + 2);
 					cell = row.createCell(cellNum); // since the first two column is taken by student id and name
 					cell.setCellStyle(style);
 					cell.setCellValue(a.getTitle());
@@ -4937,6 +4937,7 @@ public abstract class BaseAssignmentService implements AssignmentService, Entity
 		boolean withStudentSubmissionText = false;
 		boolean withStudentSubmissionAttachment = false;
 		boolean withGradeFile = false;
+		String  gradeFileFormat = "csv";
 		boolean withFeedbackText = false;
 		boolean withFeedbackComment = false;
 		boolean withFeedbackAttachment = false;
@@ -4971,6 +4972,14 @@ public abstract class BaseAssignmentService implements AssignmentService, Entity
 				{
 					// should contain grade file
 					withGradeFile = true;	
+					if (token.contains("gradeFileFormat=csv"))
+					{	
+						gradeFileFormat = "csv";
+				}
+					else if (token.contains("gradeFileFormat=excel"))
+					{	
+						gradeFileFormat = "excel";
+					}
 				}
 				else if (token.contains("feedbackTexts"))
 				{
@@ -5043,7 +5052,7 @@ public abstract class BaseAssignmentService implements AssignmentService, Entity
 					if (allowGradeSubmission(aRef))
 					{
 					    zipGroupSubmissions(aRef, a.getTitle(), a.getContent().getTypeOfGradeString(a.getContent().getTypeOfGrade()), a.getContent().getTypeOfSubmission(),
-					            new SortedIterator(submissions.iterator(), new AssignmentComparator("submitterName", "true")), out, exceptionMessage, withStudentSubmissionText, withStudentSubmissionAttachment, withGradeFile, withFeedbackText, withFeedbackComment, withFeedbackAttachment);
+					            new SortedIterator(submissions.iterator(), new AssignmentComparator("submitterName", "true")), out, exceptionMessage, withStudentSubmissionText, withStudentSubmissionAttachment, withGradeFile, withFeedbackText, withFeedbackComment, withFeedbackAttachment,gradeFileFormat);
 
 					    if (exceptionMessage.length() > 0)
 					    {
@@ -5084,7 +5093,7 @@ public abstract class BaseAssignmentService implements AssignmentService, Entity
 				if (allowGradeSubmission(aRef))
 				{
 					zipSubmissions(aRef, a.getTitle(), a.getContent().getTypeOfGradeString(a.getContent().getTypeOfGrade()), a.getContent().getTypeOfSubmission(), 
-							new SortedIterator(submissions.iterator(), new AssignmentComparator("submitterName", "true")), out, exceptionMessage, withStudentSubmissionText, withStudentSubmissionAttachment, withGradeFile, withFeedbackText, withFeedbackComment, withFeedbackAttachment, withoutFolders);
+							new SortedIterator(submissions.iterator(), new AssignmentComparator("submitterName", "true")), out, exceptionMessage, withStudentSubmissionText, withStudentSubmissionAttachment, withGradeFile, withFeedbackText, withFeedbackComment, withFeedbackAttachment, withoutFolders,gradeFileFormat);
 	
 					if (exceptionMessage.length() > 0)
 					{
@@ -5118,15 +5127,25 @@ public abstract class BaseAssignmentService implements AssignmentService, Entity
 		return cleanString;
 	}
 	
-	protected void zipGroupSubmissions(String assignmentReference, String assignmentTitle, String gradeTypeString, int typeOfSubmission, Iterator submissions, OutputStream outputStream, StringBuilder exceptionMessage, boolean withStudentSubmissionText, boolean withStudentSubmissionAttachment, boolean withGradeFile, boolean withFeedbackText, boolean withFeedbackComment, boolean withFeedbackAttachment)
+	protected void zipGroupSubmissions(String assignmentReference, String assignmentTitle, String gradeTypeString, int typeOfSubmission, Iterator submissions, OutputStream outputStream, StringBuilder exceptionMessage, boolean withStudentSubmissionText, boolean withStudentSubmissionAttachment, boolean withGradeFile, boolean withFeedbackText, boolean withFeedbackComment, boolean withFeedbackAttachment,String gradeFileFormat)
 	{
 	    ZipOutputStream out = null;
+		//Excel generation
+		HSSFWorkbook gradesWorkbook = null;
+		HSSFSheet dataSheet = null;	    
 	    try {
 	        out = new ZipOutputStream(outputStream);
 
 	        // create the folder structure - named after the assignment's title
-	        String root = Validator.escapeZipEntry(assignmentTitle) + Entity.SEPARATOR;
+	        String root = escapeInvalidCharsEntry(Validator.escapeZipEntry(assignmentTitle)) + Entity.SEPARATOR;
 
+			//Create excel datasheet	
+			if ("excel".equals(gradeFileFormat)) {	
+			   String sheetTitle = escapeInvalidCharsEntry(Validator.escapeZipEntry(assignmentTitle));
+			   gradesWorkbook=createGradesWorkbook(sheetTitle,true);
+			   dataSheet=gradesWorkbook.getSheet(sheetTitle);
+			}
+			
 	        String submittedText = "";
 	        if (!submissions.hasNext())
 	        {
@@ -5135,7 +5154,7 @@ public abstract class BaseAssignmentService implements AssignmentService, Entity
 
 	        // the buffer used to store grade information
 	        StringBuilder gradesBuffer = new StringBuilder(assignmentTitle + "," + gradeTypeString + "\n\n");
-	        gradesBuffer.append("Group" + "," + rb.getString("grades.eid") + "," + "Users" + "," + rb.getString("grades.grade") + "\n");
+	        gradesBuffer.append("Group" + "," + rb.getString("grades.eid") + "," + rb.getString("grades.members") + "," + rb.getString("grades.grade") + "\n");
 
 	        // allow add assignment members
 	        List allowAddSubmissionUsers = allowAddSubmissionUsers(assignmentReference);
@@ -5143,6 +5162,7 @@ public abstract class BaseAssignmentService implements AssignmentService, Entity
 	        // Create the ZIP file
 	        String submittersName = "";
 	        int count = 1;
+			int xlsRowCount = 1;
 	        String caughtException = null;
 	        while (submissions.hasNext())
 	        {
@@ -5183,7 +5203,16 @@ public abstract class BaseAssignmentService implements AssignmentService, Entity
 	                        submittersString = submittersString + "(" + submitters[i].getEid() + ")";
 	                    }
 
-	                    gradesBuffer.append( gs.getGroup().getTitle() + "," + gs.getGroup().getId() + "," + submitters2String + "," + s.getGradeDisplay() + "\n");
+						//Adding the row to the csv file
+						if ("csv".equals(gradeFileFormat)) {
+						gradesBuffer.append( gs.getGroup().getTitle() + "," + gs.getGroup().getId() + "," + submitters2String + "," + s.getGradeDisplay() + "\n");
+						}
+
+						//Adding the row to the excel file
+						if ("excel".equals(gradeFileFormat)) {
+							addExcelRowInfo(dataSheet,xlsRowCount,true,gs.getGroup().getTitle(),gs.getGroup().getId(),submitters2String,null,s.getGradeDisplay());
+							xlsRowCount++;
+						}
 
 	                    if (StringUtil.trimToNull(submitterString) != null)
 	                    {
@@ -5294,6 +5323,7 @@ public abstract class BaseAssignmentService implements AssignmentService, Entity
 	            // continue
 	            if (withGradeFile)
 	            {
+		          if ("csv".equals(gradeFileFormat)) {	            	
 	                // create a grades.csv file into zip
 	                ZipEntry gradesCSVEntry = new ZipEntry(root + "grades.csv");
 	                out.putNextEntry(gradesCSVEntry);
@@ -5302,6 +5332,14 @@ public abstract class BaseAssignmentService implements AssignmentService, Entity
 	                gradesCSVEntry.setSize(grades.length);
 	                out.closeEntry();
 	            }
+		          if ("excel".equals(gradeFileFormat)) {
+			        // create a grades.xls file into zip
+			        ZipEntry gradesEXCELEntry = new ZipEntry(root + "grades.xls");
+			        out.putNextEntry(gradesEXCELEntry);
+			        gradesWorkbook.write(out);
+			        out.closeEntry();
+	        }
+	            }	            
 	        }
 	        else
 	        {
@@ -5330,14 +5368,100 @@ public abstract class BaseAssignmentService implements AssignmentService, Entity
 	    }
 	}
 
-	protected void zipSubmissions(String assignmentReference, String assignmentTitle, String gradeTypeString, int typeOfSubmission, Iterator submissions, OutputStream outputStream, StringBuilder exceptionMessage, boolean withStudentSubmissionText, boolean withStudentSubmissionAttachment, boolean withGradeFile, boolean withFeedbackText, boolean withFeedbackComment, boolean withFeedbackAttachment, boolean withoutFolders)
+	private HSSFCellStyle setHeaderStyle(HSSFWorkbook sampleWorkBook){
+		//TO-DO read style information from sakai.properties
+		HSSFFont font = sampleWorkBook.createFont();
+		font.setFontName(HSSFFont.FONT_ARIAL);
+		font.setColor(IndexedColors.PLUM.getIndex());
+		font.setBoldweight(HSSFFont.BOLDWEIGHT_BOLD);
+		HSSFCellStyle cellStyle = sampleWorkBook.createCellStyle();
+		cellStyle.setFont(font);
+		return cellStyle;
+	}
+	
+	private HSSFWorkbook createGradesWorkbook(String assignmentTitle,boolean isGroupSubmissions) {
+		HSSFWorkbook gradesWorkbook = new HSSFWorkbook();
+		HSSFSheet dataSheet = gradesWorkbook.createSheet(Validator.escapeZipEntry(assignmentTitle));
+		HSSFCellStyle cellStyle = setHeaderStyle(gradesWorkbook);	
+
+		//Excel file header row
+		HSSFRow headerRow = dataSheet.createRow(0);			
+		HSSFCell firstHeaderCell = headerRow.createCell(0);
+		firstHeaderCell.setCellStyle(cellStyle);
+		firstHeaderCell.setCellValue(new HSSFRichTextString(rb.getString("grades.id")));
+		HSSFCell secondHeaderCell = headerRow.createCell(1);
+		secondHeaderCell.setCellStyle(cellStyle);
+		secondHeaderCell.setCellValue(new HSSFRichTextString(rb.getString("grades.eid")));
+		if (!isGroupSubmissions) {
+			HSSFCell thirdHeaderCell = headerRow.createCell(2);
+			thirdHeaderCell.setCellStyle(cellStyle);
+			thirdHeaderCell.setCellValue(new HSSFRichTextString(rb.getString("grades.lastname")));			
+			HSSFCell fourthHeaderCell = headerRow.createCell(3);
+			fourthHeaderCell.setCellStyle(cellStyle);
+			fourthHeaderCell.setCellValue(new HSSFRichTextString(rb.getString("grades.firstname")));			
+			HSSFCell fifthHeaderCell = headerRow.createCell(4);
+			fifthHeaderCell.setCellStyle(cellStyle);
+			fifthHeaderCell.setCellValue(new HSSFRichTextString(rb.getString("grades.grade")));
+		} else {
+			HSSFCell thirdHeaderCell = headerRow.createCell(2);
+			thirdHeaderCell.setCellStyle(cellStyle);
+			thirdHeaderCell.setCellValue(new HSSFRichTextString(rb.getString("grades.members")));			
+			HSSFCell fifthHeaderCell = headerRow.createCell(3);
+			fifthHeaderCell.setCellStyle(cellStyle);
+			fifthHeaderCell.setCellValue(new HSSFRichTextString(rb.getString("grades.grade")));
+		}
+		return gradesWorkbook;
+	}
+	private void addExcelRowInfo(HSSFSheet dataSheet,int xlsRowCount,boolean isGroupSubmission,String submittersDisplayId, String submittersId,String submittersLastName,String submittersName,String grades) {
+		HSSFRow dataRow = dataSheet.createRow(xlsRowCount);
+	    //grades.id
+	    HSSFCell gradesidCell = dataRow.createCell(0);
+	    gradesidCell.setCellType(Cell.CELL_TYPE_STRING);
+	    gradesidCell.setCellValue(submittersDisplayId);
+	    //grades.eid
+	    HSSFCell gradeseidCell = dataRow.createCell(1);
+	    gradeseidCell.setCellType(Cell.CELL_TYPE_STRING);
+	    gradeseidCell.setCellValue(submittersId);
+	    //grades.lastname
+	    HSSFCell lastnameCell = dataRow.createCell(2);
+	    lastnameCell.setCellType(Cell.CELL_TYPE_STRING);
+	    lastnameCell.setCellValue(submittersLastName);
+	    if (!isGroupSubmission) {
+		    //grades.firstname
+		    HSSFCell firstnameCell = dataRow.createCell(3);
+		    firstnameCell.setCellType(Cell.CELL_TYPE_STRING);
+		    firstnameCell.setCellValue(submittersName);
+		    //grades.grade
+		    HSSFCell gradenameCell = dataRow.createCell(4);
+		    gradenameCell.setCellType(Cell.CELL_TYPE_STRING);
+		    gradenameCell.setCellValue(grades);
+	    } else {
+		    //grades.grade
+		    HSSFCell gradenameCell = dataRow.createCell(3);
+		    gradenameCell.setCellType(Cell.CELL_TYPE_STRING);
+		    gradenameCell.setCellValue(grades);	    	
+	    }
+   }
+	
+	protected void zipSubmissions(String assignmentReference, String assignmentTitle, String gradeTypeString, int typeOfSubmission, Iterator submissions, OutputStream outputStream, StringBuilder exceptionMessage, boolean withStudentSubmissionText, boolean withStudentSubmissionAttachment, boolean withGradeFile, boolean withFeedbackText, boolean withFeedbackComment, boolean withFeedbackAttachment, boolean withoutFolders,String gradeFileFormat)
 	{
 	    ZipOutputStream out = null;
+		
+		//Excel generation
+		HSSFWorkbook gradesWorkbook = null;
+		HSSFSheet dataSheet = null;
 		try {
 			out = new ZipOutputStream(outputStream);
 
 			// create the folder structure - named after the assignment's title
 			String root = escapeInvalidCharsEntry(Validator.escapeZipEntry(assignmentTitle)) + Entity.SEPARATOR;
+
+			// create excel datasheet	
+			if ("excel".equals(gradeFileFormat)) {		
+			   String sheetTitle =escapeInvalidCharsEntry(Validator.escapeZipEntry(assignmentTitle));
+			   gradesWorkbook=createGradesWorkbook(sheetTitle,false);
+			   dataSheet=gradesWorkbook.getSheet(sheetTitle);
+			}
 
 			String submittedText = "";
 			if (!submissions.hasNext())
@@ -5363,11 +5487,11 @@ public abstract class BaseAssignmentService implements AssignmentService, Entity
 			// Create the ZIP file
 			String submittersName = "";
 			int count = 1;
+			int xlsRowCount = 1;
 			String caughtException = null;
 			while (submissions.hasNext())
 			{
 				AssignmentSubmission s = (AssignmentSubmission) submissions.next();
-				
 				if (s.getSubmitted())
 				{
 					// get the submission user id and see if the user is still in site
@@ -5406,8 +5530,15 @@ public abstract class BaseAssignmentService implements AssignmentService, Entity
 								}
 								submittersString = escapeInvalidCharsEntry(submittersString);
 								// in grades file, Eid is used
+								if ("csv".equals(gradeFileFormat)) {
 								values = new String [] {submitters[i].getDisplayId(), submitters[i].getEid(), submitters[i].getLastName(), submitters[i].getFirstName(), s.getGradeDisplay()};
 								gradesBuffer.writeNext(values);
+							}
+			                    //Adding the row to the excel file
+								if ("excel".equals(gradeFileFormat)) {
+									addExcelRowInfo(dataSheet,xlsRowCount,false,submitters[i].getDisplayId(),submitters[i].getEid(),submitters[i].getLastName(),submitters[i].getFirstName(),s.getGradeDisplay());							
+				                    xlsRowCount++;
+								}
 							}
 							
 							if (StringUtils.trimToNull(submittersString) != null)
@@ -5548,6 +5679,7 @@ public abstract class BaseAssignmentService implements AssignmentService, Entity
 				// continue
 				if (withGradeFile)
 				{
+				  if ("csv".equals(gradeFileFormat)) {
 					// create a grades.csv file into zip
 					ZipEntry gradesCSVEntry = new ZipEntry(root + "grades.csv");
 					out.putNextEntry(gradesCSVEntry);
@@ -5557,6 +5689,14 @@ public abstract class BaseAssignmentService implements AssignmentService, Entity
 					gradesCSVEntry.setSize(gradesBAOS.size());
 
 					out.closeEntry();
+				}
+		          if ("excel".equals(gradeFileFormat)) {
+		            // create a grades.xls file into zip
+		            ZipEntry gradesEXCELEntry = new ZipEntry(root + "grades.xls");
+		            out.putNextEntry(gradesEXCELEntry);
+		            gradesWorkbook.write(out);
+		            out.closeEntry();
+			}
 				}
 			}
 			else
