@@ -872,6 +872,9 @@ public class AssignmentAction extends PagedResourceActionII
 	
 	/** SAK-17606 - Property for whether an assignment user anonymous grading (user settable). */
 	private static final String NEW_ASSIGNMENT_CHECK_ANONYMOUS_GRADING = "new_assignment_check_anonymous_grading";
+
+	/** Sakai.property for enable/disable anonymous grading */
+	private static final String SAK_PROP_ENABLE_ANON_GRADING = "assignment.anon.grading.enabled";
 	
 	private AssignmentPeerAssessmentService assignmentPeerAssessmentService;
 	public void setAssignmentPeerAssessmentService(AssignmentPeerAssessmentService assignmentPeerAssessmentService){
@@ -2169,6 +2172,16 @@ public class AssignmentAction extends PagedResourceActionII
 	protected String build_instructor_new_edit_assignment_context(VelocityPortlet portlet, Context context, RunData data,
 			SessionState state)
 	{
+		// If the user adds the schedule or alternate calendar tool after using the assignment tool,
+		// we need to remove these state attributes so they are re-initialized with the updated
+		// availability of the tools.
+		state.removeAttribute(CALENDAR_TOOL_EXIST);
+		state.removeAttribute(ADDITIONAL_CALENDAR_TOOL_READY);
+		initState(state, portlet, (JetspeedRunData)data);
+
+		// Anon grading enabled/disabled
+		context.put( "enableAnonGrading", ServerConfigurationService.getBoolean( SAK_PROP_ENABLE_ANON_GRADING, false ) );
+		
 		// is the assignment an new assignment
 		String assignmentId = (String) state.getAttribute(EDIT_ASSIGNMENT_ID);
 		if (assignmentId != null)
