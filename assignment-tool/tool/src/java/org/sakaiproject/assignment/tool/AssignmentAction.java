@@ -3226,18 +3226,15 @@ public class AssignmentAction extends PagedResourceActionII
 	 */
 	private void putTimePropertiesInState(SessionState state, Time timeValue,
 											String month, String day, String year, String hour, String min) {
-		TimeBreakdown bTime = null;
+
 		try {
-			bTime = timeValue.breakdownLocal();
-		} catch (NullPointerException _npe) { 
-			bTime = TimeService.newTime().breakdownLocal();
-			bTime.setHour(12); bTime.setMin(0);
-		}
+		TimeBreakdown bTime = timeValue.breakdownLocal();
 		state.setAttribute(month, Integer.valueOf(bTime.getMonth()));
 		state.setAttribute(day, Integer.valueOf(bTime.getDay()));
 		state.setAttribute(year, Integer.valueOf(bTime.getYear()));
 		state.setAttribute(hour, Integer.valueOf(bTime.getHour()));
 		state.setAttribute(min, Integer.valueOf(bTime.getMin()));
+		} catch (NullPointerException _npe) { /* TODO empty exception block */ }
 	}
 
 	/**
@@ -5572,9 +5569,7 @@ public class AssignmentAction extends PagedResourceActionII
 										String[] grades = StringUtils.split(previousGrades, " ");
 										String newGrades = "";
 										
-										NumberFormat nbFormat = (DecimalFormat) getNumberFormat();
-										DecimalFormat dcFormat = (DecimalFormat) nbFormat;
-										String decSeparator = dcFormat.getDecimalFormatSymbols().getDecimalSeparator() + "";
+										String decSeparator = FormattedText.getDecimalSeparator();
 										
 										for (int jj = 0; jj < grades.length; jj++)
 										{
@@ -10310,9 +10305,7 @@ public class AssignmentAction extends PagedResourceActionII
 						{
 							String currentGrade = submission.getGrade();
 							
-							NumberFormat nbFormat = (DecimalFormat) getNumberFormat();
-							DecimalFormat dcFormat = (DecimalFormat) nbFormat;
-							String decSeparator = dcFormat.getDecimalFormatSymbols().getDecimalSeparator() + "";
+							String decSeparator = FormattedText.getDecimalSeparator();
 							
 							if (currentGrade != null && currentGrade.indexOf(decSeparator) != -1)
 							{
@@ -12963,9 +12956,9 @@ public class AssignmentAction extends PagedResourceActionII
 			}
 			else
 			{	
-				NumberFormat nbFormat = (DecimalFormat) getNumberFormat();
+				NumberFormat nbFormat = FormattedText.getNumberFormat();
 				DecimalFormat dcFormat = (DecimalFormat) nbFormat;
-				String decSeparator = dcFormat.getDecimalFormatSymbols().getDecimalSeparator() + "";
+				String decSeparator = FormattedText.getDecimalSeparator();
 				
 				// only the right decimal separator is allowed and no other grouping separator
 				if ((",".equals(decSeparator) && grade.indexOf(".") != -1) ||
@@ -13051,25 +13044,6 @@ public class AssignmentAction extends PagedResourceActionII
 	}
 
 	/**
-	 * get the right number format based on local
-	 * @return
-	 */
-	private NumberFormat getNumberFormat() {
-		// get localized number format
-		NumberFormat nbFormat = NumberFormat.getInstance();				
-		try {
-			Locale locale = null;
-			ResourceLoader rb = new ResourceLoader();
-			locale = rb.getLocale();
-			nbFormat = NumberFormat.getNumberInstance(locale);
-		}				
-		catch (Exception e) {
-			M_log.warn("Error while retrieving local number format, using default ", e);
-		}
-		return nbFormat;
-	} // validPointGrade
-	
-	/**
 	 * valid grade for point based type
 	 */
 	private void validLetterGrade(SessionState state, String grade)
@@ -13098,9 +13072,7 @@ public class AssignmentAction extends PagedResourceActionII
 
 	private void alertInvalidPoint(SessionState state, String grade)
 	{
-		NumberFormat nbFormat = (DecimalFormat) getNumberFormat();
-		DecimalFormat dcFormat = (DecimalFormat) nbFormat;
-		String decSeparator = dcFormat.getDecimalFormatSymbols().getDecimalSeparator() + "";
+		String decSeparator = FormattedText.getDecimalSeparator();
 		
 		String VALID_CHARS_FOR_INT = "-01234567890";
 
@@ -13136,13 +13108,9 @@ public class AssignmentAction extends PagedResourceActionII
 		{
 			if (grade != null && (grade.length() >= 1))
 			{
-				NumberFormat nbFormat = getNumberFormat();
-				nbFormat.setMaximumFractionDigits(1);
-				nbFormat.setMinimumFractionDigits(1);
-				nbFormat.setGroupingUsed(false);
-				
+				NumberFormat nbFormat = FormattedText.getNumberFormat(1,1,false);
 				DecimalFormat dcformat = (DecimalFormat) nbFormat;
-				String decSeparator = dcformat.getDecimalFormatSymbols().getDecimalSeparator() + "";
+				String decSeparator = FormattedText.getDecimalSeparator();
 				
 				if (grade.indexOf(decSeparator) != -1)
 				{
@@ -13194,9 +13162,7 @@ public class AssignmentAction extends PagedResourceActionII
 	 */
 	private String scalePointGrade(SessionState state, String point)
 	{
-		NumberFormat nbFormat = (DecimalFormat) getNumberFormat();
-		DecimalFormat dcFormat = (DecimalFormat) nbFormat;
-		String decSeparator = dcFormat.getDecimalFormatSymbols().getDecimalSeparator() + "";
+		String decSeparator = FormattedText.getDecimalSeparator();
 		
 		point = validPointGrade(state, point);
 		if (state.getAttribute(STATE_MESSAGE) == null)
@@ -14292,7 +14258,7 @@ public class AssignmentAction extends PagedResourceActionII
 												try {
 													itemString = assignment.isGroup() ? hssfRow.getCell(3).getStringCellValue() : hssfRow.getCell(4).getStringCellValue();
 													if ((itemString != null) && (itemString.trim().length() > 0)) {
-														NumberFormat nbFormat = NumberFormat.getInstance(new ResourceLoader().getLocale());
+														NumberFormat nbFormat = FormattedText.getNumberFormat();
 														gradeXls = nbFormat.parse(itemString).doubleValue();
 													}
 												} catch (Exception e) {
@@ -14304,16 +14270,8 @@ public class AssignmentAction extends PagedResourceActionII
 												}
 												if (gradeXls != -1) {
 													// get localized number format
-													NumberFormat nbFormat = NumberFormat.getInstance();
-													try {
-														Locale locale = null;
-														ResourceLoader rb = new ResourceLoader();
-														locale = rb.getLocale();
-														nbFormat = NumberFormat.getNumberInstance(locale);
+													NumberFormat nbFormat = FormattedText.getNumberFormat();
 														itemString = nbFormat.format(gradeXls);
-													} catch (Exception e) {
-														M_log.warn("Error while retrieving local number format, using default ", e);
-													}
 												} else {
 													itemString = "";
 												}
