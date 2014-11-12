@@ -151,6 +151,9 @@ public abstract class BaseAssignmentService implements AssignmentService, Entity
 	// the file types for zip download
 	protected static final String ZIP_COMMENT_FILE_TYPE = ".txt";
 	protected static final String ZIP_SUBMITTED_TEXT_FILE_TYPE = ".html";
+        
+	// SAK-17606 - Property for whether an assignment uses anonymous grading (user settable)
+	protected static final String NEW_ASSIGNMENT_CHECK_ANONYMOUS_GRADING = "new_assignment_check_anonymous_grading";
 
 //	spring service injection
 	
@@ -5527,9 +5530,22 @@ public abstract class BaseAssignmentService implements AssignmentService, Entity
 								submittersString = escapeInvalidCharsEntry(submittersString);
 								// in grades file, Eid is used
 								if ("csv".equals(gradeFileFormat)) {
-								values = new String [] {submitters[i].getDisplayId(), submitters[i].getEid(), submitters[i].getLastName(), submitters[i].getFirstName(), s.getGradeDisplay()};
-								gradesBuffer.writeNext(values);
-							}
+								
+									// SAK-17606
+									if (!assignmentUsesAnonymousGrading(s)) 
+									{
+										values = new String [] {submitters[i].getDisplayId(), submitters[i].getEid(), submitters[i].getLastName(), submitters[i].getFirstName(), s.getStatus(), s.getGradeDisplay()};
+										gradesBuffer.writeNext(values);
+									} 
+									else 
+									{ // anonymous grading is true so we need to print different stuff in the csv
+										String fullAnonId = s.getAnonymousSubmissionId();
+										String anonTitle = rb.getString("grading.anonymous.title");                                    
+										values = new String[] {fullAnonId, fullAnonId, anonTitle, anonTitle, s.getStatus(), s.getGradeDisplay()};
+										gradesBuffer.writeNext(values);
+									}
+								}
+
 			                    //Adding the row to the excel file
 								if ("excel".equals(gradeFileFormat)) {
 									addExcelRowInfo(dataSheet,xlsRowCount,false,submitters[i].getDisplayId(),submitters[i].getEid(),submitters[i].getLastName(),submitters[i].getFirstName(),s.getGradeDisplay());							
@@ -5541,6 +5557,12 @@ public abstract class BaseAssignmentService implements AssignmentService, Entity
 							{
 								submittersName = submittersName.concat(StringUtils.trimToNull(submittersString));
 								submittedText = s.getSubmittedText();
+		
+                                                                // SAK-17606
+                                                                if (assignmentUsesAnonymousGrading(s)) {
+                                                                    submittersName = root + s.getAnonymousSubmissionId();
+                                                                    submittersString = s.getAnonymousSubmissionId();
+                                                                }
 		
 								if (!withoutFolders)
 								{
@@ -5722,7 +5744,24 @@ public abstract class BaseAssignmentService implements AssignmentService, Entity
 		}
 	}
 
-
+	/*
+	 * SAK-17606 - If the assignment uses anonymous grading returns true, else false
+	 * 
+	 * Params: AssignmentSubmission s
+	 */
+	private boolean assignmentUsesAnonymousGrading(AssignmentSubmission s) {
+			ResourceProperties properties = s.getAssignment().getProperties();
+			try {
+					return properties.getBooleanProperty(NEW_ASSIGNMENT_CHECK_ANONYMOUS_GRADING);
+			}
+			catch (EntityPropertyNotDefinedException e) {
+					M_log.warn("Entity Property " + NEW_ASSIGNMENT_CHECK_ANONYMOUS_GRADING + " not defined " + e.getMessage());
+			}
+			catch (EntityPropertyTypeException e) {
+					M_log.warn("Entity Property " + NEW_ASSIGNMENT_CHECK_ANONYMOUS_GRADING + " type not defined " + e.getMessage());
+			}
+			return false;
+	}
 
 	private void zipAttachments(ZipOutputStream out, String submittersName, String sSubAttachmentFolder, List attachments) {
 		int attachedUrlCount = 0;
@@ -10081,6 +10120,9 @@ public abstract class BaseAssignmentService implements AssignmentService, Entity
 		protected boolean m_gradeReleased;
 
 		protected boolean m_honorPledgeFlag;
+                
+		// SAK-17606
+		protected String m_anonymousSubmissionId;
 
 		protected boolean m_hideDueDate;
 
@@ -10429,10 +10471,13 @@ public abstract class BaseAssignmentService implements AssignmentService, Entity
 			m_submittedText = FormattedText.decodeFormattedTextAttribute(el, "submittedtext");
 			m_feedbackComment = FormattedText.decodeFormattedTextAttribute(el, "feedbackcomment");
 			m_feedbackText = FormattedText.decodeFormattedTextAttribute(el, "feedbacktext");
+                        
+			// SAK-17606
+			m_anonymousSubmissionId = el.getAttribute("anonymousSubmissionId");
 
-                        m_submitterId = el.getAttribute("submitterid");
-                        m_submissionLog = new ArrayList();
-                        m_grades = new ArrayList();
+			m_submitterId = el.getAttribute("submitterid");
+			m_submissionLog = new ArrayList();
+			m_grades = new ArrayList();
 			intString = el.getAttribute("numberoflogs");
 			try {
 				if (intString != null) {
@@ -10761,6 +10806,9 @@ public abstract class BaseAssignmentService implements AssignmentService, Entity
 							m_submittedText = formattedTextDecodeFormattedTextAttribute(attributes, "submittedtext");
 							m_feedbackComment = formattedTextDecodeFormattedTextAttribute(attributes, "feedbackcomment");
 							m_feedbackText = formattedTextDecodeFormattedTextAttribute(attributes, "feedbacktext");
+                                                        
+                                                        // SAK-17606
+                                                        m_anonymousSubmissionId = m_id.substring(27)+" (" + rb.getString("grading.anonymous.title")  + ")";
 
 							m_submitterId = attributes.getValue("submitterid");
 
@@ -10932,6 +10980,9 @@ public abstract class BaseAssignmentService implements AssignmentService, Entity
 			submission.setAttribute("gradereleased", getBoolString(m_gradeReleased));
 			submission.setAttribute("pledgeflag", getBoolString(m_honorPledgeFlag));
 			submission.setAttribute("hideduedate", getBoolString(m_hideDueDate));
+                        
+                        // SAK-17606
+                        submission.setAttribute("anonymousSubmissionId", m_anonymousSubmissionId);
 
 			if (M_log.isDebugEnabled()) M_log.debug(this + " BaseAssignmentSubmission: SAVED REGULAR PROPERTIES");
 
@@ -11062,6 +11113,9 @@ public abstract class BaseAssignmentService implements AssignmentService, Entity
 			m_honorPledgeFlag = submission.getHonorPledgeFlag();
 			m_properties = new BaseResourcePropertiesEdit();
 			m_properties.addAll(submission.getProperties());
+                        
+                        // SAK-17606
+                        m_anonymousSubmissionId = submission.getAnonymousSubmissionId();
 		}
 
 		/**
@@ -11879,6 +11933,15 @@ public abstract class BaseAssignmentService implements AssignmentService, Entity
 				Assignment a = getAssignment();
 				return a!=null?a.getCloseTime():null;	
 			}
+		}
+		
+		/**
+		 * SAK-17606 - Method to return a speacialized string for anonymous grading.
+		 * @return
+		 */
+		public String getAnonymousSubmissionId() {
+				String anonTitle = rb.getString("grading.anonymous.title") ;
+				return this.getId().substring(27) + " (" + anonTitle + ")";
 		}
 		
 	} // AssignmentSubmission
