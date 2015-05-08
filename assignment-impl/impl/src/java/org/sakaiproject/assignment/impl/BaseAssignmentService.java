@@ -10785,7 +10785,7 @@ public abstract class BaseAssignmentService implements AssignmentService, Entity
 							intString = attributes.getValue("numberoflogs");
 							try
 							{
-							    numAttributes = Integer.parseInt(intString);
+							    numAttributes = NumberUtils.toInt(intString);
 							    for (int x = 0; x < numAttributes; x++)
 							    {
 							        attributeString = "log" + x;
@@ -10797,13 +10797,13 @@ public abstract class BaseAssignmentService implements AssignmentService, Entity
 							}
 							catch (Exception e)
 							{
-							    M_log.debug(" BaseAssignmentSubmission: CONSTRUCTOR : Exception reading logs : " + e);
+							    M_log.debug(" BaseAssignmentSubmission: error parsing 'numberoflogs' attribute : " + e);
 							}
 
 							intString = attributes.getValue("numberofgrades");
 							try
 							{
-							    numAttributes = Integer.parseInt(intString);
+							    numAttributes = NumberUtils.toInt(intString);
 							    for (int x = 0; x < numAttributes; x++)
 							    {
 							        attributeString = "grade" + x;
@@ -10813,7 +10813,7 @@ public abstract class BaseAssignmentService implements AssignmentService, Entity
 							}
 							catch (Exception e)
 							{
-							    M_log.warn(" BaseAssignmentSubmission: CONSTRUCTOR : Exception reading logs : " + e);
+							    M_log.warn(" BaseAssignmentSubmission: error parsing 'numberofgrades' property : " + e);
 							}
 
 							// READ THE SUBMITTERS
@@ -10821,7 +10821,7 @@ public abstract class BaseAssignmentService implements AssignmentService, Entity
 							intString = attributes.getValue("numberofsubmitters");
 							try
 							{
-								numAttributes = Integer.parseInt(intString);
+								numAttributes = NumberUtils.toInt(intString);
 
 								for (int x = 0; x < numAttributes; x++)
 								{
@@ -10846,7 +10846,7 @@ public abstract class BaseAssignmentService implements AssignmentService, Entity
 							intString = attributes.getValue("numberoffeedbackattachments");
 							try
 							{
-								numAttributes = Integer.parseInt(intString);
+								numAttributes = NumberUtils.toInt(intString);
 
 								for (int x = 0; x < numAttributes; x++)
 								{
@@ -10869,7 +10869,7 @@ public abstract class BaseAssignmentService implements AssignmentService, Entity
 							intString = attributes.getValue("numberofsubmittedattachments");
 							try
 							{
-								numAttributes = Integer.parseInt(intString);
+								numAttributes = NumberUtils.toInt(intString);
 
 								for (int x = 0; x < numAttributes; x++)
 								{
