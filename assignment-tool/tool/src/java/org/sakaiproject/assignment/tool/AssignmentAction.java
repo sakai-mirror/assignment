@@ -9906,6 +9906,9 @@ public class AssignmentAction extends PagedResourceActionII
 				// permissions
 				doPermissions(data);
 			}
+			else if ("new".equals(option)) {
+			    doNew_assignment(data,null);
+			}
 			else if ("returngrade".equals(option))
 			{
 					// return grading
