@@ -898,7 +898,7 @@
 			</th>
 			<td>
 				## get gradeScale
-				#set ($gradeScale = $assignmentContent.getTypeOfGradeString())
+				#set ($gradeScale = $assignment.getContent().getTypeOfGradeString($assignment.getContent().getTypeOfGrade()))
 				$gradeScale
 				#if ($!gradeType == 3)
 					($tlang.getString("grade.max") $assignmentContent.getMaxGradePointDisplay())
