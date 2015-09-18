@@ -4658,7 +4658,20 @@ public abstract class BaseAssignmentService implements AssignmentService, Entity
 	public List<String> getSubmitterIdList(String searchFilterOnly, String allOrOneGroup, String searchString, String aRef, String contextString) {
 		
 		List<String> rv = new ArrayList<String>();
-		List<User> rvUsers = new ArrayList<User>();
+		Map<User, AssignmentSubmission> submitterMap = getSubmitterMap(searchFilterOnly, allOrOneGroup, searchString, aRef, contextString);
+		for (User u : submitterMap.keySet())
+		{
+			rv.add(u.getId());
+		}
+		
+		return rv;
+	}
+
+	// alternative to getSubmittedIdList which returns full user and submissions, since submitterIdList retrieves them anyway
+	public Map<User, AssignmentSubmission> getSubmitterMap(String searchFilterOnly, String allOrOneGroup, String searchString, String aRef, String contextString)
+	{
+		Map<User, AssignmentSubmission> rv = new HashMap<User, AssignmentSubmission>();
+		List<User> rvUsers;
 		allOrOneGroup = StringUtils.trimToNull(allOrOneGroup);
 		searchString = StringUtils.trimToNull(searchString);
 		
@@ -4666,6 +4679,10 @@ public abstract class BaseAssignmentService implements AssignmentService, Entity
 		try
 		{
 			Assignment a = getAssignment(aRef);
+			if (a == null)
+			{
+				return rv;
+			}
 			
 			// SAK-27824
 			if (assignmentUsesAnonymousGrading(a)) {
@@ -4673,8 +4690,6 @@ public abstract class BaseAssignmentService implements AssignmentService, Entity
 				searchString = "";
 			}
 			
-			if (a != null)
-			{	
 				if (bSearchFilterOnly)
 				{
 					if (allOrOneGroup == null && searchString == null)
@@ -4736,7 +4751,7 @@ public abstract class BaseAssignmentService implements AssignmentService, Entity
 											
 						if (uSubmission != null)
 						{
-							rv.add(u.getId());
+						rv.put(u, uSubmission);
 						}
 						// add those users who haven't made any submissions and with submission rights
 						else
@@ -4799,7 +4814,7 @@ public abstract class BaseAssignmentService implements AssignmentService, Entity
 										}
 										
 										commitEdit(s);
-										rv.add(u.getId());
+									rv.put(u, s);
 									}
 						        }
 						        finally
@@ -4812,7 +4827,6 @@ public abstract class BaseAssignmentService implements AssignmentService, Entity
 					}
 				}
 			}
-		}
 		catch (IdUnusedException aIdException)
 		{
 			M_log.warn(":getSubmitterIdList: Assignme id not used: " + aRef + " " + aIdException.getMessage());
@@ -4825,8 +4839,6 @@ public abstract class BaseAssignmentService implements AssignmentService, Entity
 		
 		return rv;
 	}
-
-
 
 	private List<User> getSelectedGroupUsers(String allOrOneGroup, String contextString, Assignment a, List allowAddSubmissionUsers) {
 		Collection groups = new ArrayList();
@@ -5099,33 +5111,19 @@ public abstract class BaseAssignmentService implements AssignmentService, Entity
 			else
 			{
 
-			List<String> submitterIds = getSubmitterIdList(searchFilterOnly, viewString.length() == 0 ? AssignmentConstants.ALL:viewString, searchString, aRef, contextString == null? a.getContext():contextString);
+			//List<String> submitterIds = getSubmitterIdList(searchFilterOnly, viewString.length() == 0 ? AssignmentConstants.ALL:viewString, searchString, aRef, contextString == null? a.getContext():contextString);
+			Map<User, AssignmentSubmission> submitters = getSubmitterMap(searchFilterOnly, viewString.length() == 0 ? AssignmentConstants.ALL:viewString, searchString, aRef, contextString == null? a.getContext():contextString); 	
 	
-			if (submitterIds != null && !submitterIds.isEmpty())
+			if (!submitters.isEmpty())
 			{
-				List<AssignmentSubmission> submissions = new ArrayList<AssignmentSubmission>();
-				for (Iterator<String> iSubmitterIdsIterator = submitterIds.iterator(); iSubmitterIdsIterator.hasNext();)
-				{
-					String uId = iSubmitterIdsIterator.next();
-					try
-					{
-						User u = UserDirectoryService.getUser(uId);
-	
-						AssignmentSubmission sub = getSubmission(aRef, u);
-						if (sub != null)
-							submissions.add(sub);
-					}
-					catch (UserNotDefinedException e)
-					{
-						M_log.warn(":getSubmissionsZip cannot find user id=" + uId + e.getMessage() + "");
-					}
-				}
+				List<AssignmentSubmission> submissions = new ArrayList<AssignmentSubmission>(submitters.values());
 	
 				StringBuilder exceptionMessage = new StringBuilder();
 	
 				if (allowGradeSubmission(aRef))
 				{
-					zipSubmissions(aRef, a.getTitle(), a.getContent().getTypeOfGradeString(a.getContent().getTypeOfGrade()), a.getContent().getTypeOfSubmission(), 
+					AssignmentContent content = a.getContent();
+					zipSubmissions(aRef, a.getTitle(), content.getTypeOfGradeString(content.getTypeOfGrade()), content.getTypeOfSubmission(), 
 							new SortedIterator(submissions.iterator(), new AssignmentComparator("submitterName", "true")), out, exceptionMessage, withStudentSubmissionText, withStudentSubmissionAttachment, withGradeFile, withFeedbackText, withFeedbackComment, withFeedbackAttachment, withoutFolders,gradeFileFormat);
 	
 					if (exceptionMessage.length() > 0)
