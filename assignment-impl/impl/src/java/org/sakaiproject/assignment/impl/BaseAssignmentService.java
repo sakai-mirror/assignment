@@ -4988,6 +4988,7 @@ public abstract class BaseAssignmentService implements AssignmentService, Entity
 		boolean withFeedbackAttachment = false;
 		
 		boolean withoutFolders = false;
+		boolean includeNotSubmitted = false;
 
 		String viewString = "";
 		String contextString = "";
@@ -5046,6 +5047,12 @@ public abstract class BaseAssignmentService implements AssignmentService, Entity
 					// feedback attachment
 					withoutFolders = true;
 				}
+				else if (token.contains("includeNotSubmitted"))
+				{
+					// include empty submissions
+					includeNotSubmitted = true;
+				}
+
 				else if (token.contains("contextString"))
 				{
 					// context
@@ -5097,8 +5104,8 @@ public abstract class BaseAssignmentService implements AssignmentService, Entity
 					if (allowGradeSubmission(aRef))
 					{
 					    zipGroupSubmissions(aRef, a.getTitle(), a.getContent().getTypeOfGradeString(a.getContent().getTypeOfGrade()), a.getContent().getTypeOfSubmission(),
-					            new SortedIterator(submissions.iterator(), new AssignmentComparator("submitterName", "true")), out, exceptionMessage, withStudentSubmissionText, withStudentSubmissionAttachment, withGradeFile, withFeedbackText, withFeedbackComment, withFeedbackAttachment,gradeFileFormat);
-
+					            new SortedIterator(submissions.iterator(), new AssignmentComparator("submitterName", "true")), out, exceptionMessage, withStudentSubmissionText, withStudentSubmissionAttachment, withGradeFile, withFeedbackText, withFeedbackComment, withFeedbackAttachment,gradeFileFormat,includeNotSubmitted);
+                                
 					    if (exceptionMessage.length() > 0)
 					    {
 					        // log any error messages
@@ -5124,7 +5131,8 @@ public abstract class BaseAssignmentService implements AssignmentService, Entity
 				{
 					AssignmentContent content = a.getContent();
 					zipSubmissions(aRef, a.getTitle(), content.getTypeOfGradeString(content.getTypeOfGrade()), content.getTypeOfSubmission(), 
-							new SortedIterator(submissions.iterator(), new AssignmentComparator("submitterName", "true")), out, exceptionMessage, withStudentSubmissionText, withStudentSubmissionAttachment, withGradeFile, withFeedbackText, withFeedbackComment, withFeedbackAttachment, withoutFolders,gradeFileFormat);
+							new SortedIterator(submissions.iterator(), new AssignmentComparator("submitterName", "true")), out, exceptionMessage, withStudentSubmissionText, withStudentSubmissionAttachment, withGradeFile, withFeedbackText, withFeedbackComment, withFeedbackAttachment, withoutFolders,gradeFileFormat, includeNotSubmitted);
+
 	
 					if (exceptionMessage.length() > 0)
 					{
@@ -5158,7 +5166,7 @@ public abstract class BaseAssignmentService implements AssignmentService, Entity
 		return cleanString;
 	}
 	
-	protected void zipGroupSubmissions(String assignmentReference, String assignmentTitle, String gradeTypeString, int typeOfSubmission, Iterator submissions, OutputStream outputStream, StringBuilder exceptionMessage, boolean withStudentSubmissionText, boolean withStudentSubmissionAttachment, boolean withGradeFile, boolean withFeedbackText, boolean withFeedbackComment, boolean withFeedbackAttachment,String gradeFileFormat)
+	protected void zipGroupSubmissions(String assignmentReference, String assignmentTitle, String gradeTypeString, int typeOfSubmission, Iterator submissions, OutputStream outputStream, StringBuilder exceptionMessage, boolean withStudentSubmissionText, boolean withStudentSubmissionAttachment, boolean withGradeFile, boolean withFeedbackText, boolean withFeedbackComment, boolean withFeedbackAttachment,String gradeFileFormat, boolean includeNotSubmitted)
 	{
 	    ZipOutputStream out = null;
 		//Excel generation
@@ -5203,7 +5211,8 @@ public abstract class BaseAssignmentService implements AssignmentService, Entity
 
 	            M_log.debug( this + " ZIPGROUP " + ( s == null ? "null": s.getId() ));
 
-	            if (s.getSubmitted())
+				//SAK-29314 added a new value where it's by default submitted but is marked when the user submits
+	            if ((s.getSubmitted() && s.isUserSubmission())|| includeNotSubmitted)
 	            {
 	                try
 	                {
@@ -5474,7 +5483,7 @@ public abstract class BaseAssignmentService implements AssignmentService, Entity
 	    }
    }
 	
-	protected void zipSubmissions(String assignmentReference, String assignmentTitle, String gradeTypeString, int typeOfSubmission, Iterator submissions, OutputStream outputStream, StringBuilder exceptionMessage, boolean withStudentSubmissionText, boolean withStudentSubmissionAttachment, boolean withGradeFile, boolean withFeedbackText, boolean withFeedbackComment, boolean withFeedbackAttachment, boolean withoutFolders,String gradeFileFormat)
+	protected void zipSubmissions(String assignmentReference, String assignmentTitle, String gradeTypeString, int typeOfSubmission, Iterator submissions, OutputStream outputStream, StringBuilder exceptionMessage, boolean withStudentSubmissionText, boolean withStudentSubmissionAttachment, boolean withGradeFile, boolean withFeedbackText, boolean withFeedbackComment, boolean withFeedbackAttachment, boolean withoutFolders,String gradeFileFormat,boolean includeNotSubmitted)
 	{
 	    ZipOutputStream out = null;
 		
@@ -5524,7 +5533,8 @@ public abstract class BaseAssignmentService implements AssignmentService, Entity
 			{
 				AssignmentSubmission s = (AssignmentSubmission) submissions.next();
 				boolean isAnon = assignmentUsesAnonymousGrading( s );
-				if (s.getSubmitted())
+				//SAK-29314 added a new value where it's by default submitted but is marked when the user submits
+				if ((s.getSubmitted() && s.isUserSubmission()) || includeNotSubmitted)
 				{
 					// get the submission user id and see if the user is still in site
 					String userId = s.getSubmitterId();
