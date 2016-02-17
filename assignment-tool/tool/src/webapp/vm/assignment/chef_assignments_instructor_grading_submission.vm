@@ -241,7 +241,7 @@ function handleEnterKeyPress(ev)
 					</td>
 				</tr>
 			#end
-				#if($allowReviewService && $assignmentContent.AllowReviewService && $assignmentContent.AllowStudentViewReport)
+				#if($allowReviewService && $assignmentContent.AllowReviewService)
 					<tr>
 						<th>
 							$tlang.getString("review.report")
