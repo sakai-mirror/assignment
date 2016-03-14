@@ -855,4 +855,13 @@ public class AssignmentService {
 			return null;
 		return service.escapeInvalidCharsEntry(param0);
 	}
+	
+	public static boolean hasBeenSubmitted(
+			org.sakaiproject.assignment.api.AssignmentSubmissionEdit param0) {
+		org.sakaiproject.assignment.api.AssignmentService service = getInstance();
+		if (service == null)
+			return false;
+
+		return service.hasBeenSubmitted(param0);
+	}
 }
