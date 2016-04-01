@@ -10857,9 +10857,14 @@ public abstract class BaseAssignmentService implements AssignmentService, Entity
 			m_honorPledgeFlag = submission.getHonorPledgeFlag();
 			m_properties = new BaseResourcePropertiesEdit();
 			m_properties.addAll(submission.getProperties());
-                        
-                        // SAK-17606
-                        m_anonymousSubmissionId = submission.getAnonymousSubmissionId();
+
+			
+			// SAK-17606
+			m_anonymousSubmissionId = submission.getAnonymousSubmissionId();
+			// SAK-29314
+			m_isUserSubmission = submission.isUserSubmission();
+		
+		}
 
 		/**
 		 * Access the URL which can be used to access the resource.
